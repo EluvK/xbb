@@ -1,9 +1,37 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:xbb/controller/post.dart';
+import 'package:xbb/controller/setting.dart';
+import 'package:xbb/pages/register.dart';
 import 'package:xbb/pages/posts.dart';
 
-void main() {
+void main() async {
+  await GetStorage.init('XbbGetStorage');
+
+  if (!Platform.isAndroid && !Platform.isIOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
+  await Get.putAsync(() async {
+    final controller = PostController();
+    return controller;
+  });
+  await Get.putAsync(() async {
+    final controller = SettingController();
+    return controller;
+  });
+
+  // should init before app start
+  final settingController = Get.find<SettingController>();
+  await settingController.ensureInitialization();
+
+  await initCacheSetting();
   runApp(const MyApp());
 }
 
@@ -12,10 +40,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String initialRoute = initFirstTime() ? '/login' : '/posts';
     var app = GetMaterialApp(
-      initialRoute: '/posts',
+      initialRoute: initialRoute,
       getPages: [
         GetPage(name: '/posts', page: () => const PostPage()),
+        GetPage(name: '/login', page: () => const RegisterPage()),
       ],
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:xbb/components/post_card.dart';
+import 'package:xbb/components/post_filter.dart';
 import 'package:xbb/pages/repos.dart';
 
 class PostPage extends StatelessWidget {
@@ -15,7 +16,12 @@ class PostPage extends StatelessWidget {
       ),
       body: const SingleChildScrollView(
         padding: EdgeInsets.all(2.0),
-        child: PostCard(),
+        child: Column(
+          children: [
+            PostFilter(),
+            PostCard(),
+          ],
+        ),
       ),
     );
   }

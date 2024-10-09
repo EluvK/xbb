@@ -2,9 +2,11 @@ import 'package:get/get.dart';
 import 'package:xbb/model/post.dart';
 
 class PostController extends GetxController {
-  final postList = <Post>[].obs;
+  final repoPostList = <Post>[].obs;
+  final postListView = <Post>[].obs;
 
   Future<void> loadPost(String repoId) async {
-    postList.value = await PostRepository().getRepoPosts(repoId);
+    repoPostList.value = await PostRepository().getRepoPosts(repoId);
+    postListView.value = repoPostList; // to be implemented more.
   }
 }

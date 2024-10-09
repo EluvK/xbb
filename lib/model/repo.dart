@@ -64,4 +64,9 @@ class RepoRepository {
     );
     return _db!;
   }
+
+  Future<void> addRepo(Repo repo) async {
+    final db = await _getDb();
+    await db.insert(_tableRepoName, repo.toMap());
+  }
 }
