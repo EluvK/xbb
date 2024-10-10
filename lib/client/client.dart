@@ -8,6 +8,7 @@ class XbbClient {
   final String baseUrl;
   XbbClient({required this.baseUrl});
 
+  // GET `/health`
   Future<bool> validateServerHealth() async {
     try {
       HttpClient client = HttpClient();
@@ -25,6 +26,7 @@ class XbbClient {
     return false;
   }
 
+  // GET `/user/validate-name/$name`
   Future<bool> validateUserNameExist(String name) async {
     try {
       HttpClient client = HttpClient();
@@ -44,22 +46,26 @@ class XbbClient {
     return false;
   }
 
+  // POST `/user/validate-login`
   Future<bool> validateLogin(String name, String password) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
           ((X509Certificate cert, String host, int port) => true);
+      var body = jsonEncode({'name': name, "password": password});
       HttpClientRequest request =
           await client.postUrl(Uri.parse("$baseUrl/user/validate-login"));
+      request.headers.set('content-type', 'application/json');
+      request.write(body);
       // print('name: $name');
       // print('password: $password');
       // print('Basic ${base64.encode(utf8.encode('$name:$password'))}');
-      request.headers.set('Authorization',
-          'Basic ${base64Encode(utf8.encode('$name:$password'))}');
+      // request.headers.set('Authorization',
+      //     'Basic ${base64Encode(utf8.encode('$name:$password'))}');
       // print(request.headers);
       HttpClientResponse response = await request.close();
       print("validateLogin ${response.statusCode}");
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       }
     } catch (e) {

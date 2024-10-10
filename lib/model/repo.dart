@@ -20,8 +20,8 @@ class Repo {
       RepoRepository._columnId: id,
       RepoRepository._columnName: name,
       RepoRepository._columnOwner: owner,
-      RepoRepository._columnCreatedAt: createdAt,
-      RepoRepository._columnUpdatedAt: updatedAt,
+      RepoRepository._columnCreatedAt: createdAt.toIso8601String(),
+      RepoRepository._columnUpdatedAt: updatedAt.toIso8601String(),
     };
   }
 
@@ -60,9 +60,27 @@ class RepoRepository {
             $_columnUpdatedAt TEXT NOT NULL
           )
         ''');
+        var now = DateTime.now();
+        var localRepo = Repo(
+            id: '0',
+            name: 'local',
+            owner: 'local',
+            createdAt: now,
+            updatedAt: now);
+        await db.insert(_tableRepoName, localRepo.toMap());
       },
     );
     return _db!;
+  }
+
+  Future<List<Repo>> listRepo() async {
+    final db = await _getDb();
+    final List<Map<String, dynamic>> maps = await db.query(_tableRepoName);
+    var result = List.generate(maps.length, (i) {
+      return Repo.fromMap(maps[i]);
+    });
+
+    return result;
   }
 
   Future<void> addRepo(Repo repo) async {

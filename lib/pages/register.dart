@@ -183,19 +183,15 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               ElevatedButton(
                   onPressed: () async {
-                    if (userNameAvailability == UserNameAvailability.login) {
-                      var res = await validateLogin(userName, userPassword);
-                      if (res) {
-                        print('login success');
-                        settingController.setUserInfo(userName, userPassword);
-                      } else {
-                        print('login failed');
-                        // todo alarm
-                      }
+                    var res = await validateLogin(userName, userPassword);
+                    if (res) {
+                      print('login success');
+                      settingController.setUserInfo(userName, userPassword);
+                      Get.toNamed('/posts');
+                    } else {
+                      print('login failed');
+                      // todo alarm
                     }
-                    // save user info and server info
-                    // then go to the main page
-                    // runApp(const MyApp());
                   },
                   child: switch (userNameAvailability) {
                     UserNameAvailability.login => const Text('Login'),

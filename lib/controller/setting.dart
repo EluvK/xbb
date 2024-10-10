@@ -7,7 +7,7 @@ import 'package:get_storage/get_storage.dart';
 bool initFirstTime() {
   var settingController = Get.find<SettingController>();
   if (settingController.currentUser.isNotEmpty &&
-      settingController.currentRepo.isNotEmpty) {
+      settingController.currentUserPasswd.isNotEmpty) {
     print('already done first init before');
     return false;
   }
@@ -25,8 +25,7 @@ class SettingController extends GetxController {
 
   // cache information
   final serverAddress = "https://".obs;
-  final currentRepo = "".obs;
-
+  final currentRepoId = "".obs;
   final currentUser = "".obs;
   final currentUserPasswd = "".obs;
 
@@ -61,6 +60,7 @@ class SettingController extends GetxController {
 
   getCacheSetting() {
     serverAddress.value = box.read('server_address') ?? '';
+    currentRepoId.value = box.read('current_repo_id') ?? '0';
     currentUser.value = box.read('current_user') ?? '';
     currentUserPasswd.value = box.read('current_user_passwd') ?? '';
   }
@@ -90,5 +90,10 @@ class SettingController extends GetxController {
     currentUserPasswd.value = password;
     box.write('current_user', currentUser.value);
     box.write('current_user_passwd', currentUserPasswd.value);
+  }
+
+  setCurrentRepo(String repo) {
+    currentRepoId.value = repo;
+    box.write('current_repo_id', repo);
   }
 }
