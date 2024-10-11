@@ -1,4 +1,4 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:xbb/model/db.dart';
 
 enum PostStatus {
   draft,
@@ -31,75 +31,38 @@ class Post {
 
   Map<String, dynamic> toMap() {
     return {
-      PostRepository._columnId: id,
-      PostRepository._columnTitle: title,
-      PostRepository._columnContent: content,
-      PostRepository._columnCreatedAt: createdAt.toIso8601String(),
-      PostRepository._columnUpdatedAt: updatedAt.toIso8601String(),
-      PostRepository._columnAuthor: author,
-      PostRepository._columnRepoId: repoId,
-      PostRepository._columnStatus: status.toString()
+      tablePostColumnId: id,
+      tablePostColumnTitle: title,
+      tablePostColumnContent: content,
+      tablePostColumnCreatedAt: createdAt.toIso8601String(),
+      tablePostColumnUpdatedAt: updatedAt.toIso8601String(),
+      tablePostColumnAuthor: author,
+      tablePostColumnRepoId: repoId,
+      tablePostColumnStatus: status.toString()
     };
   }
 
   factory Post.fromMap(Map<String, dynamic> map) {
     return Post(
-      id: map[PostRepository._columnId],
-      title: map[PostRepository._columnTitle],
-      content: map[PostRepository._columnContent],
-      createdAt: DateTime.parse(map[PostRepository._columnCreatedAt]),
-      updatedAt: DateTime.parse(map[PostRepository._columnUpdatedAt]),
-      author: map[PostRepository._columnAuthor],
-      repoId: map[PostRepository._columnRepoId],
+      id: map[tablePostColumnId],
+      title: map[tablePostColumnTitle],
+      content: map[tablePostColumnContent],
+      createdAt: DateTime.parse(map[tablePostColumnCreatedAt]),
+      updatedAt: DateTime.parse(map[tablePostColumnUpdatedAt]),
+      author: map[tablePostColumnAuthor],
+      repoId: map[tablePostColumnRepoId],
       status: PostStatus.values
-          .firstWhere((e) => e.toString() == map[PostRepository._columnStatus]),
+          .firstWhere((e) => e.toString() == map[tablePostColumnStatus]),
     );
   }
 }
 
 class PostRepository {
-  static const String _tablePostName = 'posts';
-  static const String _columnId = 'id';
-  static const String _columnTitle = 'title';
-  static const String _columnContent = 'content';
-  static const String _columnCreatedAt = 'createdAt';
-  static const String _columnUpdatedAt = 'updatedAt';
-  static const String _columnAuthor = 'author';
-  static const String _columnRepoId = 'repoId';
-
-  // local
-  static const String _columnStatus = 'status';
-
-  static Database? _db;
-
-  Future<Database> _getDb() async {
-    _db ??= await openDatabase(
-      'xbb_client.db',
-      version: 1,
-      onCreate: (Database db, int version) async {
-        await db.execute('''
-          CREATE TABLE $_tablePostName (
-            $_columnId TEXT PRIMARY KEY,
-            $_columnTitle TEXT NOT NULL,
-            $_columnContent TEXT NOT NULL,
-            $_columnCreatedAt TEXT NOT NULL,
-            $_columnUpdatedAt TEXT NOT NULL,
-            $_columnAuthor TEXT NOT NULL,
-            $_columnRepoId TEXT NOT NULL,
-            $_columnStatus TEXT NOT NULL
-          )
-        ''');
-      },
-    );
-
-    return _db!;
-  }
-
   Future<List<Post>> getRepoPosts(String repoId) async {
-    final db = await _getDb();
+    final db = await DataBase().getDb();
     final List<Map<String, dynamic>> maps = await db.query(
-      _tablePostName,
-      where: '$_columnRepoId = ?',
+      tablePostName,
+      where: '$tablePostColumnRepoId = ?',
       whereArgs: [repoId],
     );
     var result = List.generate(maps.length, (i) {
@@ -110,7 +73,7 @@ class PostRepository {
   }
 
   Future<void> addPost(Post post) async {
-    final db = await _getDb();
-    await db.insert(_tablePostName, post.toMap());
+    final db = await DataBase().getDb();
+    await db.insert(tablePostName, post.toMap());
   }
 }

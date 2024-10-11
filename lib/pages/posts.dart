@@ -5,6 +5,7 @@ import 'package:xbb/components/post_filter.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/pages/drawer.dart';
+import 'package:xbb/pages/new_post.dart';
 
 class PostPage extends StatelessWidget {
   const PostPage({super.key});
@@ -48,7 +49,14 @@ class _PostPageAppBarState extends State<PostPageAppBar> {
         title: Text(
             repoController.repoName(settingController.currentRepoId.value) ??
                 '??'),
-        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.add))],
+        actions: [
+          IconButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const NewPost()));
+              },
+              icon: const Icon(Icons.add))
+        ],
       );
     });
   }

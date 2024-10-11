@@ -8,6 +8,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/pages/new_post.dart';
 import 'package:xbb/pages/register.dart';
 import 'package:xbb/pages/posts.dart';
 
@@ -49,8 +50,9 @@ class MyApp extends StatelessWidget {
     var app = GetMaterialApp(
       initialRoute: initialRoute,
       getPages: [
-        GetPage(name: '/posts', page: () => const PostPage()),
         GetPage(name: '/login', page: () => const RegisterPage()),
+        GetPage(name: '/posts', page: () => const PostPage()),
+        GetPage(name: '/new', page: () => const NewPost()),
       ],
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,

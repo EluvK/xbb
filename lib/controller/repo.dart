@@ -26,4 +26,8 @@ class RepoController extends GetxController {
   String? repoName(String repoId) {
     return repoList.firstWhereOrNull((element) => element.id == repoId)?.name;
   }
+
+  // List<String> listRepoNames() {
+  //   return repoList.map((element) => element.name).toList();
+  // }
 }
