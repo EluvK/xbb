@@ -18,14 +18,11 @@ class PostPage extends StatelessWidget {
         preferredSize: Size.fromHeight(56.0),
         child: PostPageAppBar(),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(2.0),
-        child: Column(
-          children: [
-            PostFilter(),
-            PostCard(),
-          ],
-        ),
+      body: Column(
+        children: [
+          PostFilter(),
+          Expanded(child: PostCard()),
+        ],
       ),
     );
   }
@@ -48,7 +45,7 @@ class _PostPageAppBarState extends State<PostPageAppBar> {
       return AppBar(
         title: Text(
             repoController.repoName(settingController.currentRepoId.value) ??
-                '??'),
+                ''),
         actions: [
           IconButton(
               onPressed: () {

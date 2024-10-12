@@ -16,21 +16,46 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     return Obx(() {
       var viewPost = postController.postListView;
-      return viewPost.isNotEmpty ? postView(viewPost) : const Placeholder();
+      print("viewPost: $viewPost");
+      return viewPost.isNotEmpty ? postView(viewPost) : const Text('no post');
     });
   }
 
   Widget postView(List<Post> viewPosts) {
-    return ListView.builder(
-      itemCount: viewPosts.length,
-      itemBuilder: (context, index) {
-        return Card(
-          child: ListTile(
-            title: Text(viewPosts[index].title),
-            subtitle: Text(viewPosts[index].content),
+    return Column(children: [
+      const Divider(),
+      Expanded(
+        child: ListView.builder(
+          itemCount: viewPosts.length,
+          itemBuilder: (context, index) {
+            return postCard(viewPosts[index]);
+          },
+        ),
+      ),
+    ]);
+  }
+
+  Widget postCard(Post post) {
+    return Card(
+      child: ListTile(
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
           ),
-        );
-      },
+          child: Column(
+            children: [
+              Text(post.title),
+              IconButton(
+                  onPressed: () {
+                    postController.deletePost(post.id);
+                  },
+                  icon: const Icon(Icons.delete))
+            ],
+          ),
+        ),
+        // subtitle: Text(post.content),
+      ),
     );
   }
 }

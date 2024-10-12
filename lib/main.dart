@@ -38,7 +38,14 @@ void main() async {
   });
 
   await initCacheSetting();
+  await initRepoPost();
   runApp(const MyApp());
+}
+
+Future<void> initRepoPost() async {
+  final settingController = Get.find<SettingController>();
+  final postController = Get.find<PostController>();
+  await postController.loadPost(settingController.currentRepoId.value);
 }
 
 class MyApp extends StatelessWidget {
@@ -74,7 +81,7 @@ class MyApp extends StatelessWidget {
         visualDensity: FlexColorScheme.comfortablePlatformDensity,
         useMaterial3: true,
         swapLegacyOnMaterial3: true,
-        // fontFamily: 'lxgw',
+        fontFamily: 'lxgw',
       ),
       darkTheme: FlexThemeData.dark(
         scheme: FlexScheme.blumineBlue,
@@ -94,7 +101,7 @@ class MyApp extends StatelessWidget {
         visualDensity: FlexColorScheme.comfortablePlatformDensity,
         useMaterial3: true,
         swapLegacyOnMaterial3: true,
-        // fontFamily: 'lxgw',
+        fontFamily: 'lxgw',
       ),
     );
     return app;
