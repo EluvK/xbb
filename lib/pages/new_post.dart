@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:xbb/components/new_post_editor.dart';
+import 'package:xbb/components/post_editor.dart';
 
 class NewPost extends StatelessWidget {
   const NewPost({super.key});
@@ -8,7 +8,7 @@ class NewPost extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('newPost')),
-      body: const NewPostEditor(),
+      body: const PostEditor(),
     );
   }
 }

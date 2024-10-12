@@ -187,7 +187,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (res) {
                       print('login success');
                       settingController.setUserInfo(userName, userPassword);
-                      Get.toNamed('/posts');
+                      Get.toNamed('/');
                     } else {
                       print('login failed');
                       // todo alarm

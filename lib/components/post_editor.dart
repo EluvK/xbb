@@ -3,14 +3,14 @@ import 'package:get/get.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 
-class NewPostEditor extends StatefulWidget {
-  const NewPostEditor({super.key});
+class PostEditor extends StatefulWidget {
+  const PostEditor({super.key});
 
   @override
-  State<NewPostEditor> createState() => _NewPostEditorState();
+  State<PostEditor> createState() => _PostEditorState();
 }
 
-class _NewPostEditorState extends State<NewPostEditor> {
+class _PostEditorState extends State<PostEditor> {
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
 

@@ -8,9 +8,9 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/new_post.dart';
 import 'package:xbb/pages/register.dart';
-import 'package:xbb/pages/posts.dart';
 
 void main() async {
   await GetStorage.init('XbbGetStorage');
@@ -53,12 +53,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String initialRoute = initFirstTime() ? '/login' : '/posts';
+    String initialRoute = initFirstTime() ? '/login' : '/';
     var app = GetMaterialApp(
       initialRoute: initialRoute,
       getPages: [
+        GetPage(name: '/', page: () => HomePage()),
         GetPage(name: '/login', page: () => const RegisterPage()),
-        GetPage(name: '/posts', page: () => const PostPage()),
         GetPage(name: '/new', page: () => const NewPost()),
       ],
       debugShowCheckedModeBanner: false,

@@ -1,41 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:xbb/components/post_card.dart';
-import 'package:xbb/components/post_filter.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/pages/drawer.dart';
 import 'package:xbb/pages/new_post.dart';
 
-class PostPage extends StatelessWidget {
-  const PostPage({super.key});
+class PostsAppBar extends StatefulWidget {
+  const PostsAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      drawer: DrawerPage(),
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(56.0),
-        child: PostPageAppBar(),
-      ),
-      body: Column(
-        children: [
-          PostFilter(),
-          Expanded(child: PostCard()),
-        ],
-      ),
-    );
-  }
+  State<PostsAppBar> createState() => _PostsAppBarState();
 }
 
-class PostPageAppBar extends StatefulWidget {
-  const PostPageAppBar({super.key});
-
-  @override
-  State<PostPageAppBar> createState() => _PostPageAppBarState();
-}
-
-class _PostPageAppBarState extends State<PostPageAppBar> {
+class _PostsAppBarState extends State<PostsAppBar> {
   final settingController = Get.find<SettingController>();
   final repoController = Get.find<RepoController>();
 
