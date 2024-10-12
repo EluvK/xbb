@@ -15,19 +15,26 @@ class PostController extends GetxController {
     postListView.value = repoPostList; // to be implemented more.
   }
 
-  savePost(String title, String content, String repoId) async {
-    var post = Post(
-      id: const Uuid().v4(),
-      title: title,
-      content: content,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      author: settingController.currentUser.value,
-      repoId: repoId,
-    );
-    await PostRepository().addPost(post);
-    if (repoId == settingController.currentRepoId.value) {
-      await loadPost(repoId);
+  savePost(String? postId, String title, String content, String repoId) async {
+    if (postId == null) {
+      // new one
+      var post = Post(
+        id: const Uuid().v4(),
+        title: title,
+        content: content,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        author: settingController.currentUser.value,
+        repoId: repoId,
+      );
+      await PostRepository().addPost(post);
+      if (repoId == settingController.currentRepoId.value) {
+        await loadPost(repoId);
+      }
+    } else {
+      // edit exist post
+      // todo
+      print("update repo");
     }
   }
 

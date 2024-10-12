@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/model/post.dart';
+import 'package:xbb/utils/markdown.dart';
 
 class PostViewer extends StatefulWidget {
   const PostViewer({super.key, required this.postId});
@@ -21,8 +22,11 @@ class _PostViewerState extends State<PostViewer> {
         builder: (context, AsyncSnapshot<Post> post) {
           if (post.hasData) {
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _title(post.data!.title),
+                // todo tags maybe?
+                const Divider(),
                 _content(post.data!.content),
               ],
             );
@@ -42,9 +46,7 @@ class _PostViewerState extends State<PostViewer> {
 
   Widget _content(String content) {
     return Column(
-      children: [
-        Text(content),
-      ],
+      children: [MarkdownRenderer(data: content)],
     );
   }
 }

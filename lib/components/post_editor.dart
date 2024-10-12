@@ -4,7 +4,8 @@ import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 
 class PostEditor extends StatefulWidget {
-  const PostEditor({super.key});
+  const PostEditor({super.key, this.postId});
+  final String? postId;
 
   @override
   State<PostEditor> createState() => _PostEditorState();
@@ -20,6 +21,47 @@ class _PostEditorState extends State<PostEditor> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.postId == null) {
+      return buildEditPostWidget();
+    } else {
+      return FutureBuilder(
+        future: postController.getPost(widget.postId!),
+        builder: (context, postData) {
+          if (postData.hasData) {
+            var post = postData.data!;
+            title = post.title;
+            content = post.content;
+            targetRepo = post.repoId;
+            return buildEditPostWidget();
+          } else {
+            return const CircularProgressIndicator();
+          }
+        },
+      );
+    }
+  }
+
+  Widget buildEditPostWidget() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _titleWidget(),
+        ),
+        Expanded(
+            child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _editorWidget(),
+        )),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _toolsWidget(),
+        ),
+      ],
+    );
+  }
+
+  Widget newPost() {
     return Column(
       children: [
         Padding(
@@ -85,7 +127,7 @@ class _PostEditorState extends State<PostEditor> {
         ),
         TextButton(
           onPressed: () {
-            postController.savePost(title, content, targetRepo);
+            postController.savePost(widget.postId,title, content, targetRepo);
             Get.back();
           },
           child: const Text('保存到存储库'),
