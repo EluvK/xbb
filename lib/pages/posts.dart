@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/pages/new_post.dart';
+import 'package:xbb/pages/edit_post.dart';
 
 class PostsAppBar extends StatefulWidget {
   const PostsAppBar({super.key});
@@ -25,8 +25,10 @@ class _PostsAppBarState extends State<PostsAppBar> {
         actions: [
           IconButton(
               onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const NewPost()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const EditPostPage()));
               },
               icon: const Icon(Icons.add))
         ],

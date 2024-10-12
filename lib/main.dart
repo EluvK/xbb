@@ -9,7 +9,6 @@ import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/pages/home.dart';
-import 'package:xbb/pages/new_post.dart';
 import 'package:xbb/pages/register.dart';
 
 void main() async {
@@ -59,7 +58,7 @@ class MyApp extends StatelessWidget {
       getPages: [
         GetPage(name: '/', page: () => HomePage()),
         GetPage(name: '/login', page: () => const RegisterPage()),
-        GetPage(name: '/new', page: () => const NewPost()),
+        // GetPage(name: '/editor', page: () => const PostEditorPage()),
       ],
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
