@@ -35,4 +35,8 @@ class PostController extends GetxController {
     await PostRepository().deletePost(postId);
     await loadPost(settingController.currentRepoId.value);
   }
+
+  Future<Post> getPost(String postId) async {
+    return await PostRepository().getPost(postId);
+  }
 }

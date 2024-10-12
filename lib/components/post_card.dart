@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/model/post.dart';
+import 'package:xbb/pages/view_post.dart';
 
 class PostCard extends StatefulWidget {
   const PostCard({super.key});
@@ -36,25 +37,33 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget postCard(Post post) {
-    return Card(
-      child: ListTile(
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+    return InkWell(
+      onTap: () => {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => ViewPostPage(postId: post.id)))
+      },
+      child: Card(
+        child: ListTile(
+          title: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Text(post.title),
+                IconButton(
+                    onPressed: () {
+                      postController.deletePost(post.id);
+                    },
+                    icon: const Icon(Icons.delete))
+              ],
+            ),
           ),
-          child: Column(
-            children: [
-              Text(post.title),
-              IconButton(
-                  onPressed: () {
-                    postController.deletePost(post.id);
-                  },
-                  icon: const Icon(Icons.delete))
-            ],
-          ),
+          // subtitle: Text(post.content),
         ),
-        // subtitle: Text(post.content),
       ),
     );
   }

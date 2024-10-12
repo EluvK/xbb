@@ -72,6 +72,16 @@ class PostRepository {
     return result;
   }
 
+  Future<Post> getPost(String postId) async {
+    final db = await DataBase().getDb();
+    final List<Map<String, dynamic>> maps = await db.query(
+      tablePostName,
+      where: '$tablePostColumnId = ?',
+      whereArgs: [postId],
+    );
+    return Post.fromMap(maps.first);
+  }
+
   Future<void> addPost(Post post) async {
     final db = await DataBase().getDb();
     await db.insert(tablePostName, post.toMap());
