@@ -17,12 +17,25 @@ class _DrawerReposState extends State<DrawerRepos> {
     return Obx(() {
       return Column(
         children: [
-          const Text('Repos'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Repos'),
+              IconButton(
+                onPressed: () {
+                  Get.toNamed('/edit-repo');
+                },
+                icon: const Icon(Icons.add),
+                tooltip: 'New repo',
+              )
+            ],
+          ),
           for (var repo in repoController.repoList)
             ListTile(
               title: Text(repo.name),
               onTap: () {
                 repoController.setCurrentRepo(repo.id);
+                Get.back();
               },
               selected: repoController.currentRepo.value == repo.id,
             ),

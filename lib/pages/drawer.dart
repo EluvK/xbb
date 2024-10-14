@@ -7,18 +7,34 @@ class DrawerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      children: [
-        Padding(
-          padding: EdgeInsets.all(8.0),
-          child: DrawerUser(),
-        ),
-        Divider(),
-        Padding(
-          padding: EdgeInsets.all(8.0),
-          child: DrawerRepos(),
-        ),
-      ],
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(10.0),
+      decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius:
+              const BorderRadius.horizontal(right: Radius.circular(25)),
+          boxShadow: [
+            BoxShadow(color: colorScheme.shadow.withOpacity(0.3), blurRadius: 7)
+          ]),
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: const Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: DrawerUser(),
+          ),
+          Divider(),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: DrawerRepos(),
+            ),
+          ),
+          Divider(),
+          Text('settings? info? maybe'),
+        ],
+      ),
     );
   }
 }

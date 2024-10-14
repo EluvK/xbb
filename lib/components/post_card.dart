@@ -34,13 +34,10 @@ class _PostCardState extends State<PostCard> {
         child: ListView.builder(
           itemCount: viewPosts.length,
           itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Card(
-                child: Container(
-                    padding: const EdgeInsets.all(8.0),
-                    child: postCard(viewPosts[index], index)),
-              ),
+            return Card(
+              child: Container(
+                  padding: const EdgeInsets.all(8.0),
+                  child: postCard(viewPosts[index], index)),
             );
           },
         ),
@@ -140,6 +137,7 @@ class _PostCardState extends State<PostCard> {
       return postCard;
     } else {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [postCard, const Divider(), moreContent],
       );
     }
