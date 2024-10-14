@@ -8,8 +8,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/pages/edit_post.dart';
 import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/register.dart';
+import 'package:xbb/pages/view_post.dart';
 
 void main() async {
   await GetStorage.init('XbbGetStorage');
@@ -58,7 +60,8 @@ class MyApp extends StatelessWidget {
       getPages: [
         GetPage(name: '/', page: () => HomePage()),
         GetPage(name: '/login', page: () => const RegisterPage()),
-        // GetPage(name: '/editor', page: () => const PostEditorPage()),
+        GetPage(name: '/view-post', page: () => const ViewPostPage()),
+        GetPage(name: '/edit-post', page: () => const EditPostPage()),
       ],
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:xbb/components/post_card.dart';
-import 'package:xbb/components/post_filter.dart';
 import 'package:xbb/pages/drawer.dart';
 import 'package:xbb/pages/posts.dart';
 
@@ -16,12 +14,7 @@ class HomePage extends GetResponsiveView {
         preferredSize: Size.fromHeight(56.0),
         child: PostsAppBar(),
       ),
-      body: Column(
-        children: [
-          PostFilter(),
-          Expanded(child: PostCard()),
-        ],
-      ),
+      body: PostPages(),
     );
   }
 

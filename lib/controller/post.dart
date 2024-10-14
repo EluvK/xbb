@@ -31,8 +31,25 @@ class PostController extends GetxController {
       if (repoId == settingController.currentRepoId.value) {
         await loadPost(repoId);
       }
+      Get.toNamed('/');
     } else {
       // edit exist post
+      var post = await getPost(postId);
+      post.title = title;
+      post.content = content;
+      post.updatedAt = DateTime.now();
+      await PostRepository().updatePost(post);
+      if (repoId == settingController.currentRepoId.value) {
+        await loadPost(repoId);
+      }
+
+      // strange, but it works... should be better.
+      Get.offNamed('/');
+      Get.toNamed('/view-post', arguments: [post.id]);
+
+      // missing pop back button:
+      // Get.offAllNamed('/view-post', arguments: [post.id]);
+
       // todo
       print("update repo");
     }

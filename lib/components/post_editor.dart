@@ -127,8 +127,7 @@ class _PostEditorState extends State<PostEditor> {
         ),
         TextButton(
           onPressed: () {
-            postController.savePost(widget.postId,title, content, targetRepo);
-            Get.back();
+            postController.savePost(widget.postId, title, content, targetRepo);
           },
           child: const Text('保存到存储库'),
         )

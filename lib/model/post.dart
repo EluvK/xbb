@@ -92,4 +92,10 @@ class PostRepository {
     await db.delete(tablePostName,
         where: '$tablePostColumnId = ?', whereArgs: [postId]);
   }
+
+  Future<void> updatePost(Post post) async {
+    final db = await DataBase().getDb();
+    await db.update(tablePostName, post.toMap(),
+        where: '$tablePostColumnId = ?', whereArgs: [post.id]);
+  }
 }

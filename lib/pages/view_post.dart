@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:xbb/components/post_viewer.dart';
-import 'package:xbb/pages/edit_post.dart';
 
 class ViewPostPage extends StatelessWidget {
-  const ViewPostPage({super.key, required this.postId});
-  final String postId;
+  const ViewPostPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final args = Get.arguments;
+    final String postId = args[0];
     return Scaffold(
       appBar: AppBar(
         title: const Text('viewPost'),
         actions: [
           IconButton(
               onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditPostPage(postId: postId),
-                    ));
+                Get.toNamed('/edit-post', arguments: [postId]);
               },
               icon: const Icon(Icons.edit)),
           // IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
