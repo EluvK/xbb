@@ -28,9 +28,10 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget postsView(List<Post> viewPosts) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     // for every post.category, create a expansion tile
     final Map<String, List<Post>> categorizedPosts = {};
-
     for (var post in viewPosts) {
       categorizedPosts.putIfAbsent(post.category, () => []).add(post);
     }
@@ -38,12 +39,22 @@ class _PostCardState extends State<PostCard> {
     return ListView(
       children: categorizedPosts.entries.map((entry) {
         return ExpansionTile(
+          backgroundColor: colorScheme.surface,
+          collapsedBackgroundColor: colorScheme.onSurface.withOpacity(0.05),
           initiallyExpanded: true,
+          tilePadding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
+          childrenPadding: const EdgeInsets.only(bottom: 8.0),
           title: Text(
-            entry.key.isNotEmpty ? entry.key : "Uncategorized",
+            entry.key,
             style: const TextStyle(fontWeight: FontWeight.w300),
             textScaler: const TextScaler.linear(1.4),
           ),
+          // title: EditableTextWidget(
+          //   initialText: entry.key,
+          //   onSave: (String newValue) {
+          //     print("save $newValue");
+          //   },
+          // ),
           controlAffinity: ListTileControlAffinity.leading,
           children: entry.value
               .map((post) => Padding(
@@ -59,7 +70,7 @@ class _PostCardState extends State<PostCard> {
   Widget postCard(Post post) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    Widget postCard = ListTile(
+    Widget postListTile = ListTile(
       onTap: () => {
         Get.toNamed('/view-post', arguments: [post.id]),
       },
@@ -110,7 +121,7 @@ class _PostCardState extends State<PostCard> {
     Widget? moreContent;
     if (post.id == _moreContentButtonId) {
       moreContent = Container(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Text(
           post.content,
           textScaler: const TextScaler.linear(1.0),
@@ -143,13 +154,16 @@ class _PostCardState extends State<PostCard> {
       );
     }
 
-    if (moreContent == null) {
-      return postCard;
-    } else {
-      return Column(
+    return Card(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [postCard, const Divider(), moreContent],
-      );
-    }
+        children: [
+          postListTile,
+          Visibility(visible: moreContent != null, child: const Divider()),
+          Visibility(
+              visible: moreContent != null, child: moreContent ?? Container()),
+        ],
+      ),
+    );
   }
 }
