@@ -15,9 +15,23 @@ class _PostEditorState extends State<PostEditor> {
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
 
-  String title = '';
-  String content = '';
+  late String title = '';
+  late String content = '';
   late String targetRepo = repoController.currentRepo.value;
+  late String targetCategory = 'uncategorized';
+
+  late Set<String> candidateCategory;
+
+  @override
+  void initState() {
+    candidateCategory = postController.repoPostList
+        .map((post) => post.category.toString())
+        .toSet();
+    if (!candidateCategory.contains('uncategorized')) {
+      candidateCategory.add('uncategorized');
+    }
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +46,7 @@ class _PostEditorState extends State<PostEditor> {
             title = post.title;
             content = post.content;
             targetRepo = post.repoId;
+            targetCategory = post.category;
             return buildEditPostWidget();
           } else {
             return const CircularProgressIndicator();
@@ -112,11 +127,10 @@ class _PostEditorState extends State<PostEditor> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        TextButton(onPressed: () {}, child: const Text('保存草稿')),
-        const VerticalDivider(),
+        // repo dropdown
         Flexible(
           child: DropdownButtonFormField(
-            items: repoController.repoList().map((e) {
+            items: repoController.repoList.map((e) {
               return DropdownMenuItem(value: e.id, child: Text(e.name));
             }).toList(),
             onChanged: (value) {
@@ -125,9 +139,46 @@ class _PostEditorState extends State<PostEditor> {
             value: targetRepo,
           ),
         ),
+        const VerticalDivider(),
+        // try:
+        Flexible(
+          child: Autocomplete(
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (textEditingValue.text == '') {
+                return candidateCategory;
+              }
+              var matched = candidateCategory.where((String category) {
+                return category.contains(textEditingValue.text.toLowerCase());
+              }).toList();
+              if (!candidateCategory.contains(textEditingValue.text)) {
+                matched.insert(
+                    matched.length, "[new] ${textEditingValue.text}");
+              }
+              if (matched.isEmpty) {
+                return {"[new] ${textEditingValue.text}"};
+                // return Iterable<String>.generate(5, (index) => '$index');
+              }
+              return matched;
+            },
+            initialValue: TextEditingValue(text: targetCategory),
+            optionsViewOpenDirection: OptionsViewOpenDirection.up,
+            onSelected: (String selection) {
+              print('selected $selection');
+              if (selection.startsWith('[new] ')) {
+                selection = selection.substring(6);
+              }
+              targetCategory = selection;
+              print('targetCategory: $targetCategory');
+            },
+          ),
+        ),
+
+        const VerticalDivider(),
+        // TextButton(onPressed: () {}, child: const Text('保存草稿')),
         TextButton(
           onPressed: () {
-            postController.savePost(widget.postId, title, content, targetRepo);
+            postController.savePost(
+                widget.postId, title, content, targetRepo, targetCategory);
           },
           child: const Text('保存到存储库'),
         )

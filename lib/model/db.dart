@@ -12,6 +12,7 @@ const String tableRepoColumnUpdatedAt = "updatedAt";
 /// POST
 const String tablePostName = 'posts';
 const String tablePostColumnId = 'id';
+const String tablePostColumnCategory = 'category';
 const String tablePostColumnTitle = 'title';
 const String tablePostColumnContent = 'content';
 const String tablePostColumnCreatedAt = 'createdAt';
@@ -32,6 +33,7 @@ class DataBase {
         await db.execute('''
           CREATE TABLE $tablePostName (
             $tablePostColumnId TEXT PRIMARY KEY,
+            $tablePostColumnCategory TEXT NOT NULL,
             $tablePostColumnTitle TEXT NOT NULL,
             $tablePostColumnContent TEXT NOT NULL,
             $tablePostColumnCreatedAt TEXT NOT NULL,

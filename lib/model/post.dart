@@ -8,6 +8,7 @@ enum PostStatus {
 class Post {
   // members that uploaded to the server
   String id;
+  String category;
   String title;
   String content;
   DateTime createdAt;
@@ -20,6 +21,7 @@ class Post {
 
   Post({
     required this.id,
+    required this.category,
     required this.title,
     required this.content,
     required this.createdAt,
@@ -32,6 +34,7 @@ class Post {
   Map<String, dynamic> toMap() {
     return {
       tablePostColumnId: id,
+      tablePostColumnCategory: category,
       tablePostColumnTitle: title,
       tablePostColumnContent: content,
       tablePostColumnCreatedAt: createdAt.toIso8601String(),
@@ -45,6 +48,7 @@ class Post {
   factory Post.fromMap(Map<String, dynamic> map) {
     return Post(
       id: map[tablePostColumnId],
+      category: map[tablePostColumnCategory],
       title: map[tablePostColumnTitle],
       content: map[tablePostColumnContent],
       createdAt: DateTime.parse(map[tablePostColumnCreatedAt]),

@@ -12,14 +12,26 @@ class PostController extends GetxController {
   Future<void> loadPost(String repoId) async {
     repoPostList.value = await PostRepository().getRepoPosts(repoId);
     print('load repoId: $repoId, post ${repoPostList.length}');
-    postListView.value = repoPostList; // to be implemented more.
+
+    // reorganize postListView, sorted first by category, then by updatedAt
+    postListView.value = repoPostList;
+    postListView.sort((a, b) {
+      if (a.category == b.category) {
+        return b.updatedAt.compareTo(a.updatedAt);
+      } else {
+        return a.category.compareTo(b.category);
+      }
+    });
   }
 
-  savePost(String? postId, String title, String content, String repoId) async {
+  savePost(String? postId, String title, String content, String repoId,
+      String category) async {
+    print("on savePost: $postId, $title, $content, $repoId, $category");
     if (postId == null) {
       // new one
       var post = Post(
         id: const Uuid().v4(),
+        category: category,
         title: title,
         content: content,
         createdAt: DateTime.now(),
@@ -37,6 +49,7 @@ class PostController extends GetxController {
       var post = await getPost(postId);
       post.title = title;
       post.content = content;
+      post.category = category;
       post.updatedAt = DateTime.now();
       await PostRepository().updatePost(post);
       if (repoId == settingController.currentRepoId.value) {

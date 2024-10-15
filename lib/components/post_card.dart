@@ -15,37 +15,48 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   final postController = Get.find<PostController>();
 
-  int _moreEditButtonIndex = -1;
-  int _moreContentButtonIndex = -1;
+  String _moreEditButtonId = "";
+  String _moreContentButtonId = "";
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       var viewPost = postController.postListView;
       print("viewPost: $viewPost");
-      return viewPost.isNotEmpty ? postView(viewPost) : const Text('no post');
+      return viewPost.isNotEmpty ? postsView(viewPost) : const Text('no post');
     });
   }
 
-  Widget postView(List<Post> viewPosts) {
-    return Column(children: [
-      const Divider(),
-      Expanded(
-        child: ListView.builder(
-          itemCount: viewPosts.length,
-          itemBuilder: (context, index) {
-            return Card(
-              child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  child: postCard(viewPosts[index], index)),
-            );
-          },
-        ),
-      ),
-    ]);
+  Widget postsView(List<Post> viewPosts) {
+    // for every post.category, create a expansion tile
+    final Map<String, List<Post>> categorizedPosts = {};
+
+    for (var post in viewPosts) {
+      categorizedPosts.putIfAbsent(post.category, () => []).add(post);
+    }
+
+    return ListView(
+      children: categorizedPosts.entries.map((entry) {
+        return ExpansionTile(
+          initiallyExpanded: true,
+          title: Text(
+            entry.key.isNotEmpty ? entry.key : "Uncategorized",
+            style: const TextStyle(fontWeight: FontWeight.w300),
+            textScaler: const TextScaler.linear(1.4),
+          ),
+          controlAffinity: ListTileControlAffinity.leading,
+          children: entry.value
+              .map((post) => Padding(
+                    padding: const EdgeInsets.only(left: 20.0),
+                    child: postCard(post),
+                  ))
+              .toList(),
+        );
+      }).toList(),
+    );
   }
 
-  Widget postCard(Post post, int index) {
+  Widget postCard(Post post) {
     final colorScheme = Theme.of(context).colorScheme;
 
     Widget postCard = ListTile(
@@ -67,27 +78,26 @@ class _PostCardState extends State<PostCard> {
         children: [
           IconButton(
             onPressed: () {
-              _moreContentButtonIndex =
-                  (_moreContentButtonIndex == index) ? -1 : index;
-              if (_moreContentButtonIndex == index &&
-                  _moreEditButtonIndex == index) {
-                _moreEditButtonIndex = -1;
+              _moreContentButtonId =
+                  (_moreContentButtonId == post.id) ? "" : post.id;
+              if (_moreContentButtonId == post.id &&
+                  _moreEditButtonId == post.id) {
+                _moreEditButtonId = "";
               }
               setState(() {});
             },
             icon: Icon(
                 color: colorScheme.primary,
-                index == _moreContentButtonIndex
+                post.id == _moreContentButtonId
                     ? Icons.expand_less
                     : Icons.expand_more),
           ),
           IconButton(
             onPressed: () {
-              _moreEditButtonIndex =
-                  (_moreEditButtonIndex == index) ? -1 : index;
-              if (_moreContentButtonIndex == index &&
-                  _moreEditButtonIndex == index) {
-                _moreContentButtonIndex = -1;
+              _moreEditButtonId = (_moreEditButtonId == post.id) ? "" : post.id;
+              if (_moreContentButtonId == post.id &&
+                  _moreEditButtonId == post.id) {
+                _moreContentButtonId = "";
               }
               setState(() {});
             },
@@ -98,7 +108,7 @@ class _PostCardState extends State<PostCard> {
     );
 
     Widget? moreContent;
-    if (index == _moreContentButtonIndex) {
+    if (post.id == _moreContentButtonId) {
       moreContent = Container(
         padding: const EdgeInsets.all(8.0),
         child: Text(
@@ -107,7 +117,7 @@ class _PostCardState extends State<PostCard> {
         ),
       );
     }
-    if (index == _moreEditButtonIndex) {
+    if (post.id == _moreEditButtonId) {
       moreContent = Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
