@@ -84,10 +84,11 @@ class _PostEditorState extends State<PostEditor> {
           child: _titleWidget(),
         ),
         Expanded(
-            child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _editorWidget(),
-        )),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _editorWidget(),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: _toolsWidget(),
@@ -103,6 +104,7 @@ class _PostEditorState extends State<PostEditor> {
           minLines: 1,
           maxLines: 3,
           controller: TextEditingController(text: title),
+          decoration: const InputDecoration(labelText: 'Title:'),
           onChanged: (value) {
             title = value;
           },
@@ -117,6 +119,10 @@ class _PostEditorState extends State<PostEditor> {
       maxLines: null,
       textAlignVertical: TextAlignVertical.top,
       controller: TextEditingController(text: content),
+      decoration: const InputDecoration(
+        labelText: 'contents:',
+        alignLabelWithHint: true,
+      ),
       onChanged: (value) {
         content = value;
       },

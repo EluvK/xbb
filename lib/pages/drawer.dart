@@ -26,10 +26,7 @@ class DrawerPage extends StatelessWidget {
           ),
           Divider(),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(8.0),
-              child: DrawerRepos(),
-            ),
+            child: DrawerRepos(),
           ),
           Divider(),
           Text('settings? info? maybe'),

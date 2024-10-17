@@ -51,4 +51,33 @@ class RepoRepository {
     final db = await DataBase().getDb();
     await db.insert(tableRepoName, repo.toMap());
   }
+
+  Future<Repo> getRepo(String repoId) async {
+    final db = await DataBase().getDb();
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableRepoName,
+      where: '$tableRepoColumnId = ?',
+      whereArgs: [repoId],
+    );
+    return Repo.fromMap(maps.first);
+  }
+
+  Future<void> deleteRepo(String repoId) async {
+    final db = await DataBase().getDb();
+    await db.delete(
+      tableRepoName,
+      where: '$tableRepoColumnId = ?',
+      whereArgs: [repoId],
+    );
+  }
+
+  Future<void> updateRepo(Repo repo) async {
+    final db = await DataBase().getDb();
+    await db.update(
+      tableRepoName,
+      repo.toMap(),
+      where: '$tableRepoColumnId = ?',
+      whereArgs: [repo.id],
+    );
+  }
 }
