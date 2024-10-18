@@ -27,10 +27,19 @@ class _PostEditorState extends State<PostEditor> {
     candidateCategory = postController.repoPostList
         .map((post) => post.category.toString())
         .toSet();
+
     if (!candidateCategory.contains('uncategorized')) {
       candidateCategory.add('uncategorized');
     }
     super.initState();
+  }
+
+  Future<void> loadOtherRepoCandidateCategory(String repoId) async {
+    candidateCategory = await postController.fetchRepoPostCategories(repoId);
+    if (!candidateCategory.contains('uncategorized')) {
+      candidateCategory.add('uncategorized');
+    }
+    targetCategory = 'uncategorized';
   }
 
   @override
@@ -139,8 +148,9 @@ class _PostEditorState extends State<PostEditor> {
             items: repoController.repoList.map((e) {
               return DropdownMenuItem(value: e.id, child: Text(e.name));
             }).toList(),
-            onChanged: (value) {
+            onChanged: (value) async {
               targetRepo = value!;
+              await loadOtherRepoCandidateCategory(targetRepo);
             },
             value: targetRepo,
           ),

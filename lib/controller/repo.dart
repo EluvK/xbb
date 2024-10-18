@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:xbb/components/repo_editor.dart';
+import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/repo.dart';
 
@@ -9,6 +9,7 @@ class RepoController extends GetxController {
   final currentRepo = "".obs;
 
   final settingController = Get.find<SettingController>();
+  final postController = Get.find<PostController>();
 
   @override
   void onInit() async {
@@ -24,6 +25,7 @@ class RepoController extends GetxController {
     settingController.setCurrentRepo(repoId);
     settingController.currentRepoId.value = repoId;
     currentRepo.value = repoId;
+    postController.loadPost(repoId);
   }
 
   String? repoName(String repoId) {

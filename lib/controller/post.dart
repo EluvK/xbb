@@ -24,6 +24,12 @@ class PostController extends GetxController {
     });
   }
 
+  Future<Set<String>> fetchRepoPostCategories(String repoId) async {
+    var repoPostList = await PostRepository().getRepoPosts(repoId);
+    var categories = repoPostList.map((post) => post.category).toSet();
+    return categories;
+  }
+
   savePost(String? postId, String title, String content, String repoId,
       String category) async {
     print("on savePost: $postId, $title, $content, $repoId, $category");
@@ -40,22 +46,18 @@ class PostController extends GetxController {
         repoId: repoId,
       );
       await PostRepository().addPost(post);
-      if (repoId == settingController.currentRepoId.value) {
-        await loadPost(repoId);
-      }
+      await loadPost(settingController.currentRepoId.value);
       Get.toNamed('/');
     } else {
       // edit exist post
       var post = await getPost(postId);
       post.title = title;
       post.content = content;
+      post.repoId = repoId;
       post.category = category;
       post.updatedAt = DateTime.now();
       await PostRepository().updatePost(post);
-      if (repoId == settingController.currentRepoId.value) {
-        await loadPost(repoId);
-      }
-
+      await loadPost(settingController.currentRepoId.value);
       // strange, but it works... should be better.
       Get.offNamed('/');
       Get.toNamed('/view-post', arguments: [post.id]);
