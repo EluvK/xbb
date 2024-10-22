@@ -37,13 +37,15 @@ class Repo {
 }
 
 class RepoRepository {
-  Future<List<Repo>> listRepo() async {
+  Future<List<Repo>> listRepo(String user) async {
     final db = await DataBase().getDb();
     final List<Map<String, dynamic>> maps = await db.query(tableRepoName);
     var result = List.generate(maps.length, (i) {
       return Repo.fromMap(maps[i]);
-    });
-
+    }).where((repo) {
+      // todo add shared
+      return repo.owner == user || repo.id == "0";
+    }).toList();
     return result;
   }
 

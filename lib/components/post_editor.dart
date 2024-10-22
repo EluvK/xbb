@@ -17,7 +17,7 @@ class _PostEditorState extends State<PostEditor> {
 
   late String title = '';
   late String content = '';
-  late String targetRepo = repoController.currentRepo.value;
+  late String targetRepo = repoController.currentRepoId.value;
   late String targetCategory = 'uncategorized';
 
   late Set<String> candidateCategory;

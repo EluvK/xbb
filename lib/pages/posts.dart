@@ -34,14 +34,14 @@ class PostsAppBar extends StatefulWidget {
 class _PostsAppBarState extends State<PostsAppBar> {
   final settingController = Get.find<SettingController>();
   final repoController = Get.find<RepoController>();
+  String targetRepo = "";
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      targetRepo = repoController.currentRepoId.value;
       return AppBar(
-        title: Text(
-            repoController.repoName(settingController.currentRepoId.value) ??
-                ''),
+        title: appBarTitle(),
         actions: [
           IconButton(
             onPressed: () {
@@ -52,5 +52,33 @@ class _PostsAppBarState extends State<PostsAppBar> {
         ],
       );
     });
+  }
+
+  Widget appBarTitle() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      width: 200,
+      child: DropdownButtonFormField(
+        items: repoController.repoList.map((e) {
+          return DropdownMenuItem(value: e.id, child: Text(e.name));
+        }).toList(),
+        isExpanded: true,
+        icon: const Icon(null),
+        decoration: InputDecoration(
+          // prefixIcon: const Icon(Icons.book),
+          contentPadding: const EdgeInsets.all(0.0),
+          border: const OutlineInputBorder(borderSide: BorderSide.none),
+          enabledBorder: const OutlineInputBorder(borderSide: BorderSide.none),
+          focusedBorder: const OutlineInputBorder(borderSide: BorderSide.none),
+          fillColor: colorScheme.surface,
+        ),
+        onChanged: (value) async {
+          targetRepo = value!;
+          repoController.setCurrentRepo(targetRepo);
+        },
+        value: targetRepo,
+      ),
+    );
   }
 }

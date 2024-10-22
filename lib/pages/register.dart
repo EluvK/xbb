@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/client/client.dart';
+import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
   UserNameAvailability userNameAvailability = UserNameAvailability.unknown;
 
   final settingController = Get.find<SettingController>();
+  final repoController = Get.find<RepoController>();
 
   @override
   void initState() {
@@ -187,6 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (res) {
                       print('login success');
                       settingController.setUserInfo(userName, userPassword);
+                      await login(userName);
                       Get.toNamed('/');
                     } else {
                       print('login failed');
@@ -206,5 +209,9 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+
+  login(String userName) async {
+    await repoController.loadRepoLists();
   }
 }

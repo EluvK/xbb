@@ -6,25 +6,40 @@ import 'package:xbb/model/repo.dart';
 
 class RepoController extends GetxController {
   final repoList = <Repo>[].obs;
-  final currentRepo = "".obs;
+  final currentRepoId = "".obs;
 
   final settingController = Get.find<SettingController>();
   final postController = Get.find<PostController>();
 
   @override
   void onInit() async {
-    repoList.value = await RepoRepository().listRepo();
-    currentRepo.value = settingController.currentRepoId.value.isEmpty
-        ? 'local'
-        : settingController.currentRepoId.value;
+    await loadRepoLists();
     print("on init repos: ${repoList.length}");
     super.onInit();
+  }
+
+  loadRepoLists() async {
+    repoList.value =
+        await RepoRepository().listRepo(settingController.currentUser.value);
+    if (repoList.firstWhereOrNull(
+          (repo) {
+            return repo.id == settingController.currentRepoId.value;
+          },
+        ) !=
+        null) {
+      currentRepoId.value = settingController.currentRepoId.value;
+    }
+    setCurrentRepo("0"); // return to local
+  }
+
+  bool isCurrentRepo(String repoId) {
+    return currentRepoId.value == repoId;
   }
 
   void setCurrentRepo(String repoId) {
     settingController.setCurrentRepo(repoId);
     settingController.currentRepoId.value = repoId;
-    currentRepo.value = repoId;
+    currentRepoId.value = repoId;
     postController.loadPost(repoId);
   }
 
@@ -53,7 +68,7 @@ class RepoController extends GetxController {
     }
     Get.toNamed('/');
     // reload
-    repoList.value = await RepoRepository().listRepo();
+    await loadRepoLists();
   }
 
   Future<Repo> getRepo(String repoId) async {

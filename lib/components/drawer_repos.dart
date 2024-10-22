@@ -59,7 +59,7 @@ class _DrawerReposState extends State<DrawerRepos> {
         repoController.setCurrentRepo(repo.id);
         Get.back();
       },
-      selected: repoController.currentRepo.value == repo.id,
+      selected: repoController.isCurrentRepo(repo.id),
     );
   }
 }
