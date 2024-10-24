@@ -57,6 +57,7 @@ class RepoController extends GetxController {
         owner: settingController.currentUser.value,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        lastSyncAt: DateTime.parse(neverSyncAt),
       );
       await RepoRepository().addRepo(repo);
     } else {

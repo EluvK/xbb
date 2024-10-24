@@ -1,11 +1,15 @@
 import 'package:xbb/model/db.dart';
 
+const String neverSyncAt = '2024-10-24T00:00:00.000000';
+
 class Repo {
   String id;
   String name;
   String owner; //owner user id
   DateTime createdAt;
   DateTime updatedAt;
+  // local
+  DateTime lastSyncAt;
 
   Repo({
     required this.id,
@@ -13,6 +17,7 @@ class Repo {
     required this.owner,
     required this.createdAt,
     required this.updatedAt,
+    required this.lastSyncAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -22,6 +27,7 @@ class Repo {
       tableRepoColumnOwner: owner,
       tableRepoColumnCreatedAt: createdAt.toIso8601String(),
       tableRepoColumnUpdatedAt: updatedAt.toIso8601String(),
+      tableRepoColumnLastSyncAt: lastSyncAt.toIso8601String()
     };
   }
 
@@ -32,6 +38,7 @@ class Repo {
       owner: map[tableRepoColumnOwner],
       createdAt: DateTime.parse(map[tableRepoColumnCreatedAt]),
       updatedAt: DateTime.parse(map[tableRepoColumnUpdatedAt]),
+      lastSyncAt: DateTime.parse(map[tableRepoColumnLastSyncAt]),
     );
   }
 }

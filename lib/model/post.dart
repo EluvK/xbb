@@ -45,6 +45,20 @@ class Post {
     };
   }
 
+  // should not contains any local members
+  Map<String, dynamic> toSyncPostMap() {
+    return {
+      tablePostColumnId: id,
+      tablePostColumnCategory: category,
+      tablePostColumnTitle: title,
+      tablePostColumnContent: content,
+      tablePostColumnCreatedAt: createdAt.toIso8601String(),
+      tablePostColumnUpdatedAt: updatedAt.toIso8601String(),
+      tablePostColumnAuthor: author,
+      tablePostColumnRepoId: repoId
+    };
+  }
+
   factory Post.fromMap(Map<String, dynamic> map) {
     return Post(
       id: map[tablePostColumnId],

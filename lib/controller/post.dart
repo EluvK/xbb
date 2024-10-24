@@ -30,6 +30,11 @@ class PostController extends GetxController {
     return categories;
   }
 
+  Future<List<Post>> fetchRepoPosts(String repoId) async {
+    var posts = await PostRepository().getRepoPosts(repoId);
+    return posts;
+  }
+
   savePost(String? postId, String title, String content, String repoId,
       String category) async {
     print("on savePost: $postId, $title, $content, $repoId, $category");

@@ -8,6 +8,8 @@ const String tableRepoColumnName = "name";
 const String tableRepoColumnOwner = "owner";
 const String tableRepoColumnCreatedAt = "createdAt";
 const String tableRepoColumnUpdatedAt = "updatedAt";
+// local
+const String tableRepoColumnLastSyncAt = "lastSyncAt";
 
 /// POST
 const String tablePostName = 'posts';
@@ -49,16 +51,19 @@ class DataBase {
             $tableRepoColumnName TEXT NOT NULL,
             $tableRepoColumnOwner TEXT NOT NULL,
             $tableRepoColumnCreatedAt TEXT NOT NULL,
-            $tableRepoColumnUpdatedAt TEXT NOT NULL
+            $tableRepoColumnUpdatedAt TEXT NOT NULL,
+            $tableRepoColumnLastSyncAt TEXT NOT NULL
           )
         ''');
         var now = DateTime.now();
         var localRepo = Repo(
-            id: '0',
-            name: 'local',
-            owner: 'local',
-            createdAt: now,
-            updatedAt: now);
+          id: '0',
+          name: 'local',
+          owner: 'local',
+          createdAt: now,
+          updatedAt: now,
+          lastSyncAt: DateTime.parse(''),
+        );
         await db.insert(tableRepoName, localRepo.toMap());
       },
     );

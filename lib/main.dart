@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
@@ -8,6 +9,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/sync.dart';
 import 'package:xbb/pages/edit_post.dart';
 import 'package:xbb/pages/edit_repo.dart';
 import 'package:xbb/pages/home.dart';
@@ -39,6 +41,11 @@ void main() async {
     return controller;
   });
 
+  await Get.putAsync(() async {
+    final controller = SyncController();
+    return controller;
+  });
+
   await initCacheSetting();
   await initRepoPost();
   runApp(const MyApp());
@@ -57,6 +64,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     String initialRoute = initFirstTime() ? '/login' : '/';
     var app = GetMaterialApp(
+      scrollBehavior: const MaterialScrollBehavior()
+          .copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       initialRoute: initialRoute,
       getPages: [
         GetPage(name: '/', page: () => HomePage()),
