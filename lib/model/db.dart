@@ -10,6 +10,8 @@ const String tableRepoColumnCreatedAt = "createdAt";
 const String tableRepoColumnUpdatedAt = "updatedAt";
 // local
 const String tableRepoColumnLastSyncAt = "lastSyncAt";
+const String tableRepoColumnRemoteRepo = 'remoteRepo';
+const String tableRepoColumnAutoSync = 'autoSync';
 
 /// POST
 const String tablePostName = 'posts';
@@ -52,7 +54,9 @@ class DataBase {
             $tableRepoColumnOwner TEXT NOT NULL,
             $tableRepoColumnCreatedAt TEXT NOT NULL,
             $tableRepoColumnUpdatedAt TEXT NOT NULL,
-            $tableRepoColumnLastSyncAt TEXT NOT NULL
+            $tableRepoColumnLastSyncAt TEXT NOT NULL,
+            $tableRepoColumnRemoteRepo INTEGER NOT NULL,
+            $tableRepoColumnAutoSync INTEGER NOT NULL
           )
         ''');
         var now = DateTime.now();
@@ -62,7 +66,9 @@ class DataBase {
           owner: 'local',
           createdAt: now,
           updatedAt: now,
-          lastSyncAt: DateTime.parse(''),
+          lastSyncAt: DateTime.parse(neverSyncAt),
+          remoteRepo: false,
+          autoSync: false,
         );
         await db.insert(tableRepoName, localRepo.toMap());
       },

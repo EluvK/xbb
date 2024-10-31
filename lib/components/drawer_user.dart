@@ -43,7 +43,7 @@ class _DrawerUserState extends State<DrawerUser> {
         // todo
         Column(
           children: [
-            Text(settingController.currentUser.value),
+            Text(settingController.currentUserName.value),
             Text(settingController.serverAddress.value),
           ],
         ),

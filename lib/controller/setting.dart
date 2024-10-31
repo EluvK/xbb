@@ -6,7 +6,7 @@ import 'package:get_storage/get_storage.dart';
 
 bool initFirstTime() {
   var settingController = Get.find<SettingController>();
-  if (settingController.currentUser.isNotEmpty &&
+  if (settingController.currentUserName.isNotEmpty &&
       settingController.currentUserPasswd.isNotEmpty) {
     print('already done first init before');
     return false;
@@ -24,9 +24,10 @@ class SettingController extends GetxController {
   final themeMode = ThemeMode.system.obs;
 
   // cache information
-  final serverAddress = "https://".obs;
+  final serverAddress = "".obs;
   final currentRepoId = "".obs;
-  final currentUser = "".obs;
+  final currentUserName = "".obs;
+  final currentUserId = "".obs;
   final currentUserPasswd = "".obs;
 
   @override
@@ -59,9 +60,10 @@ class SettingController extends GetxController {
   }
 
   getCacheSetting() {
-    serverAddress.value = box.read('server_address') ?? '';
+    serverAddress.value = box.read('server_address') ?? 'https://';
     currentRepoId.value = box.read('current_repo_id') ?? '0';
-    currentUser.value = box.read('current_user') ?? '';
+    currentUserName.value = box.read('current_user_name') ?? '';
+    currentUserId.value = box.read('current_user_id') ?? '';
     currentUserPasswd.value = box.read('current_user_passwd') ?? '';
   }
 
@@ -73,7 +75,7 @@ class SettingController extends GetxController {
   }
 
   getCurrentBaseAuth() {
-    return 'Basic ${base64Encode(utf8.encode('$currentUser:$currentUserPasswd'))}';
+    return 'Basic ${base64Encode(utf8.encode('$currentUserName:$currentUserPasswd'))}';
   }
 
   setServerAddress(String address) {
@@ -85,11 +87,16 @@ class SettingController extends GetxController {
     return serverAddress.value;
   }
 
-  setUserInfo(String name, String password) {
-    currentUser.value = name;
+  setUserLoginInfo(String name, String password) {
+    currentUserName.value = name;
     currentUserPasswd.value = password;
-    box.write('current_user', currentUser.value);
+    box.write('current_user_name', currentUserName.value);
     box.write('current_user_passwd', currentUserPasswd.value);
+  }
+
+  setUserId(String id) {
+    currentUserId.value = id;
+    box.write('current_user_id', currentUserId.value);
   }
 
   setCurrentRepo(String repo) {

@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:uuid/uuid.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/repo.dart';
@@ -19,8 +18,8 @@ class RepoController extends GetxController {
   }
 
   loadRepoLists() async {
-    repoList.value =
-        await RepoRepository().listRepo(settingController.currentUser.value);
+    repoList.value = await RepoRepository()
+        .listRepo(settingController.currentUserName.value);
     if (repoList.firstWhereOrNull(
           (repo) {
             return repo.id == settingController.currentRepoId.value;
@@ -47,33 +46,16 @@ class RepoController extends GetxController {
     return repoList.firstWhereOrNull((element) => element.id == repoId)?.name;
   }
 
-  void saveRepo(String? repoId, String name) async {
-    print("on saveRepo: $repoId, $name");
-    if (repoId == null) {
-      // new onw
-      var repo = Repo(
-        id: const Uuid().v4(),
-        name: name,
-        owner: settingController.currentUser.value,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        lastSyncAt: DateTime.parse(neverSyncAt),
-      );
-      await RepoRepository().addRepo(repo);
-    } else {
-      // edit exist post
-      var repo = await getRepo(repoId);
-      repo.name = name;
-      repo.updatedAt = DateTime.now();
-      await RepoRepository().updateRepo(repo);
-    }
+  void saveRepo(Repo repo) async {
+    print("on saveRepoNew: ${repo.id} ${repo.name}");
+    await RepoRepository().upsertRepo(repo);
     Get.toNamed('/');
     // reload
     await loadRepoLists();
   }
 
-  Future<Repo> getRepo(String repoId) async {
-    return await RepoRepository().getRepo(repoId);
+  Future<Repo> getRepoUnwrap(String repoId) async {
+    return (await RepoRepository().getRepo(repoId))!;
   }
 
   // List<String> listRepoNames() {

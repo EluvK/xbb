@@ -10,14 +10,14 @@ class SyncController extends GetxController {
 
   Future<void> checkSyncInfo() async {
     var currentRepoId = settingController.currentRepoId.value;
-    var currentUser = settingController.currentUser.value;
+    var currentUser = settingController.currentUserName.value;
     if (currentRepoId == "0") {
       // local repo no need to sync
       return;
     }
     print("try sync $currentRepoId for $currentUser");
 
-    Repo currentRepo = await RepoRepository().getRepo(currentRepoId);
+    Repo currentRepo = (await RepoRepository().getRepo(currentRepoId))!;
     List<Post> currentPosts =
         await postController.fetchRepoPosts(currentRepoId);
     DateTime latestUpdateAt = currentPosts.fold<DateTime>(
@@ -46,7 +46,5 @@ class SyncController extends GetxController {
     // todo
   }
 
-  Future<void> doSyncForwardsPost(Post post) async {
-    
-  }
+  Future<void> doSyncForwardsPost(Post post) async {}
 }

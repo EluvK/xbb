@@ -47,7 +47,7 @@ class PostController extends GetxController {
         content: content,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        author: settingController.currentUser.value,
+        author: settingController.currentUserName.value,
         repoId: repoId,
       );
       await PostRepository().addPost(post);

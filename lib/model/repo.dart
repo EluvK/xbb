@@ -10,6 +10,8 @@ class Repo {
   DateTime updatedAt;
   // local
   DateTime lastSyncAt;
+  bool remoteRepo;
+  bool autoSync;
 
   Repo({
     required this.id,
@@ -18,6 +20,8 @@ class Repo {
     required this.createdAt,
     required this.updatedAt,
     required this.lastSyncAt,
+    required this.remoteRepo,
+    required this.autoSync,
   });
 
   Map<String, dynamic> toMap() {
@@ -27,7 +31,9 @@ class Repo {
       tableRepoColumnOwner: owner,
       tableRepoColumnCreatedAt: createdAt.toIso8601String(),
       tableRepoColumnUpdatedAt: updatedAt.toIso8601String(),
-      tableRepoColumnLastSyncAt: lastSyncAt.toIso8601String()
+      tableRepoColumnLastSyncAt: lastSyncAt.toIso8601String(),
+      tableRepoColumnRemoteRepo: remoteRepo ? 1 : 0,
+      tableRepoColumnAutoSync: autoSync ? 1 : 0
     };
   }
 
@@ -39,6 +45,8 @@ class Repo {
       createdAt: DateTime.parse(map[tableRepoColumnCreatedAt]),
       updatedAt: DateTime.parse(map[tableRepoColumnUpdatedAt]),
       lastSyncAt: DateTime.parse(map[tableRepoColumnLastSyncAt]),
+      remoteRepo: map[tableRepoColumnRemoteRepo] == 1 ? true : false,
+      autoSync: map[tableRepoColumnAutoSync] == 1 ? true : false,
     );
   }
 }
@@ -61,14 +69,17 @@ class RepoRepository {
     await db.insert(tableRepoName, repo.toMap());
   }
 
-  Future<Repo> getRepo(String repoId) async {
+  Future<Repo?> getRepo(String repoId) async {
     final db = await DataBase().getDb();
     final List<Map<String, dynamic>> maps = await db.query(
       tableRepoName,
       where: '$tableRepoColumnId = ?',
       whereArgs: [repoId],
     );
-    return Repo.fromMap(maps.first);
+    if (maps.isNotEmpty) {
+      return Repo.fromMap(maps.first);
+    }
+    return null;
   }
 
   Future<void> deleteRepo(String repoId) async {
@@ -88,5 +99,13 @@ class RepoRepository {
       where: '$tableRepoColumnId = ?',
       whereArgs: [repo.id],
     );
+  }
+
+  Future<void> upsertRepo(Repo repo) async {
+    if (await getRepo(repo.id) == null) {
+      await addRepo(repo);
+    } else {
+      await updateRepo(repo);
+    }
   }
 }

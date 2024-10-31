@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:get/get.dart';
+import 'package:xbb/client/resp.dart';
 import 'package:xbb/controller/setting.dart';
 
 class XbbClient {
@@ -73,6 +74,26 @@ class XbbClient {
     }
     return false;
   }
+
+  Future<OpenApiGetUserResponse> getUser(String name, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse("$baseUrl/user/$name"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return OpenApiGetUserResponse.fromResp(jsonResponse);
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return OpenApiGetUserResponse(id: '', name: '');
+  }
 }
 
 /// Validate the server address
@@ -98,4 +119,12 @@ Future<bool> validateLogin(String name, String password) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.validateLogin(name, password);
+}
+
+Future<OpenApiGetUserResponse> getUser(String name) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.getUser(name, auth);
 }

@@ -31,7 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     serviceAddress = settingController.serverAddress.value;
-    userName = settingController.currentUser.value;
+    userName = settingController.currentUserName.value;
     userPassword = settingController.currentUserPasswd.value;
     super.initState();
   }
@@ -188,7 +188,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     var res = await validateLogin(userName, userPassword);
                     if (res) {
                       print('login success');
-                      settingController.setUserInfo(userName, userPassword);
+                      settingController.setUserLoginInfo(
+                          userName, userPassword);
+                      var user = await getUser(userName);
+                      settingController.setUserId(user.id);
                       await login(userName);
                       Get.toNamed('/');
                     } else {
