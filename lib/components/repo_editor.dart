@@ -27,6 +27,7 @@ class _RepoEditorState extends State<RepoEditor> {
         id: const Uuid().v4(),
         name: '',
         owner: settingController.currentUserId.value,
+        description: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         lastSyncAt: DateTime.parse(neverSyncAt),
@@ -68,6 +69,10 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
           padding: const EdgeInsets.all(8.0),
           child: _nameWidget(),
         ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _descriptionWidget(),
+        ),
         const Divider(),
         Expanded(
           child: Padding(
@@ -96,6 +101,18 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
     );
   }
 
+  Widget _descriptionWidget() {
+    return TextField(
+      minLines: 1,
+      maxLines: 3,
+      controller: TextEditingController(text: widget.repo.description),
+      decoration: const InputDecoration(labelText: 'Description:'),
+      onChanged: (value) {
+        widget.repo.description = value;
+      },
+    );
+  }
+
   Widget _settingWidget() {
     return Column(
       children: [
@@ -106,9 +123,10 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
-        _remoteSetting(),
+        // _remoteSetting(),
+        Visibility(visible: widget.repo.id != "0", child: _remoteSetting()),
         const Divider(),
-        _sharedSetting(),
+        Visibility(visible: widget.repo.id != "0", child: _sharedSetting()),
       ],
     );
   }
@@ -155,7 +173,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   }
 
   Widget _sharedSetting() {
-    return Column(
+    var shareLink = Column(
       children: [
         const Align(
           alignment: Alignment.centerLeft,
@@ -181,6 +199,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
         ),
       ],
     );
+    return Visibility(visible: widget.repo.remoteRepo, child: shareLink);
   }
 
   String _sharedLink(Repo repo) {

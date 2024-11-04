@@ -6,6 +6,7 @@ class Repo {
   String id;
   String name;
   String owner; //owner user id
+  String description;
   DateTime createdAt;
   DateTime updatedAt;
   // local
@@ -17,6 +18,7 @@ class Repo {
     required this.id,
     required this.name,
     required this.owner,
+    required this.description,
     required this.createdAt,
     required this.updatedAt,
     required this.lastSyncAt,
@@ -29,6 +31,7 @@ class Repo {
       tableRepoColumnId: id,
       tableRepoColumnName: name,
       tableRepoColumnOwner: owner,
+      tableRepoColumnDescription: description,
       tableRepoColumnCreatedAt: createdAt.toIso8601String(),
       tableRepoColumnUpdatedAt: updatedAt.toIso8601String(),
       tableRepoColumnLastSyncAt: lastSyncAt.toIso8601String(),
@@ -37,11 +40,24 @@ class Repo {
     };
   }
 
+  // should not contains any local members
+  Map<String, dynamic> toSyncRepoMap() {
+    return {
+      tableRepoColumnId: id,
+      tableRepoColumnName: name,
+      tableRepoColumnOwner: owner,
+      tableRepoColumnDescription: description,
+      tableRepoColumnCreatedAt: createdAt.toUtc().toIso8601String(),
+      tableRepoColumnUpdatedAt: updatedAt.toUtc().toIso8601String(),
+    };
+  }
+
   factory Repo.fromMap(Map<String, dynamic> map) {
     return Repo(
       id: map[tableRepoColumnId],
       name: map[tableRepoColumnName],
       owner: map[tableRepoColumnOwner],
+      description: map[tableRepoColumnDescription],
       createdAt: DateTime.parse(map[tableRepoColumnCreatedAt]),
       updatedAt: DateTime.parse(map[tableRepoColumnUpdatedAt]),
       lastSyncAt: DateTime.parse(map[tableRepoColumnLastSyncAt]),

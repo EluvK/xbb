@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/sync.dart';
 import 'package:xbb/model/repo.dart';
 
 class RepoController extends GetxController {
@@ -9,6 +10,7 @@ class RepoController extends GetxController {
 
   final settingController = Get.find<SettingController>();
   final postController = Get.find<PostController>();
+  final syncController = Get.find<SyncController>();
 
   @override
   void onInit() async {
@@ -18,8 +20,8 @@ class RepoController extends GetxController {
   }
 
   loadRepoLists() async {
-    repoList.value = await RepoRepository()
-        .listRepo(settingController.currentUserName.value);
+    repoList.value =
+        await RepoRepository().listRepo(settingController.currentUserId.value);
     if (repoList.firstWhereOrNull(
           (repo) {
             return repo.id == settingController.currentRepoId.value;
@@ -48,6 +50,7 @@ class RepoController extends GetxController {
 
   void saveRepo(Repo repo) async {
     print("on saveRepoNew: ${repo.id} ${repo.name}");
+    syncController.syncRepo(repo, DataFlow.push);
     await RepoRepository().upsertRepo(repo);
     Get.toNamed('/');
     // reload

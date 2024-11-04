@@ -3,10 +3,16 @@ import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/post.dart';
 import 'package:xbb/model/repo.dart';
+import 'package:xbb/utils/async_task_queue.dart';
+import 'package:xbb/client/client.dart' as client;
+
+enum DataFlow { push, pull, delete }
 
 class SyncController extends GetxController {
-  final postController = Get.find<PostController>();
+  late final postController = Get.find<PostController>();
   final settingController = Get.find<SettingController>();
+
+  final _taskQueue = AsyncTaskQueue();
 
   Future<void> checkSyncInfo() async {
     var currentRepoId = settingController.currentRepoId.value;
@@ -47,4 +53,16 @@ class SyncController extends GetxController {
   }
 
   Future<void> doSyncForwardsPost(Post post) async {}
+
+  syncRepo(Repo repo, DataFlow flow) {
+    print("sync controller sync repo ${repo.id}");
+    var metadata = {
+      "flow": flow,
+      "type": "repo",
+      "data": repo,
+    };
+    _taskQueue.addTask(repo.id, metadata, (metadata) async {
+      return await client.syncRepoPut(repo);
+    });
+  }
 }

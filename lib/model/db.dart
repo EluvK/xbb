@@ -6,6 +6,7 @@ const String tableRepoName = "repo";
 const String tableRepoColumnId = "id";
 const String tableRepoColumnName = "name";
 const String tableRepoColumnOwner = "owner";
+const String tableRepoColumnDescription = "description";
 const String tableRepoColumnCreatedAt = "createdAt";
 const String tableRepoColumnUpdatedAt = "updatedAt";
 // local
@@ -52,6 +53,7 @@ class DataBase {
             $tableRepoColumnId TEXT PRIMARY KEY,
             $tableRepoColumnName TEXT NOT NULL,
             $tableRepoColumnOwner TEXT NOT NULL,
+            $tableRepoColumnDescription TEXT NOT NULL,
             $tableRepoColumnCreatedAt TEXT NOT NULL,
             $tableRepoColumnUpdatedAt TEXT NOT NULL,
             $tableRepoColumnLastSyncAt TEXT NOT NULL,
@@ -64,6 +66,7 @@ class DataBase {
           id: '0',
           name: 'local',
           owner: 'local',
+          description: 'local repo',
           createdAt: now,
           updatedAt: now,
           lastSyncAt: DateTime.parse(neverSyncAt),

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:xbb/client/resp.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/model/repo.dart';
 
 class XbbClient {
   final String baseUrl;
@@ -94,6 +95,32 @@ class XbbClient {
     }
     return OpenApiGetUserResponse(id: '', name: '');
   }
+
+  Future<bool> syncRepoPut(Repo repo, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      var body = jsonEncode(repo.toSyncRepoMap());
+      HttpClientRequest request =
+          await client.putUrl(Uri.parse("$baseUrl/sync/repo/${repo.id}"));
+      request.headers.set('content-type', 'application/json');
+      request.headers.set('Authorization', auth);
+      request.write(body);
+      print("body: $body");
+      HttpClientResponse response = await request.close();
+      print("syncRepo ${response.statusCode}");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print("syncRepo error $responseBody");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return false;
+  }
 }
 
 /// Validate the server address
@@ -127,4 +154,12 @@ Future<OpenApiGetUserResponse> getUser(String name) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.getUser(name, auth);
+}
+
+Future<bool> syncRepoPut(Repo repo) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.syncRepoPut(repo, auth);
 }

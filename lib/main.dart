@@ -32,17 +32,16 @@ void main() async {
   final settingController = Get.find<SettingController>();
   await settingController.ensureInitialization();
   await Get.putAsync(() async {
+    final controller = SyncController();
+    return controller;
+  });
+  await Get.putAsync(() async {
     final controller = PostController();
     return controller;
   });
 
   await Get.putAsync(() async {
     final controller = RepoController();
-    return controller;
-  });
-
-  await Get.putAsync(() async {
-    final controller = SyncController();
     return controller;
   });
 

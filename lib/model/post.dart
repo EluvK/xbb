@@ -52,8 +52,8 @@ class Post {
       tablePostColumnCategory: category,
       tablePostColumnTitle: title,
       tablePostColumnContent: content,
-      tablePostColumnCreatedAt: createdAt.toIso8601String(),
-      tablePostColumnUpdatedAt: updatedAt.toIso8601String(),
+      tablePostColumnCreatedAt: createdAt.toUtc().toIso8601String(),
+      tablePostColumnUpdatedAt: updatedAt.toUtc().toIso8601String(),
       tablePostColumnAuthor: author,
       tablePostColumnRepoId: repoId
     };
