@@ -90,14 +90,17 @@ class PostRepository {
     return result;
   }
 
-  Future<Post> getPost(String postId) async {
+  Future<Post?> getPost(String postId) async {
     final db = await DataBase().getDb();
     final List<Map<String, dynamic>> maps = await db.query(
       tablePostName,
       where: '$tablePostColumnId = ?',
       whereArgs: [postId],
     );
-    return Post.fromMap(maps.first);
+    if (maps.isNotEmpty) {
+      return Post.fromMap(maps.first);
+    }
+    return null;
   }
 
   Future<void> addPost(Post post) async {
@@ -115,5 +118,13 @@ class PostRepository {
     final db = await DataBase().getDb();
     await db.update(tablePostName, post.toMap(),
         where: '$tablePostColumnId = ?', whereArgs: [post.id]);
+  }
+
+  Future<void> upsertPost(Post post) async {
+    if (await getPost(post.id) == null) {
+      await addPost(post);
+    } else {
+      await updatePost(post);
+    }
   }
 }

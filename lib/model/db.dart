@@ -61,7 +61,7 @@ class DataBase {
             $tableRepoColumnAutoSync INTEGER NOT NULL
           )
         ''');
-        var now = DateTime.now();
+        var now = DateTime.now().toUtc();
         var localRepo = Repo(
           id: '0',
           name: 'local',

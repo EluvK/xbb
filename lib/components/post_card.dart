@@ -23,7 +23,11 @@ class _PostCardState extends State<PostCard> {
     return Obx(() {
       var viewPost = postController.postListView;
       print("viewPost: $viewPost");
-      return viewPost.isNotEmpty ? postsView(viewPost) : const Text('no post');
+      return viewPost.isNotEmpty
+          ? postsView(viewPost)
+          : ListView(
+              children: const [Center(child: Text('no post'))],
+            );
     });
   }
 

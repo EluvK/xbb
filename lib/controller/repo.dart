@@ -49,6 +49,7 @@ class RepoController extends GetxController {
   }
 
   void saveRepo(Repo repo) async {
+    repo.updatedAt = DateTime.now().toUtc();
     print("on saveRepoNew: ${repo.id} ${repo.name}");
     syncController.syncRepo(repo, DataFlow.push);
     await RepoRepository().upsertRepo(repo);

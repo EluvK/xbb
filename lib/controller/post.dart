@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:uuid/uuid.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/sync.dart';
 import 'package:xbb/model/post.dart';
 
 class PostController extends GetxController {
@@ -8,6 +8,7 @@ class PostController extends GetxController {
   final postListView = <Post>[].obs;
 
   final settingController = Get.find<SettingController>();
+  final syncController = Get.find<SyncController>();
 
   Future<void> loadPost(String repoId) async {
     repoPostList.value = await PostRepository().getRepoPosts(repoId);
@@ -35,44 +36,23 @@ class PostController extends GetxController {
     return posts;
   }
 
-  savePost(String? postId, String title, String content, String repoId,
-      String category) async {
-    print("on savePost: $postId, $title, $content, $repoId, $category");
-    if (postId == null) {
-      // new one
-      var post = Post(
-        id: const Uuid().v4(),
-        category: category,
-        title: title,
-        content: content,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        author: settingController.currentUserName.value,
-        repoId: repoId,
-      );
-      await PostRepository().addPost(post);
-      await loadPost(settingController.currentRepoId.value);
-      Get.toNamed('/');
+  savePost(Post post) async {
+    post.updatedAt = DateTime.now().toUtc();
+    print(
+        "on savePost: ${post.id}, ${post.title}, ${post.content}, ${post.repoId}, ${post.category}");
+    if (post.repoId == '0') {
+      PostRepository().getPost(post.id).then((oldPost) {
+        if (oldPost != null && oldPost.repoId != '0') {
+          syncController.syncPost(oldPost, DataFlow.delete);
+        }
+      });
     } else {
-      // edit exist post
-      var post = await getPost(postId);
-      post.title = title;
-      post.content = content;
-      post.repoId = repoId;
-      post.category = category;
-      post.updatedAt = DateTime.now();
-      await PostRepository().updatePost(post);
-      await loadPost(settingController.currentRepoId.value);
-      // strange, but it works... should be better.
-      Get.offNamed('/');
-      Get.toNamed('/view-post', arguments: [post.id]);
-
-      // missing pop back button:
-      // Get.offAllNamed('/view-post', arguments: [post.id]);
-
-      // todo
-      print("update repo");
+      syncController.syncPost(post, DataFlow.push);
     }
+    PostRepository().upsertPost(post);
+    await loadPost(post.repoId);
+    Get.offNamed('/');
+    // Get.toNamed('/view-post', arguments: [post.id]);
   }
 
   deletePost(String postId) async {
@@ -80,7 +60,7 @@ class PostController extends GetxController {
     await loadPost(settingController.currentRepoId.value);
   }
 
-  Future<Post> getPost(String postId) async {
-    return await PostRepository().getPost(postId);
+  Future<Post> getPostUnwrap(String postId) async {
+    return (await PostRepository().getPost(postId))!;
   }
 }

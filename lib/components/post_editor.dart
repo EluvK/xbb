@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
+import 'package:xbb/controller/setting.dart';
+import 'package:xbb/model/post.dart';
 
 class PostEditor extends StatefulWidget {
   const PostEditor({super.key, this.postId});
@@ -12,13 +15,50 @@ class PostEditor extends StatefulWidget {
 }
 
 class _PostEditorState extends State<PostEditor> {
+  final settingController = Get.find<SettingController>();
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
+  @override
+  Widget build(BuildContext context) {
+    if (widget.postId == null) {
+      // new one
+      var post = Post(
+        id: const Uuid().v4(),
+        category: '',
+        title: '',
+        content: '',
+        createdAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+        author: settingController.currentUserId.value,
+        repoId: repoController.currentRepoId.value,
+      );
+      return _PostEditorInner(post: post);
+    }
+    return FutureBuilder(
+      future: postController.getPostUnwrap(widget.postId!),
+      builder: (context, postData) {
+        if (postData.hasData) {
+          var post = postData.data!;
+          return _PostEditorInner(post: post);
+        } else {
+          return const CircularProgressIndicator();
+        }
+      },
+    );
+  }
+}
 
-  late String title = '';
-  late String content = '';
-  late String targetRepo = repoController.currentRepoId.value;
-  late String targetCategory = 'uncategorized';
+class _PostEditorInner extends StatefulWidget {
+  const _PostEditorInner({required this.post});
+  final Post post;
+
+  @override
+  State<_PostEditorInner> createState() => _PostEditorInnerState();
+}
+
+class _PostEditorInnerState extends State<_PostEditorInner> {
+  final repoController = Get.find<RepoController>();
+  final postController = Get.find<PostController>();
 
   late Set<String> candidateCategory;
 
@@ -39,33 +79,13 @@ class _PostEditorState extends State<PostEditor> {
     if (!candidateCategory.contains('uncategorized')) {
       candidateCategory.add('uncategorized');
     }
-    targetCategory = 'uncategorized';
+    if (!candidateCategory.contains(widget.post.category)) {
+      widget.post.category = 'uncategorized';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.postId == null) {
-      return buildEditPostWidget();
-    } else {
-      return FutureBuilder(
-        future: postController.getPost(widget.postId!),
-        builder: (context, postData) {
-          if (postData.hasData) {
-            var post = postData.data!;
-            title = post.title;
-            content = post.content;
-            targetRepo = post.repoId;
-            targetCategory = post.category;
-            return buildEditPostWidget();
-          } else {
-            return const CircularProgressIndicator();
-          }
-        },
-      );
-    }
-  }
-
-  Widget buildEditPostWidget() {
     return Column(
       children: [
         Padding(
@@ -112,10 +132,10 @@ class _PostEditorState extends State<PostEditor> {
         TextField(
           minLines: 1,
           maxLines: 3,
-          controller: TextEditingController(text: title),
+          controller: TextEditingController(text: widget.post.title),
           decoration: const InputDecoration(labelText: 'Title:'),
           onChanged: (value) {
-            title = value;
+            widget.post.title = value;
           },
         )
       ],
@@ -127,13 +147,13 @@ class _PostEditorState extends State<PostEditor> {
       expands: true,
       maxLines: null,
       textAlignVertical: TextAlignVertical.top,
-      controller: TextEditingController(text: content),
+      controller: TextEditingController(text: widget.post.content),
       decoration: const InputDecoration(
         labelText: 'contents:',
         alignLabelWithHint: true,
       ),
       onChanged: (value) {
-        content = value;
+        widget.post.content = value;
       },
     );
   }
@@ -148,11 +168,12 @@ class _PostEditorState extends State<PostEditor> {
             items: repoController.repoList.map((e) {
               return DropdownMenuItem(value: e.id, child: Text(e.name));
             }).toList(),
+            decoration: const InputDecoration(labelText: 'repo'),
             onChanged: (value) async {
-              targetRepo = value!;
-              await loadOtherRepoCandidateCategory(targetRepo);
+              widget.post.repoId = value!;
+              await loadOtherRepoCandidateCategory(widget.post.repoId);
             },
-            value: targetRepo,
+            value: widget.post.repoId,
           ),
         ),
         const VerticalDivider(),
@@ -176,15 +197,24 @@ class _PostEditorState extends State<PostEditor> {
               }
               return matched;
             },
-            initialValue: TextEditingValue(text: targetCategory),
+            initialValue: TextEditingValue(text: widget.post.category),
+            fieldViewBuilder:
+                (context, textEditingController, focusNode, onFieldSubmitted) =>
+                    TextFormField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              onFieldSubmitted: (String value) {
+                onFieldSubmitted();
+              },
+              decoration: const InputDecoration(labelText: 'category'),
+            ),
             optionsViewOpenDirection: OptionsViewOpenDirection.up,
             onSelected: (String selection) {
               print('selected $selection');
               if (selection.startsWith('[new] ')) {
                 selection = selection.substring(6);
               }
-              targetCategory = selection;
-              print('targetCategory: $targetCategory');
+              widget.post.category = selection;
             },
           ),
         ),
@@ -193,8 +223,7 @@ class _PostEditorState extends State<PostEditor> {
         // TextButton(onPressed: () {}, child: const Text('保存草稿')),
         TextButton(
           onPressed: () {
-            postController.savePost(
-                widget.postId, title, content, targetRepo, targetCategory);
+            postController.savePost(widget.post);
           },
           child: const Text('保存到存储库'),
         )

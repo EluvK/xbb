@@ -62,7 +62,24 @@ class SyncController extends GetxController {
       "data": repo,
     };
     _taskQueue.addTask(repo.id, metadata, (metadata) async {
-      return await client.syncRepoPut(repo);
+      return await client.syncPushRepo(repo);
+    });
+  }
+
+  syncPost(Post post, DataFlow flow) {
+    print("sync controller sync post ${post.id}");
+    var metadata = {
+      "flow": flow,
+      "type": "post",
+      "data": post,
+    };
+    _taskQueue.addTask(post.id, metadata, (metadata) async {
+      if (metadata["flow"] == DataFlow.delete) {
+        return await client.syncDeletePost(post);
+      }else if (metadata["flow"] == DataFlow.push) {
+        return await client.syncPushPost(post);
+      }
+      return await client.syncPushPost(post);
     });
   }
 }

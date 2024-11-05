@@ -4,7 +4,10 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:xbb/client/resp.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/model/post.dart';
 import 'package:xbb/model/repo.dart';
+
+enum ClientRequestResult { ok, reject, error }
 
 class XbbClient {
   final String baseUrl;
@@ -96,14 +99,14 @@ class XbbClient {
     return OpenApiGetUserResponse(id: '', name: '');
   }
 
-  Future<bool> syncRepoPut(Repo repo, String auth) async {
+  Future<bool> pushRepo(Repo repo, String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
           ((X509Certificate cert, String host, int port) => true);
       var body = jsonEncode(repo.toSyncRepoMap());
       HttpClientRequest request =
-          await client.putUrl(Uri.parse("$baseUrl/sync/repo/${repo.id}"));
+          await client.postUrl(Uri.parse("$baseUrl/repo"));
       request.headers.set('content-type', 'application/json');
       request.headers.set('Authorization', auth);
       request.write(body);
@@ -115,6 +118,54 @@ class XbbClient {
       } else {
         String responseBody = await response.transform(utf8.decoder).join();
         print("syncRepo error $responseBody");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return false;
+  }
+
+  Future<bool> pushPost(Post post, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      var body = jsonEncode(post.toSyncPostMap());
+      HttpClientRequest request =
+          await client.postUrl(Uri.parse("$baseUrl/repo/${post.repoId}/post"));
+      request.headers.set('content-type', 'application/json');
+      request.headers.set('Authorization', auth);
+      request.write(body);
+      print("body: $body");
+      HttpClientResponse response = await request.close();
+      print("syncPost ${response.statusCode}");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print("syncPost error $responseBody");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return false;
+  }
+
+  Future<bool> deletePost(Post post, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request = await client
+          .deleteUrl(Uri.parse("$baseUrl/repo/${post.repoId}/post/${post.id}"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      print("deletePost ${response.statusCode}");
+      if (response.statusCode == 204) {
+        return true;
+      } else {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print("deletePost error $responseBody");
       }
     } catch (e) {
       print("error: $e");
@@ -156,10 +207,26 @@ Future<OpenApiGetUserResponse> getUser(String name) async {
   return await client.getUser(name, auth);
 }
 
-Future<bool> syncRepoPut(Repo repo) async {
+Future<bool> syncPushRepo(Repo repo) async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
-  return await client.syncRepoPut(repo, auth);
+  return await client.pushRepo(repo, auth);
+}
+
+Future<bool> syncPushPost(Post post) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.pushPost(post, auth);
+}
+
+Future<bool> syncDeletePost(Post post) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.deletePost(post, auth);
 }

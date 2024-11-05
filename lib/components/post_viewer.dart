@@ -19,7 +19,7 @@ class _PostViewerState extends State<PostViewer> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Post>(
-        future: postController.getPost(widget.postId),
+        future: postController.getPostUnwrap(widget.postId),
         builder: (context, AsyncSnapshot<Post> post) {
           if (post.hasData) {
             return Padding(
