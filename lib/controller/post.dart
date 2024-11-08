@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
+import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/sync.dart';
 import 'package:xbb/model/post.dart';
@@ -9,6 +11,7 @@ class PostController extends GetxController {
 
   final settingController = Get.find<SettingController>();
   final syncController = Get.find<SyncController>();
+  late final repoController = Get.find<RepoController>();
 
   Future<void> loadPost(String repoId) async {
     repoPostList.value = await PostRepository().getRepoPosts(repoId);
@@ -38,8 +41,13 @@ class PostController extends GetxController {
 
   savePost(Post post) async {
     post.updatedAt = DateTime.now().toUtc();
+    if (post.author != settingController.currentUserId.value) {
+      print(
+          "change author to ${settingController.currentUserId} ${settingController.currentUserName}");
+      post.author = settingController.currentUserId.value;
+    }
     print(
-        "on savePost: ${post.id}, ${post.title}, ${post.content}, ${post.repoId}, ${post.category}");
+        "on savePost: ${post.id}, ${post.title}, ${post.content}, ${post.repoId}, ${post.category}, ${post.author}");
     if (post.repoId == '0') {
       PostRepository().getPost(post.id).then((oldPost) {
         if (oldPost != null && oldPost.repoId != '0') {
@@ -49,8 +57,8 @@ class PostController extends GetxController {
     } else {
       syncController.syncPost(post, DataFlow.push);
     }
-    PostRepository().upsertPost(post);
-    await loadPost(post.repoId);
+    await PostRepository().upsertPost(post);
+    await repoController.setCurrentRepo(post.repoId);
     Get.offNamed('/');
     // Get.toNamed('/view-post', arguments: [post.id]);
   }

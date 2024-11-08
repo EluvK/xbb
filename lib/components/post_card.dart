@@ -23,6 +23,9 @@ class _PostCardState extends State<PostCard> {
     return Obx(() {
       var viewPost = postController.postListView;
       print("viewPost: $viewPost");
+      // for (var p in viewPost) {
+      //   print("${p.id}, ${p.author}, ${p.title}, ${p.category}");
+      // }
       return viewPost.isNotEmpty
           ? postsView(viewPost)
           : ListView(

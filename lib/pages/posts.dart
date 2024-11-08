@@ -75,7 +75,7 @@ class _PostsAppBarState extends State<PostsAppBar> {
         ),
         onChanged: (value) async {
           targetRepo = value!;
-          repoController.setCurrentRepo(targetRepo);
+          await repoController.setCurrentRepo(targetRepo);
         },
         value: targetRepo,
       ),

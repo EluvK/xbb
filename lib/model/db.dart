@@ -13,6 +13,7 @@ const String tableRepoColumnUpdatedAt = "updatedAt";
 const String tableRepoColumnLastSyncAt = "lastSyncAt";
 const String tableRepoColumnRemoteRepo = 'remoteRepo';
 const String tableRepoColumnAutoSync = 'autoSync';
+const String tableRepoColumnSharedTo = 'sharedTo';
 
 /// POST
 const String tablePostName = 'posts';

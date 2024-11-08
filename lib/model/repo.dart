@@ -13,18 +13,19 @@ class Repo {
   DateTime lastSyncAt;
   bool remoteRepo;
   bool autoSync;
+  String? sharedTo;
 
-  Repo({
-    required this.id,
-    required this.name,
-    required this.owner,
-    required this.description,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.lastSyncAt,
-    required this.remoteRepo,
-    required this.autoSync,
-  });
+  Repo(
+      {required this.id,
+      required this.name,
+      required this.owner,
+      required this.description,
+      required this.createdAt,
+      required this.updatedAt,
+      required this.lastSyncAt,
+      required this.remoteRepo,
+      required this.autoSync,
+      this.sharedTo});
 
   Map<String, dynamic> toMap() {
     return {
@@ -36,7 +37,8 @@ class Repo {
       tableRepoColumnUpdatedAt: updatedAt.toIso8601String(),
       tableRepoColumnLastSyncAt: lastSyncAt.toIso8601String(),
       tableRepoColumnRemoteRepo: remoteRepo ? 1 : 0,
-      tableRepoColumnAutoSync: autoSync ? 1 : 0
+      tableRepoColumnAutoSync: autoSync ? 1 : 0,
+      tableRepoColumnSharedTo: sharedTo
     };
   }
 
@@ -63,19 +65,28 @@ class Repo {
       lastSyncAt: DateTime.parse(map[tableRepoColumnLastSyncAt]),
       remoteRepo: map[tableRepoColumnRemoteRepo] == 1 ? true : false,
       autoSync: map[tableRepoColumnAutoSync] == 1 ? true : false,
+      sharedTo: map[tableRepoColumnSharedTo],
     );
   }
 }
 
+enum RepoType { owned, shared, all }
+
 class RepoRepository {
-  Future<List<Repo>> listRepo(String user) async {
+  Future<List<Repo>> listRepo(String user, RepoType repoType) async {
     final db = await DataBase().getDb();
     final List<Map<String, dynamic>> maps = await db.query(tableRepoName);
     var result = List.generate(maps.length, (i) {
       return Repo.fromMap(maps[i]);
     }).where((repo) {
-      // todo add shared
-      return repo.owner == user || repo.id == "0";
+      switch (repoType) {
+        case RepoType.all:
+          return true;
+        case RepoType.owned:
+          return repo.owner == user || repo.id == "0";
+        case RepoType.shared:
+          return (repo.sharedTo != null) && repo.sharedTo! == user;
+      }
     }).toList();
     return result;
   }

@@ -22,26 +22,24 @@ class RepoController extends GetxController {
   loadRepoLists() async {
     repoList.value =
         await RepoRepository().listRepo(settingController.currentUserId.value);
-    if (repoList.firstWhereOrNull(
-          (repo) {
-            return repo.id == settingController.currentRepoId.value;
-          },
-        ) !=
-        null) {
-      currentRepoId.value = settingController.currentRepoId.value;
-    }
-    setCurrentRepo("0"); // return to local
+
+    String repoId = repoList.firstWhereOrNull((repo) {
+          return repo.id == settingController.currentRepoId.value;
+        })?.id ??
+        '0';
+    print('set current repo to $repoId');
+    await setCurrentRepo(repoId);
   }
 
   bool isCurrentRepo(String repoId) {
     return currentRepoId.value == repoId;
   }
 
-  void setCurrentRepo(String repoId) {
+  Future<void> setCurrentRepo(String repoId) async {
     settingController.setCurrentRepo(repoId);
     settingController.currentRepoId.value = repoId;
     currentRepoId.value = repoId;
-    postController.loadPost(repoId);
+    await postController.loadPost(repoId);
   }
 
   String? repoName(String repoId) {
@@ -53,16 +51,12 @@ class RepoController extends GetxController {
     print("on saveRepoNew: ${repo.id} ${repo.name}");
     syncController.syncRepo(repo, DataFlow.push);
     await RepoRepository().upsertRepo(repo);
-    Get.toNamed('/');
     // reload
     await loadRepoLists();
+    Get.toNamed('/');
   }
 
   Future<Repo> getRepoUnwrap(String repoId) async {
     return (await RepoRepository().getRepo(repoId))!;
   }
-
-  // List<String> listRepoNames() {
-  //   return repoList.map((element) => element.name).toList();
-  // }
 }

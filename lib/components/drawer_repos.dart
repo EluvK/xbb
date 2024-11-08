@@ -25,7 +25,7 @@ class _DrawerReposState extends State<DrawerRepos> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Repos'),
+              const Text('MyRepos'),
               IconButton(
                 onPressed: () {
                   Get.toNamed('/edit-repo');
@@ -41,6 +41,18 @@ class _DrawerReposState extends State<DrawerRepos> {
             itemBuilder: (context, index) {
               return reposListItem(repoController.repoList[index]);
             },
+          ),
+          const Divider(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Subscribe"),
+              IconButton(
+                  onPressed: () {
+                    //todo
+                  },
+                  icon: const Icon(Icons.refresh))
+            ],
           )
         ],
       );
