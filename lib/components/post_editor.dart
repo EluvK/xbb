@@ -165,7 +165,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         // repo dropdown
         Flexible(
           child: DropdownButtonFormField(
-            items: repoController.repoList.map((e) {
+            items: repoController.myRepoList.map((e) {
               return DropdownMenuItem(value: e.id, child: Text(e.name));
             }).toList(),
             decoration: const InputDecoration(labelText: 'repo'),

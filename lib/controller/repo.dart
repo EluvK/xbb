@@ -5,7 +5,8 @@ import 'package:xbb/controller/sync.dart';
 import 'package:xbb/model/repo.dart';
 
 class RepoController extends GetxController {
-  final repoList = <Repo>[].obs;
+  final myRepoList = <Repo>[].obs;
+  final subscribeRepoList = <Repo>[].obs;
   final currentRepoId = "".obs;
 
   final settingController = Get.find<SettingController>();
@@ -15,15 +16,17 @@ class RepoController extends GetxController {
   @override
   void onInit() async {
     await loadRepoLists();
-    print("on init repos: ${repoList.length}");
+    print("on init repos: ${myRepoList.length}");
     super.onInit();
   }
 
   loadRepoLists() async {
-    repoList.value =
-        await RepoRepository().listRepo(settingController.currentUserId.value);
+    var userId = settingController.currentUserId.value;
+    myRepoList.value = await RepoRepository().listRepo(userId, RepoType.owned);
+    subscribeRepoList.value =
+        await RepoRepository().listRepo(userId, RepoType.shared);
 
-    String repoId = repoList.firstWhereOrNull((repo) {
+    String repoId = myRepoList.firstWhereOrNull((repo) {
           return repo.id == settingController.currentRepoId.value;
         })?.id ??
         '0';
@@ -43,7 +46,7 @@ class RepoController extends GetxController {
   }
 
   String? repoName(String repoId) {
-    return repoList.firstWhereOrNull((element) => element.id == repoId)?.name;
+    return myRepoList.firstWhereOrNull((element) => element.id == repoId)?.name;
   }
 
   void saveRepo(Repo repo) async {

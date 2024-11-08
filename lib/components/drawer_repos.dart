@@ -15,8 +15,9 @@ class _DrawerReposState extends State<DrawerRepos> {
 
   @override
   Widget build(BuildContext context) {
-    print("repoController.repoList.length: ${repoController.repoList.length}");
-    print("repoController.repoList: ${repoController.repoList}");
+    print(
+        "repoController.repoList.length: ${repoController.myRepoList.length}");
+    print("repoController.repoList: ${repoController.myRepoList}");
 
     return Obx(() {
       return Column(
@@ -37,9 +38,9 @@ class _DrawerReposState extends State<DrawerRepos> {
           ),
           ListView.builder(
             shrinkWrap: true,
-            itemCount: repoController.repoList.length,
+            itemCount: repoController.myRepoList.length,
             itemBuilder: (context, index) {
-              return reposListItem(repoController.repoList[index]);
+              return reposListItem(repoController.myRepoList[index]);
             },
           ),
           const Divider(),
@@ -48,12 +49,20 @@ class _DrawerReposState extends State<DrawerRepos> {
             children: [
               const Text("Subscribe"),
               IconButton(
-                  onPressed: () {
-                    //todo
-                  },
-                  icon: const Icon(Icons.refresh))
+                onPressed: () {
+                  //todo
+                },
+                icon: const Icon(Icons.refresh),
+              )
             ],
-          )
+          ),
+          ListView.builder(
+            shrinkWrap: true,
+            itemCount: repoController.subscribeRepoList.length,
+            itemBuilder: (context, index) {
+              return reposListItem(repoController.subscribeRepoList[index]);
+            },
+          ),
         ],
       );
     });

@@ -60,7 +60,7 @@ class _PostsAppBarState extends State<PostsAppBar> {
     return SizedBox(
       width: 200,
       child: DropdownButtonFormField(
-        items: repoController.repoList.map((e) {
+        items: repoController.myRepoList.map((e) {
           return DropdownMenuItem(value: e.id, child: Text(e.name));
         }).toList(),
         isExpanded: true,
