@@ -59,7 +59,8 @@ class DataBase {
             $tableRepoColumnUpdatedAt TEXT NOT NULL,
             $tableRepoColumnLastSyncAt TEXT NOT NULL,
             $tableRepoColumnRemoteRepo INTEGER NOT NULL,
-            $tableRepoColumnAutoSync INTEGER NOT NULL
+            $tableRepoColumnAutoSync INTEGER NOT NULL,
+            $tableRepoColumnSharedTo TEXT
           )
         ''');
         var now = DateTime.now().toUtc();

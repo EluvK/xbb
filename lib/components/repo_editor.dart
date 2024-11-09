@@ -34,7 +34,10 @@ class _RepoEditorState extends State<RepoEditor> {
         remoteRepo: true,
         autoSync: true,
       );
-      return _RepoEditorInner(repo: repo);
+      return _RepoEditorInner(
+        repo: repo,
+        enableChooseMode: true,
+      );
     }
     return FutureBuilder(
       future: repoController.getRepoUnwrap(widget.repoId!),
@@ -50,9 +53,12 @@ class _RepoEditorState extends State<RepoEditor> {
   }
 }
 
+enum EditRepoMode { self, shared }
+
 class _RepoEditorInner extends StatefulWidget {
-  const _RepoEditorInner({required this.repo});
+  const _RepoEditorInner({required this.repo, this.enableChooseMode = false});
   final Repo repo;
+  final bool enableChooseMode;
 
   @override
   State<_RepoEditorInner> createState() => __RepoEditorInnerState();
@@ -61,8 +67,37 @@ class _RepoEditorInner extends StatefulWidget {
 class __RepoEditorInnerState extends State<_RepoEditorInner> {
   final repoController = Get.find<RepoController>();
 
+  EditRepoMode editMode = EditRepoMode.self;
+
   @override
   Widget build(BuildContext context) {
+    if (widget.repo.sharedTo != null) {
+      setState(() {
+        editMode = EditRepoMode.shared;
+      });
+    }
+    Widget main;
+    if (editMode == EditRepoMode.self) {
+      main = _selfRepoEditor();
+    } else {
+      main = _sharedRepoEditor();
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Visibility(
+          visible: widget.enableChooseMode,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _switchModeButton(),
+          ),
+        ),
+        Expanded(child: main),
+      ],
+    );
+  }
+
+  Widget _sharedRepoEditor() {
     return Column(
       children: [
         Padding(
@@ -89,6 +124,56 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
     );
   }
 
+  Widget _selfRepoEditor() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _nameWidget(),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _descriptionWidget(),
+        ),
+        const Divider(),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _settingWidget(),
+          ),
+        ),
+        const Divider(),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _toolsWidget(),
+        )
+      ],
+    );
+  }
+
+  Widget _switchModeButton() {
+    return SegmentedButton(
+      segments: const [
+        ButtonSegment(
+          value: EditRepoMode.self,
+          icon: Icon(Icons.person),
+          label: Text('self'),
+        ),
+        ButtonSegment(
+          value: EditRepoMode.shared,
+          icon: Icon(Icons.share),
+          label: Text('shared'),
+        ),
+      ],
+      selected: {editMode},
+      onSelectionChanged: (value) {
+        setState(() {
+          editMode = value.first;
+        });
+      },
+    );
+  }
+
   Widget _nameWidget() {
     return TextField(
       minLines: 1,
@@ -98,6 +183,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       onChanged: (value) {
         widget.repo.name = value;
       },
+      enabled: editMode == EditRepoMode.self,
     );
   }
 
@@ -110,6 +196,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       onChanged: (value) {
         widget.repo.description = value;
       },
+      enabled: editMode == EditRepoMode.self,
     );
   }
 
@@ -207,11 +294,31 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   }
 
   Widget _toolsWidget() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _saveButton(),
+        _deleteButton(),
+      ],
+    );
+  }
+
+  Widget _saveButton() {
     return TextButton(
       onPressed: () {
         repoController.saveRepo(widget.repo);
       },
       child: const Text('保存 Repo'),
+    );
+  }
+
+  Widget _deleteButton() {
+    return TextButton(
+      onPressed: () {
+        // todo();
+        // repoController.deleteRepo(widget.repo.id);
+      },
+      child: const Text('删除 Repo'),
     );
   }
 }

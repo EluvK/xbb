@@ -9,8 +9,9 @@ class EditRepoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = Get.arguments;
     final String? repoId = args?[0];
+    final String? repoName = args?[1];
     return Scaffold(
-      appBar: AppBar(title: const Text('newRepo')),
+      appBar: AppBar(title: Text(repoName != null ? 'edit `$repoName`' : 'newRepo')),
       body: RepoEditor(
         repoId: repoId,
       ),
