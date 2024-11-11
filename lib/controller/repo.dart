@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:xbb/client/client.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/sync.dart';
@@ -49,7 +50,7 @@ class RepoController extends GetxController {
 
   void saveRepo(Repo repo) async {
     print("on saveRepoNew: ${repo.id} ${repo.name}");
-    syncController.syncRepo(repo, DataFlow.push);
+    syncController.asyncRepo(repo, DataFlow.push);
     await RepoRepository().upsertRepo(repo);
     // reload
     await loadRepoLists();
@@ -59,6 +60,23 @@ class RepoController extends GetxController {
     print("on saveRepoNew: ${repo.id} ${repo.name}");
     await RepoRepository().upsertRepo(repo);
     // reload
+    await loadRepoLists();
+  }
+
+  Future<void> pullRepos() async {
+    // await syncController.checkSyncInfo();
+    List<Repo> repos = await syncPullRepos();
+    for (var repo in repos) {
+      Repo? localRepo = await RepoRepository().getRepo(repo.id);
+      if (localRepo == null) {
+        await RepoRepository().addRepo(repo);
+      } else {
+        // maybe nothing?
+        // await RepoRepository().updateRepo(repo);
+      }
+      // sync posts maybe async way
+    }
+
     await loadRepoLists();
   }
 

@@ -125,6 +125,52 @@ class XbbClient {
     return false;
   }
 
+  Future<List<Repo>> pullRepos(String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse("$baseUrl/repo"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        List<dynamic> jsonResponse = jsonDecode(responseBody);
+        return jsonResponse.map((e) {
+          return OpenApiGetRepoResponse.fromResp(e).toRepo();
+        }).toList();
+      } else {
+        print("pullRepos error ${response.statusCode}");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return [];
+  }
+
+  Future<Repo?> pullRepo(String repoId, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse("$baseUrl/repo/$repoId"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return OpenApiGetRepoResponse.fromResp(jsonResponse).toRepo();
+      } else {
+        print("pullRepo error ${response.statusCode}");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return null;
+  }
+
   Future<bool> pushPost(Post post, String auth) async {
     try {
       HttpClient client = HttpClient();
@@ -238,6 +284,22 @@ Future<bool> syncPushRepo(Repo repo) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.pushRepo(repo, auth);
+}
+
+Future<List<Repo>> syncPullRepos() async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.pullRepos(auth);
+}
+
+Future<Repo?> syncPullRepo(String repoId) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.pullRepo(repoId, auth);
 }
 
 Future<bool> syncPushPost(Post post) async {

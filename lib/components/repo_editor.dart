@@ -73,7 +73,8 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.repo.sharedTo != null) {
+    if (widget.repo.sharedTo != null &&
+        widget.repo.sharedTo == settingController.currentUserId.value) {
       setState(() {
         editMode = EditRepoMode.shared;
       });
@@ -231,7 +232,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
               widget.repo.sharedLink = value;
             },
             decoration: const InputDecoration(labelText: 'Shared Link:'),
-            enabled: editMode == EditRepoMode.shared,
+            enabled: editMode == EditRepoMode.shared && widget.enableChooseMode,
           ),
         ),
         Visibility(

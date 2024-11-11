@@ -51,11 +51,11 @@ class PostController extends GetxController {
     if (post.repoId == '0') {
       PostRepository().getPost(post.id).then((oldPost) {
         if (oldPost != null && oldPost.repoId != '0') {
-          syncController.syncPost(oldPost, DataFlow.delete);
+          syncController.asyncPost(oldPost, DataFlow.delete);
         }
       });
     } else {
-      syncController.syncPost(post, DataFlow.push);
+      syncController.asyncPost(post, DataFlow.push);
     }
     await PostRepository().upsertPost(post);
     await repoController.setCurrentRepo(post.repoId);

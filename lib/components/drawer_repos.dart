@@ -24,9 +24,15 @@ class _DrawerReposState extends State<DrawerRepos> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('MyRepos'),
+              const Expanded(child: Text('MyRepos')),
+              IconButton(
+                onPressed: () async {
+                  await repoController.pullRepos();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: 'refresh',
+              ),
               IconButton(
                 onPressed: () {
                   Get.toNamed('/edit-repo');
@@ -52,7 +58,7 @@ class _DrawerReposState extends State<DrawerRepos> {
                 onPressed: () {
                   //todo
                 },
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh_rounded),
                 tooltip: 'update',
               )
             ],

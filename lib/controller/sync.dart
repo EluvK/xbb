@@ -54,7 +54,7 @@ class SyncController extends GetxController {
 
   Future<void> doSyncForwardsPost(Post post) async {}
 
-  syncRepo(Repo repo, DataFlow flow) {
+  asyncRepo(Repo repo, DataFlow flow) {
     print("sync controller sync repo ${repo.id}");
     var metadata = {
       "flow": flow,
@@ -66,7 +66,7 @@ class SyncController extends GetxController {
     });
   }
 
-  syncPost(Post post, DataFlow flow) {
+  asyncPost(Post post, DataFlow flow) {
     print("sync controller sync post ${post.id}");
     var metadata = {
       "flow": flow,
