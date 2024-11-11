@@ -5,9 +5,10 @@ import 'package:xbb/controller/sync.dart';
 import 'package:xbb/model/repo.dart';
 
 class RepoController extends GetxController {
+  final allRepoList = <Repo>[].obs;
   final myRepoList = <Repo>[].obs;
   final subscribeRepoList = <Repo>[].obs;
-  final currentRepoId = "".obs;
+  final currentRepoId = "0".obs;
 
   final settingController = Get.find<SettingController>();
   final postController = Get.find<PostController>();
@@ -16,17 +17,18 @@ class RepoController extends GetxController {
   @override
   void onInit() async {
     await loadRepoLists();
-    print("on init repos: ${myRepoList.length}");
+    print("on init repos: ${allRepoList.length}");
     super.onInit();
   }
 
   loadRepoLists() async {
     var userId = settingController.currentUserId.value;
+    allRepoList.value = await RepoRepository().listRepo(userId, RepoType.all);
     myRepoList.value = await RepoRepository().listRepo(userId, RepoType.owned);
     subscribeRepoList.value =
         await RepoRepository().listRepo(userId, RepoType.shared);
 
-    String repoId = myRepoList.firstWhereOrNull((repo) {
+    String repoId = allRepoList.firstWhereOrNull((repo) {
           return repo.id == settingController.currentRepoId.value;
         })?.id ??
         '0';
@@ -45,12 +47,7 @@ class RepoController extends GetxController {
     await postController.loadPost(repoId);
   }
 
-  String? repoName(String repoId) {
-    return myRepoList.firstWhereOrNull((element) => element.id == repoId)?.name;
-  }
-
   void saveRepo(Repo repo) async {
-    repo.updatedAt = DateTime.now().toUtc();
     print("on saveRepoNew: ${repo.id} ${repo.name}");
     syncController.syncRepo(repo, DataFlow.push);
     await RepoRepository().upsertRepo(repo);
@@ -59,7 +56,10 @@ class RepoController extends GetxController {
   }
 
   void subscribeRepo(Repo repo) async {
-    // todo
+    print("on saveRepoNew: ${repo.id} ${repo.name}");
+    await RepoRepository().upsertRepo(repo);
+    // reload
+    await loadRepoLists();
   }
 
   Future<Repo> getRepoUnwrap(String repoId) async {

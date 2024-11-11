@@ -67,6 +67,7 @@ class _RepoEditorInner extends StatefulWidget {
 
 class __RepoEditorInnerState extends State<_RepoEditorInner> {
   final repoController = Get.find<RepoController>();
+  final settingController = Get.find<SettingController>();
 
   EditRepoMode editMode = EditRepoMode.self;
 
@@ -326,6 +327,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   Widget _saveButton() {
     return TextButton(
       onPressed: () {
+        widget.repo.updatedAt = DateTime.now().toUtc();
         repoController.saveRepo(widget.repo);
         Get.toNamed('/');
       },
@@ -339,19 +341,22 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
         print('$editMode ${widget.repo.sharedLink}');
         if (widget.repo.sharedLink != null) {
           Repo? repo = await subscribeRepo(widget.repo.sharedLink!);
-          print(repo);
+          // print(repo);
           if (repo != null) {
             setState(() {
+              widget.repo.id = repo.id;
               widget.repo.name = repo.name;
-              widget.repo.description = repo.description;
               widget.repo.owner = repo.owner;
+              widget.repo.description = repo.description;
               widget.repo.createdAt = repo.createdAt;
               widget.repo.updatedAt = repo.updatedAt;
               widget.repo.lastSyncAt = repo.lastSyncAt;
+              widget.repo.sharedTo = settingController.currentUserId.value;
             });
+            repoController.subscribeRepo(widget.repo);
+            Get.toNamed('/');
           }
         }
-        repoController.subscribeRepo(widget.repo);
       },
       child: const Text('订阅 Repo'),
     );

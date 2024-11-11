@@ -40,6 +40,7 @@ class _PostsAppBarState extends State<PostsAppBar> {
   Widget build(BuildContext context) {
     return Obx(() {
       targetRepo = repoController.currentRepoId.value;
+      print("targetRepo: $targetRepo");
       return AppBar(
         title: appBarTitle(),
         actions: [
@@ -48,7 +49,7 @@ class _PostsAppBarState extends State<PostsAppBar> {
               Get.toNamed('/edit-post'); // no arguments to new one
             },
             icon: const Icon(Icons.add),
-          )
+          ),
         ],
       );
     });
@@ -60,7 +61,7 @@ class _PostsAppBarState extends State<PostsAppBar> {
     return SizedBox(
       width: 200,
       child: DropdownButtonFormField(
-        items: repoController.myRepoList.map((e) {
+        items: repoController.allRepoList.map((e) {
           return DropdownMenuItem(value: e.id, child: Text(e.name));
         }).toList(),
         isExpanded: true,
