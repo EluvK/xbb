@@ -14,18 +14,21 @@ class Repo {
   bool remoteRepo;
   bool autoSync;
   String? sharedTo;
+  String? sharedLink;
 
-  Repo(
-      {required this.id,
-      required this.name,
-      required this.owner,
-      required this.description,
-      required this.createdAt,
-      required this.updatedAt,
-      required this.lastSyncAt,
-      required this.remoteRepo,
-      required this.autoSync,
-      this.sharedTo});
+  Repo({
+    required this.id,
+    required this.name,
+    required this.owner,
+    required this.description,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.lastSyncAt,
+    required this.remoteRepo,
+    required this.autoSync,
+    this.sharedTo,
+    this.sharedLink,
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -38,7 +41,8 @@ class Repo {
       tableRepoColumnLastSyncAt: lastSyncAt.toIso8601String(),
       tableRepoColumnRemoteRepo: remoteRepo ? 1 : 0,
       tableRepoColumnAutoSync: autoSync ? 1 : 0,
-      tableRepoColumnSharedTo: sharedTo
+      tableRepoColumnSharedTo: sharedTo,
+      tableRepoColumnSharedLink: sharedLink,
     };
   }
 
@@ -66,6 +70,7 @@ class Repo {
       remoteRepo: map[tableRepoColumnRemoteRepo] == 1 ? true : false,
       autoSync: map[tableRepoColumnAutoSync] == 1 ? true : false,
       sharedTo: map[tableRepoColumnSharedTo],
+      sharedLink: map[tableRepoColumnSharedLink],
     );
   }
 }

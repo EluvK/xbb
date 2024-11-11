@@ -56,7 +56,10 @@ class RepoController extends GetxController {
     await RepoRepository().upsertRepo(repo);
     // reload
     await loadRepoLists();
-    Get.toNamed('/');
+  }
+
+  void subscribeRepo(Repo repo) async {
+    // todo
   }
 
   Future<Repo> getRepoUnwrap(String repoId) async {

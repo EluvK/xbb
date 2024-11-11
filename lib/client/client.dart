@@ -172,6 +172,30 @@ class XbbClient {
     }
     return false;
   }
+
+  Future<Repo?> subscribeRepo(String sharedLink, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.postUrl(Uri.parse("$baseUrl/subscribe/"));
+      request.headers.set('content-type', 'application/json');
+      request.headers.set('Authorization', auth);
+      request.write(jsonEncode({'link': sharedLink}));
+      HttpClientResponse response = await request.close();
+
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        // print(responseBody);
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return OpenApiGetRepoResponse.fromResp(jsonResponse).toRepo();
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return null;
+  }
 }
 
 /// Validate the server address
@@ -207,6 +231,7 @@ Future<OpenApiGetUserResponse> getUser(String name) async {
   return await client.getUser(name, auth);
 }
 
+// --- sync
 Future<bool> syncPushRepo(Repo repo) async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
@@ -229,4 +254,13 @@ Future<bool> syncDeletePost(Post post) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.deletePost(post, auth);
+}
+
+// --- subscribe
+Future<Repo?> subscribeRepo(String sharedLink) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.subscribeRepo(sharedLink, auth);
 }

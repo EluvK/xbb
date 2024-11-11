@@ -14,6 +14,7 @@ const String tableRepoColumnLastSyncAt = "lastSyncAt";
 const String tableRepoColumnRemoteRepo = 'remoteRepo';
 const String tableRepoColumnAutoSync = 'autoSync';
 const String tableRepoColumnSharedTo = 'sharedTo';
+const String tableRepoColumnSharedLink = 'sharedLink';
 
 /// POST
 const String tablePostName = 'posts';
@@ -60,7 +61,8 @@ class DataBase {
             $tableRepoColumnLastSyncAt TEXT NOT NULL,
             $tableRepoColumnRemoteRepo INTEGER NOT NULL,
             $tableRepoColumnAutoSync INTEGER NOT NULL,
-            $tableRepoColumnSharedTo TEXT
+            $tableRepoColumnSharedTo TEXT,
+            $tableRepoColumnSharedLink TEXT
           )
         ''');
         var now = DateTime.now().toUtc();

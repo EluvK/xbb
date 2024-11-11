@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import 'package:xbb/client/client.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/repo.dart';
@@ -76,6 +77,10 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
         editMode = EditRepoMode.shared;
       });
     }
+    if (!widget.enableChooseMode) {
+      widget.repo.sharedLink = _sharedLink(widget.repo);
+    }
+
     Widget main;
     if (editMode == EditRepoMode.self) {
       main = _selfRepoEditor();
@@ -219,7 +224,11 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
           child: TextField(
             minLines: 1,
             maxLines: 3,
-            controller: TextEditingController(text: _sharedLink(widget.repo)),
+            controller:
+                TextEditingController(text: widget.repo.sharedLink ?? ''),
+            onChanged: (value) {
+              widget.repo.sharedLink = value;
+            },
             decoration: const InputDecoration(labelText: 'Shared Link:'),
             enabled: editMode == EditRepoMode.shared,
           ),
@@ -229,7 +238,8 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
           child: IconButton(
             icon: const Icon(Icons.copy),
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: _sharedLink(widget.repo)));
+              Clipboard.setData(
+                  ClipboardData(text: widget.repo.sharedLink ?? ''));
               flushBar(FlushLevel.OK, "copy to clipboard", "share to others");
             },
           ),
@@ -317,6 +327,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
     return TextButton(
       onPressed: () {
         repoController.saveRepo(widget.repo);
+        Get.toNamed('/');
       },
       child: const Text('保存 Repo'),
     );
@@ -324,8 +335,23 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
 
   Widget _subscribeButton() {
     return TextButton(
-      onPressed: () {
-        // repoController.deleteRepo(widget.repo.id);
+      onPressed: () async {
+        print('$editMode ${widget.repo.sharedLink}');
+        if (widget.repo.sharedLink != null) {
+          Repo? repo = await subscribeRepo(widget.repo.sharedLink!);
+          print(repo);
+          if (repo != null) {
+            setState(() {
+              widget.repo.name = repo.name;
+              widget.repo.description = repo.description;
+              widget.repo.owner = repo.owner;
+              widget.repo.createdAt = repo.createdAt;
+              widget.repo.updatedAt = repo.updatedAt;
+              widget.repo.lastSyncAt = repo.lastSyncAt;
+            });
+          }
+        }
+        repoController.subscribeRepo(widget.repo);
       },
       child: const Text('订阅 Repo'),
     );
