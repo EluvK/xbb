@@ -8,7 +8,7 @@ import 'package:xbb/client/client.dart' as client;
 
 enum DataFlow { push, pull, delete }
 
-class SyncController extends GetxController {
+class AsyncController extends GetxController {
   late final postController = Get.find<PostController>();
   final settingController = Get.find<SettingController>();
 
@@ -21,9 +21,13 @@ class SyncController extends GetxController {
       // local repo no need to sync
       return;
     }
-    print("try sync $currentRepoId for $currentUser");
+    // todo test delay (delete)
+    await Future<void>.delayed(const Duration(seconds: 1));
 
     Repo currentRepo = (await RepoRepository().getRepo(currentRepoId))!;
+    print(
+        "try sync ${currentRepo.id} (${currentRepo.name}) for $currentUser, last sync at ${currentRepo.lastSyncAt}");
+
     List<Post> currentPosts =
         await postController.fetchRepoPosts(currentRepoId);
     DateTime latestUpdateAt = currentPosts.fold<DateTime>(
@@ -76,7 +80,7 @@ class SyncController extends GetxController {
     _taskQueue.addTask(post.id, metadata, (metadata) async {
       if (metadata["flow"] == DataFlow.delete) {
         return await client.syncDeletePost(post);
-      }else if (metadata["flow"] == DataFlow.push) {
+      } else if (metadata["flow"] == DataFlow.push) {
         return await client.syncPushPost(post);
       }
       return await client.syncPushPost(post);

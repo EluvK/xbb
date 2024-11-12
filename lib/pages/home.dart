@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:xbb/controller/sync.dart';
+import 'package:xbb/controller/post.dart';
+import 'package:xbb/controller/setting.dart';
 import 'package:xbb/pages/drawer.dart';
 import 'package:xbb/pages/posts.dart';
 
@@ -9,7 +10,8 @@ class HomePage extends GetResponsiveView {
 
   @override
   Widget? phone() {
-    final syncController = Get.find<SyncController>();
+    final settingController = Get.find<SettingController>();
+    final postController = Get.find<PostController>();
     return Scaffold(
       drawer: const DrawerPage(),
       appBar: const PreferredSize(
@@ -18,8 +20,8 @@ class HomePage extends GetResponsiveView {
       ),
       body: RefreshIndicator(
           onRefresh: () async {
-            await syncController.checkSyncInfo();
-            return Future<void>.delayed(const Duration(seconds: 1));
+            return await postController
+                .pullPosts(settingController.currentRepoId.value);
           },
           notificationPredicate: (ScrollNotification notification) {
             if (notification.depth != 0) {

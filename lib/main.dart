@@ -32,7 +32,7 @@ void main() async {
   final settingController = Get.find<SettingController>();
   await settingController.ensureInitialization();
   await Get.putAsync(() async {
-    final controller = SyncController();
+    final controller = AsyncController();
     return controller;
   });
   await Get.putAsync(() async {

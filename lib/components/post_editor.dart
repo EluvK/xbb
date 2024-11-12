@@ -21,6 +21,12 @@ class _PostEditorState extends State<PostEditor> {
   @override
   Widget build(BuildContext context) {
     if (widget.postId == null) {
+      var defaultRepo = repoController.myRepoList.firstWhere(
+        (e) => (e.id == repoController.currentRepoId.value),
+        orElse: () {
+          return repoController.myRepoList.first;
+        },
+      );
       // new one
       var post = Post(
         id: const Uuid().v4(),
@@ -30,7 +36,7 @@ class _PostEditorState extends State<PostEditor> {
         createdAt: DateTime.now().toUtc(),
         updatedAt: DateTime.now().toUtc(),
         author: settingController.currentUserId.value,
-        repoId: repoController.currentRepoId.value,
+        repoId: defaultRepo.id,
       );
       return _PostEditorInner(post: post);
     }

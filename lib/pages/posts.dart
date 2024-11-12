@@ -57,11 +57,14 @@ class _PostsAppBarState extends State<PostsAppBar> {
 
   Widget appBarTitle() {
     final colorScheme = Theme.of(context).colorScheme;
-
+    final repoLists = [
+      ...repoController.myRepoList,
+      ...repoController.subscribeRepoList
+    ];
     return SizedBox(
       width: 200,
       child: DropdownButtonFormField(
-        items: repoController.allRepoList.map((e) {
+        items: repoLists.map((e) {
           return DropdownMenuItem(value: e.id, child: Text(e.name));
         }).toList(),
         isExpanded: true,

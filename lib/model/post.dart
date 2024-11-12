@@ -5,6 +5,29 @@ enum PostStatus {
   published,
 }
 
+class PostSummary {
+  String id;
+  String title;
+  String category;
+  DateTime updatedAt;
+
+  PostSummary({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.updatedAt,
+  });
+
+  factory PostSummary.fromMap(Map<String, dynamic> map) {
+    return PostSummary(
+      id: map[tablePostColumnId],
+      title: map[tablePostColumnTitle],
+      category: map[tablePostColumnCategory],
+      updatedAt: DateTime.parse(map[tablePostColumnUpdatedAt]),
+    );
+  }
+}
+
 class Post {
   // members that uploaded to the server
   String id;
@@ -69,8 +92,12 @@ class Post {
       updatedAt: DateTime.parse(map[tablePostColumnUpdatedAt]),
       author: map[tablePostColumnAuthor],
       repoId: map[tablePostColumnRepoId],
-      status: PostStatus.values
-          .firstWhere((e) => e.toString() == map[tablePostColumnStatus]),
+      status: PostStatus.values.firstWhere(
+        (e) => e.toString() == map[tablePostColumnStatus],
+        orElse: () {
+          return PostStatus.draft; // todo change to read/unread marker
+        },
+      ),
     );
   }
 }

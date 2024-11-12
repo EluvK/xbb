@@ -197,6 +197,55 @@ class XbbClient {
     return false;
   }
 
+  Future<List<PostSummary>> pullPosts(String repoId, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse("$baseUrl/repo/$repoId/post"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print("responseBody: $responseBody");
+        List<dynamic> jsonResponse = jsonDecode(responseBody);
+        return jsonResponse.map((e) {
+          // return OpenApiGetPostResponse.fromResp(e).toPostSummary();
+          return PostSummary.fromMap(e);
+        }).toList();
+      } else {
+        print("pullPostsSummary error ${response.statusCode}");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return [];
+  }
+
+  Future<Post?> pullPost(String repoId, String postId, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse("$baseUrl/repo/$repoId/post/$postId"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print("responseBody: $responseBody");
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return Post.fromMap(jsonResponse);
+      } else {
+        print("pullPostsSummary error ${response.statusCode}");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return null;
+  }
+
   Future<bool> deletePost(Post post, String auth) async {
     try {
       HttpClient client = HttpClient();
@@ -308,6 +357,22 @@ Future<bool> syncPushPost(Post post) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.pushPost(post, auth);
+}
+
+Future<List<PostSummary>> syncPullPosts(String repoId) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.pullPosts(repoId, auth);
+}
+
+Future<Post?> syncPullPost(String repoId, String postId) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.pullPost(repoId, postId, auth);
 }
 
 Future<bool> syncDeletePost(Post post) async {

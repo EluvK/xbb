@@ -13,7 +13,7 @@ class RepoController extends GetxController {
 
   final settingController = Get.find<SettingController>();
   final postController = Get.find<PostController>();
-  final syncController = Get.find<SyncController>();
+  final asyncController = Get.find<AsyncController>();
 
   @override
   void onInit() async {
@@ -50,7 +50,7 @@ class RepoController extends GetxController {
 
   void saveRepo(Repo repo) async {
     print("on saveRepoNew: ${repo.id} ${repo.name}");
-    syncController.asyncRepo(repo, DataFlow.push);
+    asyncController.asyncRepo(repo, DataFlow.push);
     await RepoRepository().upsertRepo(repo);
     // reload
     await loadRepoLists();
@@ -64,17 +64,18 @@ class RepoController extends GetxController {
   }
 
   Future<void> pullRepos() async {
-    // await syncController.checkSyncInfo();
     List<Repo> repos = await syncPullRepos();
     for (var repo in repos) {
       Repo? localRepo = await RepoRepository().getRepo(repo.id);
       if (localRepo == null) {
         await RepoRepository().addRepo(repo);
       } else {
-        // maybe nothing?
-        // await RepoRepository().updateRepo(repo);
+        localRepo.name = repo.name;
+        localRepo.description = repo.description;
+        localRepo.updatedAt = repo.updatedAt;
+        await RepoRepository().updateRepo(localRepo);
       }
-      // sync posts maybe async way
+      // todo sync posts maybe async way
     }
 
     await loadRepoLists();

@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:uuid/uuid.dart';
+import 'package:xbb/client/client.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/sync.dart';
@@ -10,7 +10,7 @@ class PostController extends GetxController {
   final postListView = <Post>[].obs;
 
   final settingController = Get.find<SettingController>();
-  final syncController = Get.find<SyncController>();
+  final asyncController = Get.find<AsyncController>();
   late final repoController = Get.find<RepoController>();
 
   Future<void> loadPost(String repoId) async {
@@ -51,11 +51,11 @@ class PostController extends GetxController {
     if (post.repoId == '0') {
       PostRepository().getPost(post.id).then((oldPost) {
         if (oldPost != null && oldPost.repoId != '0') {
-          syncController.asyncPost(oldPost, DataFlow.delete);
+          asyncController.asyncPost(oldPost, DataFlow.delete);
         }
       });
     } else {
-      syncController.asyncPost(post, DataFlow.push);
+      asyncController.asyncPost(post, DataFlow.push);
     }
     await PostRepository().upsertPost(post);
     await repoController.setCurrentRepo(post.repoId);
@@ -66,6 +66,24 @@ class PostController extends GetxController {
   deletePost(String postId) async {
     await PostRepository().deletePost(postId);
     await loadPost(settingController.currentRepoId.value);
+  }
+
+  pullPosts(String repoId) async {
+    List<PostSummary> posts = await syncPullPosts(repoId);
+    for (PostSummary postSummary in posts) {
+      Post? localPost = await PostRepository().getPost(postSummary.id);
+      if (localPost == null ||
+          localPost.updatedAt.isBefore(postSummary.updatedAt)) {
+        Post? fetchPost = await syncPullPost(repoId, postSummary.id);
+        if (fetchPost != null) {
+          await PostRepository().upsertPost(fetchPost);
+        }
+      } else {
+        // no need to fetch post.
+      }
+    }
+
+    await repoController.setCurrentRepo(repoId);
   }
 
   Future<Post> getPostUnwrap(String postId) async {
