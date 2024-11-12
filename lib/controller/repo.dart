@@ -61,7 +61,7 @@ class RepoController extends GetxController {
     await loadRepoLists();
   }
 
-  Future<Repo?> pushSubscribeRepo(String sharedLink) async {
+  Future<Repo?> doSubscribeRepo(String sharedLink) async {
     Repo? repo = await subscribeRepo(sharedLink);
     if (repo != null) {
       repo.sharedTo = settingController.currentUserId.value;
@@ -72,6 +72,17 @@ class RepoController extends GetxController {
       await loadRepoLists();
     }
     return repo;
+  }
+
+  Future<void> doUnsubscribeRepo(String repoId) async {
+    Repo repo = await getRepoUnwrap(repoId);
+    await unsubscribeRepo(repoId);
+    repo.sharedLink = null;
+    repo.sharedTo = null;
+    await RepoRepository().upsertRepo(repo);
+    // reload
+    await loadRepoLists();
+    return;
   }
 
   Future<void> pullRepos() async {

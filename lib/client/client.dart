@@ -292,6 +292,28 @@ class XbbClient {
     return null;
   }
 
+  Future<void> unSubscribeRepo(String repoId, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.deleteUrl(Uri.parse("$baseUrl/subscribe/?repo=$repoId"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+
+      if (response.statusCode == 204) {
+        return;
+      } else {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print("${response.statusCode}, $responseBody");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return;
+  }
+
   Future<List<Repo>> syncSubscribeRepos(String auth) async {
     try {
       HttpClient client = HttpClient();
@@ -417,6 +439,14 @@ Future<Repo?> subscribeRepo(String sharedLink) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.subscribeRepo(sharedLink, auth);
+}
+
+Future<void> unsubscribeRepo(String repoId) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.unSubscribeRepo(repoId, auth);
 }
 
 Future<List<Repo>> syncSubscribeRepos() async {

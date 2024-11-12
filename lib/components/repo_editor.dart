@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import 'package:xbb/client/client.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/repo.dart';
@@ -314,10 +313,11 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   Widget _toolsWidget() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        editMode == EditRepoMode.self ? _saveButton() : _subscribeButton(),
-        // _deleteButton(),
-      ],
+      // todo match four different cases widget.enableChooseMode, && editMode == EditRepoMode.self
+      children: editMode == EditRepoMode.self
+          ? [_saveButton()]
+          : [_subscribeButton(), unsubscribeButton()],
+      // _deleteButton(),
     );
   }
 
@@ -338,7 +338,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
         print('$editMode ${widget.repo.sharedLink}');
         if (widget.repo.sharedLink != null) {
           Repo? repo =
-              await repoController.pushSubscribeRepo(widget.repo.sharedLink!);
+              await repoController.doSubscribeRepo(widget.repo.sharedLink!);
           if (repo != null) {
             setState(() {
               widget.repo.name = repo.name;
@@ -349,6 +349,19 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
         }
       },
       child: const Text('订阅 Repo'),
+    );
+  }
+
+  Widget unsubscribeButton() {
+    return TextButton(
+      onPressed: () async {
+        await repoController.doUnsubscribeRepo(widget.repo.id);
+        Get.toNamed('/');
+      },
+      child: Text(
+        '取消订阅 Repo',
+        style: TextStyle(color: Colors.red[600]),
+      ),
     );
   }
 
