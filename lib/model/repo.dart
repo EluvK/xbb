@@ -86,11 +86,12 @@ class RepoRepository {
     }).where((repo) {
       switch (repoType) {
         case RepoType.all:
-          return true;
+          return (repo.owner == user || repo.id == "0") ||
+              (repo.sharedTo != null && repo.sharedTo! == user);
         case RepoType.owned:
           return repo.owner == user || repo.id == "0";
         case RepoType.shared:
-          return (repo.sharedTo != null) && repo.sharedTo! == user;
+          return repo.sharedTo != null && repo.sharedTo! == user;
       }
     }).toList();
     return result;

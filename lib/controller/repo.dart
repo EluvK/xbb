@@ -24,11 +24,14 @@ class RepoController extends GetxController {
   }
 
   loadRepoLists() async {
+    print('loadRepoLists --- start');
     var userId = settingController.currentUserId.value;
     allRepoList.value = await RepoRepository().listRepo(userId, RepoType.all);
     myRepoList.value = await RepoRepository().listRepo(userId, RepoType.owned);
     subscribeRepoList.value =
         await RepoRepository().listRepo(userId, RepoType.shared);
+    print(
+        "all/my/sub ${allRepoList.length}, ${myRepoList.length}, ${subscribeRepoList.length}");
 
     String repoId = allRepoList.firstWhereOrNull((repo) {
           return repo.id == settingController.currentRepoId.value;
@@ -36,6 +39,7 @@ class RepoController extends GetxController {
         '0';
     print('set current repo to $repoId');
     await setCurrentRepo(repoId);
+    print('loadRepoLists --- end');
   }
 
   bool isCurrentRepo(String repoId) {
