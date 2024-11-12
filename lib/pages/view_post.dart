@@ -9,16 +9,19 @@ class ViewPostPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = Get.arguments;
     final String postId = args[0];
+    final bool editable = args[1];
     return Scaffold(
       appBar: AppBar(
         title: const Text('viewPost'),
         actions: [
-          IconButton(
-              onPressed: () {
-                Get.toNamed('/edit-post', arguments: [postId]);
-              },
-              icon: const Icon(Icons.edit)),
-          // IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
+          Visibility(
+            visible: editable,
+            child: IconButton(
+                onPressed: () {
+                  Get.toNamed('/edit-post', arguments: [postId]);
+                },
+                icon: const Icon(Icons.edit)),
+          ),
         ],
       ),
       body: PostViewer(postId: postId),

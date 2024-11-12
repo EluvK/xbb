@@ -60,7 +60,6 @@ class PostController extends GetxController {
     await PostRepository().upsertPost(post);
     await repoController.setCurrentRepo(post.repoId);
     Get.offNamed('/');
-    // Get.toNamed('/view-post', arguments: [post.id]);
   }
 
   deletePost(String postId) async {

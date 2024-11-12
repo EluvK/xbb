@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/controller/post.dart';
+import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/post.dart';
 import 'package:xbb/utils/double_click.dart';
 import 'package:xbb/utils/utils.dart';
@@ -14,6 +15,7 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> {
   final postController = Get.find<PostController>();
+  final settingController = Get.find<SettingController>();
 
   String _moreEditButtonId = "";
   String _moreContentButtonId = "";
@@ -79,7 +81,10 @@ class _PostCardState extends State<PostCard> {
 
     Widget postListTile = ListTile(
       onTap: () => {
-        Get.toNamed('/view-post', arguments: [post.id]),
+        Get.toNamed('/view-post', arguments: [
+          post.id,
+          post.author == settingController.currentUserId.value
+        ]),
       },
       title: Text(
         post.title,

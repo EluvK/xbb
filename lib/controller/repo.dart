@@ -4,6 +4,7 @@ import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/sync.dart';
 import 'package:xbb/model/repo.dart';
+import 'package:xbb/utils/utils.dart';
 
 class RepoController extends GetxController {
   final allRepoList = <Repo>[].obs;
@@ -56,11 +57,17 @@ class RepoController extends GetxController {
     await loadRepoLists();
   }
 
-  void subscribeRepo(Repo repo) async {
-    print("on saveRepoNew: ${repo.id} ${repo.name}");
-    await RepoRepository().upsertRepo(repo);
-    // reload
-    await loadRepoLists();
+  Future<Repo?> pushSubscribeRepo(String sharedLink) async {
+    Repo? repo = await subscribeRepo(sharedLink);
+    if (repo != null) {
+      repo.sharedTo = settingController.currentUserId.value;
+      repo.sharedTo = sharedLink;
+      print("on saveRepoNew: ${repo.id} ${repo.name}");
+      await RepoRepository().upsertRepo(repo);
+      // reload
+      await loadRepoLists();
+    }
+    return repo;
   }
 
   Future<void> pullRepos() async {
@@ -78,6 +85,21 @@ class RepoController extends GetxController {
       // todo sync posts maybe async way
     }
 
+    await loadRepoLists();
+  }
+
+  Future<void> pullSubscribeRepos() async {
+    List<Repo> repos = await syncSubscribeRepos();
+    for (var repo in repos) {
+      repo.sharedTo = settingController.currentUserId.value;
+      repo.sharedLink = sharedLink(repo.owner, repo.id);
+      Repo? localRepo = await RepoRepository().getRepo(repo.id);
+      if (localRepo == null ||
+          localRepo.sharedTo != settingController.currentUserId.value) {
+        await RepoRepository().upsertRepo(repo);
+        // todo sync posts maybe async way
+      }
+    }
     await loadRepoLists();
   }
 

@@ -56,8 +56,8 @@ class _DrawerReposState extends State<DrawerRepos> {
             children: [
               const Text("Subscribe"),
               IconButton(
-                onPressed: () {
-                  //todo
+                onPressed: () async {
+                  await repoController.pullSubscribeRepos();
                 },
                 icon: const Icon(Icons.refresh_rounded),
                 tooltip: 'update',

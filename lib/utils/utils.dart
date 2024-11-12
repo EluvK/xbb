@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+String sharedLink(String owner, String id) {
+  return "xbb-share://$owner/$id";
+}
+
 String dateStr(DateTime dt) {
   return DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);
 }

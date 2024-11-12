@@ -80,7 +80,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       });
     }
     if (!widget.enableChooseMode) {
-      widget.repo.sharedLink = _sharedLink(widget.repo);
+      widget.repo.sharedLink = sharedLink(widget.repo.owner, widget.repo.id);
     }
 
     Widget main;
@@ -311,10 +311,6 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
     );
   }
 
-  String _sharedLink(Repo repo) {
-    return "xbb-share://${repo.owner}/${repo.id}";
-  }
-
   Widget _toolsWidget() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -341,22 +337,15 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       onPressed: () async {
         print('$editMode ${widget.repo.sharedLink}');
         if (widget.repo.sharedLink != null) {
-          Repo? repo = await subscribeRepo(widget.repo.sharedLink!);
-          // print(repo);
+          Repo? repo =
+              await repoController.pushSubscribeRepo(widget.repo.sharedLink!);
           if (repo != null) {
             setState(() {
-              widget.repo.id = repo.id;
               widget.repo.name = repo.name;
-              widget.repo.owner = repo.owner;
               widget.repo.description = repo.description;
-              widget.repo.createdAt = repo.createdAt;
-              widget.repo.updatedAt = repo.updatedAt;
-              widget.repo.lastSyncAt = repo.lastSyncAt;
-              widget.repo.sharedTo = settingController.currentUserId.value;
             });
-            repoController.subscribeRepo(widget.repo);
-            Get.toNamed('/');
           }
+          Get.toNamed('/');
         }
       },
       child: const Text('订阅 Repo'),

@@ -238,7 +238,7 @@ class XbbClient {
         Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
         return Post.fromMap(jsonResponse);
       } else {
-        print("pullPostsSummary error ${response.statusCode}");
+        print("pullPost error ${response.statusCode}");
       }
     } catch (e) {
       print("error: $e");
@@ -290,6 +290,33 @@ class XbbClient {
       print("error: $e");
     }
     return null;
+  }
+
+  Future<List<Repo>> syncSubscribeRepos(String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse("$baseUrl/subscribe/"));
+      request.headers.set('content-type', 'application/json');
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print(responseBody);
+        List<dynamic> jsonResponse = jsonDecode(responseBody);
+        return jsonResponse.map((e) {
+          return OpenApiGetRepoResponse.fromResp(e).toRepo();
+        }).toList();
+      } else {
+        print("syncSubscribeRepos error ${response.statusCode}");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return [];
   }
 }
 
@@ -390,4 +417,12 @@ Future<Repo?> subscribeRepo(String sharedLink) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.subscribeRepo(sharedLink, auth);
+}
+
+Future<List<Repo>> syncSubscribeRepos() async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.syncSubscribeRepos(auth);
 }
