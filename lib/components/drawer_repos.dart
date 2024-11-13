@@ -21,7 +21,7 @@ class _DrawerReposState extends State<DrawerRepos> {
         "repoController.subscribeRepoList.length: ${repoController.subscribeRepoList.length}");
 
     return Obx(() {
-      return Column(
+      var body = Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
@@ -72,6 +72,9 @@ class _DrawerReposState extends State<DrawerRepos> {
             },
           ),
         ],
+      );
+      return ListView(
+        children: [body],
       );
     });
   }

@@ -29,6 +29,10 @@ class DrawerPage extends StatelessWidget {
             child: DrawerRepos(),
           ),
           Divider(),
+          Placeholder(
+            // for settings
+            fallbackHeight: 100,
+          ),
           Text('settings? info? maybe'),
         ],
       ),
