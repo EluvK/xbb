@@ -66,7 +66,13 @@ class AsyncController extends GetxController {
       "data": repo,
     };
     _taskQueue.addTask(repo.id, metadata, (metadata) async {
-      return await client.syncPushRepo(repo);
+      if (metadata["flow"] == DataFlow.delete) {
+        return await client.syncDeleteRepo(repo.id);
+      } else if (metadata["flow"] == DataFlow.push) {
+        return await client.syncPushRepo(repo);
+      }
+      print("====== unknown flow: $metadata ========");
+      return true;
     });
   }
 
@@ -83,7 +89,8 @@ class AsyncController extends GetxController {
       } else if (metadata["flow"] == DataFlow.push) {
         return await client.syncPushPost(post);
       }
-      return await client.syncPushPost(post);
+      print("====== unknown flow: $metadata ========");
+      return true;
     });
   }
 }

@@ -235,7 +235,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
           ),
         ),
         Visibility(
-          visible: editMode != EditRepoMode.shared,
+          visible: editMode != EditRepoMode.shared && !widget.enableChooseMode,
           child: IconButton(
             icon: const Icon(Icons.copy),
             onPressed: () {
@@ -315,8 +315,8 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       // todo match four different cases widget.enableChooseMode, && editMode == EditRepoMode.self
       children: editMode == EditRepoMode.self
-          ? [_saveButton()]
-          : [_subscribeButton(), unsubscribeButton()],
+          ? [_saveButton(), _deleteButton()]
+          : [_subscribeButton(), _unsubscribeButton()],
       // _deleteButton(),
     );
   }
@@ -332,6 +332,16 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
     );
   }
 
+  Widget _deleteButton() {
+    return TextButton(
+      onPressed: () {
+        repoController.deleteRepo(widget.repo);
+        Get.toNamed('/');
+      },
+      child: Text('删除 Repo', style: TextStyle(color: Colors.red[600])),
+    );
+  }
+
   Widget _subscribeButton() {
     return TextButton(
       onPressed: () async {
@@ -344,34 +354,25 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
               widget.repo.name = repo.name;
               widget.repo.description = repo.description;
             });
+            Get.toNamed('/');
+            flushBar(FlushLevel.OK, "subscribe", "success");
+          } else {
+            Get.toNamed('/');
+            flushBar(FlushLevel.WARNING, "subscribe", "fail");
           }
-          Get.toNamed('/');
         }
       },
       child: const Text('订阅 Repo'),
     );
   }
 
-  Widget unsubscribeButton() {
+  Widget _unsubscribeButton() {
     return TextButton(
       onPressed: () async {
         await repoController.doUnsubscribeRepo(widget.repo.id);
         Get.toNamed('/');
       },
-      child: Text(
-        '取消订阅 Repo',
-        style: TextStyle(color: Colors.red[600]),
-      ),
-    );
-  }
-
-  Widget _deleteButton() {
-    return TextButton(
-      onPressed: () {
-        // todo();
-        // repoController.deleteRepo(widget.repo.id);
-      },
-      child: const Text('删除 Repo'),
+      child: Text('取消订阅 Repo', style: TextStyle(color: Colors.red[600])),
     );
   }
 }

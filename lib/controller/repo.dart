@@ -53,10 +53,18 @@ class RepoController extends GetxController {
     await postController.loadPost(repoId);
   }
 
-  void saveRepo(Repo repo) async {
+  Future<void> saveRepo(Repo repo) async {
     print("on saveRepoNew: ${repo.id} ${repo.name}");
     asyncController.asyncRepo(repo, DataFlow.push);
     await RepoRepository().upsertRepo(repo);
+    // reload
+    await loadRepoLists();
+  }
+
+  Future<void> deleteRepo(Repo repo) async {
+    print("on deleteRepo: ${repo.id} ${repo.name}");
+    asyncController.asyncRepo(repo, DataFlow.delete);
+    await RepoRepository().deleteRepo(repo.id);
     // reload
     await loadRepoLists();
   }

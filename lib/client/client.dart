@@ -171,6 +171,28 @@ class XbbClient {
     return null;
   }
 
+  Future<bool> deleteRepo(String repoId, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.deleteUrl(Uri.parse("$baseUrl/repo/$repoId"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      print("deleteRepo ${response.statusCode}");
+      if (response.statusCode == 204) {
+        return true;
+      } else {
+        String responseBody = await response.transform(utf8.decoder).join();
+        print("deleteRepo error $responseBody");
+      }
+    } catch (e) {
+      print("error: $e");
+    }
+    return false;
+  }
+
   Future<bool> pushPost(Post post, String auth) async {
     try {
       HttpClient client = HttpClient();
@@ -398,6 +420,14 @@ Future<Repo?> syncPullRepo(String repoId) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.pullRepo(repoId, auth);
+}
+
+Future<bool> syncDeleteRepo(String repoId) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.deleteRepo(repoId, auth);
 }
 
 Future<bool> syncPushPost(Post post) async {
