@@ -85,7 +85,7 @@ class AsyncController extends GetxController {
     };
     _taskQueue.addTask(post.id, metadata, (metadata) async {
       if (metadata["flow"] == DataFlow.delete) {
-        return await client.syncDeletePost(post);
+        return await client.syncDeletePost(post.repoId, post.id);
       } else if (metadata["flow"] == DataFlow.push) {
         return await client.syncPushPost(post);
       }

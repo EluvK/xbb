@@ -24,7 +24,7 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     return Obx(() {
       var viewPost = postController.postListView;
-      print("viewPost: $viewPost");
+      print("build post card post number: ${viewPost.length}");
       // for (var p in viewPost) {
       //   print("${p.id}, ${p.author}, ${p.title}, ${p.category}");
       // }
@@ -158,7 +158,7 @@ class _PostCardState extends State<PostCard> {
               tooltip: '删除',
             ),
             onDoubleClick: () {
-              postController.deletePost(post.id);
+              postController.deletePost(post);
             },
             firstClickHint: '双击删除',
           ),

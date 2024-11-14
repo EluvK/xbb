@@ -62,9 +62,12 @@ class PostController extends GetxController {
     Get.offNamed('/');
   }
 
-  deletePost(String postId) async {
-    await PostRepository().deletePost(postId);
+  deletePost(Post post) async {
+    await PostRepository().deletePost(post.id);
     await loadPost(settingController.currentRepoId.value);
+    if (post.repoId != '0') {
+      asyncController.asyncPost(post, DataFlow.delete);
+    }
   }
 
   pullPosts(String repoId) async {

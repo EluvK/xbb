@@ -73,7 +73,7 @@ class RepoController extends GetxController {
     Repo? repo = await subscribeRepo(sharedLink);
     if (repo != null) {
       repo.sharedTo = settingController.currentUserId.value;
-      repo.sharedTo = sharedLink;
+      repo.sharedLink = sharedLink;
       print("on saveRepoNew: ${repo.id} ${repo.name}");
       await RepoRepository().upsertRepo(repo);
       // reload

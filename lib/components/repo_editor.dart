@@ -344,22 +344,22 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
 
   Widget _subscribeButton() {
     return TextButton(
-      onPressed: () async {
+      onPressed: () {
         print('$editMode ${widget.repo.sharedLink}');
         if (widget.repo.sharedLink != null) {
-          Repo? repo =
-              await repoController.doSubscribeRepo(widget.repo.sharedLink!);
-          if (repo != null) {
-            setState(() {
-              widget.repo.name = repo.name;
-              widget.repo.description = repo.description;
-            });
-            Get.toNamed('/');
-            flushBar(FlushLevel.OK, "subscribe", "success");
-          } else {
-            Get.toNamed('/');
-            flushBar(FlushLevel.WARNING, "subscribe", "fail");
-          }
+          repoController.doSubscribeRepo(widget.repo.sharedLink!).then((repo) {
+            if (repo != null) {
+              setState(() {
+                widget.repo.name = repo.name;
+                widget.repo.description = repo.description;
+              });
+              Get.toNamed('/');
+              flushBar(FlushLevel.OK, "subscribe", "success");
+            } else {
+              Get.toNamed('/');
+              flushBar(FlushLevel.WARNING, "subscribe", "fail");
+            }
+          });
         }
       },
       child: const Text('订阅 Repo'),
@@ -368,8 +368,8 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
 
   Widget _unsubscribeButton() {
     return TextButton(
-      onPressed: () async {
-        await repoController.doUnsubscribeRepo(widget.repo.id);
+      onPressed: () {
+        repoController.doUnsubscribeRepo(widget.repo.id);
         Get.toNamed('/');
       },
       child: Text('取消订阅 Repo', style: TextStyle(color: Colors.red[600])),

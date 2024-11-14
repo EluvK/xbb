@@ -268,13 +268,13 @@ class XbbClient {
     return null;
   }
 
-  Future<bool> deletePost(Post post, String auth) async {
+  Future<bool> deletePost(String repoId, String postId, String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
           ((X509Certificate cert, String host, int port) => true);
       HttpClientRequest request = await client
-          .deleteUrl(Uri.parse("$baseUrl/repo/${post.repoId}/post/${post.id}"));
+          .deleteUrl(Uri.parse("$baseUrl/repo/$repoId/post/$postId"));
       request.headers.set('Authorization', auth);
       HttpClientResponse response = await request.close();
       print("deletePost ${response.statusCode}");
@@ -454,12 +454,12 @@ Future<Post?> syncPullPost(String repoId, String postId) async {
   return await client.pullPost(repoId, postId, auth);
 }
 
-Future<bool> syncDeletePost(Post post) async {
+Future<bool> syncDeletePost(String repoId, String postId) async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
-  return await client.deletePost(post, auth);
+  return await client.deletePost(repoId, postId, auth);
 }
 
 // --- subscribe
