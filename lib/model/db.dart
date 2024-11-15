@@ -28,6 +28,7 @@ const String tablePostColumnAuthor = 'author';
 const String tablePostColumnRepoId = 'repoId';
 // local
 const String tablePostColumnStatus = 'status';
+const String tablePostColumnSelfAttitude = 'selfAttitude';
 
 class DataBase {
   static Database? _db;
@@ -47,7 +48,8 @@ class DataBase {
             $tablePostColumnUpdatedAt TEXT NOT NULL,
             $tablePostColumnAuthor TEXT NOT NULL,
             $tablePostColumnRepoId TEXT NOT NULL,
-            $tablePostColumnStatus TEXT NOT NULL
+            $tablePostColumnStatus TEXT NOT NULL,
+            $tablePostColumnSelfAttitude TEXT NOT NULL
           )
         ''');
         await db.execute('''

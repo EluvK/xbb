@@ -53,21 +53,11 @@ class _PostCardState extends State<PostCard> {
           initiallyExpanded: true,
           tilePadding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
           childrenPadding: const EdgeInsets.only(bottom: 8.0),
-          title: Text(
-            entry.key,
-            style: const TextStyle(fontWeight: FontWeight.w300),
-            textScaler: const TextScaler.linear(1.4),
-          ),
-          // title: EditableTextWidget(
-          //   initialText: entry.key,
-          //   onSave: (String newValue) {
-          //     print("save $newValue");
-          //   },
-          // ),
+          title: Text(entry.key),
           controlAffinity: ListTileControlAffinity.leading,
           children: entry.value
               .map((post) => Padding(
-                    padding: const EdgeInsets.only(left: 20.0),
+                    padding: const EdgeInsets.fromLTRB(20.0, 0.0, 0.0, 10.0),
                     child: postCard(post),
                   ))
               .toList(),
@@ -79,6 +69,24 @@ class _PostCardState extends State<PostCard> {
   Widget postCard(Post post) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    var statusIcon = switch (post.status) {
+      PostStatus.normal =>
+        Icon(Icons.brightness_1_rounded, color: Colors.grey[400], size: 16.0),
+      PostStatus.updated =>
+        Icon(Icons.brightness_1_rounded, color: Colors.green[400], size: 16.0),
+      PostStatus.newly =>
+        Icon(Icons.brightness_1_rounded, color: Colors.red[400], size: 16.0),
+    };
+
+    var likeIcon = switch (post.selfAttitude) {
+      PostSelfAttitude.none =>
+        const Icon(Icons.star, color: Colors.transparent, size: 16.0),
+      PostSelfAttitude.like =>
+        Icon(Icons.star_rounded, color: Colors.yellow[400], size: 16.0),
+      PostSelfAttitude.dislike =>
+        Icon(Icons.thumb_down_rounded, color: Colors.grey[400], size: 16.0),
+    };
+
     Widget postListTile = ListTile(
       onTap: () => {
         Get.toNamed('/view-post', arguments: [
@@ -86,10 +94,24 @@ class _PostCardState extends State<PostCard> {
           post.author == settingController.currentUserId.value
         ]),
       },
-      title: Text(
-        post.title,
-        style: const TextStyle(fontWeight: FontWeight.w100),
-        textScaler: const TextScaler.linear(1.3),
+      leading: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [statusIcon, likeIcon],
+      ),
+      onLongPress: () {
+        _moreContentButtonId = (_moreContentButtonId == post.id) ? "" : post.id;
+        if (_moreContentButtonId == post.id && _moreEditButtonId == post.id) {
+          _moreEditButtonId = "";
+        }
+        setState(() {});
+      },
+      title: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Text(
+          post.title,
+          // style: const TextStyle(fontWeight: FontWeight.w100),
+          textScaler: const TextScaler.linear(1.3),
+        ),
       ),
       subtitle: Text(
         "updated at ${dateStr(post.updatedAt)}",
@@ -99,22 +121,22 @@ class _PostCardState extends State<PostCard> {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            onPressed: () {
-              _moreContentButtonId =
-                  (_moreContentButtonId == post.id) ? "" : post.id;
-              if (_moreContentButtonId == post.id &&
-                  _moreEditButtonId == post.id) {
-                _moreEditButtonId = "";
-              }
-              setState(() {});
-            },
-            icon: Icon(
-                color: colorScheme.primary,
-                post.id == _moreContentButtonId
-                    ? Icons.expand_less
-                    : Icons.expand_more),
-          ),
+          // IconButton(
+          //   onPressed: () {
+          //     _moreContentButtonId =
+          //         (_moreContentButtonId == post.id) ? "" : post.id;
+          //     if (_moreContentButtonId == post.id &&
+          //         _moreEditButtonId == post.id) {
+          //       _moreEditButtonId = "";
+          //     }
+          //     setState(() {});
+          //   },
+          //   icon: Icon(
+          //       color: colorScheme.primary,
+          //       post.id == _moreContentButtonId
+          //           ? Icons.expand_less
+          //           : Icons.expand_more),
+          // ),
           IconButton(
             onPressed: () {
               _moreEditButtonId = (_moreEditButtonId == post.id) ? "" : post.id;
@@ -135,10 +157,13 @@ class _PostCardState extends State<PostCard> {
       moreContent = Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Text(
-          post.content,
+          post.content.length <= 365
+              ? post.content
+              : '${post.content.substring(0, 365)}...',
           textScaler: const TextScaler.linear(1.0),
         ),
       );
+      // } else {
     }
     if (post.id == _moreEditButtonId) {
       moreContent = Row(

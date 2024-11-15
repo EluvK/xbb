@@ -1,9 +1,8 @@
 import 'package:xbb/model/db.dart';
 
-enum PostStatus {
-  draft,
-  published,
-}
+enum PostStatus { normal, updated, newly }
+
+enum PostSelfAttitude { none, like, dislike }
 
 class PostSummary {
   String id;
@@ -41,6 +40,7 @@ class Post {
 
   // members local
   PostStatus status;
+  PostSelfAttitude selfAttitude;
 
   Post({
     required this.id,
@@ -51,7 +51,8 @@ class Post {
     required this.updatedAt,
     required this.author,
     required this.repoId,
-    this.status = PostStatus.draft,
+    this.status = PostStatus.normal,
+    this.selfAttitude = PostSelfAttitude.none,
   });
 
   Map<String, dynamic> toMap() {
@@ -64,7 +65,8 @@ class Post {
       tablePostColumnUpdatedAt: updatedAt.toIso8601String(),
       tablePostColumnAuthor: author,
       tablePostColumnRepoId: repoId,
-      tablePostColumnStatus: status.toString()
+      tablePostColumnStatus: status.toString(),
+      tablePostColumnSelfAttitude: selfAttitude.toString(),
     };
   }
 
@@ -95,7 +97,13 @@ class Post {
       status: PostStatus.values.firstWhere(
         (e) => e.toString() == map[tablePostColumnStatus],
         orElse: () {
-          return PostStatus.draft; // todo change to read/unread marker
+          return PostStatus.normal;
+        },
+      ),
+      selfAttitude: PostSelfAttitude.values.firstWhere(
+        (e) => e.toString() == map[tablePostColumnSelfAttitude],
+        orElse: () {
+          return PostSelfAttitude.none;
         },
       ),
     );
