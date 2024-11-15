@@ -70,6 +70,10 @@ class PostController extends GetxController {
     }
   }
 
+  editLocalPostStatus(Post post) async {
+    await PostRepository().updatePost(post);
+  }
+
   pullPosts(String repoId) async {
     List<PostSummary> posts = await syncPullPosts(repoId);
     for (PostSummary postSummary in posts) {

@@ -57,7 +57,7 @@ class _PostCardState extends State<PostCard> {
           controlAffinity: ListTileControlAffinity.leading,
           children: entry.value
               .map((post) => Padding(
-                    padding: const EdgeInsets.fromLTRB(20.0, 0.0, 0.0, 10.0),
+                    padding: const EdgeInsets.fromLTRB(20.0, 0.0, 5.0, 10.0),
                     child: postCard(post),
                   ))
               .toList(),
@@ -69,34 +69,60 @@ class _PostCardState extends State<PostCard> {
   Widget postCard(Post post) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    var statusIcon = switch (post.status) {
-      PostStatus.normal =>
-        Icon(Icons.brightness_1_rounded, color: Colors.grey[400], size: 16.0),
-      PostStatus.updated =>
-        Icon(Icons.brightness_1_rounded, color: Colors.green[400], size: 16.0),
-      PostStatus.newly =>
-        Icon(Icons.brightness_1_rounded, color: Colors.red[400], size: 16.0),
-    };
-
-    var likeIcon = switch (post.selfAttitude) {
-      PostSelfAttitude.none =>
-        const Icon(Icons.star, color: Colors.transparent, size: 16.0),
-      PostSelfAttitude.like =>
-        Icon(Icons.star_rounded, color: Colors.yellow[400], size: 16.0),
-      PostSelfAttitude.dislike =>
-        Icon(Icons.thumb_down_rounded, color: Colors.grey[400], size: 16.0),
-    };
+    List<Icon> icons = [];
+    switch (post.status) {
+      case PostStatus.normal:
+        break;
+      case PostStatus.updated:
+        icons.add(Icon(
+          Icons.brightness_1_rounded,
+          color: Colors.green[400],
+          size: 16.0,
+        ));
+        break;
+      case PostStatus.newly:
+        icons.add(Icon(
+          Icons.brightness_1_rounded,
+          color: Colors.blueAccent[400],
+          size: 16.0,
+        ));
+        break;
+    }
+    switch (post.selfAttitude) {
+      case PostSelfAttitude.none:
+        break;
+      case PostSelfAttitude.like:
+        icons.add(Icon(
+          Icons.star_rounded,
+          color: Colors.amber[400],
+          size: 16.0,
+        ));
+        break;
+      case PostSelfAttitude.dislike:
+        icons.add(Icon(
+          Icons.thumb_down_rounded,
+          color: Colors.grey[400],
+          size: 16.0,
+        ));
+        break;
+    }
 
     Widget postListTile = ListTile(
-      onTap: () => {
+      onTap: () {
+        if (post.status != PostStatus.normal) {
+          setState(() {
+            post.status = PostStatus.normal;
+          });
+          postController.editLocalPostStatus(post);
+        }
         Get.toNamed('/view-post', arguments: [
           post.id,
           post.author == settingController.currentUserId.value
-        ]),
+        ]);
       },
       leading: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [statusIcon, likeIcon],
+        children: icons,
       ),
       onLongPress: () {
         _moreContentButtonId = (_moreContentButtonId == post.id) ? "" : post.id;
@@ -166,32 +192,91 @@ class _PostCardState extends State<PostCard> {
       // } else {
     }
     if (post.id == _moreEditButtonId) {
+      var editButton = IconButton(
+        onPressed: () {
+          Get.toNamed('/edit-post', arguments: [post.id]);
+        },
+        icon: const Icon(Icons.edit),
+        tooltip: '编辑',
+      );
+      var deleteButton = DoubleClickButton(
+        buttonBuilder: (onPressed) => IconButton(
+          onPressed: onPressed,
+          icon: const Icon(Icons.delete),
+          tooltip: '删除',
+        ),
+        onDoubleClick: () {
+          postController.deletePost(post);
+        },
+        firstClickHint: '双击删除',
+      );
+      var likeButton = IconButton(
+        onPressed: () {
+          setState(() {
+            post.selfAttitude == PostSelfAttitude.like
+                ? post.selfAttitude = PostSelfAttitude.none
+                : post.selfAttitude = PostSelfAttitude.like;
+          });
+          postController.editLocalPostStatus(post);
+        },
+        icon: Icon(
+          Icons.star_rounded,
+          color: post.selfAttitude == PostSelfAttitude.like
+              ? Colors.amber[400]
+              : null,
+        ),
+        tooltip: '置顶',
+      );
+      var dislikeButton = IconButton(
+        onPressed: () {
+          setState(() {
+            post.selfAttitude == PostSelfAttitude.dislike
+                ? post.selfAttitude = PostSelfAttitude.none
+                : post.selfAttitude = PostSelfAttitude.dislike;
+          });
+          postController.editLocalPostStatus(post);
+        },
+        icon: Icon(
+          Icons.thumb_down_rounded,
+          color: post.selfAttitude == PostSelfAttitude.dislike
+              ? Colors.blue[400]
+              : null,
+        ),
+        tooltip: '不关注',
+      );
+      var markUnreadButton = IconButton(
+        onPressed: () {
+          setState(() {
+            if (post.status == PostStatus.normal) {
+              post.status = PostStatus.updated;
+            } else {
+              post.status = PostStatus.normal;
+            }
+          });
+          postController.editLocalPostStatus(post);
+        },
+        icon: post.status == PostStatus.normal
+            ? const Icon(Icons.mark_email_unread_rounded)
+            : const Icon(Icons.mark_email_read_rounded),
+        tooltip: post.status == PostStatus.normal ? '标记未读' : '标记以读',
+      );
+      List<Widget> editButtonIcons = [];
+      if (post.author == settingController.currentUserId.value) {
+        editButtonIcons.addAll([editButton, likeButton, deleteButton]);
+      } else {
+        editButtonIcons.addAll([markUnreadButton, likeButton, dislikeButton]);
+      }
       moreContent = Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          IconButton(
-            onPressed: () {
-              Get.toNamed('/edit-post', arguments: [post.id]);
-            },
-            icon: const Icon(Icons.edit),
-            tooltip: '编辑',
-          ),
-          DoubleClickButton(
-            buttonBuilder: (onPressed) => IconButton(
-              onPressed: onPressed,
-              icon: const Icon(Icons.delete),
-              tooltip: '删除',
-            ),
-            onDoubleClick: () {
-              postController.deletePost(post);
-            },
-            firstClickHint: '双击删除',
-          ),
-        ],
+        children: editButtonIcons,
       );
     }
 
     return Card(
+      shadowColor: post.status == PostStatus.newly
+          ? Colors.blueAccent[400]
+          : Colors.grey,
+      elevation: post.status == PostStatus.newly ? 4.0 : 2.0,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
