@@ -65,7 +65,8 @@ class PostController extends GetxController {
   deletePost(Post post) async {
     await PostRepository().deletePost(post.id);
     await loadPost(settingController.currentRepoId.value);
-    if (post.repoId != '0') {
+    if (post.repoId != '0' &&
+        post.author == settingController.currentUserId.value) {
       asyncController.asyncPost(post, DataFlow.delete);
     }
   }
@@ -78,14 +79,45 @@ class PostController extends GetxController {
     List<PostSummary> posts = await syncPullPosts(repoId);
     for (PostSummary postSummary in posts) {
       Post? localPost = await PostRepository().getPost(postSummary.id);
-      if (localPost == null ||
-          localPost.updatedAt.isBefore(postSummary.updatedAt)) {
+      if (localPost == null) {
         Post? fetchPost = await syncPullPost(repoId, postSummary.id);
         if (fetchPost != null) {
-          await PostRepository().upsertPost(fetchPost);
+          fetchPost.status = PostStatus.newly;
+          print('add post ${fetchPost.title}');
+          await PostRepository().addPost(fetchPost);
         }
+      } else if (!localPost.updatedAt.isBefore(postSummary.updatedAt)) {
+        // no need to update
+        print(
+            "no need to update post ${localPost.title} ${localPost.updatedAt} < server post ${postSummary.updatedAt}");
+        continue;
       } else {
-        // no need to fetch post.
+        Post? fetchPost = await syncPullPost(repoId, postSummary.id);
+        if (fetchPost != null) {
+          localPost = localPost.copyWith(
+            category: fetchPost.category,
+            title: fetchPost.title,
+            content: fetchPost.content,
+            updatedAt: fetchPost.updatedAt,
+            repoId: fetchPost.repoId,
+            status: localPost.status == PostStatus.newly
+                ? PostStatus.newly
+                : PostStatus.updated,
+          );
+          print('update post ${localPost!.title}');
+          await PostRepository().updatePost(localPost);
+        } else {
+          // deleted at server between pullPosts and pullPost
+        }
+      }
+    }
+
+    // deleted at server
+    for (Post post in await PostRepository().getRepoPosts(repoId)) {
+      if (!posts.any((element) => element.id == post.id)) {
+        print('delete post ${post.title}');
+        post.status = PostStatus.detached;
+        await PostRepository().updatePost(post);
       }
     }
 

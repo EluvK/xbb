@@ -1,6 +1,6 @@
 import 'package:xbb/model/db.dart';
 
-enum PostStatus { normal, updated, newly }
+enum PostStatus { normal, updated, newly, detached }
 
 enum PostSelfAttitude { none, like, dislike }
 
@@ -106,6 +106,32 @@ class Post {
           return PostSelfAttitude.none;
         },
       ),
+    );
+  }
+
+  copyWith({
+    String? id,
+    String? category,
+    String? title,
+    String? content,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? author,
+    String? repoId,
+    PostStatus? status,
+    PostSelfAttitude? selfAttitude,
+  }) {
+    return Post(
+      id: id ?? this.id,
+      category: category ?? this.category,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      author: author ?? this.author,
+      repoId: repoId ?? this.repoId,
+      status: status ?? this.status,
+      selfAttitude: selfAttitude ?? this.selfAttitude,
     );
   }
 }

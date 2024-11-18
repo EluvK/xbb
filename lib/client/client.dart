@@ -256,7 +256,7 @@ class XbbClient {
       HttpClientResponse response = await request.close();
       if (response.statusCode == 200) {
         String responseBody = await response.transform(utf8.decoder).join();
-        print("responseBody: $responseBody");
+        print("pullPost responseBody: $responseBody");
         Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
         return Post.fromMap(jsonResponse);
       } else {

@@ -76,14 +76,21 @@ class _PostCardState extends State<PostCard> {
       case PostStatus.updated:
         icons.add(Icon(
           Icons.brightness_1_rounded,
-          color: Colors.green[400],
+          color: Colors.red[400],
           size: 16.0,
         ));
         break;
       case PostStatus.newly:
         icons.add(Icon(
           Icons.brightness_1_rounded,
-          color: Colors.blueAccent[400],
+          color: Colors.lightGreen[400],
+          size: 16.0,
+        ));
+        break;
+      case PostStatus.detached:
+        icons.add(Icon(
+          Icons.brightness_1_rounded,
+          color: Colors.grey[400],
           size: 16.0,
         ));
         break;
@@ -109,7 +116,8 @@ class _PostCardState extends State<PostCard> {
 
     Widget postListTile = ListTile(
       onTap: () {
-        if (post.status != PostStatus.normal) {
+        if (post.status == PostStatus.newly ||
+            post.status == PostStatus.updated) {
           setState(() {
             post.status = PostStatus.normal;
           });
@@ -135,14 +143,23 @@ class _PostCardState extends State<PostCard> {
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Text(
           post.title,
-          // style: const TextStyle(fontWeight: FontWeight.w100),
+          style: TextStyle(
+            decoration: post.status == PostStatus.detached
+                ? TextDecoration.lineThrough
+                : null,
+          ),
           textScaler: const TextScaler.linear(1.3),
         ),
       ),
       subtitle: Text(
         "updated at ${dateStr(post.updatedAt)}",
         textScaler: const TextScaler.linear(0.9),
-        style: const TextStyle(color: Colors.grey),
+        style: TextStyle(
+          color: Colors.grey,
+          decoration: post.status == PostStatus.detached
+              ? TextDecoration.lineThrough
+              : null,
+        ),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -264,7 +281,12 @@ class _PostCardState extends State<PostCard> {
       if (post.author == settingController.currentUserId.value) {
         editButtonIcons.addAll([editButton, likeButton, deleteButton]);
       } else {
-        editButtonIcons.addAll([markUnreadButton, likeButton, dislikeButton]);
+        if (post.status == PostStatus.detached) {
+          editButtonIcons.add(deleteButton);
+        } else {
+          editButtonIcons.add(markUnreadButton);
+        }
+        editButtonIcons.addAll([likeButton, dislikeButton]);
       }
       moreContent = Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -274,7 +296,7 @@ class _PostCardState extends State<PostCard> {
 
     return Card(
       shadowColor: post.status == PostStatus.newly
-          ? Colors.blueAccent[400]
+          ? Colors.lightGreen[400]
           : Colors.grey,
       elevation: post.status == PostStatus.newly ? 4.0 : 2.0,
       child: Column(

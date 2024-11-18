@@ -311,13 +311,24 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   }
 
   Widget _toolsWidget() {
+    List<Widget> buttonList = [];
+    switch (editMode) {
+      case EditRepoMode.self:
+        buttonList.add(_saveButton());
+        if (!widget.enableChooseMode) {
+          buttonList.add(_deleteButton());
+        }
+        break;
+      case EditRepoMode.shared:
+        buttonList.add(_subscribeButton());
+        if (!widget.enableChooseMode) {
+          buttonList.add(_unsubscribeButton());
+        }
+        break;
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      // todo match four different cases widget.enableChooseMode, && editMode == EditRepoMode.self
-      children: editMode == EditRepoMode.self
-          ? [_saveButton(), _deleteButton()]
-          : [_subscribeButton(), _unsubscribeButton()],
-      // _deleteButton(),
+      children: buttonList,
     );
   }
 
