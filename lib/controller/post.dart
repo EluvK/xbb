@@ -66,7 +66,8 @@ class PostController extends GetxController {
     await PostRepository().deletePost(post.id);
     await loadPost(settingController.currentRepoId.value);
     if (post.repoId != '0' &&
-        post.author == settingController.currentUserId.value) {
+        post.author == settingController.currentUserId.value &&
+        post.status != PostStatus.detached) {
       asyncController.asyncPost(post, DataFlow.delete);
     }
   }

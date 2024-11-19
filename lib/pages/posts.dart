@@ -40,7 +40,7 @@ class _PostsAppBarState extends State<PostsAppBar> {
   Widget build(BuildContext context) {
     return Obx(() {
       targetRepo = repoController.currentRepoId.value;
-      print("targetRepo: $targetRepo");
+      // print("targetRepo: $targetRepo");
       return AppBar(
         title: appBarTitle(),
         actions: [

@@ -15,10 +15,10 @@ class _DrawerReposState extends State<DrawerRepos> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-        "repoController.myRepoList.length: ${repoController.myRepoList.length}");
-    print(
-        "repoController.subscribeRepoList.length: ${repoController.subscribeRepoList.length}");
+    // print(
+    //     "repoController.myRepoList.length: ${repoController.myRepoList.length}");
+    // print(
+    //     "repoController.subscribeRepoList.length: ${repoController.subscribeRepoList.length}");
 
     return Obx(() {
       var body = Column(

@@ -24,22 +24,22 @@ class RepoController extends GetxController {
   }
 
   loadRepoLists() async {
-    print('loadRepoLists --- start');
+    // print('loadRepoLists --- start');
     var userId = settingController.currentUserId.value;
     allRepoList.value = await RepoRepository().listRepo(userId, RepoType.all);
     myRepoList.value = await RepoRepository().listRepo(userId, RepoType.owned);
     subscribeRepoList.value =
         await RepoRepository().listRepo(userId, RepoType.shared);
-    print(
-        "all/my/sub ${allRepoList.length}, ${myRepoList.length}, ${subscribeRepoList.length}");
+    // print(
+    //     "all/my/sub ${allRepoList.length}, ${myRepoList.length}, ${subscribeRepoList.length}");
 
     String repoId = allRepoList.firstWhereOrNull((repo) {
           return repo.id == settingController.currentRepoId.value;
         })?.id ??
         '0';
-    print('set current repo to $repoId');
+    // print('set current repo to $repoId');
     await setCurrentRepo(repoId);
-    print('loadRepoLists --- end');
+    // print('loadRepoLists --- end');
   }
 
   bool isCurrentRepo(String repoId) {
@@ -100,12 +100,16 @@ class RepoController extends GetxController {
       if (localRepo == null) {
         await RepoRepository().addRepo(repo);
       } else {
-        localRepo.name = repo.name;
-        localRepo.description = repo.description;
-        localRepo.updatedAt = repo.updatedAt;
-        await RepoRepository().updateRepo(localRepo);
+        localRepo = localRepo.copyWith(
+          name: repo.name,
+          description: repo.description,
+          updatedAt: repo.updatedAt,
+        );
+        await RepoRepository().updateRepo(localRepo!);
       }
-      // todo sync posts maybe async way
+      if (repo.id != '0') {
+        postController.pullPosts(repo.id);
+      }
     }
 
     await loadRepoLists();
@@ -116,12 +120,9 @@ class RepoController extends GetxController {
     for (var repo in repos) {
       repo.sharedTo = settingController.currentUserId.value;
       repo.sharedLink = sharedLink(repo.owner, repo.id);
-      Repo? localRepo = await RepoRepository().getRepo(repo.id);
-      if (localRepo == null ||
-          localRepo.sharedTo != settingController.currentUserId.value) {
-        await RepoRepository().upsertRepo(repo);
-        // todo sync posts maybe async way
-      }
+      // Repo? localRepo = await RepoRepository().getRepo(repo.id);
+      await RepoRepository().upsertRepo(repo);
+      postController.pullPosts(repo.id);
     }
     await loadRepoLists();
   }

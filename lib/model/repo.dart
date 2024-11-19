@@ -73,6 +73,34 @@ class Repo {
       sharedLink: map[tableRepoColumnSharedLink],
     );
   }
+
+  copyWith({
+    String? id,
+    String? name,
+    String? owner,
+    String? description,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? lastSyncAt,
+    bool? remoteRepo,
+    bool? autoSync,
+    String? sharedTo,
+    String? sharedLink,
+  }) {
+    return Repo(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      owner: owner ?? this.owner,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      remoteRepo: remoteRepo ?? this.remoteRepo,
+      autoSync: autoSync ?? this.autoSync,
+      sharedTo: sharedTo ?? this.sharedTo,
+      sharedLink: sharedLink ?? this.sharedLink,
+    );
+  }
 }
 
 enum RepoType { owned, shared, all }

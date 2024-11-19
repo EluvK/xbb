@@ -136,6 +136,7 @@ class XbbClient {
       HttpClientResponse response = await request.close();
       if (response.statusCode == 200) {
         String responseBody = await response.transform(utf8.decoder).join();
+        print("pullRepos $responseBody");
         List<dynamic> jsonResponse = jsonDecode(responseBody);
         return jsonResponse.map((e) {
           return OpenApiGetRepoResponse.fromResp(e).toRepo();
@@ -349,7 +350,7 @@ class XbbClient {
 
       if (response.statusCode == 200) {
         String responseBody = await response.transform(utf8.decoder).join();
-        print(responseBody);
+        print("syncSubscribeRepos $responseBody");
         List<dynamic> jsonResponse = jsonDecode(responseBody);
         return jsonResponse.map((e) {
           return OpenApiGetRepoResponse.fromResp(e).toRepo();

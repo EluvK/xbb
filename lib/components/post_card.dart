@@ -76,7 +76,7 @@ class _PostCardState extends State<PostCard> {
       case PostStatus.updated:
         icons.add(Icon(
           Icons.brightness_1_rounded,
-          color: Colors.red[400],
+          color: Colors.red[500],
           size: 16.0,
         ));
         break;
