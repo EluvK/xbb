@@ -176,6 +176,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.1.1"
+  get_time_ago:
+    dependency: "direct main"
+    description:
+      name: get_time_ago
+      sha256: "0f50a87080a720f5491266a3f7c79109f95943decd10b66c84b5aef802f1d959"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.1.1"
   highlight:
     dependency: transitive
     description:
