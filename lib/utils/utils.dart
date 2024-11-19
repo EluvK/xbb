@@ -4,6 +4,14 @@ import 'package:get/get.dart';
 import 'package:get_time_ago/get_time_ago.dart';
 import 'package:intl/intl.dart';
 
+// ignore: constant_identifier_names
+const String VERSION =
+    String.fromEnvironment('APP_VERSION', defaultValue: 'debug');
+
+// ignore: constant_identifier_names
+const String APP_BUILD_NUMBER =
+    String.fromEnvironment('APP_BUILD_NUMBER', defaultValue: '0');
+
 String sharedLink(String owner, String id) {
   return "xbb-share://$owner/$id";
 }

@@ -1,4 +1,4 @@
-package com.example.xbb
+package com.eluvk.xbb
 
 import io.flutter.embedding.android.FlutterActivity
 

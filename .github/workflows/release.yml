@@ -1,0 +1,123 @@
+# .github/workflows/release.yml
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        description: "Flutter version to use, empty for latest"
+        required: false
+        default: ""
+      platforms:
+        description: "Platforms to build for"
+        required: true
+        type: choice
+        options:
+          - "windows"
+          - "android"
+          - "all"
+        default: "windows"
+  push:
+    tags:
+      - "v[0-9]+.*"
+
+env:
+  FLUTTER_VERSION: ${{ github.event.inputs.flutter_version }}
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    if: contains(github.event.inputs.platforms, 'windows') || contains(github.event.inputs.platforms, 'all') || startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - run: flutter --version
+
+      - name: Flutter build windows
+        id: build-app
+        run: |
+          $version_str=$(gc .\pubspec.yaml | select-string '(?<=^version: ).*' -AllMatches | Select-Object -Expand Matches | %{$_.Value})
+          $version=$version_str.Split("+")[0]
+          $build_number=$version_str.Split("+")[1]
+          flutter build windows --release --dart-define="APP_VERSION=$version" --dart-define="APP_BUILD_NUMBER=$build_number"
+
+      - name: Build Inno Installer
+        run: |
+          "%programfiles(x86)%\Inno Setup 6\iscc.exe" "windows_inno_setup.iss"
+        shell: cmd
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xbb_desktop_windows_setup.exe.zip
+          path: build/xbb_desktop_windows_setup.exe
+
+      - name: Upload windows setup exe to release
+        uses: svenstaro/upload-release-action@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          repo_token: ${{ secrets.XBB_GITHUB_TOKEN }}
+          file: build/xbb_desktop_windows_setup.exe
+          asset_name: xbb_desktop_windows_setup.exe
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-android:
+    runs-on: ubuntu-latest
+    if: contains(github.event.inputs.platforms, 'android') || contains(github.event.inputs.platforms, 'all') || startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decode keystore file
+        env:
+          XBB_KEYSTORE_FILE_BASE64: ${{ secrets.XBB_KEYSTORE_FILE_BASE64 }}
+        run: echo $XBB_KEYSTORE_FILE_BASE64 | base64 --decode > android/app/xbb_release.jks
+
+      - name: temp debug
+        env:
+          XBB_KEY_PASSWORD: ${{ secrets.XBB_KEY_PASSWORD }}
+        run: |
+          md5sum android/app/xbb_release.jks
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: "12.x"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+
+      - run: flutter --version
+
+      - name: Flutter build apk
+        env:
+          XBB_KEY_PASSWORD: ${{ secrets.XBB_KEY_PASSWORD }}
+        run: |
+          version_str=$(cat pubspec.yaml | grep 'version: ' | sed 's/version: //')
+          version_number=$(echo $version_str | cut -d'+' -f1)
+          build_number=$(echo $version_str | cut -d'+' -f2)
+          flutter build apk --release --dart-define="APP_VERSION=$version_number" --dart-define="APP_BUILD_NUMBER=$build_number"
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xbb.apk
+          path: build/app/outputs/apk/release/app-release.apk
+
+      - name: Upload apk to release
+        uses: svenstaro/upload-release-action@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          repo_token: ${{ secrets.XBB_GITHUB_TOKEN }}
+          file: build/app/outputs/apk/release/app-release.apk
+          asset_name: xbb.apk
+          tag: ${{ github.ref }}
+          overwrite: true
