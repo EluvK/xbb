@@ -33,6 +33,7 @@ class _RepoEditorState extends State<RepoEditor> {
         lastSyncAt: DateTime.parse(neverSyncAt),
         remoteRepo: true,
         autoSync: true,
+        unreadCount: 0,
       );
       return _RepoEditorInner(
         repo: repo,

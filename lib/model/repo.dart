@@ -15,6 +15,7 @@ class Repo {
   bool autoSync;
   String? sharedTo;
   String? sharedLink;
+  int unreadCount;
 
   Repo({
     required this.id,
@@ -28,6 +29,7 @@ class Repo {
     required this.autoSync,
     this.sharedTo,
     this.sharedLink,
+    required this.unreadCount,
   });
 
   Map<String, dynamic> toMap() {
@@ -43,6 +45,7 @@ class Repo {
       tableRepoColumnAutoSync: autoSync ? 1 : 0,
       tableRepoColumnSharedTo: sharedTo,
       tableRepoColumnSharedLink: sharedLink,
+      tableRepoColumnUnreadCount: unreadCount,
     };
   }
 
@@ -71,6 +74,7 @@ class Repo {
       autoSync: map[tableRepoColumnAutoSync] == 1 ? true : false,
       sharedTo: map[tableRepoColumnSharedTo],
       sharedLink: map[tableRepoColumnSharedLink],
+      unreadCount: map[tableRepoColumnUnreadCount],
     );
   }
 
@@ -86,6 +90,7 @@ class Repo {
     bool? autoSync,
     String? sharedTo,
     String? sharedLink,
+    int? unreadCount,
   }) {
     return Repo(
       id: id ?? this.id,
@@ -99,6 +104,7 @@ class Repo {
       autoSync: autoSync ?? this.autoSync,
       sharedTo: sharedTo ?? this.sharedTo,
       sharedLink: sharedLink ?? this.sharedLink,
+      unreadCount: unreadCount ?? this.unreadCount,
     );
   }
 }

@@ -24,7 +24,7 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     return Obx(() {
       var viewPost = postController.postListView;
-      print("build post card post number: ${viewPost.length}");
+      // print("build post card post number: ${viewPost.length}");
       // for (var p in viewPost) {
       //   print("${p.id}, ${p.author}, ${p.title}, ${p.category}");
       // }
@@ -128,6 +128,7 @@ class _PostCardState extends State<PostCard> {
           post.author == settingController.currentUserId.value
         ]);
       },
+      minLeadingWidth: 0,
       leading: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: icons,
@@ -152,7 +153,7 @@ class _PostCardState extends State<PostCard> {
         ),
       ),
       subtitle: Text(
-        "updated at ${dateStr(post.updatedAt)}",
+        "updated at ${readableDateStr(post.updatedAt)}",
         textScaler: const TextScaler.linear(0.9),
         style: TextStyle(
           color: Colors.grey,

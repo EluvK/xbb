@@ -59,6 +59,7 @@ class OpenApiGetRepoResponse {
       lastSyncAt: DateTime.parse(neverSyncAt),
       remoteRepo: true,
       autoSync: true,
+      unreadCount: 0,
     );
   }
 }

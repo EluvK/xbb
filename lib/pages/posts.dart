@@ -65,7 +65,10 @@ class _PostsAppBarState extends State<PostsAppBar> {
       width: 200,
       child: DropdownButtonFormField(
         items: repoLists.map((e) {
-          return DropdownMenuItem(value: e.id, child: Text(e.name));
+          return DropdownMenuItem(
+            value: e.id,
+            child: Text(e.unreadCount > 0 ? "✨ ${e.name}" : e.name),
+          );
         }).toList(),
         isExpanded: true,
         icon: const Icon(null),

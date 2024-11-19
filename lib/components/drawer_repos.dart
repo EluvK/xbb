@@ -89,7 +89,11 @@ class _DrawerReposState extends State<DrawerRepos> {
             },
             icon: const Icon(Icons.edit)),
       ),
-      title: Text(repo.name),
+      title: Row(
+        children: [
+          Text(repo.unreadCount > 0 ? "✨ ${repo.name}" : repo.name),
+        ],
+      ),
       // subtitle: Text(repo.updatedAt.toLocal().toIso8601String()),
       onTap: () {
         repoController.setCurrentRepo(repo.id);

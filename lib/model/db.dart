@@ -15,6 +15,7 @@ const String tableRepoColumnRemoteRepo = 'remoteRepo';
 const String tableRepoColumnAutoSync = 'autoSync';
 const String tableRepoColumnSharedTo = 'sharedTo';
 const String tableRepoColumnSharedLink = 'sharedLink';
+const String tableRepoColumnUnreadCount = 'unreadCount';
 
 /// POST
 const String tablePostName = 'posts';
@@ -64,7 +65,8 @@ class DataBase {
             $tableRepoColumnRemoteRepo INTEGER NOT NULL,
             $tableRepoColumnAutoSync INTEGER NOT NULL,
             $tableRepoColumnSharedTo TEXT,
-            $tableRepoColumnSharedLink TEXT
+            $tableRepoColumnSharedLink TEXT,
+            $tableRepoColumnUnreadCount INTEGER NOT NULL
           )
         ''');
         var now = DateTime.now().toUtc();
@@ -78,6 +80,7 @@ class DataBase {
           lastSyncAt: DateTime.parse(neverSyncAt),
           remoteRepo: false,
           autoSync: false,
+          unreadCount: 0,
         );
         await db.insert(tableRepoName, localRepo.toMap());
       },

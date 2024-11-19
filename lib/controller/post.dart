@@ -74,9 +74,22 @@ class PostController extends GetxController {
 
   editLocalPostStatus(Post post) async {
     await PostRepository().updatePost(post);
+    await rebuildRepoStatus(post.repoId);
   }
 
-  pullPosts(String repoId) async {
+  Future<void> rebuildRepoStatus(String repoId) async {
+    List<Post> posts = await PostRepository().getRepoPosts(repoId);
+    int newNumber = posts
+        .where((element) =>
+            element.status == PostStatus.newly ||
+            element.status == PostStatus.updated)
+        .length;
+    print("rebuildRepoStatus $repoId, unread number: $newNumber");
+    await repoController.editLocalRepoStatus(repoId, unreadCount: newNumber);
+  }
+
+  Future<List<int>> pullPosts(String repoId) async {
+    int addCnt = 0, updateCnt = 0, deleteCnt = 0;
     List<PostSummary> posts = await syncPullPosts(repoId);
     for (PostSummary postSummary in posts) {
       Post? localPost = await PostRepository().getPost(postSummary.id);
@@ -86,6 +99,7 @@ class PostController extends GetxController {
           fetchPost.status = PostStatus.newly;
           print('add post ${fetchPost.title}');
           await PostRepository().addPost(fetchPost);
+          addCnt++;
         }
       } else if (!localPost.updatedAt.isBefore(postSummary.updatedAt)) {
         // no need to update
@@ -107,6 +121,7 @@ class PostController extends GetxController {
           );
           print('update post ${localPost!.title}');
           await PostRepository().updatePost(localPost);
+          updateCnt++;
         } else {
           // deleted at server between pullPosts and pullPost
         }
@@ -119,10 +134,11 @@ class PostController extends GetxController {
         print('delete post ${post.title}');
         post.status = PostStatus.detached;
         await PostRepository().updatePost(post);
+        deleteCnt++;
       }
     }
-
-    await repoController.setCurrentRepo(repoId);
+    await rebuildRepoStatus(repoId);
+    return [addCnt, updateCnt, deleteCnt];
   }
 
   Future<Post> getPostUnwrap(String postId) async {

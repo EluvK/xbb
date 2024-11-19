@@ -37,7 +37,7 @@ class RepoController extends GetxController {
           return repo.id == settingController.currentRepoId.value;
         })?.id ??
         '0';
-    // print('set current repo to $repoId');
+    print('set current repo to $repoId');
     await setCurrentRepo(repoId);
     // print('loadRepoLists --- end');
   }
@@ -94,6 +94,7 @@ class RepoController extends GetxController {
   }
 
   Future<void> pullRepos() async {
+    List<int> sumDiff = [0, 0, 0];
     List<Repo> repos = await syncPullRepos();
     for (var repo in repos) {
       Repo? localRepo = await RepoRepository().getRepo(repo.id);
@@ -108,7 +109,11 @@ class RepoController extends GetxController {
         await RepoRepository().updateRepo(localRepo!);
       }
       if (repo.id != '0') {
-        postController.pullPosts(repo.id);
+        List<int> diff = await postController.pullPosts(repo.id);
+        for (int i = 0; i < 3; i++) {
+          sumDiff[i] += diff[i];
+        }
+        flushDiff(sumDiff);
       }
     }
 
@@ -116,18 +121,30 @@ class RepoController extends GetxController {
   }
 
   Future<void> pullSubscribeRepos() async {
+    List<int> sumDiff = [0, 0, 0];
     List<Repo> repos = await syncSubscribeRepos();
     for (var repo in repos) {
       repo.sharedTo = settingController.currentUserId.value;
       repo.sharedLink = sharedLink(repo.owner, repo.id);
       // Repo? localRepo = await RepoRepository().getRepo(repo.id);
       await RepoRepository().upsertRepo(repo);
-      postController.pullPosts(repo.id);
+      List<int> diff = await postController.pullPosts(repo.id);
+      for (int i = 0; i < 3; i++) {
+        sumDiff[i] += diff[i];
+      }
+      flushDiff(sumDiff);
     }
     await loadRepoLists();
   }
 
   Future<Repo> getRepoUnwrap(String repoId) async {
     return (await RepoRepository().getRepo(repoId))!;
+  }
+
+  editLocalRepoStatus(String repoId, {int? unreadCount}) async {
+    Repo repo = await getRepoUnwrap(repoId);
+    repo = repo.copyWith(unreadCount: unreadCount);
+    await RepoRepository().updateRepo(repo);
+    await loadRepoLists();
   }
 }

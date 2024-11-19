@@ -1,18 +1,24 @@
 import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_time_ago/get_time_ago.dart';
 import 'package:intl/intl.dart';
 
 String sharedLink(String owner, String id) {
   return "xbb-share://$owner/$id";
 }
 
-String dateStr(DateTime dt) {
-  return DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);
+String readableDateStr(DateTime dt) {
+  return GetTimeAgo.parse(dt.toLocal());
 }
 
-String dateDayStr(DateTime dt) {
-  return DateFormat('yyyy-MM-dd').format(dt);
+String detailedDateStr(DateTime dt) {
+  return DateFormat('yyyy-MM-dd HH:mm:ss').format(dt.toLocal());
+}
+
+void flushDiff(List<int> diff) {
+  String diffStr = "add ${diff[0]}, update ${diff[1]}, delete ${diff[2]}";
+  flushBar(FlushLevel.OK, "success", diffStr);
 }
 
 // ignore: constant_identifier_names

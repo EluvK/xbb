@@ -23,7 +23,7 @@ class _PostViewerState extends State<PostViewer> {
         builder: (context, AsyncSnapshot<Post> post) {
           if (post.hasData) {
             return Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -49,7 +49,7 @@ class _PostViewerState extends State<PostViewer> {
           textScaler: const TextScaler.linear(1.6),
         ),
         Text(
-          "updated at ${dateStr(post.updatedAt)}",
+          "${post.category} | ${detailedDateStr(post.updatedAt)}",
           textScaler: const TextScaler.linear(0.9),
         ),
       ],
