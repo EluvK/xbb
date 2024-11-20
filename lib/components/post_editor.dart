@@ -20,43 +20,61 @@ class _PostEditorState extends State<PostEditor> {
   final postController = Get.find<PostController>();
   @override
   Widget build(BuildContext context) {
-    if (widget.postId == null) {
-      var defaultRepo = repoController.myRepoList.firstWhere(
-        (e) => (e.id == repoController.currentRepoId.value),
-        orElse: () {
-          return repoController.myRepoList.first;
-        },
-      );
-      // new one
-      var post = Post(
-        id: const Uuid().v4(),
-        category: '',
-        title: '',
-        content: '',
-        createdAt: DateTime.now().toUtc(),
-        updatedAt: DateTime.now().toUtc(),
-        author: settingController.currentUserId.value,
-        repoId: defaultRepo.id,
-      );
-      return _PostEditorInner(post: post);
-    }
+    var defaultRepo = repoController.myRepoList.firstWhere(
+      (e) => (e.id == repoController.currentRepoId.value),
+      orElse: () {
+        return repoController.myRepoList.first;
+      },
+    );
     return FutureBuilder(
-      future: postController.getPostUnwrap(widget.postId!),
-      builder: (context, postData) {
-        if (postData.hasData) {
-          var post = postData.data!;
-          return _PostEditorInner(post: post);
-        } else {
+      future: postController.fetchRepoPostCategories(defaultRepo.id),
+      builder: (context, categories) {
+        if (!categories.hasData) {
           return const CircularProgressIndicator();
         }
+        var candidateCategory = categories.data!;
+        if (widget.postId == null) {
+          // new one
+          var post = Post(
+            id: const Uuid().v4(),
+            category: 'uncategorized',
+            title: '',
+            content: '',
+            createdAt: DateTime.now().toUtc(),
+            updatedAt: DateTime.now().toUtc(),
+            author: settingController.currentUserId.value,
+            repoId: defaultRepo.id,
+          );
+          return _PostEditorInner(
+            post: post,
+            initCandidateCategory: candidateCategory,
+          );
+        }
+        return FutureBuilder(
+          future: postController.getPostUnwrap(widget.postId!),
+          builder: (context, postData) {
+            if (!postData.hasData) {
+              return const CircularProgressIndicator();
+            }
+            var post = postData.data!;
+            return _PostEditorInner(
+              post: post,
+              initCandidateCategory: candidateCategory,
+            );
+          },
+        );
       },
     );
   }
 }
 
 class _PostEditorInner extends StatefulWidget {
-  const _PostEditorInner({required this.post});
+  const _PostEditorInner({
+    required this.post,
+    required this.initCandidateCategory,
+  });
   final Post post;
+  final Set<String> initCandidateCategory;
 
   @override
   State<_PostEditorInner> createState() => _PostEditorInnerState();
@@ -67,31 +85,22 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   final postController = Get.find<PostController>();
 
   late Set<String> candidateCategory;
+  TextEditingController textEditingController = TextEditingController();
+
+  reloadCandidateCategory(String repoId) async {
+    candidateCategory = await postController.fetchRepoPostCategories(repoId);
+    print('reload: ${candidateCategory.join(',')}');
+  }
 
   @override
   void initState() {
-    candidateCategory = postController.repoPostList
-        .map((post) => post.category.toString())
-        .toSet();
-
-    if (!candidateCategory.contains('uncategorized')) {
-      candidateCategory.add('uncategorized');
-    }
     super.initState();
-  }
-
-  Future<void> loadOtherRepoCandidateCategory(String repoId) async {
-    candidateCategory = await postController.fetchRepoPostCategories(repoId);
-    if (!candidateCategory.contains('uncategorized')) {
-      candidateCategory.add('uncategorized');
-    }
-    if (!candidateCategory.contains(widget.post.category)) {
-      widget.post.category = 'uncategorized';
-    }
+    textEditingController.text = widget.post.category;
   }
 
   @override
   Widget build(BuildContext context) {
+    candidateCategory = widget.initCandidateCategory;
     return Column(
       children: [
         Padding(
@@ -177,7 +186,8 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             decoration: const InputDecoration(labelText: 'repo'),
             onChanged: (value) async {
               widget.post.repoId = value!;
-              await loadOtherRepoCandidateCategory(widget.post.repoId);
+              print('select repo:$value');
+              await reloadCandidateCategory(value);
             },
             value: widget.post.repoId,
           ),
@@ -186,7 +196,9 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         // try:
         Flexible(
           child: Autocomplete(
-            optionsBuilder: (TextEditingValue textEditingValue) {
+            optionsBuilder: (TextEditingValue textEditingValue) async {
+              print('optionsBuilder');
+              print(candidateCategory.join(','));
               if (textEditingValue.text == '') {
                 return candidateCategory;
               }
@@ -203,7 +215,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               }
               return matched;
             },
-            initialValue: TextEditingValue(text: widget.post.category),
+            initialValue: TextEditingValue(text: textEditingController.text),
             fieldViewBuilder:
                 (context, textEditingController, focusNode, onFieldSubmitted) =>
                     TextFormField(
@@ -211,6 +223,13 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               focusNode: focusNode,
               onFieldSubmitted: (String value) {
                 onFieldSubmitted();
+              },
+              onTap: () {
+                // i need here to trigger optionsBuilders
+                setState(() {
+                  // so wired, but it worked... maybe the autoComplete should be more useful.
+                  textEditingController.text = textEditingController.text;
+                });
               },
               decoration: const InputDecoration(labelText: 'category'),
             ),

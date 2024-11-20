@@ -31,6 +31,9 @@ class PostController extends GetxController {
   Future<Set<String>> fetchRepoPostCategories(String repoId) async {
     var repoPostList = await PostRepository().getRepoPosts(repoId);
     var categories = repoPostList.map((post) => post.category).toSet();
+    if (!categories.contains('uncategorized')) {
+      categories.add('uncategorized');
+    }
     return categories;
   }
 
