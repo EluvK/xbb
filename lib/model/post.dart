@@ -1,6 +1,6 @@
 import 'package:xbb/model/db.dart';
 
-enum PostStatus { normal, updated, newly, detached }
+enum PostStatus { normal, updated, newly, detached, notSynced }
 
 enum PostSelfAttitude { none, like, dislike }
 

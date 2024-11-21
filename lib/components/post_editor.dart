@@ -197,21 +197,19 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         Flexible(
           child: Autocomplete(
             optionsBuilder: (TextEditingValue textEditingValue) async {
-              print('optionsBuilder');
-              print(candidateCategory.join(','));
+              print("optionsBuilder, ${candidateCategory.join(',')}");
               if (textEditingValue.text == '') {
                 return candidateCategory;
               }
-              var matched = candidateCategory.where((String category) {
-                return category.contains(textEditingValue.text.toLowerCase());
-              }).toList();
-              if (!candidateCategory.contains(textEditingValue.text)) {
-                matched.insert(
-                    matched.length, "[new] ${textEditingValue.text}");
+              var currentValue = textEditingValue.text;
+              while (currentValue.startsWith('⭐')) {
+                currentValue = currentValue.substring(1);
               }
-              if (matched.isEmpty) {
-                return {"[new] ${textEditingValue.text}"};
-                // return Iterable<String>.generate(5, (index) => '$index');
+              var matched = candidateCategory.where((String category) {
+                return category.contains(currentValue.toLowerCase());
+              }).toList();
+              if (!candidateCategory.contains(currentValue)) {
+                matched.insert(0, "⭐$currentValue");
               }
               return matched;
             },
@@ -235,11 +233,14 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             ),
             optionsViewOpenDirection: OptionsViewOpenDirection.up,
             onSelected: (String selection) {
-              print('selected $selection');
-              if (selection.startsWith('[new] ')) {
-                selection = selection.substring(6);
+              while (selection.startsWith('⭐')) {
+                selection = selection.substring(1);
               }
-              widget.post.category = selection;
+              setState(() {
+                textEditingController.text = selection;
+                widget.post.category = selection;
+              });
+              print('onSelected category ${widget.post.category}');
             },
           ),
         ),

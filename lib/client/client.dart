@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:get/get.dart';
+import 'package:result_dart/result_dart.dart';
+import 'package:xbb/client/err.dart';
 import 'package:xbb/client/resp.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/post.dart';
@@ -32,7 +34,7 @@ class XbbClient {
   }
 
   // GET `/user/validate-name/$name`
-  Future<bool> validateUserNameExist(String name) async {
+  ClientResult<bool> validateUserNameExist(String name) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -43,16 +45,18 @@ class XbbClient {
       if (response.statusCode == 200) {
         String responseBody = await response.transform(utf8.decoder).join();
         Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
-        return jsonResponse['exist'] == true;
+        return Success(jsonResponse['exist']);
+      } else {
+        return const Success(false);
       }
     } catch (e) {
       print("error: $e");
+      return const Failure(ClientError.internalError);
     }
-    return false;
   }
 
   // POST `/user/validate-login`
-  Future<bool> validateLogin(String name, String password) async {
+  ClientResult<bool> validateLogin(String name, String password) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -62,24 +66,19 @@ class XbbClient {
           await client.postUrl(Uri.parse("$baseUrl/user/validate-login"));
       request.headers.set('content-type', 'application/json');
       request.write(body);
-      // print('name: $name');
-      // print('password: $password');
-      // print('Basic ${base64.encode(utf8.encode('$name:$password'))}');
-      // request.headers.set('Authorization',
-      //     'Basic ${base64Encode(utf8.encode('$name:$password'))}');
-      // print(request.headers);
       HttpClientResponse response = await request.close();
       print("validateLogin ${response.statusCode}");
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
+        return const Success(true);
       }
+      return const Success(false);
     } catch (e) {
       print("error: $e");
+      return const Failure(ClientError.internalError);
     }
-    return false;
   }
 
-  Future<OpenApiGetUserResponse> getUser(String name, String auth) async {
+  ClientResult<OpenApiGetUserResponse> getUser(String name, String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -91,12 +90,14 @@ class XbbClient {
       if (response.statusCode == 200) {
         String responseBody = await response.transform(utf8.decoder).join();
         Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
-        return OpenApiGetUserResponse.fromResp(jsonResponse);
+        return Success(OpenApiGetUserResponse.fromResp(jsonResponse));
+      } else {
+        return const Failure(ClientError.unexpectedError);
       }
     } catch (e) {
       print("error: $e");
+      return const Failure(ClientError.internalError);
     }
-    return OpenApiGetUserResponse(id: '', name: '');
   }
 
   Future<bool> pushRepo(Repo repo, String auth) async {
@@ -125,7 +126,7 @@ class XbbClient {
     return false;
   }
 
-  Future<List<Repo>> pullRepos(String auth) async {
+  ClientResult<List<Repo>> pullRepos(String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -138,16 +139,20 @@ class XbbClient {
         String responseBody = await response.transform(utf8.decoder).join();
         print("pullRepos $responseBody");
         List<dynamic> jsonResponse = jsonDecode(responseBody);
-        return jsonResponse.map((e) {
-          return OpenApiGetRepoResponse.fromResp(e).toRepo();
-        }).toList();
+        return jsonResponse
+            .map((e) {
+              return OpenApiGetRepoResponse.fromResp(e).toRepo();
+            })
+            .toList()
+            .toSuccess();
       } else {
         print("pullRepos error ${response.statusCode}");
+        return const Failure(ClientError.unexpectedError);
       }
     } catch (e) {
-      print("error: $e");
+      print("pullRepos error: $e");
+      return const Failure(ClientError.internalError);
     }
-    return [];
   }
 
   Future<Repo?> pullRepo(String repoId, String auth) async {
@@ -220,7 +225,7 @@ class XbbClient {
     return false;
   }
 
-  Future<List<PostSummary>> pullPosts(String repoId, String auth) async {
+  Future<List<PostSummary>?> pullPosts(String repoId, String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -241,9 +246,9 @@ class XbbClient {
         print("pullPostsSummary error ${response.statusCode}");
       }
     } catch (e) {
-      print("error: $e");
+      print("pullPosts error: $e");
     }
-    return [];
+    return null;
   }
 
   Future<Post?> pullPost(String repoId, String postId, String auth) async {
@@ -337,7 +342,7 @@ class XbbClient {
     return;
   }
 
-  Future<List<Repo>> syncSubscribeRepos(String auth) async {
+  Future<List<Repo>?> syncSubscribeRepos(String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -359,9 +364,9 @@ class XbbClient {
         print("syncSubscribeRepos error ${response.statusCode}");
       }
     } catch (e) {
-      print("error: $e");
+      print("syncSubscribeRepos error: $e");
     }
-    return [];
+    return null;
   }
 }
 
@@ -374,7 +379,7 @@ Future<bool> validateServerAddress(String serverAddress) async {
 
 /// Validate the user name exist
 /// return true if exist
-Future<bool> validateUserNameExist(String name) async {
+ClientResult<bool> validateUserNameExist(String name) async {
   final settingController = Get.find<SettingController>();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
@@ -387,10 +392,11 @@ Future<bool> validateLogin(String name, String password) async {
   final settingController = Get.find<SettingController>();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
-  return await client.validateLogin(name, password);
+  return client.validateLogin(name, password).getOrDefault(false);
+  // return await client.validateLogin(name, password);
 }
 
-Future<OpenApiGetUserResponse> getUser(String name) async {
+ClientResult<OpenApiGetUserResponse> getUser(String name) async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
@@ -407,7 +413,7 @@ Future<bool> syncPushRepo(Repo repo) async {
   return await client.pushRepo(repo, auth);
 }
 
-Future<List<Repo>> syncPullRepos() async {
+ClientResult<List<Repo>> syncPullRepos() async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
@@ -439,7 +445,7 @@ Future<bool> syncPushPost(Post post) async {
   return await client.pushPost(post, auth);
 }
 
-Future<List<PostSummary>> syncPullPosts(String repoId) async {
+Future<List<PostSummary>?> syncPullPosts(String repoId) async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
@@ -480,7 +486,7 @@ Future<void> unsubscribeRepo(String repoId) async {
   return await client.unSubscribeRepo(repoId, auth);
 }
 
-Future<List<Repo>> syncSubscribeRepos() async {
+Future<List<Repo>?> syncSubscribeRepos() async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;

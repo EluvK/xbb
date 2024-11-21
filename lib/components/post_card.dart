@@ -94,6 +94,13 @@ class _PostCardState extends State<PostCard> {
           size: 16.0,
         ));
         break;
+      case PostStatus.notSynced:
+        icons.add(Icon(
+          Icons.sync_disabled_rounded,
+          color: Colors.red[400],
+          size: 16.0,
+        ));
+        break;
     }
     switch (post.selfAttitude) {
       case PostSelfAttitude.none:

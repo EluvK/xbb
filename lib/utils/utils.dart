@@ -26,7 +26,11 @@ String detailedDateStr(DateTime dt) {
 
 void flushDiff(List<int> diff) {
   String diffStr = "add ${diff[0]}, update ${diff[1]}, delete ${diff[2]}";
-  flushBar(FlushLevel.OK, "success", diffStr);
+  if (diff[0] < 0) {
+    flushBar(FlushLevel.WARNING, "failed", "somethings went wrongs");
+  } else {
+    flushBar(FlushLevel.OK, "success", diffStr);
+  }
 }
 
 // ignore: constant_identifier_names

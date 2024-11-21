@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:xbb/client/client.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/utils/utils.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -48,169 +49,186 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Focus(
-                        onFocusChange: (hasFocus) {
-                          print('change: $hasFocus service $serviceAddress');
-                          if (!hasFocus) {
-                            // test service client
-                            setState(() {
-                              serviceAvailability =
-                                  ServiceAvailability.checking;
-                            });
-                            validateServerAddress(serviceAddress).then((value) {
-                              setState(() {
-                                print('validateServerAddress result: $value');
-                                serviceAvailability = value
-                                    ? ServiceAvailability.available
-                                    : ServiceAvailability.notAvailable;
-                                if (serviceAvailability ==
-                                    ServiceAvailability.available) {
-                                  settingController
-                                      .setServerAddress(serviceAddress);
-                                }
-                              });
-                            });
-                          }
-                        },
-                        child: TextField(
-                          decoration: InputDecoration(
-                              labelText: 'Service Address:Port',
-                              prefixIcon: switch (serviceAvailability) {
-                                ServiceAvailability.available => const Icon(
-                                    Icons.check_box_rounded,
-                                    color: Colors.green,
-                                  ),
-                                ServiceAvailability.notAvailable => const Icon(
-                                    Icons.question_mark_outlined,
-                                    color: Colors.red,
-                                  ),
-                                ServiceAvailability.checking => Transform.scale(
-                                    scale: 0.5,
-                                    child: const CircularProgressIndicator(),
-                                  ),
-                                ServiceAvailability.unknown => null
-                              }),
-                          controller:
-                              TextEditingController(text: serviceAddress),
-                          onChanged: (value) {
-                            print("set serviceAddress $serviceAddress");
-                            serviceAddress = value;
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              serviceAddressWidget(),
               const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Focus(
-                        onFocusChange: (hasFocus) {
-                          print('change: $hasFocus name: $userName');
-                          if (!hasFocus) {
-                            // test user name exist
-                            setState(() {
-                              userNameAvailability =
-                                  UserNameAvailability.checking;
-                            });
-                            validateUserNameExist(userName).then((value) {
-                              setState(() {
-                                print('validateUserNameExist result: $value');
-                                userNameAvailability = value
-                                    ? UserNameAvailability.login
-                                    : UserNameAvailability.register;
-                              });
-                            });
-                          }
-                        },
-                        child: TextField(
-                          decoration: InputDecoration(
-                              labelText: 'Name',
-                              prefixIcon: switch (userNameAvailability) {
-                                UserNameAvailability.register => const Icon(
-                                    Icons.add_box_rounded,
-                                  ),
-                                UserNameAvailability.checking =>
-                                  Transform.scale(
-                                    scale: 0.5,
-                                    child: const CircularProgressIndicator(),
-                                  ),
-                                UserNameAvailability.login =>
-                                  const Icon(Icons.account_circle),
-                                UserNameAvailability.unknown => null,
-                              }),
-                          onChanged: (value) {
-                            userName = value;
-                          },
-                          controller: TextEditingController(text: userName),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          suffixIcon: IconButton(
-                            icon: Icon(_skVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off),
-                            onPressed: () {
-                              setState(() {
-                                _skVisible = !_skVisible;
-                              });
-                            },
-                          ),
-                        ),
-                        onChanged: (value) {
-                          userPassword = value;
-                        },
-                        controller: TextEditingController(text: userPassword),
-                        obscureText: !_skVisible,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ElevatedButton(
-                  onPressed: () async {
-                    var res = await validateLogin(userName, userPassword);
-                    if (res) {
-                      print('login success');
-                      settingController.setUserLoginInfo(
-                          userName, userPassword);
-                      var user = await getUser(userName);
-                      settingController.setUserId(user.id);
-                      await login(userName);
-                      Get.toNamed('/');
-                    } else {
-                      print('login failed');
-                      // todo alarm
-                    }
-                  },
-                  child: switch (userNameAvailability) {
-                    UserNameAvailability.login => const Text('Login'),
-                    UserNameAvailability.register => const Text('Register'),
-                    UserNameAvailability.checking =>
-                      const Text('Register / Login'),
-                    UserNameAvailability.unknown =>
-                      const Text('Register / Login'),
-                  }),
+              namePasswordWidget(),
+              loginButton(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Padding serviceAddressWidget() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Focus(
+              onFocusChange: (hasFocus) {
+                print('change: $hasFocus service $serviceAddress');
+                if (!hasFocus) {
+                  // test service client
+                  setState(() {
+                    serviceAvailability = ServiceAvailability.checking;
+                  });
+                  validateServerAddress(serviceAddress).then((value) {
+                    setState(() {
+                      print('validateServerAddress result: $value');
+                      serviceAvailability = value
+                          ? ServiceAvailability.available
+                          : ServiceAvailability.notAvailable;
+                      if (serviceAvailability ==
+                          ServiceAvailability.available) {
+                        settingController.setServerAddress(serviceAddress);
+                      }
+                    });
+                  });
+                }
+              },
+              child: TextField(
+                decoration: InputDecoration(
+                    labelText: 'Service Address:Port',
+                    prefixIcon: switch (serviceAvailability) {
+                      ServiceAvailability.available => const Icon(
+                          Icons.check_box_rounded,
+                          color: Colors.green,
+                        ),
+                      ServiceAvailability.notAvailable => const Icon(
+                          Icons.question_mark_outlined,
+                          color: Colors.red,
+                        ),
+                      ServiceAvailability.checking => Transform.scale(
+                          scale: 0.5,
+                          child: const CircularProgressIndicator(),
+                        ),
+                      ServiceAvailability.unknown => null
+                    }),
+                controller: TextEditingController(text: serviceAddress),
+                onChanged: (value) {
+                  print("set serviceAddress $serviceAddress");
+                  serviceAddress = value;
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Padding namePasswordWidget() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Focus(
+              onFocusChange: (hasFocus) {
+                print('change: $hasFocus name: $userName');
+                if (!hasFocus) {
+                  // test user name exist
+                  setState(() {
+                    userNameAvailability = UserNameAvailability.checking;
+                  });
+                  validateUserNameExist(userName).then((value) {
+                    value.fold((ok) {
+                      setState(() {
+                        print('validateUserNameExist result: $ok');
+                        userNameAvailability = ok
+                            ? UserNameAvailability.login
+                            : UserNameAvailability.register;
+                      });
+                    }, (error) {
+                      print('validateUserNameExist error: $error');
+                      setState(() {
+                        userNameAvailability = UserNameAvailability.unknown;
+                      });
+                    });
+                  });
+                }
+              },
+              child: TextField(
+                decoration: InputDecoration(
+                    labelText: 'Name',
+                    prefixIcon: switch (userNameAvailability) {
+                      UserNameAvailability.register => const Icon(
+                          Icons.add_box_rounded,
+                        ),
+                      UserNameAvailability.checking => Transform.scale(
+                          scale: 0.5,
+                          child: const CircularProgressIndicator(),
+                        ),
+                      UserNameAvailability.login =>
+                        const Icon(Icons.account_circle),
+                      UserNameAvailability.unknown => null,
+                    }),
+                onChanged: (value) {
+                  userName = value;
+                },
+                controller: TextEditingController(text: userName),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                labelText: 'Password',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                      _skVisible ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () {
+                    setState(() {
+                      _skVisible = !_skVisible;
+                    });
+                  },
+                ),
+              ),
+              onChanged: (value) {
+                userPassword = value;
+              },
+              controller: TextEditingController(text: userPassword),
+              obscureText: !_skVisible,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  ElevatedButton loginButton() {
+    return ElevatedButton(
+      onPressed: () async {
+        validateLogin(userName, userPassword).then((result) async {
+          if (result) {
+            print('login success');
+            flushBar(FlushLevel.OK, 'login success', 'welcome $userName');
+            settingController.setUserLoginInfo(userName, userPassword);
+            (await getUser(userName)).fold((user) async {
+              settingController.setUserId(user.id);
+              await login(userName);
+              Get.toNamed('/');
+            }, (err) {
+              print("get user failed: $err");
+            });
+          } else {
+            print('login failed');
+            flushBar(FlushLevel.WARNING, 'login failed',
+                'check your name and password');
+          }
+        });
+      },
+      child: switch (userNameAvailability) {
+        UserNameAvailability.login => const Text('Login'),
+        UserNameAvailability.register => const Text('Register'),
+        UserNameAvailability.checking => const Text('Register / Login'),
+        UserNameAvailability.unknown => const Text('Register / Login'),
+      },
     );
   }
 

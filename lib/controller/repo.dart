@@ -95,7 +95,12 @@ class RepoController extends GetxController {
 
   Future<void> pullRepos() async {
     List<int> sumDiff = [0, 0, 0];
-    List<Repo> repos = await syncPullRepos();
+    List<Repo> repos = (await syncPullRepos()).fold((list) {
+      return list;
+    }, (err) {
+      flushDiff([-1, -1, -1]);
+      return [];
+    });
     for (var repo in repos) {
       Repo? localRepo = await RepoRepository().getRepo(repo.id);
       if (localRepo == null) {
@@ -122,7 +127,11 @@ class RepoController extends GetxController {
 
   Future<void> pullSubscribeRepos() async {
     List<int> sumDiff = [0, 0, 0];
-    List<Repo> repos = await syncSubscribeRepos();
+    List<Repo>? repos = await syncSubscribeRepos();
+    if (repos == null) {
+      flushDiff([-1, -1, -1]);
+      return;
+    }
     for (var repo in repos) {
       repo.sharedTo = settingController.currentUserId.value;
       repo.sharedLink = sharedLink(repo.owner, repo.id);

@@ -93,7 +93,10 @@ class PostController extends GetxController {
 
   Future<List<int>> pullPosts(String repoId) async {
     int addCnt = 0, updateCnt = 0, deleteCnt = 0;
-    List<PostSummary> posts = await syncPullPosts(repoId);
+    List<PostSummary>? posts = await syncPullPosts(repoId);
+    if (posts == null) {
+      return [-0xffff, -0xffff, -0xffff];
+    }
     for (PostSummary postSummary in posts) {
       Post? localPost = await PostRepository().getPost(postSummary.id);
       if (localPost == null) {
@@ -104,12 +107,28 @@ class PostController extends GetxController {
           await PostRepository().addPost(fetchPost);
           addCnt++;
         }
-      } else if (!localPost.updatedAt.isBefore(postSummary.updatedAt)) {
+        continue;
+      }
+
+      // post exists
+      if (localPost.updatedAt == postSummary.updatedAt) {
         // no need to update
+        print("no need to update post ${localPost.title}");
+        if (localPost.status == PostStatus.notSynced ||
+            localPost.status == PostStatus.detached) {
+          localPost.status = PostStatus.normal;
+          editLocalPostStatus(localPost);
+        }
+        continue;
+      } else if (localPost.updatedAt.isAfter(postSummary.updatedAt)) {
+        // server need to update?
         print(
-            "no need to update post ${localPost.title} ${localPost.updatedAt} < server post ${postSummary.updatedAt}");
+            "server need to update post ${localPost.title} ${localPost.updatedAt} < server post ${postSummary.updatedAt}");
+        localPost.status = PostStatus.notSynced;
+        editLocalPostStatus(localPost);
         continue;
       } else {
+        // need to pull from server
         Post? fetchPost = await syncPullPost(repoId, postSummary.id);
         if (fetchPost != null) {
           localPost = localPost.copyWith(
