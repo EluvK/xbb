@@ -204,23 +204,23 @@ class _RegisterPageState extends State<RegisterPage> {
   ElevatedButton loginButton() {
     return ElevatedButton(
       onPressed: () async {
-        validateLogin(userName, userPassword).then((result) async {
-          if (result) {
+        validateLogin(userName, userPassword).then((result) {
+          result.fold((resp) async {
             print('login success');
             flushBar(FlushLevel.OK, 'login success', 'welcome $userName');
-            settingController.setUserLoginInfo(userName, userPassword);
-            (await getUser(userName)).fold((user) async {
-              settingController.setUserId(user.id);
-              await login(userName);
-              Get.toNamed('/');
-            }, (err) {
-              print("get user failed: $err");
-            });
-          } else {
+            settingController.setUser(
+              resp.id,
+              name: userName,
+              password: userPassword,
+              avatarUrl: resp.avatarUrl,
+            );
+            await login(userName);
+            Get.toNamed('/');
+          }, (err) {
             print('login failed');
             flushBar(FlushLevel.WARNING, 'login failed',
                 'check your name and password');
-          }
+          });
         });
       },
       child: switch (userNameAvailability) {

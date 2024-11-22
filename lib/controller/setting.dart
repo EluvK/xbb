@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:xbb/utils/predefined.dart';
 
 bool initFirstTime() {
   var settingController = Get.find<SettingController>();
@@ -27,8 +28,9 @@ class SettingController extends GetxController {
   final serverAddress = "".obs;
   final currentRepoId = "".obs;
   final currentUserName = "".obs;
-  final currentUserId = "".obs;
   final currentUserPasswd = "".obs;
+  final currentUserId = "".obs;
+  final currentUserAvatarUrl = "".obs;
 
   @override
   Future onInit() async {
@@ -63,8 +65,10 @@ class SettingController extends GetxController {
     serverAddress.value = box.read('server_address') ?? 'https://';
     currentRepoId.value = box.read('current_repo_id') ?? '0';
     currentUserName.value = box.read('current_user_name') ?? '';
-    currentUserId.value = box.read('current_user_id') ?? '';
     currentUserPasswd.value = box.read('current_user_passwd') ?? '';
+    currentUserId.value = box.read('current_user_id') ?? '';
+    currentUserAvatarUrl.value =
+        box.read('current_user_avatar_url') ?? defaultAvatarLink;
   }
 
   setThemeMode(ThemeMode theme) {
@@ -87,16 +91,20 @@ class SettingController extends GetxController {
     return serverAddress.value;
   }
 
-  setUserLoginInfo(String name, String password) {
-    currentUserName.value = name;
-    currentUserPasswd.value = password;
-    box.write('current_user_name', currentUserName.value);
-    box.write('current_user_passwd', currentUserPasswd.value);
-  }
-
-  setUserId(String id) {
+  setUser(String id, {String? name, String? password, String? avatarUrl}) {
     currentUserId.value = id;
-    box.write('current_user_id', currentUserId.value);
+    if (name != null) {
+      currentUserName.value = name;
+      box.write('current_user_name', currentUserName.value);
+    }
+    if (password != null) {
+      currentUserPasswd.value = password;
+      box.write('current_user_passwd', currentUserPasswd.value);
+    }
+    if (avatarUrl != null) {
+      currentUserAvatarUrl.value = avatarUrl;
+      box.write('current_user_avatar_url', currentUserAvatarUrl.value);
+    }
   }
 
   setCurrentRepo(String repo) {

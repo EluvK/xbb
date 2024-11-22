@@ -56,7 +56,8 @@ class XbbClient {
   }
 
   // POST `/user/validate-login`
-  ClientResult<bool> validateLogin(String name, String password) async {
+  ClientResult<OpenApiGetUserResponse> validateLogin(
+      String name, String password) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -69,9 +70,11 @@ class XbbClient {
       HttpClientResponse response = await request.close();
       print("validateLogin ${response.statusCode}");
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return const Success(true);
+        String responseBody = await response.transform(utf8.decoder).join();
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return Success(OpenApiGetUserResponse.fromResp(jsonResponse));
       }
-      return const Success(false);
+      return const Failure(ClientError.unexpectedError);
     } catch (e) {
       print("error: $e");
       return const Failure(ClientError.internalError);
@@ -96,6 +99,37 @@ class XbbClient {
       }
     } catch (e) {
       print("error: $e");
+      return const Failure(ClientError.internalError);
+    }
+  }
+
+  ClientResult<bool> updateUser(
+    String id,
+    String name,
+    String password,
+    String? avatarUrl,
+    String auth,
+  ) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      var body = jsonEncode(
+          {'name': name, "password": password, "avatar_url": avatarUrl});
+      HttpClientRequest request =
+          await client.putUrl(Uri.parse("$baseUrl/user/$id"));
+      request.headers.set('content-type', 'application/json');
+      request.headers.set('Authorization', auth);
+      request.write(body);
+      HttpClientResponse response = await request.close();
+      print("updateUser ${response.statusCode}");
+      if (response.statusCode == 200) {
+        return const Success(true);
+      } else {
+        return const Failure(ClientError.unexpectedError);
+      }
+    } catch (e) {
+      print("updateUser error: $e");
       return const Failure(ClientError.internalError);
     }
   }
@@ -388,12 +422,12 @@ ClientResult<bool> validateUserNameExist(String name) async {
 
 /// Validate Login user:password authorization
 /// return true if success
-Future<bool> validateLogin(String name, String password) async {
+ClientResult<OpenApiGetUserResponse> validateLogin(
+    String name, String password) async {
   final settingController = Get.find<SettingController>();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
-  return client.validateLogin(name, password).getOrDefault(false);
-  // return await client.validateLogin(name, password);
+  return client.validateLogin(name, password);
 }
 
 ClientResult<OpenApiGetUserResponse> getUser(String name) async {
@@ -402,6 +436,17 @@ ClientResult<OpenApiGetUserResponse> getUser(String name) async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.getUser(name, auth);
+}
+
+Future<bool> updateUser(
+    String id, String name, String password, String? avatarUrl) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return client
+      .updateUser(id, name, password, avatarUrl, auth)
+      .getOrDefault(false);
 }
 
 // --- sync
