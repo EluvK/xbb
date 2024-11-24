@@ -91,7 +91,12 @@ class _DrawerReposState extends State<DrawerRepos> {
       ),
       title: Row(
         children: [
-          Text(repo.unreadCount > 0 ? "✨ ${repo.name}" : repo.name),
+          Text(repo.name),
+          if (repo.unreadCount > 0)
+            Transform.translate(
+                offset: const Offset(0, -6),
+                child: Text("✨${repo.unreadCount} ",
+                    style: const TextStyle(fontSize: 12))),
         ],
       ),
       // subtitle: Text(repo.updatedAt.toLocal().toIso8601String()),

@@ -251,7 +251,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
           onPressed: () {
             postController.savePost(widget.post);
           },
-          child: const Text('保存到存储库'),
+          child: const Text(' 保存 '),
         )
       ],
     );

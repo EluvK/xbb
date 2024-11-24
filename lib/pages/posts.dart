@@ -67,7 +67,16 @@ class _PostsAppBarState extends State<PostsAppBar> {
         items: repoLists.map((e) {
           return DropdownMenuItem(
             value: e.id,
-            child: Text(e.unreadCount > 0 ? "✨ ${e.name}" : e.name),
+            child: Row(
+              children: [
+                Text(e.name),
+                if (e.unreadCount > 0)
+                  Transform.translate(
+                      offset: const Offset(0, -6),
+                      child: Text("✨${e.unreadCount} ",
+                          style: const TextStyle(fontSize: 12))),
+              ],
+            ),
           );
         }).toList(),
         isExpanded: true,
