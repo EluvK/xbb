@@ -5,6 +5,8 @@ import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/sync.dart';
 import 'package:xbb/model/post.dart';
 
+enum PostViewFilter { all, unread, stars }
+
 class PostController extends GetxController {
   final repoPostList = <Post>[].obs;
   final postListView = <Post>[].obs;
@@ -13,12 +15,15 @@ class PostController extends GetxController {
   final asyncController = Get.find<AsyncController>();
   late final repoController = Get.find<RepoController>();
 
+  final typeFilter = PostViewFilter.all.obs;
+  final regexFilter = ''.obs;
+
   Future<void> loadPost(String repoId) async {
     repoPostList.value = await PostRepository().getRepoPosts(repoId);
     print('load repoId: $repoId, post ${repoPostList.length}');
 
     // reorganize postListView, sorted first by category, then by updatedAt
-    postListView.value = repoPostList;
+    filterPosts();
     postListView.sort((a, b) {
       if (a.category == b.category) {
         return b.updatedAt.compareTo(a.updatedAt);
@@ -26,6 +31,44 @@ class PostController extends GetxController {
         return a.category.compareTo(b.category);
       }
     });
+  }
+
+  void filterPosts() {
+    switch (typeFilter.value) {
+      case PostViewFilter.all:
+        postListView.value = repoPostList;
+        break;
+      case PostViewFilter.unread:
+        postListView.value = repoPostList
+            .where((element) =>
+                element.status == PostStatus.newly ||
+                element.status == PostStatus.updated)
+            .toList();
+        break;
+      case PostViewFilter.stars:
+        postListView.value = repoPostList
+            .where((element) => element.selfAttitude == PostSelfAttitude.like)
+            .toList();
+        break;
+    }
+    if (regexFilter.value.isNotEmpty) {
+      postListView.value = postListView
+          .where((element) =>
+              element.title.contains(regexFilter.value) ||
+              element.category.contains(regexFilter.value) ||
+              element.content.contains(regexFilter.value))
+          .toList();
+    }
+  }
+
+  setViewFilter({PostViewFilter? type, String? regex}) {
+    if (type != null) {
+      typeFilter.value = type;
+    }
+    if (regex != null) {
+      regexFilter.value = regex;
+    }
+    filterPosts();
   }
 
   Future<Set<String>> fetchRepoPostCategories(String repoId) async {
@@ -73,6 +116,17 @@ class PostController extends GetxController {
         post.status != PostStatus.detached) {
       asyncController.asyncPost(post, DataFlow.delete);
     }
+  }
+
+  markedAllAsRead() async {
+    for (var post in postListView) {
+      if (post.status == PostStatus.newly ||
+          post.status == PostStatus.updated) {
+        post.status = PostStatus.normal;
+        await PostRepository().updatePost(post);
+      }
+    }
+    await rebuildRepoStatus(settingController.currentRepoId.value);
   }
 
   editLocalPostStatus(Post post) async {

@@ -30,8 +30,8 @@ class RepoController extends GetxController {
     myRepoList.value = await RepoRepository().listRepo(userId, RepoType.owned);
     subscribeRepoList.value =
         await RepoRepository().listRepo(userId, RepoType.shared);
-    // print(
-    //     "all/my/sub ${allRepoList.length}, ${myRepoList.length}, ${subscribeRepoList.length}");
+    print(
+        "loadRepoLists current user id: $userId all/my/sub ${allRepoList.length}, ${myRepoList.length}, ${subscribeRepoList.length}");
 
     String repoId = allRepoList.firstWhereOrNull((repo) {
           return repo.id == settingController.currentRepoId.value;

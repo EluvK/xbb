@@ -19,6 +19,12 @@ class HomePage extends GetResponsiveView {
         preferredSize: Size.fromHeight(56.0),
         child: PostsAppBar(),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Get.toNamed('/edit-post'); // no arguments to new one
+        },
+        child: const Icon(Icons.add),
+      ),
       body: RefreshIndicator(
           onRefresh: () async {
             if (settingController.currentRepoId.value == '0') {

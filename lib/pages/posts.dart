@@ -12,7 +12,7 @@ class PostPages extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
       decoration: BoxDecoration(color: colorScheme.surface),
       child: const Column(
         children: [
@@ -43,14 +43,14 @@ class _PostsAppBarState extends State<PostsAppBar> {
       // print("targetRepo: $targetRepo");
       return AppBar(
         title: appBarTitle(),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Get.toNamed('/edit-post'); // no arguments to new one
-            },
-            icon: const Icon(Icons.add),
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     onPressed: () {
+        //       Get.toNamed('/edit-post'); // no arguments to new one
+        //     },
+        //     icon: const Icon(Icons.add),
+        //   ),
+        // ],
       );
     });
   }
