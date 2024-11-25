@@ -79,7 +79,7 @@ class SettingController extends GetxController {
   }
 
   getCurrentBaseAuth() {
-    return 'Basic ${base64Encode(utf8.encode('$currentUserName:$currentUserPasswd'))}';
+    return 'Basic ${base64Encode(utf8.encode('$currentUserId/$currentUserName:$currentUserPasswd'))}';
   }
 
   setServerAddress(String address) {
