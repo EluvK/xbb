@@ -65,7 +65,7 @@ class XbbClient {
       var body = jsonEncode({'name': name, "password": password});
       HttpClientRequest request =
           await client.postUrl(Uri.parse("$baseUrl/user/validate-login"));
-      request.headers.set('content-type', 'application/json');
+      request.headers.set('content-type', 'application/json; charset=utf-8');
       request.write(body);
       HttpClientResponse response = await request.close();
       print("validateLogin ${response.statusCode}");
@@ -118,7 +118,7 @@ class XbbClient {
           {'name': name, "password": password, "avatar_url": avatarUrl});
       HttpClientRequest request =
           await client.putUrl(Uri.parse("$baseUrl/user/$id"));
-      request.headers.set('content-type', 'application/json');
+      request.headers.set('content-type', 'application/json; charset=utf-8');
       request.headers.set('Authorization', auth);
       request.write(body);
       HttpClientResponse response = await request.close();
@@ -142,7 +142,7 @@ class XbbClient {
       var body = jsonEncode(repo.toSyncRepoMap());
       HttpClientRequest request =
           await client.postUrl(Uri.parse("$baseUrl/repo"));
-      request.headers.set('content-type', 'application/json');
+      request.headers.set('content-type', 'application/json; charset=utf-8');
       request.headers.set('Authorization', auth);
       request.write(body);
       print("body: $body");
@@ -155,7 +155,7 @@ class XbbClient {
         print("syncRepo error $responseBody");
       }
     } catch (e) {
-      print("error: $e");
+      print("pushRepo error: $e");
     }
     return false;
   }
@@ -241,7 +241,7 @@ class XbbClient {
       var body = jsonEncode(post.toSyncPostMap());
       HttpClientRequest request =
           await client.postUrl(Uri.parse("$baseUrl/repo/${post.repoId}/post"));
-      request.headers.set('content-type', 'application/json');
+      request.headers.set('content-type', 'application/json; charset=utf-8');
       request.headers.set('Authorization', auth);
       request.write(body);
       print("body: $body");
@@ -337,7 +337,7 @@ class XbbClient {
           ((X509Certificate cert, String host, int port) => true);
       HttpClientRequest request =
           await client.postUrl(Uri.parse("$baseUrl/subscribe/"));
-      request.headers.set('content-type', 'application/json');
+      request.headers.set('content-type', 'application/json; charset=utf-8');
       request.headers.set('Authorization', auth);
       request.write(jsonEncode({'link': sharedLink}));
       HttpClientResponse response = await request.close();
@@ -383,7 +383,7 @@ class XbbClient {
           ((X509Certificate cert, String host, int port) => true);
       HttpClientRequest request =
           await client.getUrl(Uri.parse("$baseUrl/subscribe/"));
-      request.headers.set('content-type', 'application/json');
+      request.headers.set('content-type', 'application/json; charset=utf-8');
       request.headers.set('Authorization', auth);
       HttpClientResponse response = await request.close();
 
