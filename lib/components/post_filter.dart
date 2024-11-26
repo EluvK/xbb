@@ -19,7 +19,7 @@ class _PostFilterState extends State<PostFilter> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 8.0),
+          padding: const EdgeInsets.fromLTRB(10.0, 4.0, 10.0, 8.0),
           child: searchFilter(),
         ),
         Padding(

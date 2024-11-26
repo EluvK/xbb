@@ -264,7 +264,9 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
-        Visibility(visible: widget.repo.id != "0", child: _remoteSetting()),
+        // todo: remoteRepo?
+        Visibility(
+            visible: widget.repo.id != "0" && false, child: _remoteSetting()),
         const Divider(),
       ],
     );

@@ -37,53 +37,54 @@ class _DrawerUserState extends State<DrawerUser> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+
+    var avatar = InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return StatefulBuilder(builder: (context, StateSetter setState) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                elevation: 16,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: screenWidth * 0.8,
+                    height: screenHeight * 0.8,
+                    child: _showEditUserInfoDialog(setState),
+                  ),
+                ),
+              );
+            });
+          },
+        );
+      },
+      customBorder: const CircleBorder(),
+      child: _avatar(customUrlController.text),
+    );
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         Column(
           children: [
-            InkWell(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return StatefulBuilder(
-                        builder: (context, StateSetter setState) {
-                      return Dialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                        elevation: 16,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: SizedBox(
-                            width: screenWidth * 0.8,
-                            height: screenHeight * 0.8,
-                            child: _showEditUserInfoDialog(setState),
-                          ),
-                        ),
-                      );
-                    });
-                  },
-                );
-              },
-              child: _avatar(customUrlController.text),
-            ),
-            // button to change user
-            TextButton(
-              onPressed: () {
-                Get.toNamed('/login');
-              },
-              child: const Text('Change User'),
-            ),
+            avatar,
+            Column(
+              children: [
+                Text(settingController.currentUserName.value),
+                Text(settingController.serverAddress.value),
+              ],
+            )
           ],
         ),
-        // user info and server info
-        Column(
-          children: [
-            Text(settingController.currentUserName.value),
-            Text(settingController.serverAddress.value),
-          ],
+        ElevatedButton(
+          onPressed: () {
+            Get.toNamed('/login');
+          },
+          child: const Text('Change User'),
         ),
       ],
     );

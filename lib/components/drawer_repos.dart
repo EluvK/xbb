@@ -91,7 +91,9 @@ class _DrawerReposState extends State<DrawerRepos> {
       ),
       title: Row(
         children: [
-          Text(repo.name),
+          Flexible(
+            child: Text(repo.name),
+          ),
           if (repo.unreadCount > 0)
             Transform.translate(
                 offset: const Offset(0, -6),
@@ -103,8 +105,9 @@ class _DrawerReposState extends State<DrawerRepos> {
       onTap: () {
         repoController.setCurrentRepo(repo.id);
         Get.back();
+        setState(() {});
       },
-      selected: repoController.isCurrentRepo(repo.id),
+      selected: repoController.currentRepoId.value == repo.id,
     );
   }
 }

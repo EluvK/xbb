@@ -19,35 +19,51 @@ class HomePage extends GetResponsiveView {
         preferredSize: Size.fromHeight(56.0),
         child: PostsAppBar(),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Get.toNamed('/edit-post'); // no arguments to new one
-        },
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: floatAddButton(),
       body: RefreshIndicator(
-          onRefresh: () async {
-            if (settingController.currentRepoId.value == '0') {
-              return;
-            }
-            List<int> diff = await postController
-                .pullPosts(settingController.currentRepoId.value);
-            flushDiff(diff);
-            await postController
-                .loadPost(settingController.currentRepoId.value);
-          },
-          notificationPredicate: (ScrollNotification notification) {
-            if (notification.depth != 0) {
-              return false;
-            }
-            return true;
-          },
-          child: const PostPages()),
+        onRefresh: () async {
+          if (settingController.currentRepoId.value == '0') {
+            return;
+          }
+          List<int> diff = await postController
+              .pullPosts(settingController.currentRepoId.value);
+          flushDiff(diff);
+          await postController.loadPost(settingController.currentRepoId.value);
+        },
+        notificationPredicate: (ScrollNotification notification) {
+          if (notification.depth != 0) {
+            return false;
+          }
+          return true;
+        },
+        child: const PostPages(),
+      ),
+    );
+  }
+
+  FloatingActionButton floatAddButton() {
+    return FloatingActionButton(
+      onPressed: () {
+        Get.toNamed('/edit-post'); // no arguments to new one
+      },
+      child: const Icon(Icons.add),
     );
   }
 
   @override
   Widget? desktop() {
-    return const Placeholder();
+    // main page
+    var container = const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DrawerPage(),
+        VerticalDivider(),
+        Flexible(child: PostPages()),
+      ],
+    );
+    return Scaffold(
+      floatingActionButton: floatAddButton(),
+      body: container,
+    );
   }
 }

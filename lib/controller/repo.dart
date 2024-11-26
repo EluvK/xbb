@@ -42,10 +42,6 @@ class RepoController extends GetxController {
     // print('loadRepoLists --- end');
   }
 
-  bool isCurrentRepo(String repoId) {
-    return currentRepoId.value == repoId;
-  }
-
   Future<void> setCurrentRepo(String repoId) async {
     settingController.setCurrentRepo(repoId);
     settingController.currentRepoId.value = repoId;

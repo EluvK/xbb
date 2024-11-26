@@ -93,6 +93,7 @@ class SettingController extends GetxController {
 
   setUser(String id, {String? name, String? password, String? avatarUrl}) {
     currentUserId.value = id;
+    box.write('current_user_id', currentUserId.value);
     if (name != null) {
       currentUserName.value = name;
       box.write('current_user_name', currentUserName.value);

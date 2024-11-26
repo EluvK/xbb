@@ -69,7 +69,7 @@ class _PostsAppBarState extends State<PostsAppBar> {
             value: e.id,
             child: Row(
               children: [
-                Text(e.name),
+                Flexible(child: Text(e.name)),
                 if (e.unreadCount > 0)
                   Transform.translate(
                       offset: const Offset(0, -6),
