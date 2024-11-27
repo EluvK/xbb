@@ -63,29 +63,26 @@ class _DrawerUserState extends State<DrawerUser> {
         );
       },
       customBorder: const CircleBorder(),
-      child: _avatar(customUrlController.text),
+      child: _avatar(customUrlController.text, size: 40.0),
     );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
+        avatar,
         Column(
           children: [
-            avatar,
-            Column(
-              children: [
-                Text(settingController.currentUserName.value),
-                Text(settingController.serverAddress.value),
-              ],
-            )
+            Text(settingController.currentUserName.value,
+                textScaler: const TextScaler.linear(1.5)),
+            ElevatedButton.icon(
+              onPressed: () {
+                Get.toNamed('/login');
+              },
+              label: const Text('Change User'),
+              icon: const Icon(Icons.login_rounded),
+            ),
           ],
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Get.toNamed('/login');
-          },
-          child: const Text('Change User'),
-        ),
+        )
       ],
     );
   }
@@ -219,12 +216,18 @@ class _DrawerUserState extends State<DrawerUser> {
     );
   }
 
-  Widget _avatar(String url) {
+  Widget _avatar(String url, {double size = 30.0}) {
     final colorScheme = Theme.of(context).colorScheme;
-    return CircleAvatar(
-      backgroundColor: colorScheme.onSurface.withOpacity(0.1),
-      radius: 30.0,
-      backgroundImage: NetworkImage(url),
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(width: 2.0, color: Colors.lightGreen.shade700),
+      ),
+      child: CircleAvatar(
+        backgroundColor: colorScheme.onSurface.withOpacity(0.1),
+        radius: size,
+        backgroundImage: NetworkImage(url),
+      ),
     );
   }
 }

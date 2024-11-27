@@ -10,7 +10,7 @@ class DrawerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(10.0),
+      padding: const EdgeInsets.fromLTRB(12.0, 30.0, 4.0, 20.0),
       decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius:
@@ -18,7 +18,7 @@ class DrawerPage extends StatelessWidget {
           boxShadow: [
             BoxShadow(color: colorScheme.shadow.withOpacity(0.3), blurRadius: 7)
           ]),
-      constraints: const BoxConstraints(maxWidth: 400),
+      constraints: const BoxConstraints(maxWidth: 350),
       child: Column(
         children: [
           const Padding(
@@ -30,22 +30,25 @@ class DrawerPage extends StatelessWidget {
             child: DrawerRepos(),
           ),
           const Divider(),
-          ListTile(
-            title: Row(
-              children: [
-                const Text('XBB version $VERSION'),
-                Visibility(
-                  visible: false, // todo
-                  child: IconButton(
-                    onPressed: () async {
-                      launchRepo();
-                    },
-                    icon: const Icon(Icons.refresh),
-                  ),
-                )
-              ],
+          Transform.scale(
+            scale: 0.9,
+            child: ListTile(
+              title: Row(
+                children: [
+                  const Text('XBB version $VERSION'),
+                  Visibility(
+                    visible: false, // todo
+                    child: IconButton(
+                      onPressed: () async {
+                        launchRepo();
+                      },
+                      icon: const Icon(Icons.refresh),
+                    ),
+                  )
+                ],
+              ),
+              leading: const Icon(Icons.info_rounded),
             ),
-            leading: const Icon(Icons.info_rounded),
           ),
         ],
       ),

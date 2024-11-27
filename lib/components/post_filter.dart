@@ -47,12 +47,17 @@ class _PostFilterState extends State<PostFilter> {
   Widget searchFilter() {
     return TextField(
       controller: searchFilterTextController,
+      onTapOutside: (event) {
+        print('onTapOutside');
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
       onChanged: (value) {
         print('onChanged $value');
         postController.setViewFilter(regex: value);
         setState(() {});
       },
       decoration: InputDecoration(
+        isDense: true,
         prefixIcon: const Icon(Icons.search_rounded),
         hintText: '搜索',
         suffixIcon: IconButton(
