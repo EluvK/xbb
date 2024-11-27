@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/utils/utils.dart';
@@ -8,6 +9,7 @@ class DoubleClickButton<T extends ButtonStyleButton> extends StatefulWidget {
   final VoidCallback onDoubleClick;
   final String firstClickHint;
   final Duration resetDuration;
+  final FlushbarPosition flushbarPosition;
 
   const DoubleClickButton({
     super.key,
@@ -15,6 +17,7 @@ class DoubleClickButton<T extends ButtonStyleButton> extends StatefulWidget {
     required this.onDoubleClick,
     required this.firstClickHint,
     this.resetDuration = const Duration(seconds: 2),
+    this.flushbarPosition = FlushbarPosition.BOTTOM,
   });
 
   @override
@@ -33,6 +36,7 @@ class _DoubleClickButtonState extends State<DoubleClickButton> {
           FlushLevel.WARNING,
           'double_click_title'.tr,
           widget.firstClickHint,
+          flushbarPosition: widget.flushbarPosition,
         );
         _startResetTimer();
       } else if (_clickCount == 2) {

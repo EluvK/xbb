@@ -1,3 +1,4 @@
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -5,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/repo.dart';
+import 'package:xbb/utils/double_click.dart';
 import 'package:xbb/utils/utils.dart';
 
 class RepoEditor extends StatefulWidget {
@@ -347,12 +349,17 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   }
 
   Widget _deleteButton() {
-    return TextButton(
-      onPressed: () {
+    return DoubleClickButton(
+      buttonBuilder: (onPressed) => TextButton(
+        onPressed: onPressed,
+        child: Text('删除 Repo', style: TextStyle(color: Colors.red[600])),
+      ),
+      onDoubleClick: () {
         repoController.deleteRepo(widget.repo);
         Get.toNamed('/');
       },
-      child: Text('删除 Repo', style: TextStyle(color: Colors.red[600])),
+      firstClickHint: '删除 Repo',
+      flushbarPosition: FlushbarPosition.TOP,
     );
   }
 

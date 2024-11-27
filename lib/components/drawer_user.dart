@@ -52,8 +52,8 @@ class _DrawerUserState extends State<DrawerUser> {
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: SizedBox(
-                    width: screenWidth * 0.8,
-                    height: screenHeight * 0.8,
+                    width: screenWidth * 0.9,
+                    height: screenHeight * 0.9,
                     child: _showEditUserInfoDialog(setState),
                   ),
                 ),
@@ -88,7 +88,7 @@ class _DrawerUserState extends State<DrawerUser> {
   }
 
   Widget _showEditUserInfoDialog(StateSetter setState) {
-    return Column(
+    var main = Column(
       children: [
         Text(settingController.currentUserId.value),
         const Divider(),
@@ -97,10 +97,9 @@ class _DrawerUserState extends State<DrawerUser> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
           child: avatarMatrix(),
         ),
-        const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.only(bottom: 10.0),
           child: TextField(
@@ -181,6 +180,7 @@ class _DrawerUserState extends State<DrawerUser> {
         ),
       ],
     );
+    return SingleChildScrollView(child: main);
   }
 
   LayoutBuilder avatarMatrix() {
@@ -193,7 +193,7 @@ class _DrawerUserState extends State<DrawerUser> {
             (maxCardCountPerRow + 1);
         return Wrap(
           spacing: spacing,
-          runSpacing: 12.0,
+          runSpacing: 8.0,
           alignment: WrapAlignment.start,
           children: predefinedAvatar.map((avatar) {
             return InkWell(
@@ -207,8 +207,9 @@ class _DrawerUserState extends State<DrawerUser> {
                 });
               },
               child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: _avatar(avatar.url)),
+                padding: const EdgeInsets.all(4.0),
+                child: _avatar(avatar.url),
+              ),
             );
           }).toList(),
         );

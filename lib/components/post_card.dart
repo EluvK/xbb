@@ -51,13 +51,13 @@ class _PostCardState extends State<PostCard> {
           backgroundColor: colorScheme.surface,
           collapsedBackgroundColor: colorScheme.onSurface.withOpacity(0.05),
           initiallyExpanded: true,
-          tilePadding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
+          tilePadding: const EdgeInsets.fromLTRB(8.0, 0.0, 12.0, 0.0),
           childrenPadding: const EdgeInsets.only(bottom: 8.0),
           title: Text(entry.key),
           controlAffinity: ListTileControlAffinity.leading,
           children: entry.value
               .map((post) => Padding(
-                    padding: const EdgeInsets.fromLTRB(20.0, 0.0, 5.0, 10.0),
+                    padding: const EdgeInsets.fromLTRB(8.0, 0.0, 2.0, 4.0),
                     child: postCard(post),
                   ))
               .toList(),

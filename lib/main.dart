@@ -61,6 +61,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingController = Get.find<SettingController>();
+    ThemeMode themeMode = settingController.themeMode.value;
+    print('load themeMode: $themeMode');
+
     String initialRoute = initFirstTime() ? '/login' : '/';
     var app = GetMaterialApp(
       scrollBehavior: const MaterialScrollBehavior()
@@ -74,7 +78,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/edit-repo', page: () => const EditRepoPage()),
       ],
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
+      themeMode: themeMode,
       theme: FlexThemeData.light(
         scheme: FlexScheme.blumineBlue,
         surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
