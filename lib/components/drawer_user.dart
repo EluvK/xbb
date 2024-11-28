@@ -50,7 +50,7 @@ class _DrawerUserState extends State<DrawerUser> {
                 ),
                 elevation: 16,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(6.0),
                   child: SizedBox(
                     width: screenWidth * 0.9,
                     height: screenHeight * 0.9,
@@ -63,7 +63,7 @@ class _DrawerUserState extends State<DrawerUser> {
         );
       },
       customBorder: const CircleBorder(),
-      child: _avatar(customUrlController.text, size: 40.0),
+      child: _avatar(customUrlController.text, size: 36.0),
     );
 
     return Row(
@@ -208,7 +208,7 @@ class _DrawerUserState extends State<DrawerUser> {
               },
               child: Padding(
                 padding: const EdgeInsets.all(4.0),
-                child: _avatar(avatar.url),
+                child: _avatar(avatar.url, size: 24.0),
               ),
             );
           }).toList(),

@@ -184,7 +184,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             items: repoController.myRepoList.map((e) {
               return DropdownMenuItem(value: e.id, child: Text(e.name));
             }).toList(),
-            decoration: const InputDecoration(labelText: 'repo'),
+            decoration: const InputDecoration(
+              labelText: 'repo',
+              contentPadding: EdgeInsets.all(8.0),
+            ),
             onChanged: (value) async {
               widget.post.repoId = value!;
               print('select repo:$value');
@@ -193,7 +196,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             value: widget.post.repoId,
           ),
         ),
-        const VerticalDivider(),
+        const VerticalDivider(width: 6),
         // try:
         Flexible(
           child: Autocomplete(
@@ -230,7 +233,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
                   textEditingController.text = textEditingController.text;
                 });
               },
-              decoration: const InputDecoration(labelText: 'category'),
+              decoration: const InputDecoration(
+                labelText: 'category',
+                contentPadding: EdgeInsets.all(8.0),
+              ),
             ),
             optionsViewOpenDirection: OptionsViewOpenDirection.up,
             onSelected: (String selection) {
@@ -245,8 +251,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             },
           ),
         ),
-
-        const VerticalDivider(),
+        const VerticalDivider(width: 6),
         // TextButton(onPressed: () {}, child: const Text('保存草稿')),
         TextButton(
           onPressed: () {
