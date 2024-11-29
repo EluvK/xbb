@@ -11,8 +11,6 @@ class HomePage extends GetResponsiveView {
 
   @override
   Widget? phone() {
-    final settingController = Get.find<SettingController>();
-    final postController = Get.find<PostController>();
     return Scaffold(
       drawer: const DrawerPage(),
       appBar: const PreferredSize(
@@ -20,24 +18,47 @@ class HomePage extends GetResponsiveView {
         child: PostsAppBar(),
       ),
       floatingActionButton: floatAddButton(),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          if (settingController.currentRepoId.value == '0') {
-            return;
-          }
-          List<int> diff = await postController
-              .pullPosts(settingController.currentRepoId.value);
-          flushDiff(diff);
-          await postController.loadPost(settingController.currentRepoId.value);
-        },
-        notificationPredicate: (ScrollNotification notification) {
-          if (notification.depth != 0) {
-            return false;
-          }
-          return true;
-        },
-        child: const PostPages(),
-      ),
+      body: refreshPostPages(),
+    );
+  }
+
+  @override
+  Widget? desktop() {
+    // main page
+    var container = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const DrawerPage(),
+        const VerticalDivider(),
+        Flexible(child: refreshPostPages()),
+      ],
+    );
+    return Scaffold(
+      floatingActionButton: floatAddButton(),
+      body: container,
+    );
+  }
+
+  Widget refreshPostPages() {
+    final settingController = Get.find<SettingController>();
+    final postController = Get.find<PostController>();
+    return RefreshIndicator(
+      onRefresh: () async {
+        if (settingController.currentRepoId.value == '0') {
+          return;
+        }
+        List<int> diff = await postController
+            .pullPosts(settingController.currentRepoId.value);
+        flushDiff(diff);
+        await postController.loadPost(settingController.currentRepoId.value);
+      },
+      notificationPredicate: (ScrollNotification notification) {
+        if (notification.depth != 0) {
+          return false;
+        }
+        return true;
+      },
+      child: const PostPages(),
     );
   }
 
@@ -47,23 +68,6 @@ class HomePage extends GetResponsiveView {
         Get.toNamed('/edit-post'); // no arguments to new one
       },
       child: const Icon(Icons.add),
-    );
-  }
-
-  @override
-  Widget? desktop() {
-    // main page
-    var container = const Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        DrawerPage(),
-        VerticalDivider(),
-        Flexible(child: PostPages()),
-      ],
-    );
-    return Scaffold(
-      floatingActionButton: floatAddButton(),
-      body: container,
     );
   }
 }

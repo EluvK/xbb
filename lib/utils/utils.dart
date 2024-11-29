@@ -21,6 +21,10 @@ Future<void> launchRepo() async {
   }
 }
 
+bool isMobile() {
+  return GetPlatform.isMobile || Get.width < 600;
+}
+
 String sharedLink(String owner, String id) {
   return "xbb-share://$owner/$id";
 }

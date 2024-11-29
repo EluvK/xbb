@@ -17,10 +17,11 @@ class ViewPostPage extends StatelessWidget {
           Visibility(
             visible: editable,
             child: IconButton(
-                onPressed: () {
-                  Get.toNamed('/edit-post', arguments: [postId]);
-                },
-                icon: const Icon(Icons.edit)),
+              onPressed: () {
+                Get.toNamed('/edit-post', arguments: [postId]);
+              },
+              icon: const Icon(Icons.edit),
+            ),
           ),
         ],
       ),

@@ -5,6 +5,8 @@ import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/post.dart';
+import 'package:xbb/utils/markdown.dart';
+import 'package:xbb/utils/utils.dart';
 
 class PostEditor extends StatefulWidget {
   const PostEditor({super.key, this.postId});
@@ -85,7 +87,8 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   final postController = Get.find<PostController>();
 
   late Set<String> candidateCategory;
-  TextEditingController textEditingController = TextEditingController();
+  TextEditingController categoryTextEditingController = TextEditingController();
+  TextEditingController contentTextEditingController = TextEditingController();
 
   reloadCandidateCategory(String repoId) async {
     candidateCategory = await postController.fetchRepoPostCategories(repoId);
@@ -94,8 +97,21 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   @override
   void initState() {
+    contentTextEditingController.text = widget.post.content;
+    categoryTextEditingController.text = widget.post.category;
+    contentTextEditingController.addListener(() {
+      setState(() {
+        widget.post.content = contentTextEditingController.text;
+      });
+    });
     super.initState();
-    textEditingController.text = widget.post.category;
+  }
+
+  @override
+  void dispose() {
+    contentTextEditingController.dispose();
+    categoryTextEditingController.dispose();
+    super.dispose();
   }
 
   @override
@@ -104,37 +120,17 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _titleWidget(),
-        ),
-        Expanded(
-            child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _editorWidget(),
-        )),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _toolsWidget(),
-        ),
-      ],
-    );
-  }
-
-  Widget newPost() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: _titleWidget(),
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             child: _editorWidget(),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
           child: _toolsWidget(),
         ),
       ],
@@ -158,19 +154,31 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   }
 
   Widget _editorWidget() {
-    return TextField(
+    var contentEditor = TextField(
       expands: true,
       maxLines: null,
       textAlignVertical: TextAlignVertical.top,
-      controller: TextEditingController(text: widget.post.content),
+      controller: contentTextEditingController,
       decoration: const InputDecoration(
         labelText: 'contents:',
         alignLabelWithHint: true,
       ),
-      onChanged: (value) {
-        widget.post.content = value;
-      },
     );
+
+    return isMobile()
+        ? contentEditor
+        : Row(
+            children: [
+              Flexible(child: contentEditor),
+              const VerticalDivider(),
+              Flexible(
+                  child: ListView(
+                children: [
+                  MarkdownRenderer(data: contentTextEditingController.text)
+                ],
+              )),
+            ],
+          );
   }
 
   Widget _toolsWidget() {
@@ -182,11 +190,20 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
           child: DropdownButtonFormField(
             isExpanded: true,
             items: repoController.myRepoList.map((e) {
-              return DropdownMenuItem(value: e.id, child: Text(e.name));
+              return DropdownMenuItem(
+                value: e.id,
+                child: Text(e.name, style: const TextStyle(fontSize: 14)),
+              );
             }).toList(),
             decoration: const InputDecoration(
               labelText: 'repo',
-              contentPadding: EdgeInsets.all(8.0),
+              labelStyle: TextStyle(fontSize: 14),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 4.0, vertical: 10.0),
+              isCollapsed: true,
+              border: OutlineInputBorder(borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(borderSide: BorderSide.none),
             ),
             onChanged: (value) async {
               widget.post.repoId = value!;
@@ -196,10 +213,14 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             value: widget.post.repoId,
           ),
         ),
-        const VerticalDivider(width: 6),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
+          child: Text('/'),
+        ),
         // try:
         Flexible(
           child: Autocomplete(
+            optionsViewOpenDirection: OptionsViewOpenDirection.up,
             optionsBuilder: (TextEditingValue textEditingValue) async {
               print("optionsBuilder, ${candidateCategory.join(',')}");
               if (textEditingValue.text == '') {
@@ -217,10 +238,13 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               }
               return matched;
             },
-            initialValue: TextEditingValue(text: textEditingController.text),
+            initialValue:
+                TextEditingValue(text: categoryTextEditingController.text),
             fieldViewBuilder:
                 (context, textEditingController, focusNode, onFieldSubmitted) =>
                     TextFormField(
+              style: const TextStyle(fontSize: 14),
+              strutStyle: const StrutStyle(fontSize: 16),
               controller: textEditingController,
               focusNode: focusNode,
               onFieldSubmitted: (String value) {
@@ -235,16 +259,22 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               },
               decoration: const InputDecoration(
                 labelText: 'category',
-                contentPadding: EdgeInsets.all(8.0),
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                floatingLabelStyle: TextStyle(fontSize: 14),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+                isCollapsed: true,
+                border: OutlineInputBorder(borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide.none),
               ),
             ),
-            optionsViewOpenDirection: OptionsViewOpenDirection.up,
             onSelected: (String selection) {
               while (selection.startsWith('⭐')) {
                 selection = selection.substring(1);
               }
               setState(() {
-                textEditingController.text = selection;
+                categoryTextEditingController.text = selection;
                 widget.post.category = selection;
               });
               print('onSelected category ${widget.post.category}');
