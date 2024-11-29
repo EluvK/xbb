@@ -48,6 +48,7 @@ dependencies:
   get_time_ago: ^2.1.1
   result_dart: ^1.1.1
   url_launcher: ^6.3.1
+  ota_update: ^6.0.0
 
 dev_dependencies:
   flutter_test:

@@ -296,6 +296,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.0"
+  ota_update:
+    dependency: "direct main"
+    description:
+      name: ota_update
+      sha256: "8c47531b655f8fcf9961dc7758a933a9ccbcbe1c77a7ec52e5c5cfc2ec367ba7"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "6.0.0"
   path:
     dependency: transitive
     description:
