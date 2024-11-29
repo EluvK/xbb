@@ -105,7 +105,7 @@ class PostController extends GetxController {
     }
     await PostRepository().upsertPost(post);
     await repoController.setCurrentRepo(post.repoId);
-    Get.offNamed('/');
+    Get.offAllNamed('/');
   }
 
   deletePost(Post post) async {

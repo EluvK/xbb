@@ -77,7 +77,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/edit-post', page: () => const EditPostPage()),
         GetPage(name: '/edit-repo', page: () => const EditRepoPage()),
       ],
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: true,
       themeMode: themeMode,
       theme: FlexThemeData.light(
         scheme: FlexScheme.blumineBlue,

@@ -215,7 +215,7 @@ class _RegisterPageState extends State<RegisterPage> {
               avatarUrl: resp.avatarUrl,
             );
             await login(userName);
-            Get.toNamed('/');
+            Get.offAllNamed('/');
           }, (err) {
             print('login failed');
             flushBar(FlushLevel.WARNING, 'login failed',
