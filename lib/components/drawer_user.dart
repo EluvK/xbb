@@ -188,7 +188,7 @@ class _DrawerUserState extends State<DrawerUser> {
       builder: (context, constraints) {
         double totalWidth = constraints.maxWidth;
         double cardWidth = 48.0;
-        int maxCardCountPerRow = min((totalWidth / cardWidth).toInt(), 5);
+        int maxCardCountPerRow = min((totalWidth / cardWidth).toInt(), 12);
         double spacing = (totalWidth - (maxCardCountPerRow * cardWidth)) /
             (maxCardCountPerRow + 1);
         return Wrap(
