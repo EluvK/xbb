@@ -91,7 +91,7 @@ flutter:
   fonts:  
     - family: lxgw
       fonts:
-        - asset: assets/font/LXGWWenKaiMono-Bold.ttf
+        - asset: assets/font/LXGWWenKaiMonoScreen.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
