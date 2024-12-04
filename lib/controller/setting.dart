@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:ota_update/ota_update.dart';
 import 'package:xbb/utils/predefined.dart';
+import 'package:xbb/utils/utils.dart';
 
 bool initFirstTime() {
   var settingController = Get.find<SettingController>();
@@ -31,6 +33,8 @@ class SettingController extends GetxController {
   final currentUserPasswd = "".obs;
   final currentUserId = "".obs;
   final currentUserAvatarUrl = "".obs;
+
+  final downloadProgress = 0.0.obs;
 
   @override
   Future onInit() async {
@@ -111,5 +115,25 @@ class SettingController extends GetxController {
   setCurrentRepo(String repo) {
     currentRepoId.value = repo;
     box.write('current_repo_id', repo);
+  }
+
+  downloadApk(String url) {
+    try {
+      OtaUpdate().execute(url, destinationFilename: "xbb.apk").listen((event) {
+        print('event: $event');
+        print('status: ${event.status}, value: ${event.value}');
+        if (event.status == OtaStatus.DOWNLOADING) {
+          downloadProgress.value = double.parse(event.value ?? '0') / 100;
+        } else if (event.status == OtaStatus.DOWNLOAD_ERROR) {
+          flushBar(FlushLevel.WARNING, 'Failed', event.value);
+        } else if (event.status == OtaStatus.INSTALLING) {
+          downloadProgress.value = 0.0;
+          flushBar(FlushLevel.OK, 'Success', 'Download success');
+        }
+      });
+    } catch (e) {
+      print('Failed to make OTA update. Details: $e');
+      flushBar(FlushLevel.WARNING, 'Failed', 'Failed to make OTA update $e');
+    }
   }
 }

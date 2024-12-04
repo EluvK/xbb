@@ -15,6 +15,29 @@ class XbbClient {
   final String baseUrl;
   XbbClient({required this.baseUrl});
 
+  // GET `/file/version`
+  ClientResult<String> getLastestVersion(String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request =
+          await client.getUrl(Uri.parse("$baseUrl/file/version"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return Success(jsonResponse['version']);
+      } else {
+        return const Failure(ClientError.unexpectedError);
+      }
+    } catch (e) {
+      print("error: $e");
+      return const Failure(ClientError.internalError);
+    }
+  }
+
   // GET `/health`
   Future<bool> validateServerHealth() async {
     try {
@@ -402,6 +425,14 @@ class XbbClient {
     }
     return null;
   }
+}
+
+ClientResult<String> getLastestVersion() async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.getLastestVersion(auth);
 }
 
 /// Validate the server address

@@ -15,9 +15,9 @@ const String APP_BUILD_NUMBER =
 
 // ignore: constant_identifier_names
 const String REPO_URL = 'https://github.com/eluvk/xbb/releases';
-Future<void> launchRepo() async {
-  if (!await launchUrl(Uri.parse(REPO_URL))) {
-    throw Exception('Could not launch $REPO_URL');
+Future<void> openUrl(String url) async {
+  if (!await launchUrl(Uri.parse(url))) {
+    throw Exception('Could not launch $url');
   }
 }
 
