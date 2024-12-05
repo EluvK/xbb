@@ -15,14 +15,14 @@ class XbbClient {
   final String baseUrl;
   XbbClient({required this.baseUrl});
 
-  // GET `/file/version`
+  // GET `/version/version`
   ClientResult<String> getLastestVersion(String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
           ((X509Certificate cert, String host, int port) => true);
       HttpClientRequest request =
-          await client.getUrl(Uri.parse("$baseUrl/file/version"));
+          await client.getUrl(Uri.parse("$baseUrl/version"));
       request.headers.set('Authorization', auth);
       HttpClientResponse response = await request.close();
       if (response.statusCode == 200) {
@@ -30,6 +30,7 @@ class XbbClient {
         Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
         return Success(jsonResponse['version']);
       } else {
+        // print("getLastestVersion error ${response.statusCode}");
         return const Failure(ClientError.unexpectedError);
       }
     } catch (e) {
