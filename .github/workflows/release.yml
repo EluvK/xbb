@@ -34,15 +34,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set the value
-        id: step_one
-        run: |
-          "action_state=yellow" >> $env:GITHUB_ENV
-      - name: Use the value
-        id: step_two
-        run: |
-          Write-Output "$env:action_state" # This will output 'yellow'
-
       - name: Figure out DIR
         run: |
           $ref="${{ github.ref_name }}"
@@ -113,15 +104,6 @@ jobs:
     if: contains(github.event.inputs.platforms, 'android') || contains(github.event.inputs.platforms, 'all') || startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set the value
-        id: step_one
-        run: |
-          echo "action_state=yellow" >> "$GITHUB_ENV"
-      - name: Use the value
-        id: step_two
-        run: |
-          printf '%s\n' "$action_state" # This will output 'yellow'
 
       - name: Figure out DIR
         run: |
