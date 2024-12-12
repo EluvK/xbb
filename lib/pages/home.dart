@@ -49,7 +49,7 @@ class HomePage extends GetResponsiveView {
         }
         List<int> diff = await postController
             .pullPosts(settingController.currentRepoId.value);
-        flushDiff(diff);
+        flushDiff("update_current_repo".tr, diff);
         await postController.loadPost(settingController.currentRepoId.value);
       },
       notificationPredicate: (ScrollNotification notification) {

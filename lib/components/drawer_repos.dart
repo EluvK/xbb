@@ -26,21 +26,21 @@ class _DrawerReposState extends State<DrawerRepos> {
         children: [
           Row(
             children: [
-              const Expanded(child: Text('MyRepos')),
+              Expanded(child: Text('my_repos'.tr)),
               IconButton(
                 onPressed: () async {
                   await repoController.pullRepos();
                 },
                 icon: const Icon(Icons.refresh_rounded),
-                tooltip: 'refresh',
+                tooltip: 'refresh_tooltip'.tr,
               ),
-              IconButton(
-                onPressed: () {
-                  Get.toNamed('/edit-repo');
-                },
-                icon: const Icon(Icons.add),
-                tooltip: 'New repo',
-              )
+              // IconButton(
+              //   onPressed: () {
+              //     Get.toNamed('/edit-repo');
+              //   },
+              //   icon: const Icon(Icons.add),
+              //   tooltip: 'New repo',
+              // )
             ],
           ),
           ListView.builder(
@@ -54,13 +54,13 @@ class _DrawerReposState extends State<DrawerRepos> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Subscribe"),
+              Text("subscribe_repos".tr),
               IconButton(
                 onPressed: () async {
                   await repoController.pullSubscribeRepos();
                 },
                 icon: const Icon(Icons.refresh_rounded),
-                tooltip: 'update',
+                tooltip: 'refresh_tooltip'.tr,
               )
             ],
           ),

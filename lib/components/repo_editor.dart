@@ -1,4 +1,3 @@
-import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -359,7 +358,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
         Get.toNamed('/');
       },
       firstClickHint: '删除 Repo',
-      flushbarPosition: FlushbarPosition.TOP,
+      upperPosition: true,
     );
   }
 

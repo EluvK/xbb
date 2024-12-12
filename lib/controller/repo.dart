@@ -94,7 +94,7 @@ class RepoController extends GetxController {
     List<Repo> repos = (await syncPullRepos()).fold((list) {
       return list;
     }, (err) {
-      flushDiff([-1, -1, -1]);
+      flushDiff("update_failed".tr, [-1, -1, -1]);
       return [];
     });
     for (var repo in repos) {
@@ -114,9 +114,10 @@ class RepoController extends GetxController {
         for (int i = 0; i < 3; i++) {
           sumDiff[i] += diff[i];
         }
-        flushDiff(sumDiff);
+        print('pullRepos diff $sumDiff');
       }
     }
+    flushDiff("my_repo_update".tr, sumDiff);
 
     await loadRepoLists();
   }
@@ -125,7 +126,7 @@ class RepoController extends GetxController {
     List<int> sumDiff = [0, 0, 0];
     List<Repo>? repos = await syncSubscribeRepos();
     if (repos == null) {
-      flushDiff([-1, -1, -1]);
+      flushDiff("update_failed".tr, [-1, -1, -1]);
       return;
     }
     for (var repo in repos) {
@@ -137,8 +138,9 @@ class RepoController extends GetxController {
       for (int i = 0; i < 3; i++) {
         sumDiff[i] += diff[i];
       }
-      flushDiff(sumDiff);
+      print('pullSubscribeRepos diff $sumDiff');
     }
+    flushDiff("subscribe_repo_update".tr, sumDiff);
     await loadRepoLists();
   }
 

@@ -78,10 +78,17 @@ class _DrawerUserState extends State<DrawerUser> {
               onPressed: () {
                 Get.toNamed('/login');
               },
-              label: const Text('Change User'),
+              label: Text('change_user'.tr),
               icon: const Icon(Icons.login_rounded),
             ),
           ],
+        ),
+        IconButton(
+          onPressed: () {
+            Get.toNamed('/edit-repo');
+          },
+          icon: const Icon(Icons.add),
+          tooltip: 'new_repo'.tr,
         )
       ],
     );

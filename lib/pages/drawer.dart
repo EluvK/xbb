@@ -22,7 +22,7 @@ class DrawerPage extends StatelessWidget {
       child: const Column(
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+            padding: EdgeInsets.fromLTRB(2.0, 12.0, 2.0, 2.0),
             child: DrawerUser(),
           ),
           Divider(),
@@ -30,7 +30,10 @@ class DrawerPage extends StatelessWidget {
             child: DrawerRepos(),
           ),
           Divider(),
-          Settings(),
+          Padding(
+            padding: EdgeInsets.all(2.0),
+            child: Settings(),
+          ),
         ],
       ),
     );

@@ -9,7 +9,7 @@ class DoubleClickButton<T extends ButtonStyleButton> extends StatefulWidget {
   final VoidCallback onDoubleClick;
   final String firstClickHint;
   final Duration resetDuration;
-  final FlushbarPosition flushbarPosition;
+  final bool upperPosition;
 
   const DoubleClickButton({
     super.key,
@@ -17,7 +17,7 @@ class DoubleClickButton<T extends ButtonStyleButton> extends StatefulWidget {
     required this.onDoubleClick,
     required this.firstClickHint,
     this.resetDuration = const Duration(seconds: 2),
-    this.flushbarPosition = FlushbarPosition.BOTTOM,
+    this.upperPosition = false,
   });
 
   @override
@@ -36,7 +36,9 @@ class _DoubleClickButtonState extends State<DoubleClickButton> {
           FlushLevel.WARNING,
           'double_click_title'.tr,
           widget.firstClickHint,
-          flushbarPosition: widget.flushbarPosition,
+          flushbarPosition: widget.upperPosition
+              ? FlushbarPosition.TOP
+              : FlushbarPosition.BOTTOM,
         );
         _startResetTimer();
       } else if (_clickCount == 2) {

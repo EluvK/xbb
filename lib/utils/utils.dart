@@ -37,12 +37,31 @@ String detailedDateStr(DateTime dt) {
   return DateFormat('yyyy-MM-dd HH:mm:ss').format(dt.toLocal());
 }
 
-void flushDiff(List<int> diff) {
-  String diffStr = "add ${diff[0]}, update ${diff[1]}, delete ${diff[2]}";
+void flushDiff(String title, List<int> diff) {
+  String diffStr = "";
+  if (diff[0] > 0) {
+    diffStr = '$diffStr${'update_result_new_posts_cnt'.trParams({
+          'count': diff[0].toString()
+        })}\n';
+  }
+  if (diff[1] > 0) {
+    diffStr = "$diffStr${'update_result_update_posts_cnt'.trParams({
+          'count': diff[1].toString()
+        })}\n";
+  }
+  if (diff[2] > 0) {
+    diffStr = "$diffStr${'update_result_delete_posts_cnt'.trParams({
+          'count': diff[2].toString()
+        })}\n";
+  }
+  if (diffStr == "") {
+    diffStr = "update_result_nothing".tr;
+  }
+
   if (diff[0] < 0) {
-    flushBar(FlushLevel.WARNING, "failed", "somethings went wrongs");
+    flushBar(FlushLevel.WARNING, "update_failed".tr, "somethings went wrongs");
   } else {
-    flushBar(FlushLevel.OK, "success", diffStr);
+    flushBar(FlushLevel.OK, title, diffStr);
   }
 }
 

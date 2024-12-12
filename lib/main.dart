@@ -15,6 +15,7 @@ import 'package:xbb/pages/edit_repo.dart';
 import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/register.dart';
 import 'package:xbb/pages/view_post.dart';
+import 'package:xbb/utils/translation.dart';
 
 void main() async {
   await GetStorage.init('XbbGetStorage');
@@ -56,6 +57,12 @@ Future<void> initRepoPost() async {
   await postController.loadPost(settingController.currentRepoId.value);
 }
 
+Future<void> initUpdatePosts() async {
+  final repoController = Get.find<RepoController>();
+  await repoController.pullSubscribeRepos();
+  // await repoController.pullRepos();
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -65,11 +72,17 @@ class MyApp extends StatelessWidget {
     ThemeMode themeMode = settingController.themeMode.value;
     print('load themeMode: $themeMode');
 
-    String initialRoute = initFirstTime() ? '/login' : '/';
+    bool first = initFirstTime();
+    String initialRoute = first ? '/login' : '/';
+    if (!first) {
+      initUpdatePosts();
+    }
     var app = GetMaterialApp(
       scrollBehavior: const MaterialScrollBehavior()
           .copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       initialRoute: initialRoute,
+      translations: Translation(),
+      locale: const Locale('zh'), // todo add setting.
       getPages: [
         GetPage(name: '/', page: () => HomePage()),
         GetPage(name: '/login', page: () => const RegisterPage()),
