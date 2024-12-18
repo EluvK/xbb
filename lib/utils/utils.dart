@@ -97,3 +97,37 @@ void flushBar(FlushLevel level, String? title, String? message,
     flushbarPosition: flushbarPosition,
   ).show(Get.context!);
 }
+
+Future<bool?> showBackCheckDialog(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('back_check_title'.tr),
+        content: Text(
+          'back_check_content'.tr,
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text('back_check_cancel'.tr),
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+          ),
+          TextButton(
+            // style: TextButton.styleFrom(
+            //   textStyle: Theme.of(context).textTheme.labelLarge,
+            // ),
+            child: Text(
+              'back_check_confirm'.tr,
+              style: TextStyle(color: Colors.red[400]),
+            ),
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+          ),
+        ],
+      );
+    },
+  );
+}

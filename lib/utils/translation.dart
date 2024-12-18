@@ -90,6 +90,22 @@ class _TranslationHelper {
       "en_US": "Shared Link",
       "zh_CN": "分享链接",
     },
+    "back_check_title": {
+      "en_US": "Are you sure?",
+      "zh_CN": "确定退出？",
+    },
+    "back_check_content": {
+      "en_US": "Are you sure you want to leave this page?",
+      "zh_CN": "未保存的内容会丢失",
+    },
+    "back_check_confirm": {
+      "en_US": "Leave",
+      "zh_CN": "确认离开",
+    },
+    "back_check_cancel": {
+      "en_US": "Never Mind",
+      "zh_CN": "取消",
+    },
     "template": {
       "en_US": "",
       "zh_CN": "",
