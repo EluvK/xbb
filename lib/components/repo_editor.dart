@@ -171,16 +171,16 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
 
   Widget _switchModeButton() {
     return SegmentedButton(
-      segments: const [
+      segments: [
         ButtonSegment(
           value: EditRepoMode.self,
-          icon: Icon(Icons.create_rounded),
-          label: Text('self'),
+          icon: const Icon(Icons.create_rounded),
+          label: Text('repo_type_self'.tr),
         ),
         ButtonSegment(
           value: EditRepoMode.shared,
-          icon: Icon(Icons.get_app_rounded),
-          label: Text('shared'),
+          icon: const Icon(Icons.get_app_rounded),
+          label: Text('repo_type_shared'.tr),
         ),
       ],
       showSelectedIcon: false,
@@ -198,7 +198,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       minLines: 1,
       maxLines: 3,
       controller: TextEditingController(text: widget.repo.name),
-      decoration: const InputDecoration(labelText: 'Repo Name:'),
+      decoration: InputDecoration(labelText: 'repo_name'.tr),
       onChanged: (value) {
         widget.repo.name = value;
       },
@@ -211,7 +211,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       minLines: 1,
       maxLines: 3,
       controller: TextEditingController(text: widget.repo.description),
-      decoration: const InputDecoration(labelText: 'Description:'),
+      decoration: InputDecoration(labelText: 'description'.tr),
       onChanged: (value) {
         widget.repo.description = value;
       },
@@ -232,7 +232,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
             onChanged: (value) {
               widget.repo.sharedLink = value;
             },
-            decoration: const InputDecoration(labelText: 'Shared Link:'),
+            decoration: InputDecoration(labelText: 'shared_link'.tr),
             enabled: editMode == EditRepoMode.shared && widget.enableChooseMode,
           ),
         ),

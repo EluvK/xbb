@@ -31,8 +31,12 @@ class _TranslationHelper {
       "zh_CN": "切换用户",
     },
     "new_repo": {
-      "en_US": "New repo",
-      "zh_CN": "创建",
+      "en_US": "New Repo",
+      "zh_CN": "创建新小本本",
+    },
+    "edit_repo": {
+      "en_US": "Edit Repo `@repoName`",
+      "zh_CN": "修改 `@repoName`",
     },
     "update_failed": {
       "en_US": "Update Failed",
@@ -65,6 +69,26 @@ class _TranslationHelper {
     "update_result_nothing": {
       "en_US": "No Updates",
       "zh_CN": "没有任何更新噢。",
+    },
+    "repo_type_self": {
+      "en_US": "Self",
+      "zh_CN": "我的",
+    },
+    "repo_type_shared": {
+      "en_US": "Shared",
+      "zh_CN": "订阅",
+    },
+    "repo_name": {
+      "en_US": "Repo Name",
+      "zh_CN": "小本本命名",
+    },
+    "description": {
+      "en_US": "Description",
+      "zh_CN": "描述",
+    },
+    "shared_link": {
+      "en_US": "Shared Link",
+      "zh_CN": "分享链接",
     },
     "template": {
       "en_US": "",
