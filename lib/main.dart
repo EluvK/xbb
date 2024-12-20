@@ -14,6 +14,7 @@ import 'package:xbb/pages/edit_post.dart';
 import 'package:xbb/pages/edit_repo.dart';
 import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/register.dart';
+import 'package:xbb/pages/setting.dart';
 import 'package:xbb/pages/view_post.dart';
 import 'package:xbb/utils/translation.dart';
 
@@ -58,9 +59,24 @@ Future<void> initRepoPost() async {
 }
 
 Future<void> initUpdatePosts() async {
+  final settingController = Get.find<SettingController>();
   final repoController = Get.find<RepoController>();
-  await repoController.pullSubscribeRepos();
-  // await repoController.pullRepos();
+  if (settingController.autoSyncSelfRepo.value) {
+    await repoController.pullRepos();
+  }
+  if (settingController.autoSyncSubscribeRepo.value) {
+    await repoController.pullSubscribeRepos();
+  }
+}
+
+Future<void> checkIfUpdate() async {
+  final settingController = Get.find<SettingController>();
+  await settingController.checkIfUpdate();
+}
+
+void autoLoadAtStart() {
+  checkIfUpdate();
+  initUpdatePosts();
 }
 
 class MyApp extends StatelessWidget {
@@ -69,26 +85,35 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingController = Get.find<SettingController>();
-    ThemeMode themeMode = settingController.themeMode.value;
-    print('load themeMode: $themeMode');
 
     bool first = initFirstTime();
     String initialRoute = first ? '/login' : '/';
-    if (!first) {
-      initUpdatePosts();
+    if (!first && !settingController.quickReloadMode.value) {
+      autoLoadAtStart();
     }
+
+    ThemeMode themeMode = settingController.themeMode.value;
+    print('load themeMode: $themeMode');
+    var locale = settingController.locale.value;
+    double fontScale = settingController.fontScale.value;
+    print('load fontScale: $fontScale');
+    final mediaQueryData = MediaQuery.of(context);
+    final scale = mediaQueryData.textScaler
+        .clamp(minScaleFactor: fontScale, maxScaleFactor: fontScale + 0.1);
+
     var app = GetMaterialApp(
       scrollBehavior: const MaterialScrollBehavior()
           .copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       initialRoute: initialRoute,
       translations: Translation(),
-      locale: const Locale('zh'), // todo add setting.
+      locale: locale,
       getPages: [
         GetPage(name: '/', page: () => HomePage()),
         GetPage(name: '/login', page: () => const RegisterPage()),
         GetPage(name: '/view-post', page: () => const ViewPostPage()),
         GetPage(name: '/edit-post', page: () => const EditPostPage()),
         GetPage(name: '/edit-repo', page: () => const EditRepoPage()),
+        GetPage(name: '/setting', page: () => const SettingPage()),
       ],
       debugShowCheckedModeBanner: true,
       themeMode: themeMode,
@@ -133,6 +158,10 @@ class MyApp extends StatelessWidget {
         fontFamily: 'lxgw',
       ),
     );
-    return app;
+
+    return MediaQuery(
+      data: mediaQueryData.copyWith(textScaler: scale),
+      child: app,
+    );
   }
 }

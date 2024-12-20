@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/utils/utils.dart';
@@ -36,9 +35,7 @@ class _DoubleClickButtonState extends State<DoubleClickButton> {
           FlushLevel.WARNING,
           'double_click_title'.tr,
           widget.firstClickHint,
-          flushbarPosition: widget.upperPosition
-              ? FlushbarPosition.TOP
-              : FlushbarPosition.BOTTOM,
+          upperPosition: widget.upperPosition,
         );
         _startResetTimer();
       } else if (_clickCount == 2) {

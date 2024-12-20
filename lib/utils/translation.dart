@@ -106,6 +106,54 @@ class _TranslationHelper {
       "en_US": "Never Mind",
       "zh_CN": "取消",
     },
+    "setting": {
+      "en_US": "Setting",
+      "zh_CN": "设置",
+    },
+    "app_setting": {
+      "en_US": "App Setting",
+      "zh_CN": "应用设置",
+    },
+    "sync_setting": {
+      "en_US": "Sync Setting",
+      "zh_CN": "同步设置",
+    },
+    "theme_mode": {
+      "en_US": "Theme Mode",
+      "zh_CN": "主题模式",
+    },
+    "mode_light": {
+      "en_US": "Light",
+      "zh_CN": "亮色",
+    },
+    "mode_system": {
+      "en_US": "System",
+      "zh_CN": "跟随系统",
+    },
+    "mode_dark": {
+      "en_US": "Dark",
+      "zh_CN": "暗色",
+    },
+    "language": {
+      "en_US": "Language",
+      "zh_CN": "语言",
+    },
+    "font_scale": {
+      "en_US": "Font Scale",
+      "zh_CN": "字体缩放",
+    },
+    "check_app_update": {
+      "en_US": "Check App Update",
+      "zh_CN": "检查软件更新",
+    },
+    "auto_sync_self_repo": {
+      "en_US": "Sync Self Repo At Startup",
+      "zh_CN": "启动时同步我的小本本",
+    },
+    "auto_sync_subscribe_repo": {
+      "en_US": "Sync Subscribe Repo At Startup",
+      "zh_CN": "启动时同步订阅的小本本",
+    },
     "template": {
       "en_US": "",
       "zh_CN": "",

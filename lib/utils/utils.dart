@@ -69,7 +69,7 @@ void flushDiff(String title, List<int> diff) {
 enum FlushLevel { OK, INFO, WARNING }
 
 void flushBar(FlushLevel level, String? title, String? message,
-    {FlushbarPosition flushbarPosition = FlushbarPosition.BOTTOM}) {
+    {bool upperPosition = false}) {
   Color? color;
   IconData? icon;
   switch (level) {
@@ -94,7 +94,8 @@ void flushBar(FlushLevel level, String? title, String? message,
     margin: const EdgeInsets.all(12.0),
     borderRadius: BorderRadius.circular(8.0),
     leftBarIndicatorColor: color,
-    flushbarPosition: flushbarPosition,
+    flushbarPosition:
+        upperPosition ? FlushbarPosition.TOP : FlushbarPosition.BOTTOM,
   ).show(Get.context!);
 }
 

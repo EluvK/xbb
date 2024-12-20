@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ota_update/ota_update.dart';
+import 'package:xbb/client/client.dart';
 import 'package:xbb/utils/predefined.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -25,6 +26,13 @@ class SettingController extends GetxController {
 
   // app settings
   final themeMode = ThemeMode.system.obs;
+  final fontScale = 1.0.obs;
+  final locale = const Locale('en').obs;
+  final autoCheckAppUpdate = true.obs;
+
+  // sync settings
+  final autoSyncSelfRepo = false.obs;
+  final autoSyncSubscribeRepo = true.obs;
 
   // cache information
   final serverAddress = "".obs;
@@ -34,13 +42,19 @@ class SettingController extends GetxController {
   final currentUserId = "".obs;
   final currentUserAvatarUrl = "".obs;
 
+  // local state
+  final canUpdate = false.obs;
+  final quickReloadMode = false.obs;
+
   final downloadProgress = 0.0.obs;
 
   @override
   Future onInit() async {
     print('setting controller onInit');
     getAppSetting();
+    getSyncSetting();
     getCacheSetting();
+    getLocalState();
     super.onInit();
     _initialized = true;
   }
@@ -63,6 +77,54 @@ class SettingController extends GetxController {
       print('theme not found, setting to system');
       themeMode.value = ThemeMode.system;
     }
+    fontScale.value = box.read('font_scale') ?? 1.0;
+    locale.value = Locale(box.read('locale') ?? 'zh');
+    autoCheckAppUpdate.value = box.read('auto_check_app_update') ?? true;
+  }
+
+  setFontScale(double scale) {
+    setQuickReloadMode(true);
+    fontScale.value = scale;
+    Get.forceAppUpdate().then((value) {
+      setQuickReloadMode(false);
+    });
+    box.write('font_scale', scale);
+  }
+
+  setLocale(Locale locale) {
+    setQuickReloadMode(true);
+    this.locale.value = locale;
+    Get.updateLocale(locale).then((value) {
+      setQuickReloadMode(false);
+    });
+    box.write('locale', locale.languageCode);
+  }
+
+  setThemeMode(ThemeMode theme) {
+    print('setting theme: $theme');
+    themeMode.value = theme;
+    Get.changeThemeMode(themeMode.value);
+    box.write('theme', themeMode.value.toString());
+  }
+
+  setAutoCheckUpdate(bool value) {
+    autoCheckAppUpdate.value = value;
+    box.write('auto_check_app_update', value);
+  }
+
+  getSyncSetting() {
+    autoSyncSelfRepo.value = box.read('auto_sync_self_repo') ?? false;
+    autoSyncSubscribeRepo.value = box.read('auto_sync_subscribe_repo') ?? true;
+  }
+
+  setAutoSyncSelfRepo(bool value) {
+    autoSyncSelfRepo.value = value;
+    box.write('auto_sync_self_repo', value);
+  }
+
+  setAutoSyncSubscribeRepo(bool value) {
+    autoSyncSubscribeRepo.value = value;
+    box.write('auto_sync_subscribe_repo', value);
   }
 
   getCacheSetting() {
@@ -73,13 +135,6 @@ class SettingController extends GetxController {
     currentUserId.value = box.read('current_user_id') ?? '';
     currentUserAvatarUrl.value =
         box.read('current_user_avatar_url') ?? defaultAvatarLink;
-  }
-
-  setThemeMode(ThemeMode theme) {
-    print('setting theme: $theme');
-    themeMode.value = theme;
-    Get.changeThemeMode(themeMode.value);
-    box.write('theme', themeMode.value.toString());
   }
 
   getCurrentBaseAuth() {
@@ -136,4 +191,53 @@ class SettingController extends GetxController {
       flushBar(FlushLevel.WARNING, 'Failed', 'Failed to make OTA update $e');
     }
   }
+
+  getLocalState() {
+    canUpdate.value = box.read('can_update') ?? false;
+    quickReloadMode.value = box.read('quick_reload_mode') ?? false;
+  }
+
+  setCanUpdate(bool value) {
+    canUpdate.value = value;
+    box.write('can_update', value);
+  }
+
+  setQuickReloadMode(bool value) {
+    // print('setUpdateAppMode,$value');
+    quickReloadMode.value = value;
+    box.write('quick_reload_mode', value);
+  }
+
+  checkIfUpdate() {
+    if (VERSION == 'debug' || canUpdate.value) {
+      return;
+    }
+    if (!autoCheckAppUpdate.value) {
+      return;
+    }
+    getLatestVersion().then((value) {
+      value.fold((version) {
+        if (shouldUpdate(version)) {
+          flushBar(FlushLevel.INFO, "有新版本啦", "最新版本: $version",
+              upperPosition: true);
+          setCanUpdate(true);
+        }
+      }, (error) {
+        print('error: $error');
+      });
+    });
+  }
+}
+
+bool shouldUpdate(String latestVersion) {
+  if (VERSION == 'debug') {
+    return true;
+  }
+  for (int i = 0; i < latestVersion.split('.').length; i++) {
+    if (int.parse(latestVersion.split('.')[i]) >
+        int.parse(VERSION.split('.')[i])) {
+      return true;
+    }
+  }
+  return false;
 }

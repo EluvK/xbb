@@ -16,7 +16,7 @@ class XbbClient {
   XbbClient({required this.baseUrl});
 
   // GET `/version/version`
-  ClientResult<String> getLastestVersion(String auth) async {
+  ClientResult<String> getLatestVersion(String auth) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
@@ -428,12 +428,12 @@ class XbbClient {
   }
 }
 
-ClientResult<String> getLastestVersion() async {
+ClientResult<String> getLatestVersion() async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
-  return await client.getLastestVersion(auth);
+  return await client.getLatestVersion(auth);
 }
 
 /// Validate the server address

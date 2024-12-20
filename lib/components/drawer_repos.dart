@@ -22,11 +22,11 @@ class _DrawerReposState extends State<DrawerRepos> {
 
     return Obx(() {
       var body = Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(child: Text('my_repos'.tr)),
+              Text('my_repos'.tr),
               IconButton(
                 onPressed: () async {
                   await repoController.pullRepos();
@@ -34,21 +34,12 @@ class _DrawerReposState extends State<DrawerRepos> {
                 icon: const Icon(Icons.refresh_rounded),
                 tooltip: 'refresh_tooltip'.tr,
               ),
-              // IconButton(
-              //   onPressed: () {
-              //     Get.toNamed('/edit-repo');
-              //   },
-              //   icon: const Icon(Icons.add),
-              //   tooltip: 'New repo',
-              // )
             ],
           ),
-          ListView.builder(
-            shrinkWrap: true,
-            itemCount: repoController.myRepoList.length,
-            itemBuilder: (context, index) {
-              return reposListItem(repoController.myRepoList[index]);
-            },
+          Column(
+            children: [
+              for (var repo in repoController.myRepoList) reposListItem(repo),
+            ],
           ),
           const Divider(),
           Row(
@@ -64,16 +55,16 @@ class _DrawerReposState extends State<DrawerRepos> {
               )
             ],
           ),
-          ListView.builder(
-            shrinkWrap: true,
-            itemCount: repoController.subscribeRepoList.length,
-            itemBuilder: (context, index) {
-              return reposListItem(repoController.subscribeRepoList[index]);
-            },
+          Column(
+            children: [
+              for (var repo in repoController.subscribeRepoList)
+                reposListItem(repo),
+            ],
           ),
         ],
       );
       return ListView(
+        padding: EdgeInsets.zero,
         children: [body],
       );
     });

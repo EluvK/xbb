@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xbb/components/drawer_repos.dart';
 import 'package:xbb/components/drawer_user.dart';
-import 'package:xbb/components/settings.dart';
+import 'package:xbb/components/drawer_settings.dart';
 
 class DrawerPage extends StatelessWidget {
   const DrawerPage({super.key});
@@ -32,7 +32,7 @@ class DrawerPage extends StatelessWidget {
           Divider(),
           Padding(
             padding: EdgeInsets.all(2.0),
-            child: Settings(),
+            child: DrawerSettingArea(),
           ),
         ],
       ),
