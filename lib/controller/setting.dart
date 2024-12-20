@@ -48,7 +48,7 @@ class SettingController extends GetxController {
 
   // memory state
   final downloadProgress = 0.0.obs;
-  final lastAutoLoadTimestamp = DateTime.now().obs;
+  final lastAutoLoadTimestamp = DateTime.fromMillisecondsSinceEpoch(0).obs;
 
   @override
   Future onInit() async {

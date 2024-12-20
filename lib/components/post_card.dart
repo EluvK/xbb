@@ -155,18 +155,18 @@ class _PostCardState extends State<PostCard> {
             decoration: post.status == PostStatus.detached
                 ? TextDecoration.lineThrough
                 : null,
+            fontSize: 18,
           ),
-          textScaler: const TextScaler.linear(1.3),
         ),
       ),
       subtitle: Text(
         "updated at ${readableDateStr(post.updatedAt)}",
-        textScaler: const TextScaler.linear(0.9),
         style: TextStyle(
           color: Colors.grey,
           decoration: post.status == PostStatus.detached
               ? TextDecoration.lineThrough
               : null,
+          fontSize: 12,
         ),
       ),
       trailing: Row(
@@ -207,12 +207,9 @@ class _PostCardState extends State<PostCard> {
     if (post.id == _moreContentButtonId) {
       moreContent = Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Text(
-          post.content.length <= 365
-              ? post.content
-              : '${post.content.substring(0, 365)}...',
-          textScaler: const TextScaler.linear(1.0),
-        ),
+        child: Text(post.content.length <= 365
+            ? post.content
+            : '${post.content.substring(0, 365)}...'),
       );
       // } else {
     }

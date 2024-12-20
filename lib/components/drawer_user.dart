@@ -72,8 +72,10 @@ class _DrawerUserState extends State<DrawerUser> {
         avatar,
         Column(
           children: [
-            Text(settingController.currentUserName.value,
-                textScaler: const TextScaler.linear(1.5)),
+            Text(
+              settingController.currentUserName.value,
+              style: const TextStyle(fontSize: 20),
+            ),
             ElevatedButton.icon(
               onPressed: () {
                 Get.toNamed('/login');

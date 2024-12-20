@@ -46,11 +46,11 @@ class _PostViewerState extends State<PostViewer> {
       children: [
         Text(
           post.title,
-          textScaler: const TextScaler.linear(1.6),
+          style: const TextStyle(fontSize: 22),
         ),
         Text(
           "${post.category} | ${detailedDateStr(post.updatedAt)}",
-          textScaler: const TextScaler.linear(0.9),
+          style: const TextStyle(fontSize: 13),
         ),
       ],
     );
