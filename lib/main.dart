@@ -86,9 +86,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingController = Get.find<SettingController>();
 
+    print(settingController.lastAutoLoadTimestamp);
+    bool inMinimumUpdateInterval = DateTime.now()
+        .subtract(const Duration(minutes: 1))
+        .isBefore(settingController.lastAutoLoadTimestamp.value);
     bool first = initFirstTime();
     String initialRoute = first ? '/login' : '/';
-    if (!first && !settingController.quickReloadMode.value) {
+    if (!first &&
+        !settingController.quickReloadMode.value &&
+        !inMinimumUpdateInterval) {
+      settingController.lastAutoLoadTimestamp.value = DateTime.now();
       autoLoadAtStart();
     }
 
