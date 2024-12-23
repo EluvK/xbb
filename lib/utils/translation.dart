@@ -38,6 +38,14 @@ class _TranslationHelper {
       "en_US": "Edit Repo `@repoName`",
       "zh_CN": "修改 `@repoName`",
     },
+    "new_post": {
+      "en_US": "New Post",
+      "zh_CN": "写新笔记",
+    },
+    "edit_post": {
+      "en_US": "Edit Post `@postName`",
+      "zh_CN": "修改 `@postName`",
+    },
     "update_failed": {
       "en_US": "Update Failed",
       "zh_CN": "更新失败",

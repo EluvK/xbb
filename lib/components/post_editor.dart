@@ -9,8 +9,8 @@ import 'package:xbb/utils/markdown.dart';
 import 'package:xbb/utils/utils.dart';
 
 class PostEditor extends StatefulWidget {
-  const PostEditor({super.key, this.postId});
-  final String? postId;
+  const PostEditor({super.key, this.post});
+  final Post? post;
 
   @override
   State<PostEditor> createState() => _PostEditorState();
@@ -35,7 +35,7 @@ class _PostEditorState extends State<PostEditor> {
           return const CircularProgressIndicator();
         }
         var candidateCategory = categories.data!;
-        if (widget.postId == null) {
+        if (widget.post == null) {
           // new one
           var post = Post(
             id: const Uuid().v4(),
@@ -52,18 +52,9 @@ class _PostEditorState extends State<PostEditor> {
             initCandidateCategory: candidateCategory,
           );
         }
-        return FutureBuilder(
-          future: postController.getPostUnwrap(widget.postId!),
-          builder: (context, postData) {
-            if (!postData.hasData) {
-              return const CircularProgressIndicator();
-            }
-            var post = postData.data!;
-            return _PostEditorInner(
-              post: post,
-              initCandidateCategory: candidateCategory,
-            );
-          },
+        return _PostEditorInner(
+          post: widget.post!,
+          initCandidateCategory: candidateCategory,
         );
       },
     );
