@@ -20,17 +20,26 @@ class _PostViewerState extends State<PostViewer> {
   Widget build(BuildContext context) {
     return FutureBuilder<Post>(
         future: postController.getPostUnwrap(widget.postId),
-        builder: (context, AsyncSnapshot<Post> post) {
-          if (post.hasData) {
+        builder: (context, AsyncSnapshot<Post> getPost) {
+          if (getPost.hasData) {
+            var post = getPost.data!;
             return Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _title(post.data!),
-                  // todo tags maybe?
+                  // title:
+                  Text(
+                    "${post.category} | ${detailedDateStr(post.updatedAt)}",
+                    style: const TextStyle(fontSize: 13),
+                  ),
                   const Divider(),
-                  Expanded(child: _content(post.data!.content)),
+                  // content:
+                  Expanded(
+                    child: ListView(
+                      children: [MarkdownRenderer(data: post.content)],
+                    ),
+                  ),
                 ],
               ),
             );
@@ -40,23 +49,23 @@ class _PostViewerState extends State<PostViewer> {
         });
   }
 
-  Widget _title(Post post) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          post.title,
-          style: const TextStyle(fontSize: 22),
-        ),
-        Text(
-          "${post.category} | ${detailedDateStr(post.updatedAt)}",
-          style: const TextStyle(fontSize: 13),
-        ),
-      ],
-    );
-  }
+  // Widget _title(Post post) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         post.title,
+  //         style: const TextStyle(fontSize: 22),
+  //       ),
+  //       Text(
+  //         "${post.category} | ${detailedDateStr(post.updatedAt)}",
+  //         style: const TextStyle(fontSize: 13),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _content(String content) {
-    return ListView(children: [MarkdownRenderer(data: content)]);
-  }
+  // Widget _content(String content) {
+  //   return ListView(children: [MarkdownRenderer(data: content)]);
+  // }
 }

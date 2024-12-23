@@ -46,6 +46,10 @@ class _TranslationHelper {
       "en_US": "Edit Post `@postName`",
       "zh_CN": "修改 `@postName`",
     },
+    "view_post": {
+      "en_US": "@postName",
+      "zh_CN": "@postName",
+    },
     "update_failed": {
       "en_US": "Update Failed",
       "zh_CN": "更新失败",

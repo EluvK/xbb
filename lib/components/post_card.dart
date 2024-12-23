@@ -130,10 +130,7 @@ class _PostCardState extends State<PostCard> {
           });
           postController.editLocalPostStatus(post);
         }
-        Get.toNamed('/view-post', arguments: [
-          post.id,
-          post.author == settingController.currentUserId.value
-        ]);
+        Get.toNamed('/view-post', arguments: [post]);
       },
       minLeadingWidth: 0,
       leading: Column(
