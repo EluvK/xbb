@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
-import 'package:xbb/client/client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -60,38 +59,23 @@ class _DrawerSettingAreaState extends State<DrawerSettingArea> {
 
   Widget versionWithUpdate() {
     bool canUpdate = settingController.canUpdate.value;
-    return ElevatedButton.icon(
-      onPressed: canUpdate
-          ? () async {
-              checkUpdate();
-            }
-          : null,
-      label: const Text(VERSION),
-      icon: Icon(canUpdate ? Icons.update_rounded : Icons.info_rounded),
-    );
-  }
-
-  checkUpdate() {
-    getLatestVersion().then((value) {
-      value.fold((version) {
-        if (!shouldUpdate(version)) {
-          flushBar(FlushLevel.INFO, "已经是最新版本啦", "当前版本: $VERSION");
-          return;
-        }
-        if (GetPlatform.isWindows) {
-          String url =
-              "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$version/xbb_desktop_windows_setup.exe";
-          print(url);
-          openUrl(url);
-        } else if (GetPlatform.isAndroid) {
-          String url =
-              "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$version/xbb.apk";
-          print(url);
-          settingController.downloadApk(url);
-        }
-      }, (error) {
-        print('error: $error');
-      });
-    });
+    if (canUpdate) {
+      return ElevatedButton.icon(
+        onPressed: () async {
+          settingController.checkIfUpdate(
+            manually: true,
+            doUpdateIfCan: true,
+          );
+        },
+        label: Text("do_app_update".tr),
+        icon: const Icon(Icons.update_rounded),
+      );
+    } else {
+      return ElevatedButton.icon(
+        onPressed: null,
+        label: const Text(VERSION),
+        icon: const Icon(Icons.info_rounded),
+      );
+    }
   }
 }

@@ -210,28 +210,42 @@ class SettingController extends GetxController {
     box.write('quick_reload_mode', value);
   }
 
-  checkIfUpdate() {
-    if (VERSION == 'debug' || canUpdate.value) {
+  checkIfUpdate({bool manually = false, bool doUpdateIfCan = false}) {
+    if (!manually && !autoCheckAppUpdate.value) {
       return;
     }
-    if (!autoCheckAppUpdate.value) {
-      return;
-    }
-    getLatestVersion().then((value) {
-      value.fold((version) {
-        if (shouldUpdate(version)) {
+    _getLatestVersionThen((version) {
+      if (_shouldUpdate(version)) {
+        if (!manually || !doUpdateIfCan) {
           flushBar(FlushLevel.INFO, "有新版本啦", "最新版本: $version",
               upperPosition: true);
           setCanUpdate(true);
+          return;
         }
-      }, (error) {
-        print('error: $error');
-      });
+        // do update:
+        if (GetPlatform.isWindows) {
+          String url =
+              "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$version/xbb_desktop_windows_setup.exe";
+          print(url);
+          openUrl(url);
+        } else if (GetPlatform.isAndroid) {
+          String url =
+              "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$version/xbb.apk";
+          print(url);
+          downloadApk(url);
+        }
+      } else {
+        setCanUpdate(false);
+        if (manually) {
+          flushBar(FlushLevel.INFO, "已经是最新版本啦", "当前版本: $VERSION");
+        }
+        return;
+      }
     });
   }
 }
 
-bool shouldUpdate(String latestVersion) {
+bool _shouldUpdate(String latestVersion) {
   if (VERSION == 'debug') {
     return true;
   }
@@ -242,4 +256,14 @@ bool shouldUpdate(String latestVersion) {
     }
   }
   return false;
+}
+
+_getLatestVersionThen(void Function(String) onValue) {
+  getLatestVersion().then((value) {
+    value.fold((version) {
+      onValue(version);
+    }, (error) {
+      print('error: $error');
+    });
+  });
 }

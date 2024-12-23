@@ -43,6 +43,7 @@ class __SettingsState extends State<_Settings> {
         child(checkSelfRepoSyncOption()),
         child(checkSubscribeRepoSyncOption()),
         const Divider(),
+        child(forceCheckUpdateButton()),
       ],
     );
   }
@@ -173,5 +174,17 @@ class __SettingsState extends State<_Settings> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [Text('auto_sync_subscribe_repo'.tr), btn],
     );
+  }
+
+  // info?
+  Widget forceCheckUpdateButton() {
+    var btn = ElevatedButton.icon(
+      onPressed: () {
+        settingController.checkIfUpdate(manually: true);
+      },
+      label: Text('check_app_update'.tr),
+      icon: const Icon(Icons.update_rounded),
+    );
+    return Center(child: btn);
   }
 }

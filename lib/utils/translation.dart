@@ -158,6 +158,10 @@ class _TranslationHelper {
       "en_US": "Check App Update",
       "zh_CN": "检查软件更新",
     },
+    "do_app_update": {
+      "en_US": "Download Update",
+      "zh_CN": "下载新版本 APP",
+    },
     "auto_sync_self_repo": {
       "en_US": "Sync Self Repo At Startup",
       "zh_CN": "启动时同步我的小本本",
