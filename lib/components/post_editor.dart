@@ -6,6 +6,7 @@ import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/post.dart';
 import 'package:xbb/utils/markdown.dart';
+import 'package:xbb/utils/rich_editor.dart';
 import 'package:xbb/utils/utils.dart';
 
 class PostEditor extends StatefulWidget {
@@ -145,15 +146,18 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   }
 
   Widget _editorWidget() {
-    var contentEditor = TextField(
-      expands: true,
-      maxLines: null,
-      textAlignVertical: TextAlignVertical.top,
-      controller: contentTextEditingController,
-      decoration: const InputDecoration(
-        labelText: 'contents:',
-        alignLabelWithHint: true,
-      ),
+    // var contentEditor = TextField(
+    //   expands: true,
+    //   maxLines: null,
+    //   textAlignVertical: TextAlignVertical.top,
+    //   controller: contentTextEditingController,
+    //   decoration: const InputDecoration(
+    //     labelText: 'contents:',
+    //     alignLabelWithHint: true,
+    //   ),
+    // );
+    var contentEditor = RichEditor(
+      textEditingController: contentTextEditingController,
     );
 
     return isMobile()
