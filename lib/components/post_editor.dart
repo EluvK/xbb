@@ -130,13 +130,17 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   }
 
   Widget _titleWidget() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         TextField(
           minLines: 1,
           maxLines: 3,
           controller: TextEditingController(text: widget.post.title),
-          decoration: const InputDecoration(labelText: 'Title:'),
+          decoration: InputDecoration(
+            labelText: 'Title:',
+            hoverColor: colorScheme.surface.withOpacity(0.2),
+          ),
           onChanged: (value) {
             widget.post.title = value;
           },

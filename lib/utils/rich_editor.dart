@@ -97,6 +97,7 @@ class _RichEditorState extends State<RichEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     var body = Column(
       children: [
         Row(
@@ -135,9 +136,10 @@ class _RichEditorState extends State<RichEditor> {
             maxLines: null,
             textAlignVertical: TextAlignVertical.top,
             controller: textEditingController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'contents:',
               alignLabelWithHint: true,
+              hoverColor: colorScheme.surface.withOpacity(0.2),
             ),
           ),
         ),
