@@ -139,16 +139,6 @@ class _RichEditorState extends State<RichEditor> {
               labelText: 'contents:',
               alignLabelWithHint: true,
             ),
-            // onSubmitted: (value) {
-            //   _handleEnterKey();
-            // },
-            // onChanged: (value) {
-            //   // print("onchange $value");
-            //   _handleTextChange(value);
-            // },
-            // onEditingComplete: () {
-            //   _handleEnterKey();
-            // },
           ),
         ),
       ],
@@ -490,21 +480,21 @@ class _RichEditorState extends State<RichEditor> {
         final newText = lineText.replaceFirst('- [ ] ', '- [x] ');
         textEditingController.value = textEditingController.value.copyWith(
           text: text.replaceRange(lineStart, lineEndSafe, newText),
-          selection: TextSelection.collapsed(offset: cursorPosition + 1),
+          selection: TextSelection.collapsed(offset: cursorPosition),
         );
       } else if (lineText.startsWith('- [x] ')) {
         // 如果复选框已经选中，移除复选框标记
         final newText = lineText.replaceFirst('- [x] ', '');
         textEditingController.value = textEditingController.value.copyWith(
           text: text.replaceRange(lineStart, lineEndSafe, newText),
-          selection: TextSelection.collapsed(offset: cursorPosition - 4),
+          selection: TextSelection.collapsed(offset: cursorPosition - 6),
         );
       } else {
         // 如果没有复选框标记，添加未选中状态的复选框
         final newText = '- [ ] $lineText';
         textEditingController.value = textEditingController.value.copyWith(
           text: text.replaceRange(lineStart, lineEndSafe, newText),
-          selection: TextSelection.collapsed(offset: cursorPosition + 4),
+          selection: TextSelection.collapsed(offset: cursorPosition + 6),
         );
       }
     } else {
@@ -700,10 +690,6 @@ class _RichEditorState extends State<RichEditor> {
     final text = textEditingController.text;
     final selection = textEditingController.selection;
 
-    // print("toggle tab, $isShift");
-    // print(text);
-    // print(selection);
-
     if (selection.isCollapsed) {
       final cursorPosition = selection.baseOffset;
 
@@ -715,8 +701,12 @@ class _RichEditorState extends State<RichEditor> {
       final lineEndSafe = lineEnd == -1 ? text.length : lineEnd;
       final lineText = text.substring(lineStart, lineEndSafe);
 
-      // print("lineText:[$lineText]");
-      if (lineText.trimLeft().startsWith('- ')) {
+      // 判断当前行是否是列表项（无序列表、有序列表或复选框）
+      final isUnorderedList = lineText.trimLeft().startsWith('- ');
+      final isOrderedList = RegExp(r'^\d+\. ').hasMatch(lineText.trimLeft());
+      final isCheckbox = RegExp(r'^- \[[ x]\] ').hasMatch(lineText.trimLeft());
+
+      if (isUnorderedList || isOrderedList || isCheckbox) {
         // 当前行是列表项
         if (isShift) {
           // Shift + Tab：取消缩进
@@ -728,7 +718,6 @@ class _RichEditorState extends State<RichEditor> {
             );
           }
         } else {
-          // print("do tab");
           // Tab：缩进
           final newText = text.replaceRange(lineStart, lineStart, '  ');
           textEditingController.value = TextEditingValue(
@@ -737,7 +726,6 @@ class _RichEditorState extends State<RichEditor> {
           );
         }
       } else {
-        // print("do regular");
         // 当前行不是列表项，插入 Tab 字符
         final newText = text.replaceRange(cursorPosition, cursorPosition, '\t');
         textEditingController.value = TextEditingValue(
