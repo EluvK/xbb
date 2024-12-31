@@ -31,13 +31,39 @@ const String tablePostColumnRepoId = 'repoId';
 const String tablePostColumnStatus = 'status';
 const String tablePostColumnSelfAttitude = 'selfAttitude';
 
+/// COMMENT
+const String tableCommentName = 'comments';
+const String tableCommentColumnId = 'id';
+const String tableCommentColumnRepoId = 'repoId';
+const String tableCommentColumnPostId = 'postId';
+const String tableCommentColumnContent = 'content';
+const String tableCommentColumnCreatedAt = 'createdAt';
+const String tableCommentColumnUpdatedAt = 'updatedAt';
+const String tableCommentColumnAuthor = 'author';
+const String tableCommentColumnParentId = 'parentId';
+
 class DataBase {
   static Database? _db;
 
   Future<Database> getDb() async {
     _db ??= await openDatabase(
       'xbb_client.db',
-      version: 1,
+      version: 2,
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+        // version 2: add table comments
+        if (oldVersion < 2 && newVersion >= 2) {
+          await db.execute('''CREATE TABLE $tableCommentName(
+            $tableCommentColumnId TEXT PRIMARY KEY,
+            $tableCommentColumnRepoId TEXT NOT NULL,
+            $tableCommentColumnPostId TEXT NOT NULL,
+            $tableCommentColumnContent TEXT NOT NULL,
+            $tableCommentColumnCreatedAt TEXT NOT NULL,
+            $tableCommentColumnUpdatedAt TEXT NOT NULL,
+            $tableCommentColumnAuthor TEXT NOT NULL,
+            $tableCommentColumnParentId TEXT
+          )''');
+        }
+      },
       onCreate: (Database db, int version) async {
         await db.execute('''
           CREATE TABLE $tablePostName (
@@ -67,6 +93,18 @@ class DataBase {
             $tableRepoColumnSharedTo TEXT,
             $tableRepoColumnSharedLink TEXT,
             $tableRepoColumnUnreadCount INTEGER NOT NULL
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE $tableCommentName(
+            $tableCommentColumnId TEXT PRIMARY KEY,
+            $tableCommentColumnRepoId TEXT NOT NULL,
+            $tableCommentColumnPostId TEXT NOT NULL,
+            $tableCommentColumnContent TEXT NOT NULL,
+            $tableCommentColumnCreatedAt TEXT NOT NULL,
+            $tableCommentColumnUpdatedAt TEXT NOT NULL,
+            $tableCommentColumnAuthor TEXT NOT NULL,
+            $tableCommentColumnParentId TEXT
           )
         ''');
         var now = DateTime.now().toUtc();
