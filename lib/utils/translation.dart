@@ -154,6 +154,10 @@ class _TranslationHelper {
       "en_US": "Font Scale",
       "zh_CN": "字体缩放",
     },
+    "auto_check_app_update": {
+      "en_US": "Check App Update At StartUp",
+      "zh_CN": "启动时检查软件更新",
+    },
     "check_app_update": {
       "en_US": "Check App Update",
       "zh_CN": "检查软件更新",

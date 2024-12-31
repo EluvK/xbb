@@ -140,7 +140,7 @@ class __SettingsState extends State<_Settings> {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [Text('check_app_update'.tr), btn],
+      children: [Text('auto_check_app_update'.tr), btn],
     );
   }
 
