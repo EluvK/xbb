@@ -6,6 +6,7 @@ import 'package:result_dart/result_dart.dart';
 import 'package:xbb/client/err.dart';
 import 'package:xbb/client/resp.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/model/comment.dart';
 import 'package:xbb/model/post.dart';
 import 'package:xbb/model/repo.dart';
 
@@ -426,6 +427,37 @@ class XbbClient {
     }
     return null;
   }
+
+  // --- comment
+  ClientResult<Comment> addComment(
+      String repoId, String postId, String content, String auth) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      var body = jsonEncode({
+        'content': content,
+      });
+      HttpClientRequest request = await client
+          .postUrl(Uri.parse("$baseUrl/repo/$repoId/post/$postId/comment"));
+      request.headers.set('content-type', 'application/json; charset=utf-8');
+      request.headers.set('Authorization', auth);
+      request.write(body);
+      HttpClientResponse response = await request.close();
+      print("addComment ${response.statusCode}");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        // print("responseBody: $responseBody");
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return Success(Comment.fromMap(jsonResponse));
+      } else {
+        return const Failure(ClientError.unexpectedError);
+      }
+    } catch (e) {
+      print("addComment error: $e");
+      return const Failure(ClientError.internalError);
+    }
+  }
 }
 
 ClientResult<String> getLatestVersion() async {
@@ -569,4 +601,14 @@ Future<List<Repo>?> syncSubscribeRepos() async {
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.syncSubscribeRepos(auth);
+}
+
+// --- comment
+ClientResult<Comment> addComment(
+    String repoId, String postId, String content) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.addComment(repoId, postId, content, auth);
 }

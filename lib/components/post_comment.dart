@@ -46,13 +46,16 @@ class _PostCommentState extends State<PostComment> {
           icon: const Icon(Icons.send_rounded),
           onPressed: () async {
             if (_textController.text.isNotEmpty) {
-              // await commentController.addComment(
-              //   widget.repoId,
-              //   widget.postId,
-              //   _textController.text,
-              // );
-              _textController.clear();
-              setState(() {}); // 刷新评论列表
+              // todo
+              var comment = await commentController.addNewComment(
+                widget.repoId,
+                widget.postId,
+                _textController.text,
+              );
+              if (comment != null) {
+                _textController.clear();
+                setState(() {}); // 刷新评论列表
+              }
             }
           },
         ),
