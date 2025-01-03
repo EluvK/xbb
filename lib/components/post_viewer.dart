@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/components/post_comment.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/model/post.dart';
 import 'package:xbb/utils/markdown.dart';
@@ -37,7 +38,11 @@ class _PostViewerState extends State<PostViewer> {
                   // content:
                   Expanded(
                     child: ListView(
-                      children: [MarkdownRenderer(data: post.content)],
+                      children: [
+                        MarkdownRenderer(data: post.content),
+                        const Divider(),
+                        PostComment(repoId: post.repoId, postId: post.id),
+                      ],
                     ),
                   ),
                 ],
@@ -46,7 +51,7 @@ class _PostViewerState extends State<PostViewer> {
           } else {
             return const CircularProgressIndicator();
           }
-        });
+        },);
   }
 
   // Widget _title(Post post) {

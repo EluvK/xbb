@@ -6,6 +6,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:xbb/controller/comment.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
@@ -39,6 +40,10 @@ void main() async {
   });
   await Get.putAsync(() async {
     final controller = PostController();
+    return controller;
+  });
+  await Get.putAsync(() async {
+    final controller = CommentController();
     return controller;
   });
 
