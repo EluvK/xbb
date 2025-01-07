@@ -14,18 +14,18 @@ class PostComment extends StatefulWidget {
 
 class _PostCommentState extends State<PostComment> {
   final commentController = Get.find<CommentController>();
-  final TextEditingController _textController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    var commentTree = FutureBuilder<List<Comment>>(
+    return FutureBuilder<List<Comment>>(
       future: commentController.loadComments(widget.repoId, widget.postId),
       builder: (context, AsyncSnapshot<List<Comment>> getComments) {
         if (getComments.hasData) {
-          return CommentTreeExample();
-          // return CommentTree(
-          //   comments: getComments.data!,
-          // );
+          return PostCommentInner(
+            comments: getComments.data!,
+            repoId: widget.repoId,
+            postId: widget.postId,
+          );
         } else {
           return const SizedBox(
             width: 50,
@@ -35,7 +35,35 @@ class _PostCommentState extends State<PostComment> {
         }
       },
     );
+  }
+}
 
+class PostCommentInner extends StatefulWidget {
+  const PostCommentInner(
+      {super.key,
+      required this.comments,
+      required this.repoId,
+      required this.postId});
+  final List<Comment> comments;
+  final String repoId;
+  final String postId;
+  @override
+  State<PostCommentInner> createState() => _PostCommentInnerState();
+}
+
+class _PostCommentInnerState extends State<PostCommentInner> {
+  late List<Comment> comments;
+  final commentController = Get.find<CommentController>();
+  final TextEditingController _textController = TextEditingController();
+
+  @override
+  void initState() {
+    comments = widget.comments;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     var inputComment = TextField(
       minLines: 1,
       maxLines: 5,
@@ -54,7 +82,9 @@ class _PostCommentState extends State<PostComment> {
               );
               if (comment != null) {
                 _textController.clear();
-                setState(() {}); // 刷新评论列表
+                setState(() {
+                  comments.add(comment);
+                }); // 刷新评论列表
               }
             }
           },
@@ -70,7 +100,8 @@ class _PostCommentState extends State<PostComment> {
             const Center(child: Text('Comments')),
             inputComment,
             const Divider(),
-            commentTree,
+            // commentTree,
+            CommentTree(comments: comments),
           ],
         ),
       ),
@@ -110,34 +141,46 @@ class CommentTree extends StatelessWidget {
         // 当前评论
         Padding(
           padding: EdgeInsets.only(left: 16.0 * level), // 根据层级缩进
-          child: Card(
-            margin: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch, // 横向拉伸
-                children: [
-                  Text(
-                    comment.author,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4.0),
-                  Text(comment.content),
-                  const SizedBox(height: 4.0),
-                  Text(
-                    '${comment.createdAt}',
-                    style: const TextStyle(fontSize: 12.0, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          child: commentCard(comment),
         ),
         // 递归渲染子评论
         if (commentMap.containsKey(comment.id))
           ...commentMap[comment.id]!.map(
               (child) => _buildCommentWidget(child, commentMap, level + 1)),
       ],
+    );
+  }
+
+  Widget commentCard(Comment comment) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch, // 横向拉伸
+          children: [
+            Text(
+              comment.author,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4.0),
+            Text(comment.content),
+            const SizedBox(height: 4.0),
+            Row(
+              children: [
+                Text(
+                  '${comment.createdAt}',
+                  style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+                ),
+                // IconButton(
+                //   onPressed: () {},
+                //   icon: const Icon(Icons.edit),
+                // )
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -159,74 +202,5 @@ class CommentTree extends StatelessWidget {
             .toList(),
       ),
     );
-  }
-}
-
-// 使用示例
-class CommentTreeExample extends StatelessWidget {
-  final List<Comment> comments = [
-    Comment(
-      id: '1',
-      repoId: 'repo1',
-      postId: 'post1',
-      content: 'This is the first comment. ',
-      createdAt: DateTime.now().subtract(Duration(hours: 2)),
-      updatedAt: DateTime.now().subtract(Duration(hours: 2)),
-      author: 'User1',
-    ),
-    Comment(
-      id: '2',
-      repoId: 'repo1',
-      postId: 'post1',
-      content: 'This is a reply to the first comment 2222222222222222222',
-      createdAt: DateTime.now().subtract(Duration(hours: 1)),
-      updatedAt: DateTime.now().subtract(Duration(hours: 1)),
-      author: 'User2',
-      parentId: '1',
-    ),
-    Comment(
-      id: '3',
-      repoId: 'repo1',
-      postId: 'post1',
-      content: 'This is another comment 333333333333333333333333333',
-      createdAt: DateTime.now().subtract(Duration(hours: 3)),
-      updatedAt: DateTime.now().subtract(Duration(hours: 3)),
-      author: 'User3',
-    ),
-    Comment(
-      id: '4',
-      repoId: 'repo1',
-      postId: 'post1',
-      content:
-          'This is a reply to the third comment 4444444444444444444444444333333333333333333333333333333333',
-      createdAt: DateTime.now().subtract(Duration(minutes: 30)),
-      updatedAt: DateTime.now().subtract(Duration(minutes: 30)),
-      author: 'User4',
-      parentId: '3',
-    ),
-    Comment(
-      id: '5',
-      repoId: 'repo1',
-      postId: 'post1',
-      content: 'This is a reply to the 2 comment 22222222222222222222222222',
-      createdAt: DateTime.now().subtract(Duration(minutes: 200)),
-      updatedAt: DateTime.now().subtract(Duration(minutes: 200)),
-      author: 'User4',
-      parentId: '2',
-    ),
-    Comment(
-      id: '6',
-      repoId: 'repo1',
-      postId: 'post1',
-      content: 'This is a now comment',
-      createdAt: DateTime.now().subtract(Duration(minutes: 1)),
-      updatedAt: DateTime.now().subtract(Duration(minutes: 1)),
-      author: 'User4',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return CommentTree(comments: comments);
   }
 }

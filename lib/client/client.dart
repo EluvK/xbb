@@ -429,14 +429,22 @@ class XbbClient {
   }
 
   // --- comment
-  ClientResult<Comment> addComment(
-      String repoId, String postId, String content, String auth) async {
+  ClientResult<Comment> postComment(
+    String repoId,
+    String postId,
+    String content,
+    String? commentId,
+    String? parentId,
+    String auth,
+  ) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
           ((X509Certificate cert, String host, int port) => true);
       var body = jsonEncode({
         'content': content,
+        'parent_id': parentId,
+        'id': commentId,
       });
       HttpClientRequest request = await client
           .postUrl(Uri.parse("$baseUrl/repo/$repoId/post/$postId/comment"));
@@ -444,7 +452,7 @@ class XbbClient {
       request.headers.set('Authorization', auth);
       request.write(body);
       HttpClientResponse response = await request.close();
-      print("addComment ${response.statusCode}");
+      print("postComment ${response.statusCode}");
       if (response.statusCode == 200 || response.statusCode == 201) {
         String responseBody = await response.transform(utf8.decoder).join();
         // print("responseBody: $responseBody");
@@ -454,7 +462,7 @@ class XbbClient {
         return const Failure(ClientError.unexpectedError);
       }
     } catch (e) {
-      print("addComment error: $e");
+      print("postComment error: $e");
       return const Failure(ClientError.internalError);
     }
   }
@@ -605,10 +613,41 @@ Future<List<Repo>?> syncSubscribeRepos() async {
 
 // --- comment
 ClientResult<Comment> addComment(
-    String repoId, String postId, String content) async {
+  String repoId,
+  String postId,
+  String content,
+) async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
-  return await client.addComment(repoId, postId, content, auth);
+  return await client.postComment(repoId, postId, content, null, null, auth);
+}
+
+ClientResult<Comment> addReplyComment(
+  String repoId,
+  String postId,
+  String content,
+  String parentId,
+) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.postComment(
+      repoId, postId, content, null, parentId, auth);
+}
+
+ClientResult<Comment> editComment(
+  String repoId,
+  String postId,
+  String commentId,
+  String content,
+) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.postComment(
+      repoId, postId, commentId, null, content, auth);
 }
