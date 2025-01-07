@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/controller/comment.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/model/comment.dart';
+import 'package:xbb/utils/markdown.dart';
+import 'package:xbb/utils/utils.dart';
 
 class PostComment extends StatefulWidget {
   const PostComment({super.key, required this.repoId, required this.postId});
@@ -159,28 +162,46 @@ class CommentTree extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch, // 横向拉伸
           children: [
-            Text(
-              comment.author,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            commentAuthor(comment.author, comment.createdAt, comment.updatedAt),
             const SizedBox(height: 4.0),
-            Text(comment.content),
+            MarkdownRenderer(data: comment.content),
+            // Text(comment.content),
             const SizedBox(height: 4.0),
-            Row(
-              children: [
-                Text(
-                  '${comment.createdAt}',
-                  style: const TextStyle(fontSize: 12.0, color: Colors.grey),
-                ),
-                // IconButton(
-                //   onPressed: () {},
-                //   icon: const Icon(Icons.edit),
-                // )
-              ],
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget commentAuthor(String userId, DateTime createdAt, DateTime updatedAt) {
+    final userController = Get.find<UserController>();
+    final user = userController.getUserInfoLocalUnwrap(userId);
+    return Row(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: CircleAvatar(
+            backgroundImage: NetworkImage(user.avatarUrl),
+            radius: 16.0,
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              user.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              // `updatedAt == createdAt` is not accurate as updated is written by server
+              updatedAt.subtract(const Duration(seconds: 1)).isBefore(createdAt)
+                  ? readableDateStr(createdAt)
+                  : "${readableDateStr(createdAt)}, edited at ${readableDateStr(updatedAt)}",
+              style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

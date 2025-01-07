@@ -1,10 +1,20 @@
 import 'package:get/get.dart';
 import 'package:xbb/client/client.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/model/comment.dart';
 
 class CommentController extends GetxController {
+  final UserController userController = Get.find<UserController>();
+
   Future<List<Comment>> loadComments(String repoId, String postId) async {
-    return await CommentRepository().getComments(repoId, postId);
+    // todo load from server?
+
+    var comments = await CommentRepository().getComments(repoId, postId);
+    // ensure user info loaded
+    for (var comment in comments) {
+      await userController.loadUser(comment.author);
+    }
+    return comments;
   }
 
   Future<Comment?> addNewComment(

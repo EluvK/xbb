@@ -11,6 +11,7 @@ import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/sync.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/pages/edit_post.dart';
 import 'package:xbb/pages/edit_repo.dart';
 import 'package:xbb/pages/home.dart';
@@ -34,6 +35,11 @@ void main() async {
   // should init before app start
   final settingController = Get.find<SettingController>();
   await settingController.ensureInitialization();
+  
+  await Get.putAsync(() async {
+    final controller = UserController();
+    return controller;
+  });
   await Get.putAsync(() async {
     final controller = AsyncController();
     return controller;
