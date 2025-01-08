@@ -438,17 +438,17 @@ class XbbClient {
     String repoId,
     String postId,
     String content,
+    String auth, {
     String? commentId,
     String? parentId,
-    String auth,
-  ) async {
+  }) async {
     try {
       HttpClient client = HttpClient();
       client.badCertificateCallback =
           ((X509Certificate cert, String host, int port) => true);
       var body = jsonEncode({
         'content': content,
-        'parent_id': parentId,
+        'parentId': parentId,
         'id': commentId,
       });
       HttpClientRequest request = await client
@@ -468,6 +468,32 @@ class XbbClient {
       }
     } catch (e) {
       print("postComment error: $e");
+      return const Failure(ClientError.internalError);
+    }
+  }
+
+  ClientResult<void> deleteComment(
+    String repoId,
+    String postId,
+    String commentId,
+    String auth,
+  ) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request = await client.deleteUrl(
+          Uri.parse("$baseUrl/repo/$repoId/post/$postId/comment/$commentId"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      print("deleteComment ${response.statusCode}");
+      if (response.statusCode == 204) {
+        return const Success(Null);
+      } else {
+        return const Failure(ClientError.unexpectedError);
+      }
+    } catch (e) {
+      print("deleteComment error: $e");
       return const Failure(ClientError.internalError);
     }
   }
@@ -626,7 +652,12 @@ ClientResult<Comment> addComment(
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
-  return await client.postComment(repoId, postId, content, null, null, auth);
+  return await client.postComment(
+    repoId,
+    postId,
+    content,
+    auth,
+  );
 }
 
 ClientResult<Comment> addReplyComment(
@@ -640,19 +671,41 @@ ClientResult<Comment> addReplyComment(
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.postComment(
-      repoId, postId, content, null, parentId, auth);
+    repoId,
+    postId,
+    content,
+    auth,
+    parentId: parentId,
+  );
 }
 
 ClientResult<Comment> editComment(
   String repoId,
   String postId,
-  String commentId,
   String content,
+  String commentId,
 ) async {
   final settingController = Get.find<SettingController>();
   var auth = settingController.getCurrentBaseAuth();
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.postComment(
-      repoId, postId, commentId, null, content, auth);
+    repoId,
+    postId,
+    content,
+    auth,
+    commentId: commentId,
+  );
+}
+
+ClientResult<void> deleteComment(
+  String repoId,
+  String postId,
+  String commentId,
+) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.deleteComment(repoId, postId, commentId, auth);
 }

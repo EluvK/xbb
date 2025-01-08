@@ -41,7 +41,7 @@ class CommentController extends GetxController {
     String content,
   ) async {
     Comment? result =
-        (await editComment(repoId, postId, commentId, content)).fold(
+        (await editComment(repoId, postId, content, commentId)).fold(
       (Comment comment) {
         CommentRepository().updateComment(comment);
         return comment;
@@ -70,5 +70,17 @@ class CommentController extends GetxController {
       },
     );
     return result;
+  }
+
+  Future<bool> deleteExistComment(String repoId, String postId, String commentId) async {
+    return (await deleteComment(repoId, postId, commentId)).fold(
+      (value) {
+        CommentRepository().deleteComment(commentId);
+        return true;
+      },
+      (error) {
+        return false;
+      },
+    );
   }
 }
