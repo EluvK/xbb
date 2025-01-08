@@ -1,5 +1,28 @@
 import 'package:xbb/model/db.dart';
 
+class CommentSummary {
+  final String id;
+  final String repoId;
+  final String postId;
+  final DateTime updatedAt;
+
+  CommentSummary({
+    required this.id,
+    required this.repoId,
+    required this.postId,
+    required this.updatedAt,
+  });
+
+  factory CommentSummary.fromMap(Map<String, dynamic> map) {
+    return CommentSummary(
+      id: map[tableCommentColumnId],
+      repoId: map[tableCommentColumnRepoId],
+      postId: map[tableCommentColumnPostId],
+      updatedAt: DateTime.parse(map[tableCommentColumnUpdatedAt]),
+    );
+  }
+}
+
 class Comment {
   final String id;
   final String repoId;

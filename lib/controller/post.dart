@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:xbb/client/client.dart';
+import 'package:xbb/controller/comment.dart';
 import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/sync.dart';
@@ -13,6 +14,7 @@ class PostController extends GetxController {
 
   final settingController = Get.find<SettingController>();
   final asyncController = Get.find<AsyncController>();
+  late final commentController = Get.find<CommentController>();
   late final repoController = Get.find<RepoController>();
 
   final typeFilter = PostViewFilter.all.obs;
@@ -152,6 +154,13 @@ class PostController extends GetxController {
       return [-0xffff, -0xffff, -0xffff];
     }
     for (PostSummary postSummary in posts) {
+      commentController
+          .syncComments(repoId, postSummary.id, postSummary.comments)
+          .then((updated) {
+        if (updated) {
+          // todo add comments update label.
+        }
+      });
       Post? localPost = await PostRepository().getPost(postSummary.id);
       if (localPost == null) {
         Post? fetchPost = await syncPullPost(repoId, postSummary.id);

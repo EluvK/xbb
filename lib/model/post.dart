@@ -1,3 +1,4 @@
+import 'package:xbb/model/comment.dart';
 import 'package:xbb/model/db.dart';
 
 enum PostStatus { normal, updated, newly, detached, notSynced }
@@ -9,12 +10,14 @@ class PostSummary {
   String title;
   String category;
   DateTime updatedAt;
+  List<CommentSummary> comments;
 
   PostSummary({
     required this.id,
     required this.title,
     required this.category,
     required this.updatedAt,
+    required this.comments,
   });
 
   factory PostSummary.fromMap(Map<String, dynamic> map) {
@@ -23,6 +26,11 @@ class PostSummary {
       title: map[tablePostColumnTitle],
       category: map[tablePostColumnCategory],
       updatedAt: DateTime.parse(map[tablePostColumnUpdatedAt]),
+      comments: map['comments'] != null
+          ? List<Map<String, dynamic>>.from(map['comments'])
+              .map((e) => CommentSummary.fromMap(e))
+              .toList()
+          : [],
     );
   }
 }

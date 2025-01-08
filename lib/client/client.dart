@@ -497,6 +497,33 @@ class XbbClient {
       return const Failure(ClientError.internalError);
     }
   }
+
+  ClientResult<Comment> getComment(
+    String repoId,
+    String postId,
+    String commentId,
+    String auth,
+  ) async {
+    try {
+      HttpClient client = HttpClient();
+      client.badCertificateCallback =
+          ((X509Certificate cert, String host, int port) => true);
+      HttpClientRequest request = await client.getUrl(
+          Uri.parse("$baseUrl/repo/$repoId/post/$postId/comment/$commentId"));
+      request.headers.set('Authorization', auth);
+      HttpClientResponse response = await request.close();
+      if (response.statusCode == 200) {
+        String responseBody = await response.transform(utf8.decoder).join();
+        Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+        return Success(Comment.fromMap(jsonResponse));
+      } else {
+        return const Failure(ClientError.unexpectedError);
+      }
+    } catch (e) {
+      print("error: $e");
+      return const Failure(ClientError.internalError);
+    }
+  }
 }
 
 ClientResult<String> getLatestVersion() async {
@@ -708,4 +735,16 @@ ClientResult<void> deleteComment(
   var baseUrl = settingController.serverAddress.value;
   XbbClient client = XbbClient(baseUrl: baseUrl);
   return await client.deleteComment(repoId, postId, commentId, auth);
+}
+
+ClientResult<Comment> getComment(
+  String repoId,
+  String postId,
+  String commentId,
+) async {
+  final settingController = Get.find<SettingController>();
+  var auth = settingController.getCurrentBaseAuth();
+  var baseUrl = settingController.serverAddress.value;
+  XbbClient client = XbbClient(baseUrl: baseUrl);
+  return await client.getComment(repoId, postId, commentId, auth);
 }

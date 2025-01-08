@@ -6,6 +6,41 @@ import 'package:xbb/model/comment.dart';
 class CommentController extends GetxController {
   final UserController userController = Get.find<UserController>();
 
+  Future<bool> syncComments(
+      String repoId, String postId, List<CommentSummary> remoteComments) async {
+    bool updated = false;
+    var comments = await CommentRepository().getComments(repoId, postId);
+    for (var comment in comments) {
+      if (remoteComments.indexWhere((element) => element.id == comment.id) ==
+          -1) {
+        // delete local comment
+        CommentRepository().deleteComment(comment.id);
+      }
+    }
+
+    for (var remoteComment in remoteComments) {
+      var localComment = await CommentRepository().getComment(remoteComment.id);
+      if (localComment == null) {
+        // add local comment
+        Comment? fetchComment =
+            (await getComment(repoId, postId, remoteComment.id)).getOrNull();
+        if (fetchComment != null) {
+          CommentRepository().addComment(fetchComment);
+          updated = true;
+        }
+      } else if (localComment.updatedAt.isBefore(remoteComment.updatedAt)) {
+        // update local comment
+        Comment? fetchComment =
+            (await getComment(repoId, postId, remoteComment.id)).getOrNull();
+        if (fetchComment != null) {
+          CommentRepository().updateComment(fetchComment);
+          updated = true;
+        }
+      }
+    }
+    return updated;
+  }
+
   Future<List<Comment>> loadComments(String repoId, String postId) async {
     // todo load from server?
 
@@ -72,7 +107,8 @@ class CommentController extends GetxController {
     return result;
   }
 
-  Future<bool> deleteExistComment(String repoId, String postId, String commentId) async {
+  Future<bool> deleteExistComment(
+      String repoId, String postId, String commentId) async {
     return (await deleteComment(repoId, postId, commentId)).fold(
       (value) {
         CommentRepository().deleteComment(commentId);
