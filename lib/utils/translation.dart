@@ -50,6 +50,46 @@ class _TranslationHelper {
       "en_US": "@postName",
       "zh_CN": "@postName",
     },
+    "comment_list": {
+      "en_US": "Comments",
+      "zh_CN": "评论列表",
+    },
+    "new_comment": {
+      "en_US": "New Comment",
+      "zh_CN": "写评论",
+    },
+    "reply_comment": {
+      "en_US": "@ Reply To @id",
+      "zh_CN": "@ 回复 @id",
+    },
+    "cancel_reply": {
+      "en_US": "Cancel Reply",
+      "zh_CN": "取消回复",
+    },
+    "save": {
+      "en_US": "Save",
+      "zh_CN": "保存",
+    },
+    "cancel": {
+      "en_US": "Cancel",
+      "zh_CN": "取消",
+    },
+    "reply": {
+      "en_US": "Reply",
+      "zh_CN": "回复",
+    },
+    "edit": {
+      "en_US": "Edit",
+      "zh_CN": "修改",
+    },
+    "delete": {
+      "en_US": "Delete",
+      "zh_CN": "删除",
+    },
+    "delete_comment": {
+      "en_US": "Delete Comment",
+      "zh_CN": "删除评论",
+    },
     "update_failed": {
       "en_US": "Update Failed",
       "zh_CN": "更新失败",
@@ -77,6 +117,10 @@ class _TranslationHelper {
     "update_result_delete_posts_cnt": {
       "en_US": "@count Deleted Posts",
       "zh_CN": "删除 @count 篇笔记",
+    },
+    "update_result_update_comments_cnt": {
+      "en_US": "@count Updated Comments",
+      "zh_CN": "更新 @count 条评论",
     },
     "update_result_nothing": {
       "en_US": "No Updates",
@@ -173,6 +217,10 @@ class _TranslationHelper {
     "auto_sync_subscribe_repo": {
       "en_US": "Sync Subscribe Repo At Startup",
       "zh_CN": "启动时同步订阅的小本本",
+    },
+    "double_click_title": {
+      "en_US": "Double Click Check!",
+      "zh_CN": "双击确认！",
     },
     "template": {
       "en_US": "",

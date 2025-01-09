@@ -148,7 +148,7 @@ class PostController extends GetxController {
   }
 
   Future<List<int>> pullPosts(String repoId) async {
-    int addCnt = 0, updateCnt = 0, deleteCnt = 0;
+    int addCnt = 0, updateCnt = 0, deleteCnt = 0, updatedCommentCnt = 0;
     List<PostSummary>? posts = await syncPullPosts(repoId);
     if (posts == null) {
       return [-0xffff, -0xffff, -0xffff];
@@ -167,6 +167,8 @@ class PostController extends GetxController {
             postSummary.id,
             postSummary.comments,
           );
+          updatedCommentCnt +=
+              fetchPost.commentStatus == PostCommentStatus.normal ? 0 : 1;
           await PostRepository().addPost(fetchPost);
           addCnt++;
         }
@@ -193,6 +195,7 @@ class PostController extends GetxController {
         postSummary.id,
         postSummary.comments,
       );
+      updatedCommentCnt += newCommentStatus == PostCommentStatus.normal ? 0 : 1;
       if (newPostStatus == PostStatus.normal &&
           newCommentStatus == PostCommentStatus.normal) {
         continue;
@@ -229,7 +232,7 @@ class PostController extends GetxController {
       }
     }
     await rebuildRepoStatus(repoId);
-    return [addCnt, updateCnt, deleteCnt];
+    return [addCnt, updateCnt, deleteCnt, updatedCommentCnt];
   }
 
   Future<Post> getPostUnwrap(String postId) async {

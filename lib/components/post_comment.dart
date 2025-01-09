@@ -83,12 +83,12 @@ class _PostCommentInnerState extends State<PostCommentInner> {
       focusNode: _textControllerFocusNode,
       decoration: InputDecoration(
         labelText: _isReplyingToCommentId != null
-            ? '@ Reply To $_isReplyingToCommentId'
-            : 'New comment',
+            ? 'reply_comment'.trParams({'id': _isReplyingToCommentId!})
+            : 'new_comment'.tr,
         prefixIcon: _isReplyingToCommentId != null
             ? IconButton(
                 icon: const Icon(Icons.reply_rounded),
-                tooltip: 'Cancel reply',
+                tooltip: 'cancel_reply'.tr,
                 onPressed: () {
                   setState(() {
                     _isReplyingToCommentId = null;
@@ -129,7 +129,12 @@ class _PostCommentInnerState extends State<PostCommentInner> {
         width: 1200,
         child: Column(
           children: [
-            const Center(child: Text('Comments')),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10.0),
+                child: Text('comment_list'.tr),
+              ),
+            ),
             inputComment,
             const Divider(),
             CommentTree(
@@ -318,13 +323,16 @@ class CommentTree extends StatelessWidget {
                     children: [
                       TextButton(
                         onPressed: onCancel,
-                        child: Text('Cancel'),
+                        child: Text(
+                          'cancel'.tr,
+                          style: const TextStyle(color: Colors.red),
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           onSave(comment.id, editController.text);
                         },
-                        child: Text('Save'),
+                        child: Text('save'.tr),
                       ),
                     ],
                   ),
@@ -381,7 +389,7 @@ class CommentTree extends StatelessWidget {
                 onReply(comment);
               },
               icon: const Icon(Icons.reply_rounded),
-              tooltip: '回复',
+              tooltip: 'reply'.tr,
             ),
             Visibility(
               visible: settingController.currentUserId.value == comment.author,
@@ -392,7 +400,7 @@ class CommentTree extends StatelessWidget {
                         onEdit(comment);
                       },
                 icon: const Icon(Icons.edit_rounded),
-                tooltip: '编辑',
+                tooltip: 'edit'.tr,
               ),
             ),
             Visibility(
@@ -401,12 +409,12 @@ class CommentTree extends StatelessWidget {
                 buttonBuilder: (onPressed) => IconButton(
                   onPressed: isEditing ? null : onPressed,
                   icon: const Icon(Icons.delete_rounded),
-                  tooltip: '删除',
+                  tooltip: 'delete'.tr,
                 ),
                 onDoubleClick: () {
                   onDelete(comment);
                 },
-                firstClickHint: '删除评论',
+                firstClickHint: 'delete_comment'.tr,
                 upperPosition: true,
               ),
             ),

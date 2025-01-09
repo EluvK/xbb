@@ -54,6 +54,11 @@ void flushDiff(String title, List<int> diff) {
           'count': diff[2].toString()
         })}\n";
   }
+  if (diff[3] > 0) {
+    diffStr = "$diffStr${'update_result_update_comments_cnt'.trParams({
+          'count': diff[3].toString()
+        })}\n";
+  }
   if (diffStr == "") {
     diffStr = "update_result_nothing".tr;
   }

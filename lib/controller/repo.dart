@@ -90,11 +90,11 @@ class RepoController extends GetxController {
   }
 
   Future<void> pullRepos() async {
-    List<int> sumDiff = [0, 0, 0];
+    List<int> sumDiff = [0, 0, 0, 0];
     List<Repo> repos = (await syncPullRepos()).fold((list) {
       return list;
     }, (err) {
-      flushDiff("update_failed".tr, [-1, -1, -1]);
+      flushDiff("update_failed".tr, [-1, -1, -1, -1]);
       return [];
     });
     for (var repo in repos) {
@@ -111,7 +111,7 @@ class RepoController extends GetxController {
       }
       if (repo.id != '0') {
         List<int> diff = await postController.pullPosts(repo.id);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
           sumDiff[i] += diff[i];
         }
         print('pullRepos diff $sumDiff');
@@ -123,10 +123,10 @@ class RepoController extends GetxController {
   }
 
   Future<void> pullSubscribeRepos() async {
-    List<int> sumDiff = [0, 0, 0];
+    List<int> sumDiff = [0, 0, 0, 0];
     List<Repo>? repos = await syncSubscribeRepos();
     if (repos == null) {
-      flushDiff("update_failed".tr, [-1, -1, -1]);
+      flushDiff("update_failed".tr, [-1, -1, -1, -1]);
       return;
     }
     for (var repo in repos) {
@@ -135,7 +135,7 @@ class RepoController extends GetxController {
       // Repo? localRepo = await RepoRepository().getRepo(repo.id);
       await RepoRepository().upsertRepo(repo);
       List<int> diff = await postController.pullPosts(repo.id);
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 4; i++) {
         sumDiff[i] += diff[i];
       }
       print('pullSubscribeRepos diff $sumDiff');
