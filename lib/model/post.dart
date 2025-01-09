@@ -1,6 +1,8 @@
 import 'package:xbb/model/comment.dart';
 import 'package:xbb/model/db.dart';
 
+enum PostCommentStatus { normal, updated, newly }
+
 enum PostStatus { normal, updated, newly, detached, notSynced }
 
 enum PostSelfAttitude { none, like, dislike }
@@ -49,6 +51,7 @@ class Post {
   // members local
   PostStatus status;
   PostSelfAttitude selfAttitude;
+  PostCommentStatus commentStatus;
 
   Post({
     required this.id,
@@ -61,6 +64,7 @@ class Post {
     required this.repoId,
     this.status = PostStatus.normal,
     this.selfAttitude = PostSelfAttitude.none,
+    this.commentStatus = PostCommentStatus.normal,
   });
 
   Map<String, dynamic> toMap() {
@@ -75,6 +79,7 @@ class Post {
       tablePostColumnRepoId: repoId,
       tablePostColumnStatus: status.toString(),
       tablePostColumnSelfAttitude: selfAttitude.toString(),
+      tablePostColumnCommentStatus: commentStatus.toString(),
     };
   }
 
@@ -114,6 +119,12 @@ class Post {
           return PostSelfAttitude.none;
         },
       ),
+      commentStatus: PostCommentStatus.values.firstWhere(
+        (e) => e.toString() == map[tablePostColumnCommentStatus],
+        orElse: () {
+          return PostCommentStatus.normal;
+        },
+      ),
     );
   }
 
@@ -128,6 +139,7 @@ class Post {
     String? repoId,
     PostStatus? status,
     PostSelfAttitude? selfAttitude,
+    PostCommentStatus? commentStatus,
   }) {
     return Post(
       id: id ?? this.id,
@@ -140,6 +152,7 @@ class Post {
       repoId: repoId ?? this.repoId,
       status: status ?? this.status,
       selfAttitude: selfAttitude ?? this.selfAttitude,
+      commentStatus: commentStatus ?? this.commentStatus,
     );
   }
 }

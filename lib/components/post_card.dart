@@ -70,6 +70,25 @@ class _PostCardState extends State<PostCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     List<Icon> icons = [];
+    switch (post.commentStatus) {
+      case PostCommentStatus.normal:
+        break;
+      case PostCommentStatus.updated:
+        icons.add(Icon(
+          Icons.comment_rounded,
+          color: Colors.red[500],
+          size: 16.0,
+        ));
+        break;
+      case PostCommentStatus.newly:
+        icons.add(Icon(
+          Icons.comment_rounded,
+          color: Colors.lightGreen[400],
+          size: 16.0,
+        ));
+        break;
+    }
+
     switch (post.status) {
       case PostStatus.normal:
         break;
@@ -124,9 +143,12 @@ class _PostCardState extends State<PostCard> {
     Widget postListTile = ListTile(
       onTap: () {
         if (post.status == PostStatus.newly ||
-            post.status == PostStatus.updated) {
+            post.status == PostStatus.updated ||
+            post.commentStatus == PostCommentStatus.newly ||
+            post.commentStatus == PostCommentStatus.updated) {
           setState(() {
             post.status = PostStatus.normal;
+            post.commentStatus = PostCommentStatus.normal;
           });
           postController.editLocalPostStatus(post);
         }

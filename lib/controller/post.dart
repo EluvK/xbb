@@ -154,19 +154,19 @@ class PostController extends GetxController {
       return [-0xffff, -0xffff, -0xffff];
     }
     for (PostSummary postSummary in posts) {
-      commentController
-          .syncComments(repoId, postSummary.id, postSummary.comments)
-          .then((updated) {
-        if (updated) {
-          // todo add comments update label.
-        }
-      });
       Post? localPost = await PostRepository().getPost(postSummary.id);
+
+      // post not exist in local
       if (localPost == null) {
         Post? fetchPost = await syncPullPost(repoId, postSummary.id);
         if (fetchPost != null) {
           fetchPost.status = PostStatus.newly;
           print('add post ${fetchPost.title}');
+          fetchPost.commentStatus = await commentController.syncComments(
+            repoId,
+            postSummary.id,
+            postSummary.comments,
+          );
           await PostRepository().addPost(fetchPost);
           addCnt++;
         }
@@ -174,24 +174,36 @@ class PostController extends GetxController {
       }
 
       // post exists
-      if (localPost.updatedAt == postSummary.updatedAt) {
-        // no need to update
-        print("no need to update post ${localPost.title}");
-        if (localPost.status == PostStatus.notSynced ||
-            localPost.status == PostStatus.detached) {
-          localPost.status = PostStatus.normal;
-          editLocalPostStatus(localPost);
-        }
-        continue;
-      } else if (localPost.updatedAt.isAfter(postSummary.updatedAt)) {
+      var newPostStatus = PostStatus.normal;
+      var newCommentStatus = PostCommentStatus.normal;
+      if (localPost.updatedAt.isAfter(postSummary.updatedAt)) {
         // server need to update?
         print(
             "server need to update post ${localPost.title} ${localPost.updatedAt} < server post ${postSummary.updatedAt}");
-        localPost.status = PostStatus.notSynced;
-        editLocalPostStatus(localPost);
-        continue;
+        newPostStatus = PostStatus.notSynced;
+      } else if (localPost.updatedAt.isBefore(postSummary.updatedAt)) {
+        newPostStatus = PostStatus.updated;
+        updateCnt++;
       } else {
-        // need to pull from server
+        // no need to update
+        print("no need to update post ${localPost.title}");
+      }
+      newCommentStatus = await commentController.syncComments(
+        repoId,
+        postSummary.id,
+        postSummary.comments,
+      );
+      if (newPostStatus == PostStatus.normal &&
+          newCommentStatus == PostCommentStatus.normal) {
+        continue;
+      }
+      if (localPost.status == newPostStatus &&
+          localPost.commentStatus == newCommentStatus) {
+        continue;
+      }
+      localPost.status = newPostStatus;
+      localPost.commentStatus = newCommentStatus;
+      if (newPostStatus == PostStatus.updated) {
         Post? fetchPost = await syncPullPost(repoId, postSummary.id);
         if (fetchPost != null) {
           localPost = localPost.copyWith(
@@ -200,17 +212,11 @@ class PostController extends GetxController {
             content: fetchPost.content,
             updatedAt: fetchPost.updatedAt,
             repoId: fetchPost.repoId,
-            status: localPost.status == PostStatus.newly
-                ? PostStatus.newly
-                : PostStatus.updated,
           );
           print('update post ${localPost!.title}');
-          await PostRepository().updatePost(localPost);
-          updateCnt++;
-        } else {
-          // deleted at server between pullPosts and pullPost
         }
       }
+      await PostRepository().updatePost(localPost);
     }
 
     // deleted at server

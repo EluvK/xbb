@@ -2,13 +2,17 @@ import 'package:get/get.dart';
 import 'package:xbb/client/client.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/model/comment.dart';
+import 'package:xbb/model/post.dart';
 
 class CommentController extends GetxController {
   final UserController userController = Get.find<UserController>();
 
-  Future<bool> syncComments(
-      String repoId, String postId, List<CommentSummary> remoteComments) async {
-    bool updated = false;
+  Future<PostCommentStatus> syncComments(
+    String repoId,
+    String postId,
+    List<CommentSummary> remoteComments,
+  ) async {
+    PostCommentStatus result = PostCommentStatus.normal;
     var comments = await CommentRepository().getComments(repoId, postId);
     for (var comment in comments) {
       if (remoteComments.indexWhere((element) => element.id == comment.id) ==
@@ -26,7 +30,7 @@ class CommentController extends GetxController {
             (await getComment(repoId, postId, remoteComment.id)).getOrNull();
         if (fetchComment != null) {
           CommentRepository().addComment(fetchComment);
-          updated = true;
+          result = PostCommentStatus.newly;
         }
       } else if (localComment.updatedAt.isBefore(remoteComment.updatedAt)) {
         // update local comment
@@ -34,11 +38,11 @@ class CommentController extends GetxController {
             (await getComment(repoId, postId, remoteComment.id)).getOrNull();
         if (fetchComment != null) {
           CommentRepository().updateComment(fetchComment);
-          updated = true;
+          result = PostCommentStatus.updated;
         }
       }
     }
-    return updated;
+    return result;
   }
 
   Future<List<Comment>> loadComments(String repoId, String postId) async {
