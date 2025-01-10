@@ -126,6 +126,11 @@ class _RichEditorState extends State<RichEditor> {
               icon: const Icon(Icons.check_box),
               onPressed: _toggleCheckBox,
               tooltip: 'Check Box',
+            ),
+            IconButton(
+              icon: const Icon(Icons.horizontal_rule),
+              onPressed: _toggleHorizontalRule,
+              tooltip: 'Horizontal Rule',
             )
           ],
         ),
@@ -533,6 +538,31 @@ class _RichEditorState extends State<RichEditor> {
         selection: TextSelection(
             baseOffset: startLineStart,
             extentOffset: startLineStart + modifiedLines.length),
+      );
+    }
+    focusNode.requestFocus();
+  }
+
+  void _toggleHorizontalRule() {
+    final text = textEditingController.text;
+    final selection = textEditingController.selection;
+
+    if (selection.isCollapsed) {
+      // 没有选中文本，在光标位置插入水平分割线，光标自动移动到下一行
+      final cursorPosition = selection.baseOffset;
+      final newText = '\n---\n';
+      textEditingController.value = textEditingController.value.copyWith(
+        text: text.replaceRange(cursorPosition, cursorPosition, newText),
+        selection: TextSelection.collapsed(offset: cursorPosition + 5),
+      );
+    } else {
+      // 选中了文本，在选中区域前后插入水平分割线
+      final start = selection.start;
+      final end = selection.end;
+      final newText = '\n---\n';
+      textEditingController.value = textEditingController.value.copyWith(
+        text: text.replaceRange(start, end, newText),
+        selection: TextSelection.collapsed(offset: start + 5),
       );
     }
     focusNode.requestFocus();
