@@ -172,9 +172,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               const VerticalDivider(),
               Flexible(
                   child: ListView(
-                children: [
-                  MarkdownRenderer(data: contentTextEditingController.text)
-                ],
+                children: [MarkdownRenderer(data: contentTextEditingController.text)],
               )),
             ],
           );
@@ -197,8 +195,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             decoration: const InputDecoration(
               labelText: 'repo',
               labelStyle: TextStyle(fontSize: 14),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 4.0, vertical: 10.0),
+              contentPadding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 10.0),
               isCollapsed: true,
               border: OutlineInputBorder(borderSide: BorderSide.none),
               enabledBorder: OutlineInputBorder(borderSide: BorderSide.none),
@@ -237,11 +234,8 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               }
               return matched;
             },
-            initialValue:
-                TextEditingValue(text: categoryTextEditingController.text),
-            fieldViewBuilder:
-                (context, textEditingController, focusNode, onFieldSubmitted) =>
-                    TextFormField(
+            initialValue: TextEditingValue(text: categoryTextEditingController.text),
+            fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) => TextFormField(
               style: const TextStyle(fontSize: 14),
               strutStyle: const StrutStyle(fontSize: 16),
               controller: textEditingController,
@@ -260,8 +254,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
                 labelText: 'category',
                 floatingLabelBehavior: FloatingLabelBehavior.always,
                 floatingLabelStyle: TextStyle(fontSize: 14),
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+                contentPadding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
                 isCollapsed: true,
                 border: OutlineInputBorder(borderSide: BorderSide.none),
                 enabledBorder: OutlineInputBorder(borderSide: BorderSide.none),
