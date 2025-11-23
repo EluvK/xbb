@@ -6,6 +6,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:xbb/constant.dart';
 import 'package:xbb/controller/comment.dart';
 import 'package:xbb/controller/post.dart';
 import 'package:xbb/controller/repo.dart';
@@ -15,13 +16,16 @@ import 'package:xbb/controller/user.dart';
 import 'package:xbb/pages/edit_post.dart';
 import 'package:xbb/pages/edit_repo.dart';
 import 'package:xbb/pages/home.dart';
+import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/register.dart';
 import 'package:xbb/pages/setting.dart';
 import 'package:xbb/pages/view_post.dart';
+import 'package:xbb/ss_client/client.dart';
+import 'package:xbb/ss_client/token_storage.dart';
 import 'package:xbb/utils/translation.dart';
 
 void main() async {
-  await GetStorage.init('XbbGetStorage');
+  await GetStorage.init(GET_STORAGE_FILE_KEY);
 
   if (!Platform.isAndroid && !Platform.isIOS) {
     sqfliteFfiInit();
@@ -35,7 +39,7 @@ void main() async {
   // should init before app start
   final settingController = Get.find<SettingController>();
   await settingController.ensureInitialization();
-  
+
   await Get.putAsync(() async {
     final controller = UserController();
     return controller;
@@ -56,6 +60,11 @@ void main() async {
   await Get.putAsync(() async {
     final controller = RepoController();
     return controller;
+  });
+
+  Get.lazyPut(() {
+    final ssClient = SSClient(baseUrl: APP_API_URI, tokenStorage: GetStorageTokenStorage());
+    return ssClient;
   });
 
   await initCacheSetting();
@@ -103,9 +112,7 @@ class MyApp extends StatelessWidget {
         .isBefore(settingController.lastAutoLoadTimestamp.value);
     bool first = initFirstTime();
     String initialRoute = first ? '/login' : '/';
-    if (!first &&
-        !settingController.quickReloadMode.value &&
-        !inMinimumUpdateInterval) {
+    if (!first && !settingController.quickReloadMode.value && !inMinimumUpdateInterval) {
       settingController.lastAutoLoadTimestamp.value = DateTime.now();
       autoLoadAtStart();
     }
@@ -116,18 +123,17 @@ class MyApp extends StatelessWidget {
     double fontScale = settingController.fontScale.value;
     print('load fontScale: $fontScale');
     final mediaQueryData = MediaQuery.of(context);
-    final scale = mediaQueryData.textScaler
-        .clamp(minScaleFactor: fontScale, maxScaleFactor: fontScale + 0.1);
+    final scale = mediaQueryData.textScaler.clamp(minScaleFactor: fontScale, maxScaleFactor: fontScale + 0.1);
 
     var app = GetMaterialApp(
-      scrollBehavior: const MaterialScrollBehavior()
-          .copyWith(dragDevices: PointerDeviceKind.values.toSet()),
+      scrollBehavior: const MaterialScrollBehavior().copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       initialRoute: initialRoute,
       translations: Translation(),
       locale: locale,
       getPages: [
         GetPage(name: '/', page: () => HomePage()),
-        GetPage(name: '/login', page: () => const RegisterPage()),
+        // GetPage(name: '/login', page: () => const RegisterPage()),
+        GetPage(name: '/login', page: () => const LoginPage()),
         GetPage(name: '/view-post', page: () => const ViewPostPage()),
         GetPage(name: '/edit-post', page: () => const EditPostPage()),
         GetPage(name: '/edit-repo', page: () => const EditRepoPage()),
@@ -146,9 +152,7 @@ class MyApp extends StatelessWidget {
           alignedDropdown: true,
           useInputDecoratorThemeInDialogs: true,
         ),
-        keyColors: const FlexKeyColors(
-          useSecondary: true,
-        ),
+        keyColors: const FlexKeyColors(useSecondary: true),
         tones: FlexTones.material(Brightness.light).onMainsUseBW(),
         visualDensity: FlexColorScheme.comfortablePlatformDensity,
         useMaterial3: true,
@@ -166,9 +170,7 @@ class MyApp extends StatelessWidget {
           alignedDropdown: true,
           useInputDecoratorThemeInDialogs: true,
         ),
-        keyColors: const FlexKeyColors(
-          useSecondary: true,
-        ),
+        keyColors: const FlexKeyColors(useSecondary: true),
         tones: FlexTones.material(Brightness.dark).onMainsUseBW(),
         visualDensity: FlexColorScheme.comfortablePlatformDensity,
         useMaterial3: true,

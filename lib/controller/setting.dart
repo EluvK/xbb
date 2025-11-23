@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:xbb/client/client.dart';
+import 'package:xbb/constant.dart';
 import 'package:xbb/utils/predefined.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -22,7 +23,7 @@ bool initFirstTime() {
 Future<void> initCacheSetting() async {}
 
 class SettingController extends GetxController {
-  final box = GetStorage('XbbGetStorage');
+  final box = GetStorage(GET_STORAGE_FILE_KEY);
 
   // app settings
   final themeMode = ThemeMode.system.obs;
