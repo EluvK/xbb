@@ -6,6 +6,7 @@ import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/repo.dart';
 import 'package:xbb/utils/double_click.dart';
+import 'package:xbb/utils/test_input.dart';
 import 'package:xbb/utils/utils.dart';
 
 class RepoEditor extends StatefulWidget {
@@ -36,10 +37,7 @@ class _RepoEditorState extends State<RepoEditor> {
         autoSync: true,
         unreadCount: 0,
       );
-      return _RepoEditorInner(
-        repo: repo,
-        enableChooseMode: true,
-      );
+      return _RepoEditorInner(repo: repo, enableChooseMode: true);
     }
     return FutureBuilder(
       future: repoController.getRepoUnwrap(widget.repoId!),
@@ -74,8 +72,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.repo.sharedTo != null &&
-        widget.repo.sharedTo == settingController.currentUserId.value) {
+    if (widget.repo.sharedTo != null && widget.repo.sharedTo == settingController.currentUserId.value) {
       setState(() {
         editMode = EditRepoMode.shared;
       });
@@ -95,10 +92,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       children: [
         Visibility(
           visible: widget.enableChooseMode,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: _switchModeButton(),
-          ),
+          child: Padding(padding: const EdgeInsets.all(8.0), child: _switchModeButton()),
         ),
         Expanded(child: main),
       ],
@@ -108,32 +102,17 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   Widget _sharedRepoEditor() {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _sharedLinkWidget(),
-        ),
+        Padding(padding: const EdgeInsets.all(8.0), child: _sharedLinkWidget()),
         const Divider(),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _nameWidget(),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _descriptionWidget(),
-        ),
+        Padding(padding: const EdgeInsets.all(8.0), child: _nameWidget()),
+        Padding(padding: const EdgeInsets.all(8.0), child: _descriptionWidget()),
         const Divider(),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _settingWidget(),
-          ),
+          child: Padding(padding: const EdgeInsets.all(16.0), child: _settingWidget()),
         ),
         const Divider(),
         // Expanded(child: Placeholder()),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _toolsWidget(),
-        )
+        Padding(padding: const EdgeInsets.all(8.0), child: _toolsWidget()),
       ],
     );
   }
@@ -141,30 +120,15 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   Widget _selfRepoEditor() {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _nameWidget(),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _descriptionWidget(),
-        ),
+        Padding(padding: const EdgeInsets.all(8.0), child: _nameWidget()),
+        Padding(padding: const EdgeInsets.all(8.0), child: _descriptionWidget()),
         const Divider(),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _sharedLinkWidget(),
-        ),
+        Padding(padding: const EdgeInsets.all(8.0), child: _sharedLinkWidget()),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _settingWidget(),
-          ),
+          child: Padding(padding: const EdgeInsets.all(16.0), child: _settingWidget()),
         ),
         const Divider(),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _toolsWidget(),
-        )
+        Padding(padding: const EdgeInsets.all(8.0), child: _toolsWidget()),
       ],
     );
   }
@@ -194,16 +158,21 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
   }
 
   Widget _nameWidget() {
-    return TextField(
-      minLines: 1,
-      maxLines: 3,
-      controller: TextEditingController(text: widget.repo.name),
-      decoration: InputDecoration(labelText: 'repo_name'.tr),
-      onChanged: (value) {
-        widget.repo.name = value;
-      },
-      enabled: editMode == EditRepoMode.self,
+    return TextInputWidget(
+      title: InputTitleEnum.title,
+      onChanged: (value) => widget.repo.name = value,
+      initialValue: widget.repo.name,
     );
+    // return TextField(
+    //   minLines: 1,
+    //   maxLines: 3,
+    //   controller: TextEditingController(text: widget.repo.name),
+    //   decoration: InputDecoration(labelText: 'repo_name'.tr),
+    //   onChanged: (value) {
+    //     widget.repo.name = value;
+    //   },
+    //   enabled: editMode == EditRepoMode.self,
+    // );
   }
 
   Widget _descriptionWidget() {
@@ -227,8 +196,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
           child: TextField(
             minLines: 1,
             maxLines: 3,
-            controller:
-                TextEditingController(text: widget.repo.sharedLink ?? ''),
+            controller: TextEditingController(text: widget.repo.sharedLink ?? ''),
             onChanged: (value) {
               widget.repo.sharedLink = value;
             },
@@ -241,18 +209,14 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
           child: IconButton(
             icon: const Icon(Icons.copy),
             onPressed: () {
-              Clipboard.setData(
-                  ClipboardData(text: widget.repo.sharedLink ?? ''));
+              Clipboard.setData(ClipboardData(text: widget.repo.sharedLink ?? ''));
               flushBar(FlushLevel.OK, "copy to clipboard", "share to others");
             },
           ),
         ),
       ],
     );
-    return Visibility(
-      visible: widget.repo.remoteRepo,
-      child: shared,
-    );
+    return Visibility(visible: widget.repo.remoteRepo, child: shared);
   }
 
   Widget _settingWidget() {
@@ -260,14 +224,10 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
       children: [
         const Align(
           alignment: Alignment.centerLeft,
-          child: Text(
-            'settings',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
+          child: Text('settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         ),
         // todo: remoteRepo?
-        Visibility(
-            visible: widget.repo.id != "0" && false, child: _remoteSetting()),
+        Visibility(visible: widget.repo.id != "0" && false, child: _remoteSetting()),
         const Divider(),
       ],
     );
@@ -291,7 +251,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
                   }
                 });
               },
-            )
+            ),
           ],
         ),
         TableRow(
@@ -307,7 +267,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
                   });
                 }
               },
-            )
+            ),
           ],
         ),
       ],
@@ -330,10 +290,7 @@ class __RepoEditorInnerState extends State<_RepoEditorInner> {
         }
         break;
     }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: buttonList,
-    );
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: buttonList);
   }
 
   Widget _saveButton() {

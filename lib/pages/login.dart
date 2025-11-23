@@ -108,7 +108,7 @@ class _LoginBodyState extends State<LoginBody> {
     return ElevatedButton(
       onPressed: () async {
         final userName = nameController.text;
-        final password = _passwordVisible ? '' : passwordController.text;
+        final password = passwordController.text;
 
         try {
           final UserProfile userProfile = await ssClient.login(userName, password);

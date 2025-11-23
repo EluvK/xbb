@@ -62,7 +62,7 @@ void main() async {
     return controller;
   });
 
-  Get.lazyPut(() {
+  await Get.putAsync(() async {
     final ssClient = SSClient(baseUrl: APP_API_URI, tokenStorage: GetStorageTokenStorage());
     return ssClient;
   });
