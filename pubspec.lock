@@ -529,7 +529,7 @@ packages:
     source: hosted
     version: "2.2.0"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "75cca69d1490965be98c73ceaea117e8a04dd21217b37b292c9ddbec0d955bc5"
@@ -769,10 +769,10 @@ packages:
     dependency: transitive
     description:
       name: sqlite3
-      sha256: "4fd811bd46d2191ff06fed74d7f1ab8be94944ff75dcb5486c052d1769118476"
+      sha256: "0e690e9633d530e46f1229efd2f280b97e363f8ed10f581dc1426ea5d39374fc"
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
-    version: "3.0.1"
+    version: "3.1.0"
   stack_trace:
     dependency: transitive
     description:
@@ -816,7 +816,7 @@ packages:
   syncstore_client:
     dependency: "direct main"
     description:
-      path: "../syncstore_client"
+      path: "../syncstore_client/syncstore_client"
       relative: true
     source: path
     version: "1.0.0"
