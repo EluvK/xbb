@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/comment.dart';
 import 'package:xbb/controller/post.dart';
@@ -26,11 +25,6 @@ import 'package:xbb/utils/translation.dart';
 
 void main() async {
   await GetStorage.init(GET_STORAGE_FILE_KEY);
-
-  if (!Platform.isAndroid && !Platform.isIOS) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
 
   await Get.putAsync(() async {
     final controller = SettingController();

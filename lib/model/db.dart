@@ -1,4 +1,7 @@
-import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:path/path.dart';
 import 'package:xbb/model/repo.dart';
 
 /// Repo
@@ -47,8 +50,16 @@ class DataBase {
   static Database? _db;
 
   Future<Database> getDb() async {
+    if (_db != null) return _db!;
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'xbb_client.db');
+
     _db ??= await openDatabase(
-      'xbb_client.db',
+      path,
       version: 2,
       onUpgrade: (Database db, int oldVersion, int newVersion) async {
         /// add table comments
