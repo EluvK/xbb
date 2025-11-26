@@ -56,12 +56,20 @@ dependencies:
     git:
       url: https://github.com/EluvK/syncstore_client.git/syncstore_client
       ref: master
+  sync_annotation:
+    git:
+      url: https://github.com/EluvK/syncstore_client.git/sync_annotation
+      ref: master
 
 dev_dependencies:
   build_runner: ^2.10.4
   json_serializable: ^6.11.3
   flutter_test:
     sdk: flutter
+  sync_generator:
+    git:
+      url: https://github.com/EluvK/syncstore_client.git/sync_generator
+      ref: master
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
