@@ -1,28 +1,42 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:get/get.dart';
 import 'package:json_annotation/json_annotation.dart';
-
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:syncstore_client/syncstore_client.dart';
 import 'package:sync_annotation/sync_annotation.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/models/notes/db.dart';
 
 part 'model.g.dart';
 
-// @JsonEnum()
-// enum RepoStatus {
-//   normal,
-//   deleted,
-// }
+Future<void> reInitNotesSync(SyncStoreClient client) async {
+  await reInit<RepoController>(() => RepoController(client), (c) => c.ensureInitialization());
+  await reInit<PostController>(() => PostController(client), (c) => c.ensureInitialization());
+  await reInit<CommentController>(() => CommentController(client), (c) => c.ensureInitialization());
+}
 
-@Repository(tableName: 'repo', db: NotesDB)
+Future<void> reInit<T extends GetxController>(
+  FutureOr<T> Function() creator,
+  FutureOr<void> Function(T controller)? initializer,
+) async {
+  if (Get.isRegistered<T>()) {
+    await Get.delete<T>(force: true);
+  }
+  final controller = await Get.putAsync<T>(() async {
+    return await creator();
+  });
+  if (initializer != null) {
+    await initializer(controller);
+  }
+}
+
+@Repository(collectionName: 'xbb', tableName: 'repo', db: NotesDB)
 @JsonSerializable()
 class Repo {
   String name;
   String status;
   String? description;
-
-  // todo add more local fields?
 
   Repo({required this.name, required this.status, this.description});
 
@@ -30,7 +44,7 @@ class Repo {
   Map<String, dynamic> toJson() => _$RepoToJson(this);
 }
 
-@Repository(tableName: 'post', db: NotesDB)
+@Repository(collectionName: 'xbb', tableName: 'post', db: NotesDB)
 @JsonSerializable(fieldRename: FieldRename.snake)
 class Post {
   String title;
@@ -38,22 +52,18 @@ class Post {
   String content;
   String repoId;
 
-  // todo more local fields?
-
   Post({required this.title, required this.category, required this.content, required this.repoId});
 
   factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
   Map<String, dynamic> toJson() => _$PostToJson(this);
 }
 
-@Repository(tableName: 'comment', db: NotesDB)
+@Repository(collectionName: 'xbb', tableName: 'comment', db: NotesDB)
 @JsonSerializable(fieldRename: FieldRename.snake)
 class Comment {
   String content;
   String postId;
   String? parentId;
-
-  // todo more local fields?
 
   Comment({required this.postId, required this.content, this.parentId});
 

@@ -805,6 +805,20 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "1.4.1"
+  sync_annotation:
+    dependency: "direct main"
+    description:
+      path: "../syncstore_client/sync_annotation"
+      relative: true
+    source: path
+    version: "0.0.1"
+  sync_generator:
+    dependency: "direct dev"
+    description:
+      path: "../syncstore_client/sync_generator"
+      relative: true
+    source: path
+    version: "0.0.1"
   synchronized:
     dependency: transitive
     description:
