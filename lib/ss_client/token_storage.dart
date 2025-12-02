@@ -31,6 +31,16 @@ class GetStorageTokenStorage implements TokenStorage {
     return box.write(TOKEN_REFRESH_KEY, token);
   }
 
+  @override
+  void setUserId(String userId) {
+    box.write(STORAGE_USER_ID_KEY, userId);
+  }
+
+  @override
+  String? getUserId() {
+    return box.read<String?>(STORAGE_USER_ID_KEY);
+  }
+
   String getUserName() {
     return box.read<String?>(STORAGE_USER_NAME_KEY) ?? '';
   }

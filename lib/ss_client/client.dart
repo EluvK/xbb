@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/ss_client/token_storage.dart';
 
@@ -8,6 +9,7 @@ class SSClient {
 
   SSClient({required this.baseUrl, required this.tokenStorage}) {
     client = SyncStoreClient(baseUrl: baseUrl, tokenStorage: tokenStorage);
+    Get.put<SyncStoreClient>(client);
   }
 
   Future<UserProfile> login(String username, String password) async {

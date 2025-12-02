@@ -203,7 +203,11 @@ class RepoController extends GetxController {
 
   void deleteData(String id) {
     _items.removeWhere((item) => item.id == id);
-    _syncEngine.delete(id);
+    if (currentRepoId.value == id) {
+      currentRepoId.value = null;
+    }
+    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
+    _syncEngine.delete(id, status != SyncStatus.deleted);
   }
 }
 
@@ -215,8 +219,15 @@ class _RepoSyncEngine {
     local.syncStatus = SyncStatus.syncing;
     await RepoRepository().addToLocalDb(local);
 
-    final newId = await client.create('xbb', 'repo', local.body.toJson());
-    final RepoDataItem createdItem = await client.get<Repo>('xbb', 'repo', newId, Repo.fromJson);
+    RepoDataItem createdItem;
+    try {
+      final newId = await client.create('xbb', 'repo', local.body.toJson());
+      createdItem = await client.get<Repo>('xbb', 'repo', newId, Repo.fromJson);
+    } catch (e) {
+      local.syncStatus = SyncStatus.failed;
+      await RepoRepository().updateToLocalDb(local);
+      rethrow;
+    }
     createdItem.syncStatus = SyncStatus.archived;
 
     await RepoRepository().deleteFromLocalDb(local.id);
@@ -227,15 +238,27 @@ class _RepoSyncEngine {
   Future<RepoDataItem> update(RepoDataItem local) async {
     local.syncStatus = SyncStatus.syncing;
     await RepoRepository().updateToLocalDb(local);
-    await client.update('xbb', 'repo', local.id, local.body.toJson());
-    final RepoDataItem updatedItem = await client.get<Repo>('xbb', 'repo', local.id, Repo.fromJson);
+
+    RepoDataItem updatedItem;
+    try {
+      await client.update('xbb', 'repo', local.id, local.body.toJson());
+      updatedItem = await client.get<Repo>('xbb', 'repo', local.id, Repo.fromJson);
+    } catch (e) {
+      local.syncStatus = SyncStatus.failed;
+      await RepoRepository().updateToLocalDb(local);
+      rethrow;
+    }
     updatedItem.syncStatus = SyncStatus.archived;
+
     await RepoRepository().updateToLocalDb(updatedItem);
     return updatedItem;
   }
 
-  void delete(String id) {
+  void delete(String id, bool deleteFromServer) {
     RepoRepository().deleteFromLocalDb(id);
+    if (!deleteFromServer) {
+      return;
+    }
     try {
       client.delete('xbb', 'repo', id);
     } catch (e) {
@@ -441,7 +464,11 @@ class PostController extends GetxController {
 
   void deleteData(String id) {
     _items.removeWhere((item) => item.id == id);
-    _syncEngine.delete(id);
+    if (currentPostId.value == id) {
+      currentPostId.value = null;
+    }
+    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
+    _syncEngine.delete(id, status != SyncStatus.deleted);
   }
 }
 
@@ -453,8 +480,15 @@ class _PostSyncEngine {
     local.syncStatus = SyncStatus.syncing;
     await PostRepository().addToLocalDb(local);
 
-    final newId = await client.create('xbb', 'post', local.body.toJson());
-    final PostDataItem createdItem = await client.get<Post>('xbb', 'post', newId, Post.fromJson);
+    PostDataItem createdItem;
+    try {
+      final newId = await client.create('xbb', 'post', local.body.toJson());
+      createdItem = await client.get<Post>('xbb', 'post', newId, Post.fromJson);
+    } catch (e) {
+      local.syncStatus = SyncStatus.failed;
+      await PostRepository().updateToLocalDb(local);
+      rethrow;
+    }
     createdItem.syncStatus = SyncStatus.archived;
 
     await PostRepository().deleteFromLocalDb(local.id);
@@ -465,15 +499,27 @@ class _PostSyncEngine {
   Future<PostDataItem> update(PostDataItem local) async {
     local.syncStatus = SyncStatus.syncing;
     await PostRepository().updateToLocalDb(local);
-    await client.update('xbb', 'post', local.id, local.body.toJson());
-    final PostDataItem updatedItem = await client.get<Post>('xbb', 'post', local.id, Post.fromJson);
+
+    PostDataItem updatedItem;
+    try {
+      await client.update('xbb', 'post', local.id, local.body.toJson());
+      updatedItem = await client.get<Post>('xbb', 'post', local.id, Post.fromJson);
+    } catch (e) {
+      local.syncStatus = SyncStatus.failed;
+      await PostRepository().updateToLocalDb(local);
+      rethrow;
+    }
     updatedItem.syncStatus = SyncStatus.archived;
+
     await PostRepository().updateToLocalDb(updatedItem);
     return updatedItem;
   }
 
-  void delete(String id) {
+  void delete(String id, bool deleteFromServer) {
     PostRepository().deleteFromLocalDb(id);
+    if (!deleteFromServer) {
+      return;
+    }
     try {
       client.delete('xbb', 'post', id);
     } catch (e) {
@@ -683,7 +729,11 @@ class CommentController extends GetxController {
 
   void deleteData(String id) {
     _items.removeWhere((item) => item.id == id);
-    _syncEngine.delete(id);
+    if (currentCommentId.value == id) {
+      currentCommentId.value = null;
+    }
+    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
+    _syncEngine.delete(id, status != SyncStatus.deleted);
   }
 }
 
@@ -695,8 +745,15 @@ class _CommentSyncEngine {
     local.syncStatus = SyncStatus.syncing;
     await CommentRepository().addToLocalDb(local);
 
-    final newId = await client.create('xbb', 'comment', local.body.toJson());
-    final CommentDataItem createdItem = await client.get<Comment>('xbb', 'comment', newId, Comment.fromJson);
+    CommentDataItem createdItem;
+    try {
+      final newId = await client.create('xbb', 'comment', local.body.toJson());
+      createdItem = await client.get<Comment>('xbb', 'comment', newId, Comment.fromJson);
+    } catch (e) {
+      local.syncStatus = SyncStatus.failed;
+      await CommentRepository().updateToLocalDb(local);
+      rethrow;
+    }
     createdItem.syncStatus = SyncStatus.archived;
 
     await CommentRepository().deleteFromLocalDb(local.id);
@@ -707,15 +764,27 @@ class _CommentSyncEngine {
   Future<CommentDataItem> update(CommentDataItem local) async {
     local.syncStatus = SyncStatus.syncing;
     await CommentRepository().updateToLocalDb(local);
-    await client.update('xbb', 'comment', local.id, local.body.toJson());
-    final CommentDataItem updatedItem = await client.get<Comment>('xbb', 'comment', local.id, Comment.fromJson);
+
+    CommentDataItem updatedItem;
+    try {
+      await client.update('xbb', 'comment', local.id, local.body.toJson());
+      updatedItem = await client.get<Comment>('xbb', 'comment', local.id, Comment.fromJson);
+    } catch (e) {
+      local.syncStatus = SyncStatus.failed;
+      await CommentRepository().updateToLocalDb(local);
+      rethrow;
+    }
     updatedItem.syncStatus = SyncStatus.archived;
+
     await CommentRepository().updateToLocalDb(updatedItem);
     return updatedItem;
   }
 
-  void delete(String id) {
+  void delete(String id, bool deleteFromServer) {
     CommentRepository().deleteFromLocalDb(id);
+    if (!deleteFromServer) {
+      return;
+    }
     try {
       client.delete('xbb', 'comment', id);
     } catch (e) {

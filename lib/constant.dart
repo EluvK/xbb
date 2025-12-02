@@ -8,3 +8,4 @@ const String TOKEN_ACCESS_KEY = 'AccessToken';
 const String TOKEN_REFRESH_KEY = 'RefreshToken';
 
 const String STORAGE_USER_NAME_KEY = 'UserName';
+const String STORAGE_USER_ID_KEY = 'UserId';
