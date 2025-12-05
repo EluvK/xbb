@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/models/notes/model.dart';
 
-class ViewPostsPage extends StatelessWidget {
-  const ViewPostsPage({super.key});
+class ViewPosts extends StatelessWidget {
+  const ViewPosts({super.key});
 
   @override
   Widget build(BuildContext context) {

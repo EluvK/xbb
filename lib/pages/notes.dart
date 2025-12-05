@@ -29,7 +29,7 @@ class NoteHomePage extends GetResponsiveView {
           // Placeholder(),
           ViewRepos(),
           VerticalDivider(),
-          Flexible(child: ViewPostsPage()),
+          Flexible(child: ViewPosts()),
         ],
       ),
     );
