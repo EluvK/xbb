@@ -58,6 +58,7 @@ extension LocalStoreRepo on Repo {
           parent_id TEXT,
           "unique" TEXT,
           sync_status TEXT NOT NULL,
+          color_tag TEXT NOT NULL,
           body TEXT NOT NULL
         )
       """;
@@ -160,11 +161,11 @@ class RepoController extends GetxController {
     currentRepoId.value = id;
   }
 
-  List<RepoDataItem> onViewRepos(String? parent_id) {
-    if (parent_id == null) {
+  List<RepoDataItem> onViewRepos(String? parentId) {
+    if (parentId == null) {
       return _items;
     }
-    return _items.where((item) => item.parentId == parent_id).toList();
+    return _items.where((item) => item.parentId == parentId).toList();
   }
 
   Future<void> trySyncAll() async => await _syncEngine.syncAll();
@@ -201,6 +202,12 @@ class RepoController extends GetxController {
     });
   }
 
+  void updateColorLocal(String id, ColorTag color) {
+    final item = _items.firstWhere((item) => item.id == id);
+    final updatedItem = item.updatedColorTag(color);
+    _items[_items.indexOf(item)] = updatedItem;
+  }
+
   void deleteData(String id) {
     _items.removeWhere((item) => item.id == id);
     if (currentRepoId.value == id) {
@@ -229,6 +236,7 @@ class _RepoSyncEngine {
       rethrow;
     }
     createdItem.syncStatus = SyncStatus.archived;
+    createdItem.colorTag = local.colorTag;
 
     await RepoRepository().deleteFromLocalDb(local.id);
     await RepoRepository().addToLocalDb(createdItem);
@@ -249,6 +257,7 @@ class _RepoSyncEngine {
       rethrow;
     }
     updatedItem.syncStatus = SyncStatus.archived;
+    updatedItem.colorTag = local.colorTag;
 
     await RepoRepository().updateToLocalDb(updatedItem);
     return updatedItem;
@@ -319,6 +328,7 @@ extension LocalStorePost on Post {
           parent_id TEXT,
           "unique" TEXT,
           sync_status TEXT NOT NULL,
+          color_tag TEXT NOT NULL,
           body TEXT NOT NULL
         )
       """;
@@ -421,11 +431,11 @@ class PostController extends GetxController {
     currentPostId.value = id;
   }
 
-  List<PostDataItem> onViewPosts(String? parent_id) {
-    if (parent_id == null) {
+  List<PostDataItem> onViewPosts(String? parentId) {
+    if (parentId == null) {
       return _items;
     }
-    return _items.where((item) => item.parentId == parent_id).toList();
+    return _items.where((item) => item.parentId == parentId).toList();
   }
 
   Future<void> trySyncAll() async => await _syncEngine.syncAll();
@@ -462,6 +472,12 @@ class PostController extends GetxController {
     });
   }
 
+  void updateColorLocal(String id, ColorTag color) {
+    final item = _items.firstWhere((item) => item.id == id);
+    final updatedItem = item.updatedColorTag(color);
+    _items[_items.indexOf(item)] = updatedItem;
+  }
+
   void deleteData(String id) {
     _items.removeWhere((item) => item.id == id);
     if (currentPostId.value == id) {
@@ -490,6 +506,7 @@ class _PostSyncEngine {
       rethrow;
     }
     createdItem.syncStatus = SyncStatus.archived;
+    createdItem.colorTag = local.colorTag;
 
     await PostRepository().deleteFromLocalDb(local.id);
     await PostRepository().addToLocalDb(createdItem);
@@ -510,6 +527,7 @@ class _PostSyncEngine {
       rethrow;
     }
     updatedItem.syncStatus = SyncStatus.archived;
+    updatedItem.colorTag = local.colorTag;
 
     await PostRepository().updateToLocalDb(updatedItem);
     return updatedItem;
@@ -580,6 +598,7 @@ extension LocalStoreComment on Comment {
           parent_id TEXT,
           "unique" TEXT,
           sync_status TEXT NOT NULL,
+          color_tag TEXT NOT NULL,
           body TEXT NOT NULL
         )
       """;
@@ -686,11 +705,11 @@ class CommentController extends GetxController {
     currentCommentId.value = id;
   }
 
-  List<CommentDataItem> onViewComments(String? parent_id) {
-    if (parent_id == null) {
+  List<CommentDataItem> onViewComments(String? parentId) {
+    if (parentId == null) {
       return _items;
     }
-    return _items.where((item) => item.parentId == parent_id).toList();
+    return _items.where((item) => item.parentId == parentId).toList();
   }
 
   Future<void> trySyncAll() async => await _syncEngine.syncAll();
@@ -727,6 +746,12 @@ class CommentController extends GetxController {
     });
   }
 
+  void updateColorLocal(String id, ColorTag color) {
+    final item = _items.firstWhere((item) => item.id == id);
+    final updatedItem = item.updatedColorTag(color);
+    _items[_items.indexOf(item)] = updatedItem;
+  }
+
   void deleteData(String id) {
     _items.removeWhere((item) => item.id == id);
     if (currentCommentId.value == id) {
@@ -755,6 +780,7 @@ class _CommentSyncEngine {
       rethrow;
     }
     createdItem.syncStatus = SyncStatus.archived;
+    createdItem.colorTag = local.colorTag;
 
     await CommentRepository().deleteFromLocalDb(local.id);
     await CommentRepository().addToLocalDb(createdItem);
@@ -775,6 +801,7 @@ class _CommentSyncEngine {
       rethrow;
     }
     updatedItem.syncStatus = SyncStatus.archived;
+    updatedItem.colorTag = local.colorTag;
 
     await CommentRepository().updateToLocalDb(updatedItem);
     return updatedItem;
