@@ -1,74 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:uuid/uuid.dart';
-import 'package:xbb/controller/post.dart';
-import 'package:xbb/controller/repo.dart';
-import 'package:xbb/controller/setting.dart';
-import 'package:xbb/model/post.dart';
+// import 'package:uuid/uuid.dart';
+// import 'package:xbb/controller/post.dart';
+// import 'package:xbb/controller/repo.dart';
+// import 'package:xbb/controller/setting.dart';
+import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/markdown.dart';
 import 'package:xbb/utils/rich_editor.dart';
 import 'package:xbb/utils/utils.dart';
 
 class PostEditor extends StatefulWidget {
-  const PostEditor({super.key, this.post});
-  final Post? post;
+  const PostEditor({super.key, this.postItem});
+  final PostDataItem? postItem;
 
   @override
   State<PostEditor> createState() => _PostEditorState();
 }
 
 class _PostEditorState extends State<PostEditor> {
-  final settingController = Get.find<SettingController>();
+  // final settingController = Get.find<SettingController>();
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
+
   @override
   Widget build(BuildContext context) {
-    var defaultRepo = repoController.myRepoList.firstWhere(
-      (e) => (e.id == repoController.currentRepoId.value),
-      orElse: () {
-        return repoController.myRepoList.first;
-      },
-    );
-    return FutureBuilder(
-      future: postController.fetchRepoPostCategories(defaultRepo.id),
-      builder: (context, categories) {
-        if (!categories.hasData) {
-          return const CircularProgressIndicator();
-        }
-        var candidateCategory = categories.data!;
-        if (widget.post == null) {
-          // new one
-          var post = Post(
-            id: const Uuid().v4(),
-            category: 'uncategorized',
-            title: '',
-            content: '',
-            createdAt: DateTime.now().toUtc(),
-            updatedAt: DateTime.now().toUtc(),
-            author: settingController.currentUserId.value,
-            repoId: defaultRepo.id,
-          );
-          return _PostEditorInner(
-            post: post,
-            initCandidateCategory: candidateCategory,
-          );
-        }
-        return _PostEditorInner(
-          post: widget.post!,
-          initCandidateCategory: candidateCategory,
-        );
-      },
-    );
+    if (widget.postItem == null) {
+      // new one
+      var post = Post(category: 'uncategorized', title: '', content: '', repoId: repoController.currentRepoId.value!);
+      return _PostEditorInner(post: post);
+    }
+    return _PostEditorInner(post: widget.postItem!.body);
   }
 }
 
 class _PostEditorInner extends StatefulWidget {
-  const _PostEditorInner({
-    required this.post,
-    required this.initCandidateCategory,
-  });
+  const _PostEditorInner({required this.post});
   final Post post;
-  final Set<String> initCandidateCategory;
 
   @override
   State<_PostEditorInner> createState() => _PostEditorInnerState();
@@ -83,7 +50,9 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   TextEditingController contentTextEditingController = TextEditingController();
 
   reloadCandidateCategory(String repoId) async {
-    candidateCategory = await postController.fetchRepoPostCategories(repoId);
+    // todo
+    candidateCategory = <String>{}; // mock a empty set for now
+    // candidateCategory = await postController.fetchRepoPostCategories(repoId);
     print('reload: ${candidateCategory.join(',')}');
   }
 
@@ -108,23 +77,14 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   @override
   Widget build(BuildContext context) {
-    candidateCategory = widget.initCandidateCategory;
+    reloadCandidateCategory(widget.post.repoId);
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          child: _titleWidget(),
-        ),
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), child: _titleWidget()),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: _editorWidget(),
-          ),
+          child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), child: _editorWidget()),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-          child: _toolsWidget(),
-        ),
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: _toolsWidget()),
       ],
     );
   }
@@ -137,14 +97,11 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
           minLines: 1,
           maxLines: 3,
           controller: TextEditingController(text: widget.post.title),
-          decoration: InputDecoration(
-            labelText: 'Title:',
-            hoverColor: colorScheme.surface.withOpacity(0.2),
-          ),
+          decoration: InputDecoration(labelText: 'Title:', hoverColor: colorScheme.surface.withOpacity(0.2)),
           onChanged: (value) {
             widget.post.title = value;
           },
-        )
+        ),
       ],
     );
   }
@@ -160,9 +117,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
     //     alignLabelWithHint: true,
     //   ),
     // );
-    var contentEditor = RichEditor(
-      textEditingController: contentTextEditingController,
-    );
+    var contentEditor = RichEditor(textEditingController: contentTextEditingController);
 
     return isMobile()
         ? contentEditor
@@ -171,9 +126,8 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               Flexible(child: contentEditor),
               const VerticalDivider(),
               Flexible(
-                  child: ListView(
-                children: [MarkdownRenderer(data: contentTextEditingController.text)],
-              )),
+                child: ListView(children: [MarkdownRenderer(data: contentTextEditingController.text)]),
+              ),
             ],
           );
   }
@@ -186,10 +140,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         Flexible(
           child: DropdownButtonFormField(
             isExpanded: true,
-            items: repoController.myRepoList.map((e) {
+            items: repoController.onViewRepos(null).map((e) {
               return DropdownMenuItem(
                 value: e.id,
-                child: Text(e.name, style: const TextStyle(fontSize: 14)),
+                child: Text(e.body.name, style: const TextStyle(fontSize: 14)),
               );
             }).toList(),
             decoration: const InputDecoration(
@@ -209,10 +163,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             value: widget.post.repoId,
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0),
-          child: Text('/'),
-        ),
+        const Padding(padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0), child: Text('/')),
         // try:
         Flexible(
           child: Autocomplete(
@@ -277,10 +228,12 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         // TextButton(onPressed: () {}, child: const Text('保存草稿')),
         TextButton(
           onPressed: () {
-            postController.savePost(widget.post);
+            postController.addData(widget.post);
+            Get.offAllNamed('/');
+            // postController.savePost(widget.post);
           },
           child: const Text(' 保存 '),
-        )
+        ),
       ],
     );
   }

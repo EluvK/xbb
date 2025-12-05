@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:syncstore_client/syncstore_client.dart' show SyncStatus;
 import 'package:xbb/models/notes/model.dart';
 
 class ViewRepos extends StatelessWidget {
@@ -32,7 +33,7 @@ class _RepoLists extends StatefulWidget {
 
 class __RepoListsState extends State<_RepoLists> {
   final repoController = Get.find<RepoController>();
-  final postController = Get.find<PostController>();
+  // final postController = Get.find<PostController>();
 
   @override
   Widget build(BuildContext context) {
@@ -53,17 +54,34 @@ class __RepoListsState extends State<_RepoLists> {
   }
 
   Widget repoCardItem({required RepoDataItem repo}) {
+    Icon? iconForStatus(SyncStatus syncStatus) {
+      switch (syncStatus) {
+        case SyncStatus.syncing:
+          return const Icon(Icons.upload, color: Colors.green);
+        case SyncStatus.pending:
+          return const Icon(Icons.sync, color: Colors.orange);
+        case SyncStatus.deleted:
+          return const Icon(Icons.delete, color: Colors.grey);
+        case SyncStatus.synced:
+          return const Icon(Icons.check_circle, color: Colors.red);
+        default:
+          return null;
+      }
+    }
+
     return Card(
       child: ListTile(
         title: Text(repo.body.name),
         subtitle: Text(repo.id, maxLines: 2, overflow: TextOverflow.ellipsis),
         onTap: () {
-          postController.onSelectPost(repo.id);
-          // Get.toNamed('/view-posts', arguments: [repo.id]);
+          setState(() {
+            repoController.onSelectRepo(repo.id);
+          });
         },
         onLongPress: () {
           repoController.deleteData(repo.id);
         },
+        leading: iconForStatus(repo.syncStatus),
         trailing: repoController.currentRepoId.value == repo.id
             ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
             : null,

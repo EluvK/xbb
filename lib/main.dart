@@ -5,20 +5,24 @@ import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/constant.dart';
-import 'package:xbb/controller/comment.dart';
-import 'package:xbb/controller/post.dart';
-import 'package:xbb/controller/repo.dart';
+// import 'package:xbb/controller/comment.dart';
+// import 'package:xbb/controller/post.dart';
+// import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/controller/sync.dart';
+// import 'package:xbb/controller/sync.dart';
 import 'package:xbb/controller/user.dart';
-import 'package:xbb/pages/edit_post.dart';
+import 'package:xbb/models/notes/model.dart';
+// import 'package:xbb/pages/edit_post.dart';
 import 'package:xbb/pages/edit_repo.dart';
-import 'package:xbb/pages/home.dart';
+// import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/login.dart';
-import 'package:xbb/pages/register.dart';
+import 'package:xbb/pages/notes.dart';
+// import 'package:xbb/pages/register.dart';
 import 'package:xbb/pages/setting.dart';
-import 'package:xbb/pages/view_post.dart';
+import 'package:xbb/pages/notes/edit_post.dart';
+import 'package:xbb/pages/notes/view_post.dart';
 import 'package:xbb/ss_client/client.dart';
 import 'package:xbb/ss_client/token_storage.dart';
 import 'package:xbb/utils/translation.dart';
@@ -38,50 +42,51 @@ void main() async {
     final controller = UserController();
     return controller;
   });
-  await Get.putAsync(() async {
-    final controller = AsyncController();
-    return controller;
-  });
-  await Get.putAsync(() async {
-    final controller = PostController();
-    return controller;
-  });
-  await Get.putAsync(() async {
-    final controller = CommentController();
-    return controller;
-  });
+  // await Get.putAsync(() async {
+  //   final controller = AsyncController();
+  //   return controller;
+  // });
+  // await Get.putAsync(() async {
+  //   final controller = PostController();
+  //   return controller;
+  // });
+  // await Get.putAsync(() async {
+  //   final controller = CommentController();
+  //   return controller;
+  // });
 
-  await Get.putAsync(() async {
-    final controller = RepoController();
-    return controller;
-  });
+  // await Get.putAsync(() async {
+  //   final controller = RepoController();
+  //   return controller;
+  // });
 
   await Get.putAsync(() async {
     final ssClient = SSClient(baseUrl: APP_API_URI, tokenStorage: GetStorageTokenStorage());
     return ssClient;
   });
+  await reInitNotesSync(Get.find<SyncStoreClient>());
 
   await initCacheSetting();
-  await initRepoPost();
+  // await initRepoPost();
   runApp(const MyApp());
 }
 
-Future<void> initRepoPost() async {
-  final settingController = Get.find<SettingController>();
-  final postController = Get.find<PostController>();
-  await postController.loadPost(settingController.currentRepoId.value);
-}
+// Future<void> initRepoPost() async {
+//   final settingController = Get.find<SettingController>();
+//   final postController = Get.find<PostController>();
+//   await postController.loadPost(settingController.currentRepoId.value);
+// }
 
-Future<void> initUpdatePosts() async {
-  final settingController = Get.find<SettingController>();
-  final repoController = Get.find<RepoController>();
-  if (settingController.autoSyncSelfRepo.value) {
-    await repoController.pullRepos();
-  }
-  if (settingController.autoSyncSubscribeRepo.value) {
-    await repoController.pullSubscribeRepos();
-  }
-}
+// Future<void> initUpdatePosts() async {
+//   final settingController = Get.find<SettingController>();
+//   final repoController = Get.find<RepoController>();
+//   if (settingController.autoSyncSelfRepo.value) {
+//     await repoController.pullRepos();
+//   }
+//   if (settingController.autoSyncSubscribeRepo.value) {
+//     await repoController.pullSubscribeRepos();
+//   }
+// }
 
 Future<void> checkIfUpdate() async {
   final settingController = Get.find<SettingController>();
@@ -89,8 +94,8 @@ Future<void> checkIfUpdate() async {
 }
 
 void autoLoadAtStart() {
-  checkIfUpdate();
-  initUpdatePosts();
+  // checkIfUpdate();
+  // initUpdatePosts();
 }
 
 class MyApp extends StatelessWidget {
@@ -125,11 +130,14 @@ class MyApp extends StatelessWidget {
       translations: Translation(),
       locale: locale,
       getPages: [
-        GetPage(name: '/', page: () => HomePage()),
+        GetPage(name: '/', page: () => NoteHomePage()),
+        // GetPage(name: '/', page: () => HomePage()),
         // GetPage(name: '/login', page: () => const RegisterPage()),
         GetPage(name: '/login', page: () => const LoginPage()),
-        GetPage(name: '/view-post', page: () => const ViewPostPage()),
-        GetPage(name: '/edit-post', page: () => const EditPostPage()),
+        GetPage(name: '/notes/view-post', page: () => const ViewPostPage()),
+        GetPage(name: '/notes/edit-post', page: () => const EditPostPage()),
+        // GetPage(name: '/view-post', page: () => const ViewPostPage()),
+        // GetPage(name: '/edit-post', page: () => const EditPostPage()),
         GetPage(name: '/edit-repo', page: () => const EditRepoPage()),
         GetPage(name: '/setting', page: () => const SettingPage()),
       ],

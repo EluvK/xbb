@@ -10,15 +10,24 @@ class ViewPostsPage extends StatelessWidget {
     // final args = Get.arguments;
     // final String? repoId = args?[0];
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
-      decoration: BoxDecoration(color: colorScheme.surface),
-      child: const Column(
-        children: [
-          // todo
-          // PostFilter(),
-          Expanded(child: _ViewPosts()),
-        ],
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          print("click add post");
+          Get.toNamed('/notes/edit-post', arguments: [null]);
+        },
+        child: const Icon(Icons.add),
+      ),
+      body: Container(
+        padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
+        decoration: BoxDecoration(color: colorScheme.surface),
+        child: const Column(
+          children: [
+            // todo
+            // PostFilter(),
+            Expanded(child: _ViewPosts()),
+          ],
+        ),
       ),
     );
   }
@@ -44,6 +53,9 @@ class __ViewPostsState extends State<_ViewPosts> {
       }
       List<PostDataItem> posts = postController.onViewPosts(currentRepoId);
       print("build post card post number: ${posts.length}");
+      if (posts.isEmpty) {
+        return const Center(child: Text('No posts found.'));
+      }
       return ListView.builder(
         itemCount: posts.length,
         itemBuilder: (context, index) {
