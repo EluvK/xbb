@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/models/notes/model.dart';
 
 class ViewPosts extends StatelessWidget {
@@ -51,28 +52,45 @@ class __ViewPostsState extends State<_ViewPosts> {
       if (currentRepoId == null) {
         return const Center(child: Text('No repository selected.'));
       }
-      List<PostDataItem> posts = postController.onViewPosts(currentRepoId);
+      List<PostDataItem> posts = postController.onViewPosts(ParentIdFilter(currentRepoId));
+      
       print("build post card post number: ${posts.length}");
       if (posts.isEmpty) {
         return const Center(child: Text('No posts found.'));
       }
-      return ListView.builder(
-        itemCount: posts.length,
-        itemBuilder: (context, index) {
-          var post = posts[index];
-          return postCardItem(post: post);
-        },
-      );
+      return Column(children: [postCategoryLists(posts)]);
     });
   }
 
-  Widget postCardItem({required PostDataItem post}) {
-    return ListTile(
-      title: Text(post.body.title),
-      subtitle: Text(post.body.content, maxLines: 2, overflow: TextOverflow.ellipsis),
-      onTap: () {
-        // Get.toNamed('/view-post', arguments: [post.id]);
-      },
+  Widget postCategoryLists(List<PostDataItem> postItems) {
+    final Map<String, List<PostDataItem>> categoryMap = {};
+    for (var postItem in postItems) {
+      categoryMap.putIfAbsent(postItem.body.category, () => []).add(postItem);
+    }
+
+    return ListView(
+      children: categoryMap.entries.map((entry) {
+        final category = entry.key;
+        final posts = entry.value;
+        return ExpansionTile(
+          title: Text(category),
+          initiallyExpanded: true,
+          controlAffinity: ListTileControlAffinity.leading,
+          tilePadding: const EdgeInsets.fromLTRB(8.0, 0.0, 12.0, 0.0),
+          children: posts.map((post) {
+            return Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: ListTile(
+                title: Text(post.body.title),
+                subtitle: Text(post.body.content, maxLines: 2, overflow: TextOverflow.ellipsis),
+                onTap: () {
+                  Get.toNamed('/notes/view-post', arguments: [post]);
+                },
+              ),
+            );
+          }).toList(),
+        );
+      }).toList(),
     );
   }
 }

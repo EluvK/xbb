@@ -38,7 +38,7 @@ class __RepoListsState extends State<_RepoLists> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      List<RepoDataItem> repos = repoController.onViewRepos(null);
+      List<RepoDataItem> repos = repoController.onViewRepos();
       print("build repo card repo number: ${repos.length}");
       if (repos.isEmpty) {
         return const Center(child: Text('No repositories found.'));
@@ -99,6 +99,7 @@ class _ToolLists extends StatefulWidget {
 
 class __ToolListsState extends State<_ToolLists> {
   final repoController = Get.find<RepoController>();
+  final postController = Get.find<PostController>();
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +115,9 @@ class __ToolListsState extends State<_ToolLists> {
               icon: Icon(Icons.add),
             ),
             IconButton(
-              onPressed: () {
-                repoController.trySyncAll();
+              onPressed: () async {
+                await repoController.trySyncAll();
+                await postController.trySyncAll();
               },
               icon: Icon(Icons.refresh),
             ),

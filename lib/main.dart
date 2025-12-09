@@ -15,13 +15,13 @@ import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
 // import 'package:xbb/pages/edit_post.dart';
-import 'package:xbb/pages/edit_repo.dart';
+// import 'package:xbb/pages/edit_repo.dart';
 // import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/notes.dart';
 // import 'package:xbb/pages/register.dart';
 import 'package:xbb/pages/setting.dart';
-import 'package:xbb/pages/notes/edit_post.dart';
+import 'package:xbb/pages/notes/editor_pages.dart';
 import 'package:xbb/pages/notes/view_post.dart';
 import 'package:xbb/ss_client/client.dart';
 import 'package:xbb/ss_client/token_storage.dart';
@@ -138,7 +138,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/notes/edit-post', page: () => const EditPostPage()),
         // GetPage(name: '/view-post', page: () => const ViewPostPage()),
         // GetPage(name: '/edit-post', page: () => const EditPostPage()),
-        GetPage(name: '/edit-repo', page: () => const EditRepoPage()),
+        GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
         GetPage(name: '/setting', page: () => const SettingPage()),
       ],
       debugShowCheckedModeBanner: true,

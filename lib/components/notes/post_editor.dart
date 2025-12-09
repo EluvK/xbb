@@ -27,15 +27,17 @@ class _PostEditorState extends State<PostEditor> {
     if (widget.postItem == null) {
       // new one
       var post = Post(category: 'uncategorized', title: '', content: '', repoId: repoController.currentRepoId.value!);
-      return _PostEditorInner(post: post);
+      return _PostEditorInner(post: post, existPostId: null);
     }
-    return _PostEditorInner(post: widget.postItem!.body);
+    var postItem = widget.postItem!;
+    return _PostEditorInner(post: postItem.body, existPostId: postItem.id);
   }
 }
 
 class _PostEditorInner extends StatefulWidget {
-  const _PostEditorInner({required this.post});
+  const _PostEditorInner({required this.post, this.existPostId});
   final Post post;
+  final String? existPostId;
 
   @override
   State<_PostEditorInner> createState() => _PostEditorInnerState();
@@ -140,7 +142,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         Flexible(
           child: DropdownButtonFormField(
             isExpanded: true,
-            items: repoController.onViewRepos(null).map((e) {
+            items: repoController.onViewRepos().map((e) {
               return DropdownMenuItem(
                 value: e.id,
                 child: Text(e.body.name, style: const TextStyle(fontSize: 14)),
@@ -228,7 +230,11 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         // TextButton(onPressed: () {}, child: const Text('保存草稿')),
         TextButton(
           onPressed: () {
-            postController.addData(widget.post);
+            if (widget.existPostId != null) {
+              postController.updateData(widget.existPostId!, widget.post);
+            } else {
+              postController.addData(widget.post);
+            }
             Get.offAllNamed('/');
             // postController.savePost(widget.post);
           },

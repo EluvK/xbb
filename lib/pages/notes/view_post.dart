@@ -12,9 +12,9 @@ class ViewPostPage extends StatelessWidget {
     final args = Get.arguments;
     final PostDataItem post = args[0];
     final settingController = Get.find<SettingController>();
-    // todo
-    // bool editable = true;
     bool editable = (post.owner == settingController.currentUserId.value);
+    // todo
+    editable = true;
     return Scaffold(
       appBar: AppBar(
         title: Text('view_post'.trParams({"postName": post.body.title})),
@@ -23,7 +23,7 @@ class ViewPostPage extends StatelessWidget {
             visible: editable,
             child: IconButton(
               onPressed: () {
-                Get.toNamed('/notes/edit-post', arguments: [post.id]);
+                Get.toNamed('/notes/edit-post', arguments: [post]);
               },
               icon: const Icon(Icons.edit),
             ),

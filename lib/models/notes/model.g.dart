@@ -161,14 +161,18 @@ class RepoController extends GetxController {
     currentRepoId.value = id;
   }
 
-  List<RepoDataItem> onViewRepos(String? parentId) {
-    if (parentId == null) {
+  List<RepoDataItem> onViewRepos({List<DataItemFilter<Repo>> filters = const []}) {
+    if (filters.isEmpty) {
       return _items;
     }
-    return _items.where((item) => item.parentId == parentId).toList();
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
-  Future<void> trySyncAll() async => await _syncEngine.syncAll();
+  Future<void> trySyncAll() async {
+    await _syncEngine.syncAll();
+    await rebuildLocal();
+  }
+
   void _replaceLocal(String id, RepoDataItem fetchedItem) {
     final index = _items.indexWhere((item) => item.id == id);
     if (index != -1) {
@@ -431,14 +435,18 @@ class PostController extends GetxController {
     currentPostId.value = id;
   }
 
-  List<PostDataItem> onViewPosts(String? parentId) {
-    if (parentId == null) {
+  List<PostDataItem> onViewPosts(ParentIdFilter parentIdFilter, {List<DataItemFilter<Post>> filters = const []}) {
+    if (filters.isEmpty) {
       return _items;
     }
-    return _items.where((item) => item.parentId == parentId).toList();
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
-  Future<void> trySyncAll() async => await _syncEngine.syncAll();
+  Future<void> trySyncAll() async {
+    await _syncEngine.syncAll();
+    await rebuildLocal();
+  }
+
   void _replaceLocal(String id, PostDataItem fetchedItem) {
     final index = _items.indexWhere((item) => item.id == id);
     if (index != -1) {
@@ -705,14 +713,18 @@ class CommentController extends GetxController {
     currentCommentId.value = id;
   }
 
-  List<CommentDataItem> onViewComments(String? parentId) {
-    if (parentId == null) {
+  List<CommentDataItem> onViewComments({List<DataItemFilter<Comment>> filters = const []}) {
+    if (filters.isEmpty) {
       return _items;
     }
-    return _items.where((item) => item.parentId == parentId).toList();
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
-  Future<void> trySyncAll() async => await _syncEngine.syncAll();
+  Future<void> trySyncAll() async {
+    await _syncEngine.syncAll();
+    await rebuildLocal();
+  }
+
   void _replaceLocal(String id, CommentDataItem fetchedItem) {
     final index = _items.indexWhere((item) => item.id == id);
     if (index != -1) {
