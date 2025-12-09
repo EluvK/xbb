@@ -161,7 +161,7 @@ class RepoController extends GetxController {
     currentRepoId.value = id;
   }
 
-  List<RepoDataItem> onViewRepos({List<DataItemFilter<Repo>> filters = const []}) {
+  List<RepoDataItem> onViewRepos({List<DataItemFilter> filters = const []}) {
     if (filters.isEmpty) {
       return _items;
     }
@@ -435,7 +435,7 @@ class PostController extends GetxController {
     currentPostId.value = id;
   }
 
-  List<PostDataItem> onViewPosts(ParentIdFilter parentIdFilter, {List<DataItemFilter<Post>> filters = const []}) {
+  List<PostDataItem> onViewPosts({List<DataItemFilter> filters = const []}) {
     if (filters.isEmpty) {
       return _items;
     }
@@ -713,7 +713,7 @@ class CommentController extends GetxController {
     currentCommentId.value = id;
   }
 
-  List<CommentDataItem> onViewComments({List<DataItemFilter<Comment>> filters = const []}) {
+  List<CommentDataItem> onViewComments({List<DataItemFilter> filters = const []}) {
     if (filters.isEmpty) {
       return _items;
     }

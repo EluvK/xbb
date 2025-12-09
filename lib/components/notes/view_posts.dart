@@ -52,8 +52,7 @@ class __ViewPostsState extends State<_ViewPosts> {
       if (currentRepoId == null) {
         return const Center(child: Text('No repository selected.'));
       }
-      List<PostDataItem> posts = postController.onViewPosts(ParentIdFilter(currentRepoId));
-      
+      List<PostDataItem> posts = postController.onViewPosts(filters: [ParentIdFilter(currentRepoId)]);
       print("build post card post number: ${posts.length}");
       if (posts.isEmpty) {
         return const Center(child: Text('No posts found.'));
@@ -69,6 +68,7 @@ class __ViewPostsState extends State<_ViewPosts> {
     }
 
     return ListView(
+      shrinkWrap: true,
       children: categoryMap.entries.map((entry) {
         final category = entry.key;
         final posts = entry.value;
