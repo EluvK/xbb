@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:syncstore_client/syncstore_client.dart' show SyncStatus;
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/utils/list_tile_card.dart';
 
 class ViewRepos extends StatelessWidget {
   const ViewRepos({super.key});
@@ -47,46 +47,24 @@ class __RepoListsState extends State<_RepoLists> {
         itemCount: repos.length,
         itemBuilder: (context, index) {
           var repo = repos[index];
-          return repoCardItem(repo: repo);
+          return ListTileCard(
+            dataItem: repo,
+            onUpdateLocalField: () => repoController.onUpdateLocalField(repo.id),
+            title: repo.body.name,
+            subtitle: repo.body.description,
+            onTap: () {
+              setState(() {
+                repoController.onSelectRepo(repo.id);
+              });
+            },
+            isSelected: repoController.currentRepoId.value == repo.id,
+            enableSwitchArchivedStatus: false,
+            onEditButton: () => Get.toNamed('/notes/edit-repo', arguments: [repo]),
+            onDeleteButton: () => repoController.deleteData(repo.id),
+          );
         },
       );
     });
-  }
-
-  Widget repoCardItem({required RepoDataItem repo}) {
-    Icon? iconForStatus(SyncStatus syncStatus) {
-      switch (syncStatus) {
-        case SyncStatus.syncing:
-          return const Icon(Icons.upload, color: Colors.green);
-        case SyncStatus.pending:
-          return const Icon(Icons.sync, color: Colors.orange);
-        case SyncStatus.deleted:
-          return const Icon(Icons.delete, color: Colors.grey);
-        case SyncStatus.synced:
-          return const Icon(Icons.check_circle, color: Colors.red);
-        default:
-          return null;
-      }
-    }
-
-    return Card(
-      child: ListTile(
-        title: Text(repo.body.name),
-        subtitle: Text(repo.id, maxLines: 2, overflow: TextOverflow.ellipsis),
-        onTap: () {
-          setState(() {
-            repoController.onSelectRepo(repo.id);
-          });
-        },
-        onLongPress: () {
-          repoController.deleteData(repo.id);
-        },
-        leading: iconForStatus(repo.syncStatus),
-        trailing: repoController.currentRepoId.value == repo.id
-            ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
-            : null,
-      ),
-    );
   }
 }
 

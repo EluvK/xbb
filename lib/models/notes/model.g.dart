@@ -206,10 +206,9 @@ class RepoController extends GetxController {
     });
   }
 
-  void updateColorLocal(String id, ColorTag color) {
+  void onUpdateLocalField(String id) {
     final item = _items.firstWhere((item) => item.id == id);
-    final updatedItem = item.updatedColorTag(color);
-    _items[_items.indexOf(item)] = updatedItem;
+    RepoRepository().updateToLocalDb(item);
   }
 
   void deleteData(String id) {
@@ -480,10 +479,9 @@ class PostController extends GetxController {
     });
   }
 
-  void updateColorLocal(String id, ColorTag color) {
+  void onUpdateLocalField(String id) {
     final item = _items.firstWhere((item) => item.id == id);
-    final updatedItem = item.updatedColorTag(color);
-    _items[_items.indexOf(item)] = updatedItem;
+    PostRepository().updateToLocalDb(item);
   }
 
   void deleteData(String id) {
@@ -758,10 +756,9 @@ class CommentController extends GetxController {
     });
   }
 
-  void updateColorLocal(String id, ColorTag color) {
+  void onUpdateLocalField(String id) {
     final item = _items.firstWhere((item) => item.id == id);
-    final updatedItem = item.updatedColorTag(color);
-    _items[_items.indexOf(item)] = updatedItem;
+    CommentRepository().updateToLocalDb(item);
   }
 
   void deleteData(String id) {

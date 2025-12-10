@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/utils/list_tile_card.dart';
+import 'package:xbb/utils/utils.dart';
 
 class ViewPosts extends StatelessWidget {
   const ViewPosts({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // final args = Get.arguments;
-    // final String? repoId = args?[0];
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -22,13 +22,7 @@ class ViewPosts extends StatelessWidget {
       body: Container(
         padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
         decoration: BoxDecoration(color: colorScheme.surface),
-        child: const Column(
-          children: [
-            // todo
-            // PostFilter(),
-            Expanded(child: _ViewPosts()),
-          ],
-        ),
+        child: _ViewPosts(),
       ),
     );
   }
@@ -52,13 +46,67 @@ class __ViewPostsState extends State<_ViewPosts> {
       if (currentRepoId == null) {
         return const Center(child: Text('No repository selected.'));
       }
-      List<PostDataItem> posts = postController.onViewPosts(filters: [ParentIdFilter(currentRepoId)]);
-      print("build post card post number: ${posts.length}");
-      if (posts.isEmpty) {
-        return const Center(child: Text('No posts found.'));
+      List<DataItemFilter> filters = [ParentIdFilter(currentRepoId)];
+      if (searchFilterTextController.text.isNotEmpty) {
+        filters.add(PostContentFilter(searchFilterTextController.text));
       }
-      return Column(children: [postCategoryLists(posts)]);
+      print("filters length: ${filters.length}");
+      List<PostDataItem> posts = postController.onViewPosts(filters: filters);
+      print("build post card post number: ${posts.length}");
+      final colorScheme = Theme.of(context).colorScheme;
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
+        decoration: BoxDecoration(color: colorScheme.surface),
+        child: Column(
+          children: [
+            searchFilter(),
+            posts.isEmpty ? const Center(child: Text('No posts found.')) : postCategoryLists(posts),
+          ],
+        ),
+      );
     });
+  }
+
+  final searchFilterTextController = TextEditingController();
+  Widget searchFilter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10.0, 4.0, 10.0, 8.0),
+      child: TextField(
+        controller: searchFilterTextController,
+        onTapOutside: (event) {
+          print('onTapOutside');
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        onChanged: (value) {
+          print('onChanged $value');
+          setState(() {});
+        },
+        decoration: InputDecoration(
+          isDense: true,
+          prefixIcon: const Icon(Icons.search_rounded),
+          hintText: '搜索',
+          suffixIcon: IconButton(
+            onPressed: () {
+              searchFilterTextController.text = '';
+              setState(() {});
+            },
+            icon: const Icon(Icons.clear_rounded),
+          ),
+          border: const OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.all(Radius.circular(30)),
+          ),
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.all(Radius.circular(30)),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.all(Radius.circular(30)),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget postCategoryLists(List<PostDataItem> postItems) {
@@ -78,19 +126,33 @@ class __ViewPostsState extends State<_ViewPosts> {
           controlAffinity: ListTileControlAffinity.leading,
           tilePadding: const EdgeInsets.fromLTRB(8.0, 0.0, 12.0, 0.0),
           children: posts.map((post) {
-            return Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: ListTile(
-                title: Text(post.body.title),
-                subtitle: Text(post.body.content, maxLines: 2, overflow: TextOverflow.ellipsis),
-                onTap: () {
-                  Get.toNamed('/notes/view-post', arguments: [post]);
-                },
-              ),
+            return ListTileCard(
+              dataItem: post,
+              onUpdateLocalField: () => postController.onUpdateLocalField(post.id),
+              title: post.body.title,
+              subtitle: "updated at ${readableDateStr(post.updatedAt)}",
+              onTap: () {
+                Get.toNamed('/notes/view-post', arguments: [post]);
+              },
+              enableLongPressPreview: post.body.content.length <= 300
+                  ? post.body.content
+                  : '${post.body.content.substring(0, 300)}...',
+              onEditButton: () => Get.toNamed('/notes/edit-post', arguments: [post]),
+              onDeleteButton: () => postController.deleteData(post.id),
             );
           }).toList(),
         );
       }).toList(),
     );
+  }
+}
+
+class PostContentFilter extends DataItemBodyFilter<Post> {
+  final String contentRegexString;
+  PostContentFilter(this.contentRegexString);
+  @override
+  bool applyBody(Post body) {
+    final regex = RegExp(contentRegexString, caseSensitive: false);
+    return regex.hasMatch(body.content) || regex.hasMatch(body.title) || regex.hasMatch(body.category);
   }
 }
