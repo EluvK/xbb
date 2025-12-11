@@ -7,6 +7,7 @@ class DoubleClickButton<T extends ButtonStyleButton> extends StatefulWidget {
   final Widget Function(VoidCallback onPressed) buttonBuilder;
   final VoidCallback onDoubleClick;
   final String firstClickHint;
+  final bool Function()? firstClickCheckCondition;
   final Duration resetDuration;
   final bool upperPosition;
 
@@ -15,6 +16,7 @@ class DoubleClickButton<T extends ButtonStyleButton> extends StatefulWidget {
     required this.buttonBuilder,
     required this.onDoubleClick,
     required this.firstClickHint,
+    this.firstClickCheckCondition,
     this.resetDuration = const Duration(seconds: 2),
     this.upperPosition = false,
   });
@@ -31,6 +33,16 @@ class _DoubleClickButtonState extends State<DoubleClickButton> {
     setState(() {
       _clickCount++;
       if (_clickCount == 1) {
+        if (widget.firstClickCheckCondition != null && !widget.firstClickCheckCondition!()) {
+          flushBar(
+            FlushLevel.INFO,
+            'clear_child_data_plz'.tr,
+            'clear_child_data_plz',
+            upperPosition: widget.upperPosition,
+          );
+          _clickCount = 0;
+          return;
+        }
         flushBar(
           FlushLevel.WARNING,
           'double_click_title'.tr,

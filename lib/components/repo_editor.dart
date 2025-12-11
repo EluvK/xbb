@@ -6,7 +6,7 @@ import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/model/repo.dart';
 import 'package:xbb/utils/double_click.dart';
-import 'package:xbb/utils/test_input.dart';
+import 'package:xbb/utils/text_input.dart';
 import 'package:xbb/utils/utils.dart';
 
 class RepoEditor extends StatefulWidget {

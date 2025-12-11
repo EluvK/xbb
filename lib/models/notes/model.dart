@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:get/get.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/models/notes/db.dart';
 
 part 'model.g.dart';
+part 'model.freezed.dart';
 
 Future<void> reInitNotesSync(SyncStoreClient client) async {
   await reInit<RepoController>(() => RepoController(client), (c) => c.ensureInitialization());
@@ -32,41 +33,32 @@ Future<void> reInit<T extends GetxController>(
 }
 
 @Repository(collectionName: 'xbb', tableName: 'repo', db: NotesDB)
-@JsonSerializable()
-class Repo {
-  String name;
-  String status;
-  String? description;
-
-  Repo({required this.name, required this.status, this.description});
+@freezed
+abstract class Repo with _$Repo {
+  const factory Repo({required String name, required String status, String? description}) = _Repo;
 
   factory Repo.fromJson(Map<String, dynamic> json) => _$RepoFromJson(json);
-  Map<String, dynamic> toJson() => _$RepoToJson(this);
 }
 
 @Repository(collectionName: 'xbb', tableName: 'post', db: NotesDB)
-@JsonSerializable(fieldRename: FieldRename.snake)
-class Post {
-  String title;
-  String category;
-  String content;
-  String repoId;
-
-  Post({required this.title, required this.category, required this.content, required this.repoId});
+@freezed
+abstract class Post with _$Post {
+  @JsonSerializable(fieldRename: FieldRename.snake)
+  const factory Post({
+    required String title,
+    required String category,
+    required String content,
+    required String repoId,
+  }) = _Post;
 
   factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
-  Map<String, dynamic> toJson() => _$PostToJson(this);
 }
 
 @Repository(collectionName: 'xbb', tableName: 'comment', db: NotesDB)
-@JsonSerializable(fieldRename: FieldRename.snake)
-class Comment {
-  String content;
-  String postId;
-  String? parentId;
-
-  Comment({required this.postId, required this.content, this.parentId});
+@freezed
+abstract class Comment with _$Comment {
+  @JsonSerializable(fieldRename: FieldRename.snake)
+  const factory Comment({required String content, required String postId, String? parentId}) = _Comment;
 
   factory Comment.fromJson(Map<String, dynamic> json) => _$CommentFromJson(json);
-  Map<String, dynamic> toJson() => _$CommentToJson(this);
 }

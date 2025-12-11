@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-enum InputTitleEnum { title }
+enum InputTitleEnum { title, description }
 
 extension InputTitleExtension on InputTitleEnum {
   String get title {
     switch (this) {
       case InputTitleEnum.title:
         return '名称';
+      case InputTitleEnum.description:
+        return '描述';
     }
   }
 
@@ -14,6 +16,8 @@ extension InputTitleExtension on InputTitleEnum {
     switch (this) {
       case InputTitleEnum.title:
         return Icons.title;
+      case InputTitleEnum.description:
+        return Icons.description;
     }
   }
 
@@ -21,6 +25,8 @@ extension InputTitleExtension on InputTitleEnum {
     switch (this) {
       case InputTitleEnum.title:
         return Colors.blue;
+      case InputTitleEnum.description:
+        return Colors.green;
     }
   }
 }

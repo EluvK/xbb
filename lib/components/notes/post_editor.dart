@@ -51,6 +51,8 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   TextEditingController categoryTextEditingController = TextEditingController();
   TextEditingController contentTextEditingController = TextEditingController();
 
+  late Post editPost;
+
   reloadCandidateCategory(String repoId) async {
     // todo
     candidateCategory = <String>{}; // mock a empty set for now
@@ -60,11 +62,12 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   @override
   void initState() {
-    contentTextEditingController.text = widget.post.content;
-    categoryTextEditingController.text = widget.post.category;
+    editPost = widget.post;
+    contentTextEditingController.text = editPost.content;
+    categoryTextEditingController.text = editPost.category;
     contentTextEditingController.addListener(() {
       setState(() {
-        widget.post.content = contentTextEditingController.text;
+        editPost = editPost.copyWith(content: contentTextEditingController.text);
       });
     });
     super.initState();
@@ -79,7 +82,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   @override
   Widget build(BuildContext context) {
-    reloadCandidateCategory(widget.post.repoId);
+    reloadCandidateCategory(editPost.repoId);
     return Column(
       children: [
         Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), child: _titleWidget()),
@@ -98,10 +101,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         TextField(
           minLines: 1,
           maxLines: 3,
-          controller: TextEditingController(text: widget.post.title),
+          controller: TextEditingController(text: editPost.title),
           decoration: InputDecoration(labelText: 'Title:', hoverColor: colorScheme.surface.withOpacity(0.2)),
           onChanged: (value) {
-            widget.post.title = value;
+            editPost = editPost.copyWith(title: value);
           },
         ),
       ],
@@ -158,11 +161,11 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               focusedBorder: OutlineInputBorder(borderSide: BorderSide.none),
             ),
             onChanged: (value) async {
-              widget.post.repoId = value!;
+              editPost = editPost.copyWith(repoId: value!);
               print('select repo:$value');
               await reloadCandidateCategory(value);
             },
-            value: widget.post.repoId,
+            value: editPost.repoId,
           ),
         ),
         const Padding(padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0), child: Text('/')),
@@ -220,9 +223,9 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               }
               setState(() {
                 categoryTextEditingController.text = selection;
-                widget.post.category = selection;
+                editPost = editPost.copyWith(category: selection);
               });
-              print('onSelected category ${widget.post.category}');
+              print('onSelected category ${editPost.category}');
             },
           ),
         ),
@@ -231,12 +234,11 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         TextButton(
           onPressed: () {
             if (widget.existPostId != null) {
-              postController.updateData(widget.existPostId!, widget.post);
+              postController.updateData(widget.existPostId!, editPost);
             } else {
-              postController.addData(widget.post);
+              postController.addData(editPost);
             }
             Get.offAllNamed('/');
-            // postController.savePost(widget.post);
           },
           child: const Text(' 保存 '),
         ),

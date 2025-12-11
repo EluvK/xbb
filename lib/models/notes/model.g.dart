@@ -6,36 +6,36 @@ part of 'model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Repo _$RepoFromJson(Map<String, dynamic> json) =>
-    Repo(name: json['name'] as String, status: json['status'] as String, description: json['description'] as String?);
+_Repo _$RepoFromJson(Map<String, dynamic> json) =>
+    _Repo(name: json['name'] as String, status: json['status'] as String, description: json['description'] as String?);
 
-Map<String, dynamic> _$RepoToJson(Repo instance) => <String, dynamic>{
+Map<String, dynamic> _$RepoToJson(_Repo instance) => <String, dynamic>{
   'name': instance.name,
   'status': instance.status,
   'description': instance.description,
 };
 
-Post _$PostFromJson(Map<String, dynamic> json) => Post(
+_Post _$PostFromJson(Map<String, dynamic> json) => _Post(
   title: json['title'] as String,
   category: json['category'] as String,
   content: json['content'] as String,
   repoId: json['repo_id'] as String,
 );
 
-Map<String, dynamic> _$PostToJson(Post instance) => <String, dynamic>{
+Map<String, dynamic> _$PostToJson(_Post instance) => <String, dynamic>{
   'title': instance.title,
   'category': instance.category,
   'content': instance.content,
   'repo_id': instance.repoId,
 };
 
-Comment _$CommentFromJson(Map<String, dynamic> json) => Comment(
-  postId: json['post_id'] as String,
+_Comment _$CommentFromJson(Map<String, dynamic> json) => _Comment(
   content: json['content'] as String,
+  postId: json['post_id'] as String,
   parentId: json['parent_id'] as String?,
 );
 
-Map<String, dynamic> _$CommentToJson(Comment instance) => <String, dynamic>{
+Map<String, dynamic> _$CommentToJson(_Comment instance) => <String, dynamic>{
   'content': instance.content,
   'post_id': instance.postId,
   'parent_id': instance.parentId,

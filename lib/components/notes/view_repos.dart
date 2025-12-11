@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:syncstore_client/syncstore_client.dart' show ParentIdFilter;
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/list_tile_card.dart';
 
@@ -33,7 +34,7 @@ class _RepoLists extends StatefulWidget {
 
 class __RepoListsState extends State<_RepoLists> {
   final repoController = Get.find<RepoController>();
-  // final postController = Get.find<PostController>();
+  final postController = Get.find<PostController>();
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +62,7 @@ class __RepoListsState extends State<_RepoLists> {
             enableSwitchArchivedStatus: false,
             onEditButton: () => Get.toNamed('/notes/edit-repo', arguments: [repo]),
             onDeleteButton: () => repoController.deleteData(repo.id),
+            onDeleteButtonCondition: () => postController.onViewPosts(filters: [ParentIdFilter(repo.id)]).isEmpty,
           );
         },
       );

@@ -17,6 +17,7 @@ class ListTileCard<T> extends StatefulWidget {
     this.enableSwitchColorTag = true,
     this.onEditButton,
     this.onDeleteButton,
+    this.onDeleteButtonCondition,
   });
 
   final DataItem<T> dataItem;
@@ -35,6 +36,7 @@ class ListTileCard<T> extends StatefulWidget {
   final bool enableSwitchColorTag;
   final Function()? onEditButton;
   final Function()? onDeleteButton;
+  final bool Function()? onDeleteButtonCondition;
 
   @override
   State<ListTileCard<T>> createState() => _ListTileCardState<T>();
@@ -177,6 +179,8 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
                 IconButton(onPressed: onPressed, icon: const Icon(Icons.delete_rounded), tooltip: '删除'),
             onDoubleClick: widget.onDeleteButton!,
             firstClickHint: '双击删除',
+            firstClickCheckCondition: widget.onDeleteButtonCondition,
+            upperPosition: true,
           ),
         );
       }

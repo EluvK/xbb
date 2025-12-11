@@ -55,16 +55,7 @@ class EditRepoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args = Get.arguments;
-    final RepoDataItem? repo = args?[0];
-    if (repo == null) {
-      return withPopAlert(
-        context,
-        Scaffold(
-          appBar: AppBar(title: Text('new_repo'.tr)),
-          body: RepoEditor(repoItem: null),
-        ),
-      );
-    }
+    final RepoDataItem repo = args?[0];
     return withPopAlert(
       context,
       Scaffold(
