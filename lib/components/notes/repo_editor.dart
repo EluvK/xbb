@@ -12,7 +12,7 @@ class RepoEditor extends StatefulWidget {
 }
 
 class _RepoEditorState extends State<RepoEditor> {
-  late final Repo _editedRepo;
+  late Repo _editedRepo;
 
   @override
   void initState() {

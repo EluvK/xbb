@@ -16,9 +16,8 @@ import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
 // import 'package:xbb/pages/edit_post.dart';
 // import 'package:xbb/pages/edit_repo.dart';
-// import 'package:xbb/pages/home.dart';
+import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/login.dart';
-import 'package:xbb/pages/notes.dart';
 // import 'package:xbb/pages/register.dart';
 import 'package:xbb/pages/setting.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
@@ -130,8 +129,7 @@ class MyApp extends StatelessWidget {
       translations: Translation(),
       locale: locale,
       getPages: [
-        GetPage(name: '/', page: () => NoteHomePage()),
-        // GetPage(name: '/', page: () => HomePage()),
+        GetPage(name: '/', page: () => const HomePageWrapper()),
         // GetPage(name: '/login', page: () => const RegisterPage()),
         GetPage(name: '/login', page: () => const LoginPage()),
         GetPage(name: '/notes/view-post', page: () => const ViewPostPage()),
@@ -141,7 +139,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
         GetPage(name: '/setting', page: () => const SettingPage()),
       ],
-      debugShowCheckedModeBanner: true,
+      debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: FlexThemeData.light(
         scheme: FlexScheme.blumineBlue,

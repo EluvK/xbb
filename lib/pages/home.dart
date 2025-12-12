@@ -1,73 +1,141 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:xbb/controller/post.dart';
-import 'package:xbb/controller/setting.dart';
-import 'package:xbb/pages/drawer.dart';
-import 'package:xbb/pages/posts.dart';
-import 'package:xbb/utils/utils.dart';
+import 'package:xbb/components/notes/view_posts.dart';
+import 'package:xbb/components/notes/view_repos.dart';
 
-class HomePage extends GetResponsiveView {
-  HomePage({super.key});
+final List<Tab> homeTabs = <Tab>[
+  const Tab(text: 'Notes', icon: Icon(Icons.library_books_rounded)),
+  const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
+  const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
+  const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
+];
+
+class HomePageWrapper extends StatefulWidget {
+  const HomePageWrapper({super.key});
+
+  @override
+  State<HomePageWrapper> createState() => _HomePageWrapperState();
+}
+
+class _HomePageWrapperState extends State<HomePageWrapper> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: homeTabs.length, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (!_tabController.indexIsChanging && mounted) {
+      setState(() {
+        _currentIndex = _tabController.index;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _HomePage(tabController: _tabController, currentIndex: _currentIndex, tabs: homeTabs);
+  }
+}
+
+class _HomePage extends GetResponsiveView {
+  _HomePage({required this.tabController, required this.currentIndex, required this.tabs});
+  final TabController tabController;
+  final int currentIndex;
+  final List<Tab> tabs;
 
   @override
   Widget? phone() {
     return Scaffold(
-      drawer: const DrawerPage(),
-      appBar: const PreferredSize(
-        preferredSize: Size.fromHeight(56.0),
-        child: PostsAppBar(),
+      drawer: Drawer(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TabBar.secondary(tabs: tabs, controller: tabController),
+            const Divider(),
+            Expanded(child: _LeftMain(index: currentIndex)),
+          ],
+        ),
       ),
-      floatingActionButton: floatAddButton(),
-      body: refreshPostPages(),
+      appBar: AppBar(title: _AppBar(index: currentIndex)),
+      body: _RightMain(index: currentIndex),
     );
   }
 
   @override
   Widget? desktop() {
-    // main page
-    var container = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const DrawerPage(),
-        const VerticalDivider(),
-        Flexible(child: refreshPostPages()),
-      ],
-    );
     return Scaffold(
-      floatingActionButton: floatAddButton(),
-      body: container,
+      body: Row(
+        children: [
+          SizedBox(
+            width: 300,
+            child: Column(
+              children: [
+                TabBar.secondary(tabs: tabs, controller: tabController),
+                const Divider(),
+                Expanded(child: _LeftMain(index: currentIndex)),
+              ],
+            ),
+          ),
+          const VerticalDivider(),
+          Flexible(child: _RightMain(index: currentIndex)),
+        ],
+      ),
     );
   }
+}
 
-  Widget refreshPostPages() {
-    final settingController = Get.find<SettingController>();
-    final postController = Get.find<PostController>();
-    return RefreshIndicator(
-      onRefresh: () async {
-        if (settingController.currentRepoId.value == '0') {
-          return;
-        }
-        List<int> diff = await postController
-            .pullPosts(settingController.currentRepoId.value);
-        flushDiff("update_current_repo".tr, diff);
-        await postController.loadPost(settingController.currentRepoId.value);
-      },
-      notificationPredicate: (ScrollNotification notification) {
-        if (notification.depth != 0) {
-          return false;
-        }
-        return true;
-      },
-      child: const PostPages(),
-    );
+class _LeftMain extends StatelessWidget {
+  const _LeftMain({required this.index});
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (index) {
+      case 0:
+        return const ViewRepos();
+      case 1:
+        return const Placeholder();
+      default:
+        return const Placeholder();
+    }
   }
+}
 
-  FloatingActionButton floatAddButton() {
-    return FloatingActionButton(
-      onPressed: () {
-        Get.toNamed('/edit-post'); // no arguments to new one
-      },
-      child: const Icon(Icons.add),
-    );
+class _RightMain extends StatelessWidget {
+  const _RightMain({required this.index});
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (index) {
+      case 0:
+        return const ViewPosts();
+      case 1:
+        return const Placeholder();
+      default:
+        return const Placeholder();
+    }
+  }
+}
+
+class _AppBar extends StatelessWidget {
+  const _AppBar({required this.index});
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text('App Bar');
   }
 }
