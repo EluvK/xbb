@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ota_update/ota_update.dart';
+import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/client/client.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/utils/predefined.dart';
@@ -267,4 +268,114 @@ _getLatestVersionThen(void Function(String) onValue) {
       print('error: $error');
     });
   });
+}
+
+class NewSettingController extends GetxController {
+  final box = GetStorage(GET_STORAGE_FILE_KEY);
+
+  @override
+  Future onInit() async {
+    print('new setting controller onInit');
+
+    // load app setting from storage
+    Map<String, dynamic>? json = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_SETTINGS_KEY);
+    if (json != null) {
+      appSetting.value = AppSetting.fromJson(json);
+    }
+    super.onInit();
+
+    _initialized = true;
+  }
+
+  bool _initialized = false;
+  Future<void> ensureInitialization() async {
+    while (!_initialized) {
+      await onInit();
+    }
+    return;
+  }
+
+  // app settings
+  final appSetting = AppSetting.defaults().obs;
+  ThemeMode get themeMode => appSetting.value.themeMode;
+  double get fontScale => appSetting.value.fontScale;
+  Locale get locale => appSetting.value.locale;
+  ColorTag get colorTag => appSetting.value.colorTag;
+  void updateAppSetting({ThemeMode? themeMode, double? fontScale, Locale? locale, ColorTag? colorTag}) {
+    appSetting.update((setting) {
+      setting?.update(
+        themeMode: themeMode,
+        fontScale: fontScale,
+        locale: locale,
+        colorTag: colorTag,
+      );
+    });
+    box.write(STORAGE_SETTING_APP_SETTINGS_KEY, appSetting.value.toJson());
+  }
+}
+
+class AppSetting {
+  ThemeMode _themeMode;
+  double _fontScale;
+  Locale _locale;
+  ColorTag _colorTag = ColorTag.none;
+
+  get themeMode => _themeMode;
+  get fontScale => _fontScale;
+  get locale => _locale;
+  get colorTag => _colorTag;
+
+  AppSetting({
+    required ThemeMode themeMode,
+    required double fontScale,
+    required Locale locale,
+    required ColorTag colorTag,
+  }) : _themeMode = themeMode,
+       _fontScale = fontScale,
+       _locale = locale,
+       _colorTag = colorTag;
+
+  factory AppSetting.defaults() {
+    return AppSetting(themeMode: ThemeMode.system, fontScale: 1.0, locale: const Locale('en'), colorTag: ColorTag.none);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'theme_mode': _themeMode.toString(),
+      'font_scale': _fontScale,
+      'locale': _locale.languageCode,
+      'color_tag': _colorTag.toString(),
+    };
+  }
+
+  factory AppSetting.fromJson(Map<String, dynamic> json) {
+    ThemeMode themeMode;
+    try {
+      themeMode = ThemeMode.values.firstWhere((e) => e.toString() == json['theme_mode']);
+    } catch (_) {
+      themeMode = ThemeMode.system;
+    }
+    double fontScale = (json['font_scale'] as num).toDouble();
+    Locale locale = Locale(json['locale'] ?? 'en');
+    ColorTag colorTag = ColorTag.values.firstWhere(
+      (e) => e.toString() == json['color_tag'],
+      orElse: () => ColorTag.none,
+    );
+    return AppSetting(themeMode: themeMode, fontScale: fontScale, locale: locale, colorTag: colorTag);
+  }
+
+  void update({ThemeMode? themeMode, double? fontScale, Locale? locale, ColorTag? colorTag}) {
+    if (themeMode != null) {
+      _themeMode = themeMode;
+    }
+    if (fontScale != null) {
+      _fontScale = fontScale;
+    }
+    if (locale != null) {
+      _locale = locale;
+    }
+    if (colorTag != null) {
+      _colorTag = colorTag;
+    }
+  }
 }

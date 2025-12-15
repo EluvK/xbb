@@ -24,7 +24,7 @@ class _RepoEditorState extends State<RepoEditor> {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        constraints: BoxConstraints(maxWidth: 600),
+        constraints: const BoxConstraints(maxWidth: 600),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
         child: Column(
           children: [

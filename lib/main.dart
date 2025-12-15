@@ -30,6 +30,13 @@ void main() async {
   await GetStorage.init(GET_STORAGE_FILE_KEY);
 
   await Get.putAsync(() async {
+    final controller = NewSettingController();
+    return controller;
+  });
+  final newSettingController = Get.find<NewSettingController>();
+  await newSettingController.ensureInitialization();
+
+  await Get.putAsync(() async {
     final controller = SettingController();
     return controller;
   });
@@ -102,23 +109,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settingController = Get.find<SettingController>();
+    final settingController = Get.find<NewSettingController>();
 
-    print(settingController.lastAutoLoadTimestamp);
-    bool inMinimumUpdateInterval = DateTime.now()
-        .subtract(const Duration(minutes: 1))
-        .isBefore(settingController.lastAutoLoadTimestamp.value);
-    bool first = initFirstTime();
-    String initialRoute = first ? '/login' : '/';
-    if (!first && !settingController.quickReloadMode.value && !inMinimumUpdateInterval) {
-      settingController.lastAutoLoadTimestamp.value = DateTime.now();
-      autoLoadAtStart();
-    }
+    // print(settingController.lastAutoLoadTimestamp);
+    // bool inMinimumUpdateInterval = DateTime.now()
+    //     .subtract(const Duration(minutes: 1))
+    //     .isBefore(settingController.lastAutoLoadTimestamp.value);
+    // bool first = initFirstTime();
+    // String initialRoute = first ? '/login' : '/';
+    // if (!first && !settingController.quickReloadMode.value && !inMinimumUpdateInterval) {
+    //   settingController.lastAutoLoadTimestamp.value = DateTime.now();
+    //   autoLoadAtStart();
+    // }
+    String initialRoute = '/';
 
-    ThemeMode themeMode = settingController.themeMode.value;
+    ThemeMode themeMode = settingController.themeMode;
     print('load themeMode: $themeMode');
-    var locale = settingController.locale.value;
-    double fontScale = settingController.fontScale.value;
+    var locale = settingController.locale;
+    double fontScale = settingController.fontScale;
     print('load fontScale: $fontScale');
     final mediaQueryData = MediaQuery.of(context);
     final scale = mediaQueryData.textScaler.clamp(minScaleFactor: fontScale, maxScaleFactor: fontScale + 0.1);

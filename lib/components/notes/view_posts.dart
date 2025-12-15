@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/list_tile_card.dart';
 import 'package:xbb/utils/utils.dart';
@@ -22,7 +23,7 @@ class ViewPosts extends StatelessWidget {
       body: Container(
         padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
         decoration: BoxDecoration(color: colorScheme.surface),
-        child: _ViewPosts(),
+        child: const _ViewPosts(),
       ),
     );
   }
@@ -38,6 +39,7 @@ class _ViewPosts extends StatefulWidget {
 class __ViewPostsState extends State<_ViewPosts> {
   final postController = Get.find<PostController>();
   final repoController = Get.find<RepoController>();
+  final settingController = Get.find<NewSettingController>();
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +48,10 @@ class __ViewPostsState extends State<_ViewPosts> {
       if (currentRepoId == null) {
         return const Center(child: Text('No repository selected.'));
       }
-      List<DataItemFilter> filters = [ParentIdFilter(currentRepoId)];
+      List<DataItemFilter> filters = [
+        ParentIdFilter(currentRepoId),
+        ColorTagFilter.fromColorTag(settingController.colorTag),
+      ];
       if (searchFilterTextController.text.isNotEmpty) {
         filters.add(PostContentFilter(searchFilterTextController.text));
       }
@@ -128,7 +133,11 @@ class __ViewPostsState extends State<_ViewPosts> {
           children: posts.map((post) {
             return ListTileCard(
               dataItem: post,
-              onUpdateLocalField: () => postController.onUpdateLocalField(post.id),
+              onUpdateLocalField: () {
+                postController.onUpdateLocalField(post.id);
+                // tricky way to refresh parent repo list. should be better.
+                repoController.rebuildLocal();
+              },
               title: post.body.title,
               subtitle: "updated at ${readableDateStr(post.updatedAt)}",
               onTap: () {

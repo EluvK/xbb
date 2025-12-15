@@ -18,6 +18,7 @@ class ListTileCard<T> extends StatefulWidget {
     this.onEditButton,
     this.onDeleteButton,
     this.onDeleteButtonCondition,
+    this.enableChildrenUpdateNumber,
   });
 
   final DataItem<T> dataItem;
@@ -37,6 +38,7 @@ class ListTileCard<T> extends StatefulWidget {
   final Function()? onEditButton;
   final Function()? onDeleteButton;
   final bool Function()? onDeleteButtonCondition;
+  final int Function()? enableChildrenUpdateNumber;
 
   @override
   State<ListTileCard<T>> createState() => _ListTileCardState<T>();
@@ -81,6 +83,13 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
     if (isFailed) {
       leadingIcons.add(const Icon(Icons.sync_disabled_rounded, color: Colors.redAccent, size: 16));
     }
+    if (widget.enableChildrenUpdateNumber != null) {
+      int updateNumber = widget.enableChildrenUpdateNumber!();
+      if (updateNumber > 0) {
+        leadingIcons.add(Text("✨$updateNumber", style: const TextStyle(fontSize: 12)));
+      }
+    }
+
     if (isNew) {
       leadingIcons.add(const Icon(Icons.star_outline_rounded, color: Colors.redAccent, size: 16));
     }
@@ -225,41 +234,56 @@ class _InlineColorPickerButtonState extends State<InlineColorPickerButton> {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       child: expanded
-          ? Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-                // boxShadow: const [BoxShadow(blurRadius: 10, color: Colors.black26)],
-              ),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: ColorTag.values.map((tag) {
-                  final selected = widget.value == tag;
-                  return GestureDetector(
-                    onTap: () {
-                      widget.onChanged(tag);
-                      setState(() => expanded = false);
-                    },
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: tag.toColor(),
-                        border: selected
-                            ? Border.all(color: Theme.of(context).colorScheme.primary, width: 3)
-                            : Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+          ? ColorPickerButtons(
+              selectedTag: widget.value,
+              onChanged: (tag) {
+                widget.onChanged(tag);
+                setState(() => expanded = false);
+              },
             )
           : IconButton(
               icon: const Icon(Icons.color_lens_rounded),
               onPressed: () => setState(() => expanded = !expanded),
             ),
+    );
+  }
+}
+
+class ColorPickerButtons extends StatelessWidget {
+  final double iconSize;
+  final double spacing;
+  final ColorTag selectedTag;
+  final ValueChanged<ColorTag> onChanged;
+
+  const ColorPickerButtons({
+    super.key,
+    this.iconSize = 16.0,
+    this.spacing = 12.0,
+    required this.selectedTag,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: spacing,
+      children: ColorTag.values.map((tag) {
+        final selected = selectedTag == tag;
+        return GestureDetector(
+          onTap: () => onChanged(tag),
+          child: Container(
+            width: iconSize,
+            height: iconSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: tag.toColor(),
+              border: selected
+                  ? Border.all(color: Theme.of(context).colorScheme.outline, width: iconSize / 5.0)
+                  : Border.all(color: Theme.of(context).colorScheme.outline, width: 0.5),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
