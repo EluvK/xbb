@@ -15,19 +15,24 @@ class _CommonSettingsState extends State<CommonSettings> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
-        child: ListView(
-          children: [
-            Text('app_setting'.tr),
-            child(themeModeButton()),
-            child(languageButton()),
-            child(fontScaleButton()),
-            const Divider(),
-            child(versionInfo()),
-          ],
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      color: colorScheme.surface,
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800),
+          decoration: BoxDecoration(color: colorScheme.surface),
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          child: ListView(
+            children: [
+              Text('app_setting'.tr),
+              child(themeModeButton()),
+              child(languageButton()),
+              child(fontScaleButton()),
+              const Divider(),
+              child(versionInfo()),
+            ],
+          ),
         ),
       ),
     );

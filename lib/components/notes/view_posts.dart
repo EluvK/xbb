@@ -11,7 +11,6 @@ class ViewPosts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -20,11 +19,7 @@ class ViewPosts extends StatelessWidget {
         },
         child: const Icon(Icons.add),
       ),
-      body: Container(
-        padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
-        decoration: BoxDecoration(color: colorScheme.surface),
-        child: const _ViewPosts(),
-      ),
+      body: const _ViewPosts(),
     );
   }
 }
@@ -45,29 +40,32 @@ class __ViewPostsState extends State<_ViewPosts> {
   Widget build(BuildContext context) {
     return Obx(() {
       final currentRepoId = repoController.currentRepoId.value;
+      Widget body;
       if (currentRepoId == null) {
-        return const Center(child: Text('No repository selected.'));
-      }
-      List<DataItemFilter> filters = [
-        ParentIdFilter(currentRepoId),
-        ColorTagFilter.fromColorTag(settingController.colorTag),
-      ];
-      if (searchFilterTextController.text.isNotEmpty) {
-        filters.add(PostContentFilter(searchFilterTextController.text));
-      }
-      print("filters length: ${filters.length}");
-      List<PostDataItem> posts = postController.onViewPosts(filters: filters);
-      print("build post card post number: ${posts.length}");
-      final colorScheme = Theme.of(context).colorScheme;
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
-        decoration: BoxDecoration(color: colorScheme.surface),
-        child: Column(
+        body = const Center(child: Text('No repository selected.'));
+      } else {
+        List<DataItemFilter> filters = [
+          ParentIdFilter(currentRepoId),
+          ColorTagFilter.fromColorTag(settingController.colorTag),
+        ];
+        if (searchFilterTextController.text.isNotEmpty) {
+          filters.add(PostContentFilter(searchFilterTextController.text));
+        }
+        print("filters length: ${filters.length}");
+        List<PostDataItem> posts = postController.onViewPosts(filters: filters);
+        print("build post card post number: ${posts.length}");
+        body = Column(
           children: [
             searchFilter(),
             posts.isEmpty ? const Center(child: Text('No posts found.')) : postCategoryLists(posts),
           ],
-        ),
+        );
+      }
+      final colorScheme = Theme.of(context).colorScheme;
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
+        decoration: BoxDecoration(color: colorScheme.surface),
+        child: body,
       );
     });
   }

@@ -10,11 +10,9 @@ class ViewRepos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      width: 350,
       padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
-      decoration: BoxDecoration(color: colorScheme.surface),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
       child: const Column(
         children: [
           // Text('repositories'),

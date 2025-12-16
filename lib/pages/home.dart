@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/components/common/profile.dart';
 import 'package:xbb/components/common/settings.dart';
 import 'package:xbb/components/notes/view_posts.dart';
 import 'package:xbb/components/notes/view_repos.dart';
@@ -64,12 +67,13 @@ class _HomePage extends GetResponsiveView {
   Widget? phone() {
     return Scaffold(
       drawer: Drawer(
+        width: Get.width * 0.85,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TabBar.secondary(tabs: tabs, controller: tabController),
+            TabBarController(tabs: tabs, tabController: tabController),
             const Divider(),
-            Expanded(child: _LeftMain(index: currentTab)),
+            Expanded(child: _LeftButton(index: currentTab)),
           ],
         ),
       ),
@@ -84,23 +88,42 @@ class _HomePage extends GetResponsiveView {
       body: Row(
         children: [
           SizedBox(
-            width: 300,
+            width: min(max(Get.width * 0.3, 280), 400),
             child: Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
-                  child: Align(alignment: Alignment.centerLeft, child: _GlobalColorController()),
-                ),
+                const _GlobalColorController(),
+                // const Divider(),
+                TabBarController(tabs: tabs, tabController: tabController),
                 const Divider(),
-                TabBar.secondary(tabs: tabs, controller: tabController),
-                const Divider(),
-                Expanded(child: _LeftMain(index: currentTab)),
+                Expanded(child: _LeftButton(index: currentTab)),
               ],
             ),
           ),
           const VerticalDivider(),
           Flexible(child: _RightMain(index: currentTab)),
         ],
+      ),
+    );
+  }
+}
+
+class TabBarController extends StatelessWidget {
+  const TabBarController({super.key, required this.tabs, required this.tabController});
+
+  final List<Tab> tabs;
+  final TabController tabController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+      // child: TabBar.secondary(tabs: tabs, controller: tabController),
+      child: TabBar(
+        tabs: tabs,
+        controller: tabController,
+        labelColor: Theme.of(context).colorScheme.primary,
+        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        indicatorColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }
@@ -117,23 +140,36 @@ class _GlobalColorControllerState extends State<_GlobalColorController> {
   final settingController = Get.find<NewSettingController>();
   @override
   Widget build(BuildContext context) {
-    return ColorPickerButtons(
-      selectedTag: settingController.colorTag,
-      onChanged: (newTag) {
-        setState(() {
-          settingController.updateAppSetting(colorTag: newTag);
-        });
-      },
+    return Container(
+      padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: ColorPickerButtons(
+          selectedTag: settingController.colorTag,
+          onChanged: (newTag) {
+            setState(() {
+              settingController.updateAppSetting(colorTag: newTag);
+            });
+          },
+        ),
+      ),
     );
   }
 }
 
-class _LeftMain extends StatelessWidget {
-  const _LeftMain({required this.index});
+class _LeftButton extends StatelessWidget {
+  const _LeftButton({required this.index});
   final HomeTabIndex index;
 
   @override
   Widget build(BuildContext context) {
+    //   return Container(
+    //     decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+    //     child: _parts(),
+    //   );
+    // }
+    // Widget _parts() {
     switch (index) {
       case HomeTabIndex.notes:
         return const ViewRepos();
@@ -141,7 +177,7 @@ class _LeftMain extends StatelessWidget {
       case HomeTabIndex.todo2:
         return const Placeholder();
       case HomeTabIndex.settings:
-        return const Placeholder();
+        return const CommonProfile();
     }
   }
 }
@@ -152,6 +188,12 @@ class _RightMain extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    //   return Container(
+    //     decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+    //     child: _parts(),
+    //   );
+    // }
+    // Widget _parts() {
     switch (index) {
       case HomeTabIndex.notes:
         return const ViewPosts();
@@ -170,6 +212,17 @@ class _AppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Text('App Bar');
+    switch (index) {
+      case HomeTabIndex.notes:
+        return const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // todo many work here.
+          children: [Text('TODO s'), _GlobalColorController()],
+        );
+      case HomeTabIndex.todo:
+      case HomeTabIndex.todo2:
+      case HomeTabIndex.settings:
+        return const Text('Settings');
+    }
   }
 }
