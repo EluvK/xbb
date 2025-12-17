@@ -3,19 +3,37 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:xbb/constant.dart';
 
-class SyncStoreControl {
+class SyncStoreControl extends GetxController {
+  // todo should allow change baseUrl for different server in future
   final String baseUrl;
   final GetStorageTokenStorage tokenStorage;
-  late final SyncStoreClient client;
+
+  final Rx<SyncStoreClient?> client = Rx<SyncStoreClient?>(null);
 
   SyncStoreControl({required this.baseUrl, required this.tokenStorage}) {
-    client = SyncStoreClient(baseUrl: baseUrl, tokenStorage: tokenStorage);
-    Get.put<SyncStoreClient>(client);
+    client.value = SyncStoreClient(baseUrl: baseUrl, tokenStorage: tokenStorage);
   }
+
+  get syncStoreClient => client.value;
+
+  @override
+  Future<void> onInit() async {
+    super.onInit();
+    _initialized = true;
+  }
+
+  bool _initialized = false;
+  Future<void> ensureInitialization() async {
+    while (!_initialized) {
+      await onInit();
+    }
+    return;
+  }
+
 
   Future<UserProfile> login(String username, String password) async {
     try {
-      return client.login(username, password);
+      return client.value!.login(username, password);
     } on ApiException catch (e) {
       print('Error during login: ${e.message}');
       rethrow;
@@ -24,7 +42,7 @@ class SyncStoreControl {
 
   Future<bool> checkHealth() async {
     try {
-      return client.checkHealth();
+      return client.value!.checkHealth();
     } on ApiException catch (e) {
       print('Error during health check: ${e.message}');
       rethrow;

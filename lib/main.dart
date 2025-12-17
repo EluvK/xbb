@@ -69,9 +69,12 @@ void main() async {
     final ssClient = SyncStoreControl(baseUrl: APP_API_URI, tokenStorage: GetStorageTokenStorage());
     return ssClient;
   });
-  await reInitNotesSync(Get.find<SyncStoreClient>());
+  final syncStoreControl = Get.find<SyncStoreControl>();
+  await syncStoreControl.ensureInitialization();
+  await reInitUserManagerController(syncStoreControl.syncStoreClient);
+  await reInitNotesSync(syncStoreControl.syncStoreClient);
 
-  await initCacheSetting();
+  // await initCacheSetting();
   // await initRepoPost();
   runApp(const MyApp());
 }

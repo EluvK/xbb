@@ -19,3 +19,13 @@ final List<Avatar> predefinedAvatar = [
   Avatar(name: 'psyduck', url: '$R2LINK/avatar/psyduck.png'),
   Avatar(name: 'starfish', url: '$R2LINK/avatar/starfish.png'),
 ];
+
+final List<String> predefinedAvatarNames = [
+  'assets://cat',
+  'assets://crab',
+  'assets://deer',
+  'assets://fox',
+  'assets://koala',
+  'assets://psyduck',
+  'assets://starfish',
+];
