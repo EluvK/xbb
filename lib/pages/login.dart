@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/ss_client/client.dart';
+import 'package:xbb/controller/syncstore.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -28,7 +28,7 @@ class LoginBody extends StatefulWidget {
 }
 
 class _LoginBodyState extends State<LoginBody> {
-  SSClient ssClient = Get.find<SSClient>();
+  SyncStoreControl ssClient = Get.find<SyncStoreControl>();
 
   ServiceAvailability serviceAvailability = ServiceAvailability.unknown;
   UserNameAvailability userNameAvailability = UserNameAvailability.unknown;

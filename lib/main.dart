@@ -11,6 +11,7 @@ import 'package:xbb/constant.dart';
 // import 'package:xbb/controller/post.dart';
 // import 'package:xbb/controller/repo.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/syncstore.dart';
 // import 'package:xbb/controller/sync.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
@@ -22,8 +23,6 @@ import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/setting.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
 import 'package:xbb/pages/notes/view_post.dart';
-import 'package:xbb/ss_client/client.dart';
-import 'package:xbb/ss_client/token_storage.dart';
 import 'package:xbb/utils/translation.dart';
 
 void main() async {
@@ -67,7 +66,7 @@ void main() async {
   // });
 
   await Get.putAsync(() async {
-    final ssClient = SSClient(baseUrl: APP_API_URI, tokenStorage: GetStorageTokenStorage());
+    final ssClient = SyncStoreControl(baseUrl: APP_API_URI, tokenStorage: GetStorageTokenStorage());
     return ssClient;
   });
   await reInitNotesSync(Get.find<SyncStoreClient>());
