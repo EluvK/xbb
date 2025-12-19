@@ -1,9 +1,8 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/client/client.dart';
 import 'package:xbb/constant.dart';
-import 'package:xbb/utils/predefined.dart';
+import 'package:xbb/controller/setting.dart';
 
 class User {
   String id;
@@ -14,33 +13,33 @@ class User {
 }
 
 // deprecated, use UserManagerController instead
-class UserController extends GetxController {
-  Map<String, User> users = {};
+// class UserController extends GetxController {
+//   Map<String, User> users = {};
 
-  Future<void> loadUser(String userId) async {
-    if (!users.containsKey(userId)) {
-      var user = await getUserInfo(userId);
-      users[user.id] = user;
-    }
-  }
+//   Future<void> loadUser(String userId) async {
+//     if (!users.containsKey(userId)) {
+//       var user = await getUserInfo(userId);
+//       users[user.id] = user;
+//     }
+//   }
 
-  User getUserInfoLocalUnwrap(String userId) {
-    return users[userId] ?? User(id: userId, name: 'Unknown', avatarUrl: defaultAvatarLink);
-  }
+//   User getUserInfoLocalUnwrap(String userId) {
+//     return users[userId] ?? User(id: userId, name: 'Unknown', avatarUrl: defaultAvatarLink);
+//   }
 
-  Future<User> getUserInfo(String userId) async {
-    if (!users.containsKey(userId)) {
-      var user = await getUser(id: userId);
-      if (user != null) {
-        users[user.id] = User(id: user.id, name: user.name, avatarUrl: user.avatarUrl ?? defaultAvatarLink);
-      } else {
-        // error?
-        users[userId] = User(id: userId, name: 'Unknown', avatarUrl: defaultAvatarLink);
-      }
-    }
-    return users[userId]!;
-  }
-}
+//   Future<User> getUserInfo(String userId) async {
+//     if (!users.containsKey(userId)) {
+//       var user = await getUser(id: userId);
+//       if (user != null) {
+//         users[user.id] = User(id: user.id, name: user.name, avatarUrl: user.avatarUrl ?? defaultAvatarLink);
+//       } else {
+//         // error?
+//         users[userId] = User(id: userId, name: 'Unknown', avatarUrl: defaultAvatarLink);
+//       }
+//     }
+//     return users[userId]!;
+//   }
+// }
 
 Future<void> reInitUserManagerController(SyncStoreClient client) async {
   if (Get.isRegistered<UserManagerController>()) {
@@ -60,6 +59,7 @@ class UserManagerController extends GetxController {
   SyncStoreClient syncStoreClient;
 
   UserManagerController(this.syncStoreClient);
+  final NewSettingController settingController = Get.find<NewSettingController>();
 
   @override
   Future<void> onInit() async {
@@ -105,13 +105,24 @@ class UserManagerController extends GetxController {
     box.write(GET_STORAGE_FRIENDS_KEY, friends.toList());
   }
 
+  UserProfile getSelfProfile() {
+    return userProfiles.firstWhere((p) => p.userId ==  settingController.userId );
+  }
+
+  Future<void> updateSelfProfile(UpdateUserProfileRequest newProfile) async {
+    UserProfile updatedProfile = await syncStoreClient.updateProfile(settingController.userId, newProfile);
+    addOrUpdateUserProfile(updatedProfile);
+    settingController.updateUserInfo(userName: updatedProfile.name, userPassword: newProfile.password);
+    _saveToStorage();
+  }
+
   UserProfile? getUserProfile(String userId) {
     return userProfiles.firstWhereOrNull((p) => p.userId == userId);
   }
 
   Future<void> fetchAndUpdateUserProfiles() async {
     try {
-      UserProfile self = await syncStoreClient.getProfile(syncStoreClient.currentUserId());
+      UserProfile self = await syncStoreClient.getProfile(settingController.userId);
       addOrUpdateUserProfile(self);
       List<UserProfile> profiles = await syncStoreClient.getFriends();
       for (var profile in profiles) {

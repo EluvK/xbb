@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:xbb/constant.dart';
+import 'package:xbb/controller/setting.dart';
 
 class SyncStoreControl extends GetxController {
   // todo should allow change baseUrl for different server in future
@@ -30,7 +31,6 @@ class SyncStoreControl extends GetxController {
     return;
   }
 
-
   Future<UserProfile> login(String username, String password) async {
     try {
       return client.value!.login(username, password);
@@ -52,6 +52,7 @@ class SyncStoreControl extends GetxController {
 
 class GetStorageTokenStorage implements TokenStorage {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
+  final NewSettingController settingController = Get.find<NewSettingController>();
 
   //  override TokenStorage
   @override
@@ -81,19 +82,11 @@ class GetStorageTokenStorage implements TokenStorage {
 
   @override
   void setUserId(String userId) {
-    box.write(STORAGE_USER_ID_KEY, userId);
+    settingController.updateUserInfo(userId: userId);
   }
 
   @override
   String? getUserId() {
-    return box.read<String?>(STORAGE_USER_ID_KEY);
-  }
-
-  String getUserName() {
-    return box.read<String?>(STORAGE_USER_NAME_KEY) ?? '';
-  }
-
-  void setUserName(String name) {
-    box.write(STORAGE_USER_NAME_KEY, name);
+    return settingController.userId;
   }
 }

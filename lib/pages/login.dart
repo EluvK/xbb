@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/controller/user.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -29,11 +30,12 @@ class LoginBody extends StatefulWidget {
 
 class _LoginBodyState extends State<LoginBody> {
   SyncStoreControl ssClient = Get.find<SyncStoreControl>();
+  NewSettingController settingController = Get.find<NewSettingController>();
 
   ServiceAvailability serviceAvailability = ServiceAvailability.unknown;
   UserNameAvailability userNameAvailability = UserNameAvailability.unknown;
 
-  late final nameController = TextEditingController(text: ssClient.tokenStorage.getUserName());
+  late final nameController = TextEditingController(text: settingController.userName);
   final passwordController = TextEditingController();
   final focus = FocusNode();
   bool _passwordVisible = false;
@@ -63,8 +65,8 @@ class _LoginBodyState extends State<LoginBody> {
   void initState() {
     focus.addListener(() {
       if (!focus.hasFocus && nameController.text.isNotEmpty) {
-        if (ssClient.tokenStorage.getUserName() == nameController.text) return;
-        ssClient.tokenStorage.setUserName(nameController.text);
+        if (settingController.userName == nameController.text) return;
+        // settingController.userName = nameController.text;
         // todo check name?
         setState(() {});
       }
@@ -112,13 +114,10 @@ class _LoginBodyState extends State<LoginBody> {
 
         try {
           final UserProfile userProfile = await ssClient.login(userName, password);
-          final settingController = Get.find<SettingController>();
-          settingController.setUser(
-            userProfile.userId,
-            name: userName,
-            password: password,
-            avatarUrl: userProfile.avatarUrl,
-          );
+          final userController = Get.find<UserManagerController>();
+          userController.addOrUpdateUserProfile(userProfile);
+          // final settingController = Get.find<NewSettingController>();
+          settingController.updateUserInfo(userName: userName, userPassword: password);
           Get.offAllNamed('/');
         } catch (e) {
           print('login error: $e');

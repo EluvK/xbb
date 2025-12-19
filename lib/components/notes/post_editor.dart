@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-// import 'package:uuid/uuid.dart';
-// import 'package:xbb/controller/post.dart';
-// import 'package:xbb/controller/repo.dart';
-// import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/markdown.dart';
 import 'package:xbb/utils/rich_editor.dart';
@@ -18,7 +14,6 @@ class PostEditor extends StatefulWidget {
 }
 
 class _PostEditorState extends State<PostEditor> {
-  // final settingController = Get.find<SettingController>();
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
 

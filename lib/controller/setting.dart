@@ -5,15 +5,13 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
-import 'package:xbb/client/client.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/utils/predefined.dart';
 import 'package:xbb/utils/utils.dart';
 
 bool initFirstTime() {
-  var settingController = Get.find<SettingController>();
-  if (settingController.currentUserName.isNotEmpty &&
-      settingController.currentUserPasswd.isNotEmpty) {
+  var settingController = Get.find<NewSettingController>();
+  if (settingController.userId.isNotEmpty && settingController.userName.isNotEmpty) {
     print('already done first init before');
     return false;
   }
@@ -261,13 +259,13 @@ bool _shouldUpdate(String latestVersion) {
 }
 
 _getLatestVersionThen(void Function(String) onValue) {
-  getLatestVersion().then((value) {
-    value.fold((version) {
-      onValue(version);
-    }, (error) {
-      print('error: $error');
-    });
-  });
+  // getLatestVersion().then((value) {
+  //   value.fold((version) {
+  //     onValue(version);
+  //   }, (error) {
+  //     print('error: $error');
+  //   });
+  // });
 }
 
 class NewSettingController extends GetxController {
@@ -278,9 +276,14 @@ class NewSettingController extends GetxController {
     print('new setting controller onInit');
 
     // load app setting from storage
-    Map<String, dynamic>? json = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_SETTINGS_KEY);
-    if (json != null) {
-      appSetting.value = AppSetting.fromJson(json);
+    Map<String, dynamic>? app = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_SETTINGS_KEY);
+    if (app != null) {
+      appSetting.value = AppSetting.fromJson(app);
+    }
+    // load user info from storage
+    Map<String, dynamic>? user = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INFO_KEY);
+    if (user != null) {
+      userInfo.value = UserInfo.fromJson(user);
     }
     super.onInit();
 
@@ -303,14 +306,21 @@ class NewSettingController extends GetxController {
   ColorTag get colorTag => appSetting.value.colorTag;
   void updateAppSetting({ThemeMode? themeMode, double? fontScale, Locale? locale, ColorTag? colorTag}) {
     appSetting.update((setting) {
-      setting?.update(
-        themeMode: themeMode,
-        fontScale: fontScale,
-        locale: locale,
-        colorTag: colorTag,
-      );
+      setting?.update(themeMode: themeMode, fontScale: fontScale, locale: locale, colorTag: colorTag);
     });
     box.write(STORAGE_SETTING_APP_SETTINGS_KEY, appSetting.value.toJson());
+  }
+
+  // user info
+  final userInfo = UserInfo.unknown().obs;
+  String get userId => userInfo.value.id;
+  String get userName => userInfo.value.name;
+  String get userPassword => userInfo.value.password;
+  void updateUserInfo({String? userId, String? userName, String? userPassword}) {
+    userInfo.update((info) {
+      info?.update(userId: userId, userName: userName, userPassword: userPassword);
+    });
+    box.write(STORAGE_SETTING_USER_INFO_KEY, userInfo.value.toJson());
   }
 }
 
@@ -376,6 +386,45 @@ class AppSetting {
     }
     if (colorTag != null) {
       _colorTag = colorTag;
+    }
+  }
+}
+
+class UserInfo {
+  String _userId;
+  String _userName;
+  String _userPassword;
+
+  get id => _userId;
+  get name => _userName;
+  get password => _userPassword;
+
+  UserInfo({required String userId, required String userName, required String userPassword})
+    : _userId = userId,
+      _userName = userName,
+      _userPassword = userPassword;
+
+  factory UserInfo.unknown() {
+    return UserInfo(userId: '', userName: '', userPassword: '');
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'user_id': _userId, 'user_name': _userName, 'user_password': _userPassword};
+  }
+
+  factory UserInfo.fromJson(Map<String, dynamic> json) {
+    return UserInfo(userId: json['user_id'], userName: json['user_name'], userPassword: json['user_password']);
+  }
+
+  void update({String? userId, String? userName, String? userPassword}) {
+    if (userId != null) {
+      _userId = userId;
+    }
+    if (userName != null) {
+      _userName = userName;
+    }
+    if (userPassword != null) {
+      _userPassword = userPassword;
     }
   }
 }
