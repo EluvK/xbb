@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:syncstore_client/syncstore_client.dart' show UpdateUserProfileRequest;
+import 'package:syncstore_client/syncstore_client.dart' show UpdateUserProfileRequest, UserProfile;
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/utils/predefined.dart';
@@ -44,17 +44,9 @@ class _SelfProfile extends StatefulWidget {
 
 class _SelfProfileState extends State<_SelfProfile> {
   final userManagerController = Get.find<UserManagerController>();
-  TextEditingController avatarUrlController = TextEditingController();
-  TextEditingController nameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
 
   @override
   void initState() {
-    var profile = userManagerController.getSelfProfile();
-    if (profile.avatarUrl != null) {
-      avatarUrlController.text = profile.avatarUrl!;
-    }
-    nameController.text = profile.name;
     super.initState();
   }
 
@@ -66,139 +58,54 @@ class _SelfProfileState extends State<_SelfProfile> {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [_selfAvatar(context), _switchUserButton()],
+          children: [
+            _selfAvatar(context),
+            Column(children: [_selfUserName(context), _switchUserButton()]),
+          ],
         ),
       ),
     );
   }
 
+  Widget _selfUserName(BuildContext context) {
+    return Obx(() {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: Text(
+          userManagerController.selfProfile.value?.name ?? 'unknown'.tr,
+          style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+        ),
+      );
+    });
+  }
+
   Widget _selfAvatar(BuildContext context) {
-    var profile = userManagerController.getSelfProfile();
-    Widget avatar;
-    if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
-      avatar = _avatar(context, profile.avatarUrl!, size: 36.0);
-    } else {
-      avatar = _avatar(context, predefinedAvatarNames[0], size: 36.0);
-    }
-    return InkWell(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return StatefulBuilder(
-              builder: (context, StateSetter setState) {
-                return Dialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-                  elevation: 16,
-                  child: Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.9,
-                      height: MediaQuery.of(context).size.height * 0.9,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: _showEditUserInfoDialog(setState),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-      customBorder: const CircleBorder(),
-      child: avatar,
-    );
-  }
-
-  bool _passwordVisible = false;
-  Widget _showEditUserInfoDialog(StateSetter setState) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          Text('edit_profile'.tr, style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12.0),
-          _avatarMatrix(),
-          TextField(
-            controller: avatarUrlController,
-            decoration: InputDecoration(labelText: 'avatar_url'.tr),
-            minLines: 1,
-            maxLines: 3,
-          ),
-          TextField(
-            controller: nameController,
-            decoration: InputDecoration(labelText: 'name'.tr),
-          ),
-          TextField(
-            controller: passwordController,
-            decoration: InputDecoration(
-              labelText: 'password'.tr,
-              suffixIcon: IconButton(
-                icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off),
-                onPressed: () {
+    return Obx(() {
+      Widget selfAvatar = _avatar(
+        context,
+        userManagerController.selfProfile.value?.avatarUrl ?? predefinedAvatarNames[5],
+        size: 36.0,
+      );
+      return InkWell(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return _EditProfileDialog(
+                currentProfile: userManagerController.selfProfile.value!,
+                onSave: (newProfile) {
                   setState(() {
-                    _passwordVisible = !_passwordVisible;
+                    userManagerController.updateSelfProfile(newProfile);
                   });
                 },
-              ),
-            ),
-            obscureText: !_passwordVisible,
-          ),
-          const SizedBox(height: 20.0),
-          ElevatedButton(
-            onPressed: () {
-              final newProfile = UpdateUserProfileRequest(
-                name: nameController.text,
-                password: passwordController.text.isNotEmpty ? passwordController.text : null,
-                avatarUrl: avatarUrlController.text.isNotEmpty ? avatarUrlController.text : null,
               );
-              userManagerController.updateSelfProfile(newProfile);
-              setState(() {});
-              Get.back();
             },
-            child: Text('save'.tr),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _avatarMatrix() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          double totalWidth = constraints.maxWidth;
-          double cardWidth = 48.0;
-          int maxCardCountPerRow = min((totalWidth / cardWidth).toInt(), 12);
-          double spacing = (totalWidth - (maxCardCountPerRow * cardWidth)) / (maxCardCountPerRow + 1);
-          return Wrap(
-            spacing: spacing,
-            runSpacing: 8.0,
-            alignment: WrapAlignment.start,
-            children: predefinedAvatar.map((avatar) {
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    avatarUrlController.text = avatar.url;
-                  });
-                },
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: _avatar(context, avatar.url, size: 24.0),
-                    ),
-                    Text(avatar.name),
-                  ],
-                ),
-              );
-            }).toList(),
           );
         },
-      ),
-    );
+        customBorder: const CircleBorder(),
+        child: selfAvatar,
+      );
+    });
   }
 
   Widget _switchUserButton() {
@@ -212,14 +119,156 @@ class _SelfProfileState extends State<_SelfProfile> {
   }
 }
 
+class _EditProfileDialog extends StatefulWidget {
+  final UserProfile currentProfile;
+  final Function(UpdateUserProfileRequest) onSave;
+  const _EditProfileDialog({required this.currentProfile, required this.onSave});
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  TextEditingController avatarUrlController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+
+  String? _selectAssetAvatarName;
+
+  bool _passwordVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.currentProfile.avatarUrl != null && widget.currentProfile.avatarUrl!.startsWith('assets://')) {
+      _selectAssetAvatarName = widget.currentProfile.avatarUrl;
+    } else if (widget.currentProfile.avatarUrl != null && widget.currentProfile.avatarUrl!.startsWith('http')) {
+      _selectAssetAvatarName = null;
+      avatarUrlController.text = widget.currentProfile.avatarUrl!;
+    }
+    nameController = TextEditingController(text: widget.currentProfile.name);
+    passwordController = TextEditingController();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text('edit_profile'.tr, style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+              _avatarMatrix(),
+              TextField(
+                controller: avatarUrlController,
+                decoration: InputDecoration(labelText: 'input_optional_avatar_url'.tr),
+                minLines: 1,
+                maxLines: 3,
+                onChanged: (value) {
+                  if (value.isNotEmpty && value.startsWith('http')) {
+                    setState(() {
+                      _selectAssetAvatarName = null;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 20.0),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'name'.tr),
+              ),
+              TextField(
+                controller: passwordController,
+                decoration: InputDecoration(
+                  labelText: 'password'.tr,
+                  suffixIcon: IconButton(
+                    icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () {
+                      setState(() {
+                        _passwordVisible = !_passwordVisible;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: !_passwordVisible,
+              ),
+              const SizedBox(height: 20.0),
+              _buildSaveButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _avatarMatrix() {
+    print('building avatar matrix');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          double totalWidth = constraints.maxWidth;
+          double cardWidth = 48.0;
+          int maxCardCountPerRow = min((totalWidth / cardWidth).toInt(), 12);
+          double spacing = (totalWidth - (maxCardCountPerRow * cardWidth)) / (maxCardCountPerRow + 1);
+          return Wrap(
+            spacing: spacing,
+            runSpacing: 8.0,
+            alignment: WrapAlignment.start,
+            children: predefinedAvatarNames.map((avatar) {
+              return InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () {
+                  setState(() {
+                    _selectAssetAvatarName = avatar;
+                    avatarUrlController.clear();
+                  });
+                },
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: _avatar(context, avatar, size: 24.0, selected: _selectAssetAvatarName == avatar),
+                    ),
+                    // Text(avatar.name),
+                  ],
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return ElevatedButton(
+      onPressed: () {
+        final newProfile = UpdateUserProfileRequest(
+          name: nameController.text,
+          password: passwordController.text.isNotEmpty ? passwordController.text : null,
+          avatarUrl: _selectAssetAvatarName ?? (avatarUrlController.text.isNotEmpty ? avatarUrlController.text : null),
+        );
+        widget.onSave(newProfile);
+        Navigator.pop(context);
+      },
+      child: Text('save'.tr),
+    );
+  }
+}
+
 // maybe move to utils/image.dart
-Widget _avatar(BuildContext context, String url, {double size = 30.0}) {
+Widget _avatar(BuildContext context, String url, {double size = 30.0, selected = true}) {
   final colorScheme = Theme.of(context).colorScheme;
+  final border = selected
+      ? Border.all(width: 3.0, color: Colors.lightGreen.shade700)
+      : Border.all(width: 3.0, color: Colors.transparent);
   return Container(
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      border: Border.all(width: 2.0, color: Colors.lightGreen.shade700),
-    ),
+    decoration: BoxDecoration(shape: BoxShape.circle, border: border),
     child: CircleAvatar(
       backgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
       radius: size,
@@ -268,10 +317,10 @@ class _FriendProfilesState extends State<FriendProfiles> {
             children: userManagerController.userProfiles
                 .map(
                   (profile) => ListTile(
-                    leading: _avatar(context, profile.avatarUrl ?? predefinedAvatarNames[3], size: 20.0),
-                    trailing: profile.userId == userManagerController.getSelfProfile().userId
-                        ? const Icon(Icons.person_rounded, size: 20.0)
-                        : null,
+                    leading: _avatar(context, profile.avatarUrl ?? predefinedAvatarNames[5], size: 20.0),
+                    // trailing: profile.userId == userManagerController.selfProfile.userId
+                    //     ? const Icon(Icons.person_rounded, size: 20.0)
+                    //     : null,
                     title: Text(profile.name),
                     subtitle: Text(profile.userId),
                   ),

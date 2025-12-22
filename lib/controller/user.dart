@@ -12,35 +12,6 @@ class User {
   User({required this.id, required this.name, required this.avatarUrl});
 }
 
-// deprecated, use UserManagerController instead
-// class UserController extends GetxController {
-//   Map<String, User> users = {};
-
-//   Future<void> loadUser(String userId) async {
-//     if (!users.containsKey(userId)) {
-//       var user = await getUserInfo(userId);
-//       users[user.id] = user;
-//     }
-//   }
-
-//   User getUserInfoLocalUnwrap(String userId) {
-//     return users[userId] ?? User(id: userId, name: 'Unknown', avatarUrl: defaultAvatarLink);
-//   }
-
-//   Future<User> getUserInfo(String userId) async {
-//     if (!users.containsKey(userId)) {
-//       var user = await getUser(id: userId);
-//       if (user != null) {
-//         users[user.id] = User(id: user.id, name: user.name, avatarUrl: user.avatarUrl ?? defaultAvatarLink);
-//       } else {
-//         // error?
-//         users[userId] = User(id: userId, name: 'Unknown', avatarUrl: defaultAvatarLink);
-//       }
-//     }
-//     return users[userId]!;
-//   }
-// }
-
 Future<void> reInitUserManagerController(SyncStoreClient client) async {
   if (Get.isRegistered<UserManagerController>()) {
     await Get.delete<UserManagerController>(force: true);
@@ -55,6 +26,7 @@ Future<void> reInitUserManagerController(SyncStoreClient client) async {
 class UserManagerController extends GetxController {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
   final RxList<UserProfile> userProfiles = <UserProfile>[].obs;
+  final Rx<UserProfile?> selfProfile = Rx<UserProfile?>(null);
   final RxList<String> friends = <String>[].obs;
   SyncStoreClient syncStoreClient;
 
@@ -67,6 +39,8 @@ class UserManagerController extends GetxController {
     List<dynamic>? storedData = box.read(GET_STORAGE_USER_PROFILES_KEY);
     if (storedData != null) {
       userProfiles.value = storedData.map((e) => UserProfile.fromJson(e as Map<String, dynamic>)).toList();
+      selfProfile.value = userProfiles.firstWhereOrNull((p) => p.userId == settingController.userId);
+      userProfiles.removeWhere((p) => p.userId == settingController.userId);
     }
     List<dynamic>? storedFriends = box.read(GET_STORAGE_FRIENDS_KEY);
     if (storedFriends != null) {
@@ -84,16 +58,6 @@ class UserManagerController extends GetxController {
     return;
   }
 
-  void addOrUpdateUserProfile(UserProfile profile) {
-    int index = userProfiles.indexWhere((p) => p.userId == profile.userId);
-    if (index != -1) {
-      userProfiles[index] = profile;
-    } else {
-      userProfiles.add(profile);
-    }
-    // _saveToStorage();
-  }
-
   // void removeUserProfile(String userId) {
   //   userProfiles.removeWhere((p) => p.userId == userId);
   //   _saveToStorage();
@@ -101,17 +65,16 @@ class UserManagerController extends GetxController {
 
   void _saveToStorage() {
     List<Map<String, dynamic>> data = userProfiles.map((p) => p.toJson()).toList();
+    data.addIf(selfProfile.value != null, selfProfile.value!.toJson());
     box.write(GET_STORAGE_USER_PROFILES_KEY, data);
     box.write(GET_STORAGE_FRIENDS_KEY, friends.toList());
   }
 
-  UserProfile getSelfProfile() {
-    return userProfiles.firstWhere((p) => p.userId ==  settingController.userId );
-  }
+  // UserProfile get selfProfile => userProfiles.firstWhere((p) => p.userId == settingController.userId);
 
   Future<void> updateSelfProfile(UpdateUserProfileRequest newProfile) async {
     UserProfile updatedProfile = await syncStoreClient.updateProfile(settingController.userId, newProfile);
-    addOrUpdateUserProfile(updatedProfile);
+    selfProfile.value = updatedProfile;
     settingController.updateUserInfo(userName: updatedProfile.name, userPassword: newProfile.password);
     _saveToStorage();
   }
@@ -121,12 +84,21 @@ class UserManagerController extends GetxController {
   }
 
   Future<void> fetchAndUpdateUserProfiles() async {
+    void upsertFriendProfile(UserProfile profile) {
+      int index = userProfiles.indexWhere((p) => p.userId == profile.userId);
+      if (index != -1) {
+        userProfiles[index] = profile;
+      } else {
+        userProfiles.add(profile);
+      }
+    }
+
     try {
       UserProfile self = await syncStoreClient.getProfile(settingController.userId);
-      addOrUpdateUserProfile(self);
+      selfProfile.value = self;
       List<UserProfile> profiles = await syncStoreClient.getFriends();
       for (var profile in profiles) {
-        addOrUpdateUserProfile(profile);
+        upsertFriendProfile(profile);
       }
       friends.value = profiles.map((p) => p.userId).toList();
       _saveToStorage();

@@ -115,7 +115,7 @@ class _LoginBodyState extends State<LoginBody> {
         try {
           final UserProfile userProfile = await ssClient.login(userName, password);
           final userController = Get.find<UserManagerController>();
-          userController.addOrUpdateUserProfile(userProfile);
+          userController.selfProfile.value = userProfile;
           // final settingController = Get.find<NewSettingController>();
           settingController.updateUserInfo(userName: userName, userPassword: password);
           Get.offAllNamed('/');
