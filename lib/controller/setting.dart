@@ -135,8 +135,7 @@ class SettingController extends GetxController {
     currentUserName.value = box.read('current_user_name') ?? '';
     currentUserPasswd.value = box.read('current_user_passwd') ?? '';
     currentUserId.value = box.read('current_user_id') ?? '';
-    currentUserAvatarUrl.value =
-        box.read('current_user_avatar_url') ?? defaultAvatarLink;
+    // currentUserAvatarUrl.value = box.read('current_user_avatar_url') ?? defaultAvatarLink;
   }
 
   getCurrentBaseAuth() {

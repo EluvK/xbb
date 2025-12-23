@@ -1,9 +1,11 @@
 import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart' show UpdateUserProfileRequest, UserProfile;
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/utils/predefined.dart';
 
@@ -83,7 +85,7 @@ class _SelfProfileState extends State<_SelfProfile> {
     return Obx(() {
       Widget selfAvatar = _avatar(
         context,
-        userManagerController.selfProfile.value?.avatarUrl ?? predefinedAvatarNames[5],
+        userManagerController.selfProfile.value?.avatarUrl ?? defaultAvatar.url,
         size: 36.0,
       );
       return InkWell(
@@ -219,12 +221,12 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
             spacing: spacing,
             runSpacing: 8.0,
             alignment: WrapAlignment.start,
-            children: predefinedAvatarNames.map((avatar) {
+            children: predefinedAvatar.map((avatar) {
               return InkWell(
                 customBorder: const CircleBorder(),
                 onTap: () {
                   setState(() {
-                    _selectAssetAvatarName = avatar;
+                    _selectAssetAvatarName = avatar.name;
                     avatarUrlController.clear();
                   });
                 },
@@ -232,7 +234,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: _avatar(context, avatar, size: 24.0, selected: _selectAssetAvatarName == avatar),
+                      child: _avatar(context, avatar.url, size: 24.0, selected: _selectAssetAvatarName == avatar.name),
                     ),
                     // Text(avatar.name),
                   ],
@@ -263,26 +265,26 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
 
 // maybe move to utils/image.dart
 Widget _avatar(BuildContext context, String url, {double size = 30.0, selected = true}) {
-  final colorScheme = Theme.of(context).colorScheme;
+  // final colorScheme = Theme.of(context).colorScheme;
   final border = selected
       ? Border.all(width: 3.0, color: Colors.lightGreen.shade700)
       : Border.all(width: 3.0, color: Colors.transparent);
+  if (url.startsWith(ASSETS_PREFIX)) {
+    url = predefinedAvatar.firstWhere((avatar) => avatar.name == url, orElse: () => defaultAvatar).url;
+  }
+  SyncStoreControl ssClient = Get.find<SyncStoreControl>();
   return Container(
     decoration: BoxDecoration(shape: BoxShape.circle, border: border),
-    child: CircleAvatar(
-      backgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
-      radius: size,
-      backgroundImage: _image(url).image,
+    child: CachedNetworkImage(
+      imageUrl: url,
+      cacheManager: AppCacheManager.instance(ssClient.syncStoreClient),
+      placeholder: (context, url) => const CircularProgressIndicator(),
+      errorWidget: (context, url, error) => const Icon(Icons.error),
+      fit: BoxFit.cover,
+      width: size * 2,
+      height: size * 2,
     ),
   );
-}
-
-Image _image(String url) {
-  if (url.startsWith('assets://')) {
-    return Image.asset('assets/avatar/${url.substring(9)}.png');
-  } else {
-    return Image.network(url);
-  }
 }
 
 class FriendProfiles extends StatefulWidget {
@@ -317,7 +319,7 @@ class _FriendProfilesState extends State<FriendProfiles> {
             children: userManagerController.userProfiles
                 .map(
                   (profile) => ListTile(
-                    leading: _avatar(context, profile.avatarUrl ?? predefinedAvatarNames[5], size: 20.0),
+                    leading: _avatar(context, profile.avatarUrl ?? defaultAvatar.url, size: 20.0),
                     // trailing: profile.userId == userManagerController.selfProfile.userId
                     //     ? const Icon(Icons.person_rounded, size: 20.0)
                     //     : null,
