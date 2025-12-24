@@ -27,6 +27,8 @@ class ListTileCard<T> extends StatefulWidget {
   final String? subtitle;
   final Function() onTap;
 
+  // todo add Badge for new/updated items
+
   /// Content to show on long press preview
   final String? enableLongPressPreview;
 
@@ -111,6 +113,7 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
               style: TextStyle(decoration: isDeleted ? TextDecoration.lineThrough : null, fontSize: 14),
             )
           : null,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10.0),
       minLeadingWidth: 0,
       leading: Column(mainAxisAlignment: MainAxisAlignment.spaceAround, children: leadingIcons),
       trailing: Row(

@@ -36,6 +36,39 @@ class __ViewPostsState extends State<_ViewPosts> {
   final repoController = Get.find<RepoController>();
   final settingController = Get.find<NewSettingController>();
 
+  bool _allExpanded = true;
+  bool _isAllExpanded() {
+    for (var controller in _controllers.values) {
+      if (!controller.isExpanded) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  final Map<String, ExpansibleController> _controllers = {};
+  bool _isProcessing = false;
+  void _toggleAll(bool expand) {
+    for (var controller in _controllers.values) {
+      if (expand) {
+        controller.expand();
+      } else {
+        controller.collapse();
+      }
+    }
+  }
+
+  void _handleToggle() async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+    setState(() {
+      _allExpanded = !_allExpanded;
+    });
+    _toggleAll(_allExpanded);
+    await Future.delayed(const Duration(milliseconds: 300));
+    _isProcessing = false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -56,8 +89,17 @@ class __ViewPostsState extends State<_ViewPosts> {
         print("build post card post number: ${posts.length}");
         body = Column(
           children: [
-            searchFilter(),
-            posts.isEmpty ? const Center(child: Text('No posts found.')) : postCategoryLists(posts),
+            Row(
+              children: [
+                Expanded(child: searchFilter()),
+                // todo maybe move to next line if we have more buttons, remove this row.
+                IconButton(
+                  onPressed: _handleToggle,
+                  icon: Icon(_isAllExpanded() ? Icons.expand_less : Icons.expand_more),
+                ),
+              ],
+            ),
+            postList(posts),
           ],
         );
       }
@@ -112,9 +154,14 @@ class __ViewPostsState extends State<_ViewPosts> {
     );
   }
 
-  Widget postCategoryLists(List<PostDataItem> postItems) {
+  Widget postList(List<PostDataItem> posts) {
+    print("build post card post number: ${posts.length}");
+    if (posts.isEmpty) {
+      return const Center(child: Text('No posts found.'));
+    }
+
     final Map<String, List<PostDataItem>> categoryMap = {};
-    for (var postItem in postItems) {
+    for (var postItem in posts) {
       categoryMap.putIfAbsent(postItem.body.category, () => []).add(postItem);
     }
 
@@ -123,33 +170,40 @@ class __ViewPostsState extends State<_ViewPosts> {
       children: categoryMap.entries.map((entry) {
         final category = entry.key;
         final posts = entry.value;
+        final controller = _controllers.putIfAbsent(category, () {
+          final controller = ExpansibleController();
+          controller.expand();
+          return controller;
+        });
         return ExpansionTile(
           title: Text(category),
-          initiallyExpanded: true,
+          controller: controller,
           controlAffinity: ListTileControlAffinity.leading,
           tilePadding: const EdgeInsets.fromLTRB(8.0, 0.0, 12.0, 0.0),
-          children: posts.map((post) {
-            return ListTileCard(
-              dataItem: post,
-              onUpdateLocalField: () {
-                postController.onUpdateLocalField(post.id);
-                // tricky way to refresh parent repo list. should be better.
-                repoController.rebuildLocal();
-              },
-              title: post.body.title,
-              subtitle: "updated at ${readableDateStr(post.updatedAt)}",
-              onTap: () {
-                Get.toNamed('/notes/view-post', arguments: [post]);
-              },
-              enableLongPressPreview: post.body.content.length <= 300
-                  ? post.body.content
-                  : '${post.body.content.substring(0, 300)}...',
-              onEditButton: () => Get.toNamed('/notes/edit-post', arguments: [post]),
-              onDeleteButton: () => postController.deleteData(post.id),
-            );
-          }).toList(),
+          children: posts.map((post) => _postListCard(post)).toList(),
         );
       }).toList(),
+    );
+  }
+
+  Widget _postListCard(post) {
+    return ListTileCard(
+      dataItem: post,
+      onUpdateLocalField: () {
+        postController.onUpdateLocalField(post.id);
+        // tricky way to refresh parent repo list. should be better.
+        repoController.rebuildLocal();
+      },
+      title: post.body.title,
+      subtitle: "updated at ${readableDateStr(post.updatedAt)}",
+      onTap: () {
+        Get.toNamed('/notes/view-post', arguments: [post]);
+      },
+      enableLongPressPreview: post.body.content.length <= 300
+          ? post.body.content
+          : '${post.body.content.substring(0, 300)}...',
+      onEditButton: () => Get.toNamed('/notes/edit-post', arguments: [post]),
+      onDeleteButton: () => postController.deleteData(post.id),
     );
   }
 }

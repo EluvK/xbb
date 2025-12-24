@@ -1,11 +1,10 @@
 import 'dart:math';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart' show UpdateUserProfileRequest, UserProfile;
+import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/utils/predefined.dart';
 
@@ -83,11 +82,7 @@ class _SelfProfileState extends State<_SelfProfile> {
 
   Widget _selfAvatar(BuildContext context) {
     return Obx(() {
-      Widget selfAvatar = _avatar(
-        context,
-        userManagerController.selfProfile.value?.avatarUrl ?? defaultAvatar.url,
-        size: 36.0,
-      );
+      Widget selfAvatar = buildUserAvatar(context, userManagerController.selfProfile.value?.avatarUrl, size: 36.0);
       return InkWell(
         onTap: () {
           showDialog(
@@ -234,7 +229,12 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: _avatar(context, avatar.url, size: 24.0, selected: _selectAssetAvatarName == avatar.name),
+                      child: buildUserAvatar(
+                        context,
+                        avatar.url,
+                        size: 24.0,
+                        selected: _selectAssetAvatarName == avatar.name,
+                      ),
                     ),
                     // Text(avatar.name),
                   ],
@@ -261,30 +261,6 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
       child: Text('save'.tr),
     );
   }
-}
-
-// maybe move to utils/image.dart
-Widget _avatar(BuildContext context, String url, {double size = 30.0, selected = true}) {
-  // final colorScheme = Theme.of(context).colorScheme;
-  final border = selected
-      ? Border.all(width: 3.0, color: Colors.lightGreen.shade700)
-      : Border.all(width: 3.0, color: Colors.transparent);
-  if (url.startsWith(ASSETS_PREFIX)) {
-    url = predefinedAvatar.firstWhere((avatar) => avatar.name == url, orElse: () => defaultAvatar).url;
-  }
-  SyncStoreControl ssClient = Get.find<SyncStoreControl>();
-  return Container(
-    decoration: BoxDecoration(shape: BoxShape.circle, border: border),
-    child: CachedNetworkImage(
-      imageUrl: url,
-      cacheManager: AppCacheManager.instance(ssClient.syncStoreClient),
-      placeholder: (context, url) => const CircularProgressIndicator(),
-      errorWidget: (context, url, error) => const Icon(Icons.error),
-      fit: BoxFit.cover,
-      width: size * 2,
-      height: size * 2,
-    ),
-  );
 }
 
 class FriendProfiles extends StatefulWidget {
@@ -319,7 +295,7 @@ class _FriendProfilesState extends State<FriendProfiles> {
             children: userManagerController.userProfiles
                 .map(
                   (profile) => ListTile(
-                    leading: _avatar(context, profile.avatarUrl ?? defaultAvatar.url, size: 20.0),
+                    leading: buildUserAvatar(context, profile.avatarUrl, size: 20.0),
                     // trailing: profile.userId == userManagerController.selfProfile.userId
                     //     ? const Icon(Icons.person_rounded, size: 20.0)
                     //     : null,

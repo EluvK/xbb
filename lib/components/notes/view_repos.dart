@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/list_tile_card.dart';
 
@@ -13,13 +15,7 @@ class ViewRepos extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-      child: const Column(
-        children: [
-          // Text('repositories'),
-          _ToolLists(),
-          Expanded(child: _RepoLists()),
-        ],
-      ),
+      child: const _RepoLists(),
     );
   }
 }
@@ -35,9 +31,52 @@ class __RepoListsState extends State<_RepoLists> {
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
   final settingController = Get.find<NewSettingController>();
+  final userManagerController = Get.find<UserManagerController>();
+
+  bool _allExpanded = true;
+  bool _isAllExpanded() {
+    for (var controller in _controllers.values) {
+      if (!controller.isExpanded) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  final Map<String, ExpansibleController> _controllers = {};
+  bool _isProcessing = false;
+  void _toggleAll(bool expand) {
+    for (var controller in _controllers.values) {
+      if (expand) {
+        controller.expand();
+      } else {
+        controller.collapse();
+      }
+    }
+  }
+
+  void _handleToggle() async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+    setState(() {
+      _allExpanded = !_allExpanded;
+    });
+    _toggleAll(_allExpanded);
+    await Future.delayed(const Duration(milliseconds: 300));
+    _isProcessing = false;
+  }
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        toolList(),
+        Expanded(child: repoList(context)),
+      ],
+    );
+  }
+
+  Widget repoList(BuildContext context) {
     return Obx(() {
       List<RepoDataItem> repos = repoController.onViewRepos(
         filters: [ColorTagFilter.fromColorTag(settingController.colorTag)],
@@ -46,54 +85,73 @@ class __RepoListsState extends State<_RepoLists> {
       if (repos.isEmpty) {
         return const Center(child: Text('No repositories found.'));
       }
-      return ListView.builder(
-        itemCount: repos.length,
-        itemBuilder: (context, index) {
-          var repo = repos[index];
-          return ListTileCard(
-            dataItem: repo,
-            onUpdateLocalField: () => repoController.onUpdateLocalField(repo.id),
-            title: repo.body.name,
-            subtitle: repo.body.description,
-            onTap: () {
-              setState(() {
-                repoController.onSelectRepo(repo.id);
-              });
-              // Close the drawer on phone when tab changes
-              if (MediaQuery.of(context).size.width < 600) {
-                Get.back();
-              }
-            },
-            isSelected: repoController.currentRepoId.value == repo.id,
-            enableSwitchArchivedStatus: false,
-            onEditButton: () => Get.toNamed('/notes/edit-repo', arguments: [repo]),
-            onDeleteButton: () => repoController.deleteData(repo.id),
-            onDeleteButtonCondition: () => postController.onViewPosts(filters: [ParentIdFilter(repo.id)]).isEmpty,
-            enableChildrenUpdateNumber: () =>
-                postController.onViewPosts(filters: [ParentIdFilter(repo.id), StatusFilter.synced]).length,
+
+      final Map<String, List<RepoDataItem>> reposByOwner = {};
+      for (var repo in repos) {
+        reposByOwner.putIfAbsent(repo.owner, () => []).add(repo);
+      }
+
+      return ListView(
+        shrinkWrap: true,
+        children: reposByOwner.entries.map((entry) {
+          String ownerId = entry.key;
+          UserProfile? ownerProfile = ownerId == userManagerController.selfProfile.value?.userId
+              ? userManagerController.selfProfile.value
+              : userManagerController.userProfiles.firstWhereOrNull((p) => p.userId == ownerId);
+          List<RepoDataItem> ownerRepos = entry.value;
+
+          final controller = _controllers.putIfAbsent(ownerId, () {
+            final controller = ExpansibleController();
+            controller.expand();
+            return controller;
+          });
+          return ExpansionTile(
+            title: Row(
+              children: [
+                buildUserAvatar(context, ownerProfile?.avatarUrl, size: 16, selected: false),
+                const SizedBox(width: 8.0),
+                Text(ownerProfile?.name ?? 'Unknown User'),
+              ],
+            ),
+            tilePadding: const EdgeInsets.fromLTRB(2.0, 0.0, 12.0, 0.0),
+            controller: controller,
+            controlAffinity: ListTileControlAffinity.trailing,
+            children: ownerRepos.map((repo) => _repoListTileCard(repo)).toList(),
           );
-        },
+        }).toList(),
       );
     });
   }
-}
 
-class _ToolLists extends StatefulWidget {
-  const _ToolLists();
+  Widget _repoListTileCard(RepoDataItem repo) {
+    return ListTileCard(
+      dataItem: repo,
+      onUpdateLocalField: () => repoController.onUpdateLocalField(repo.id),
+      title: repo.body.name,
+      subtitle: repo.body.description,
+      onTap: () {
+        setState(() {
+          repoController.onSelectRepo(repo.id);
+        });
+        // Close the drawer on phone when tab changes
+        if (MediaQuery.of(context).size.width < 600) {
+          Get.back();
+        }
+      },
+      isSelected: repoController.currentRepoId.value == repo.id,
+      enableSwitchArchivedStatus: false,
+      onEditButton: () => Get.toNamed('/notes/edit-repo', arguments: [repo]),
+      onDeleteButton: () => repoController.deleteData(repo.id),
+      onDeleteButtonCondition: () => postController.onViewPosts(filters: [ParentIdFilter(repo.id)]).isEmpty,
+      enableChildrenUpdateNumber: () =>
+          postController.onViewPosts(filters: [ParentIdFilter(repo.id), StatusFilter.synced]).length,
+    );
+  }
 
-  @override
-  State<_ToolLists> createState() => __ToolListsState();
-}
-
-class __ToolListsState extends State<_ToolLists> {
-  final repoController = Get.find<RepoController>();
-  final postController = Get.find<PostController>();
-
-  @override
-  Widget build(BuildContext context) {
+  // ToolLists
+  Widget toolList() {
     return Column(
       children: [
-        // const Divider(),
         Row(
           children: [
             IconButton(
@@ -109,6 +167,8 @@ class __ToolListsState extends State<_ToolLists> {
               },
               icon: const Icon(Icons.refresh),
             ),
+            const Spacer(),
+            IconButton(onPressed: _handleToggle, icon: Icon(_isAllExpanded() ? Icons.expand_less : Icons.expand_more)),
           ],
         ),
       ],
