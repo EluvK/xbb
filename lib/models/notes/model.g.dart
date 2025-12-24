@@ -300,6 +300,10 @@ class _RepoSyncEngine {
             // local data is newer, need to sync to server
             localItem.syncStatus = SyncStatus.failed;
             await RepoRepository().updateToLocalDb(localItem);
+          } else if (localItem.syncStatus == SyncStatus.deleted) {
+            // same updatedAt but marked as deleted as local before
+            localItem.syncStatus = SyncStatus.archived;
+            await RepoRepository().updateToLocalDb(localItem);
           }
         }
       } while (nextMarker != null);
@@ -572,6 +576,10 @@ class _PostSyncEngine {
           } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
             // local data is newer, need to sync to server
             localItem.syncStatus = SyncStatus.failed;
+            await PostRepository().updateToLocalDb(localItem);
+          } else if (localItem.syncStatus == SyncStatus.deleted) {
+            // same updatedAt but marked as deleted as local before
+            localItem.syncStatus = SyncStatus.archived;
             await PostRepository().updateToLocalDb(localItem);
           }
         }
@@ -849,6 +857,10 @@ class _CommentSyncEngine {
           } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
             // local data is newer, need to sync to server
             localItem.syncStatus = SyncStatus.failed;
+            await CommentRepository().updateToLocalDb(localItem);
+          } else if (localItem.syncStatus == SyncStatus.deleted) {
+            // same updatedAt but marked as deleted as local before
+            localItem.syncStatus = SyncStatus.archived;
             await CommentRepository().updateToLocalDb(localItem);
           }
         }

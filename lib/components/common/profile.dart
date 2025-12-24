@@ -295,7 +295,7 @@ class _FriendProfilesState extends State<FriendProfiles> {
             children: userManagerController.userProfiles
                 .map(
                   (profile) => ListTile(
-                    leading: buildUserAvatar(context, profile.avatarUrl, size: 20.0),
+                    leading: buildUserAvatar(context, profile.avatarUrl, size: 20.0, selected: false),
                     // trailing: profile.userId == userManagerController.selfProfile.userId
                     //     ? const Icon(Icons.person_rounded, size: 20.0)
                     //     : null,

@@ -26,20 +26,15 @@ class _RepoEditorState extends State<RepoEditor> {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
-        child: Column(
-          children: [
-            Expanded(child: body()),
-            buttons(),
-          ],
-        ),
+        child: ListView(children: [_editRepo(), _editRepoAcl()]),
       ),
     );
   }
 
-  Widget body() {
-    return ListView(
+  Widget _editRepo() {
+    return Column(
       children: [
-        Text('Repo Info', style: Theme.of(context).textTheme.titleMedium),
+        Text('Update Repo Info'.tr, style: Theme.of(context).textTheme.titleMedium),
         TextInputWidget(
           title: InputTitleEnum.title,
           initialValue: _editedRepo.name,
@@ -55,30 +50,39 @@ class _RepoEditorState extends State<RepoEditor> {
           },
           optional: true,
         ),
+        const SizedBox(height: 12.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('cancel'.tr),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                // save repo
+                final repoController = Get.find<RepoController>();
+                repoController.updateData(widget.repoItem.id, _editedRepo);
+                Navigator.pop(context);
+              },
+              child: Text('save'.tr),
+            ),
+          ],
+        ),
+        const Divider(),
       ],
     );
   }
 
-  Widget buttons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _editRepoAcl() {
+    return Column(
       children: [
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('cancel'.tr),
-        ),
-        const SizedBox(width: 12),
-        ElevatedButton(
-          onPressed: () {
-            // save repo
-            final repoController = Get.find<RepoController>();
-            repoController.updateData(widget.repoItem.id, _editedRepo);
-            Navigator.pop(context);
-          },
-          child: Text('save'.tr),
-        ),
+        Text('Update Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8.0),
+        Text('Repo ACL editing is not implemented yet.'.tr),
       ],
     );
   }

@@ -84,22 +84,20 @@ class UserManagerController extends GetxController {
   }
 
   Future<void> fetchAndUpdateUserProfiles() async {
-    void upsertFriendProfile(UserProfile profile) {
-      int index = userProfiles.indexWhere((p) => p.userId == profile.userId);
-      if (index != -1) {
-        userProfiles[index] = profile;
-      } else {
-        userProfiles.add(profile);
-      }
-    }
-
     try {
       UserProfile self = await syncStoreClient.getProfile(settingController.userId);
       selfProfile.value = self;
       List<UserProfile> profiles = await syncStoreClient.getFriends();
+      userProfiles.removeWhere((p) => p.userId == settingController.userId);
       for (var profile in profiles) {
-        upsertFriendProfile(profile);
+        int index = userProfiles.indexWhere((p) => p.userId == profile.userId);
+        if (index != -1) {
+          userProfiles[index] = profile;
+        } else {
+          userProfiles.add(profile);
+        }
       }
+
       friends.value = profiles.map((p) => p.userId).toList();
       _saveToStorage();
     } catch (e) {
