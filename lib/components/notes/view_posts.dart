@@ -77,10 +77,18 @@ class __ViewPostsState extends State<_ViewPosts> {
       if (currentRepoId == null) {
         body = const Center(child: Text('No repository selected.'));
       } else {
-        List<DataItemFilter> filters = [
-          ParentIdFilter(currentRepoId),
-          ColorTagFilter.fromColorTag(settingController.colorTag),
-        ];
+        List<DataItemFilter> filters = [ParentIdFilter(currentRepoId)];
+        if (repoController
+            .onViewRepos(
+              filters: [
+                IdsFilter([currentRepoId]),
+                ColorTagFilter.fromColorTag(settingController.colorTag),
+              ],
+            )
+            .isEmpty) {
+          // if the current repo matches the color tag filter, we don't need to add extra filter.
+          filters.add(ColorTagFilter.fromColorTag(settingController.colorTag));
+        }
         if (searchFilterTextController.text.isNotEmpty) {
           filters.add(PostContentFilter(searchFilterTextController.text));
         }

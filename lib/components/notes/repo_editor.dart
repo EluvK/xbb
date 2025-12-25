@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/acl_editor.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/text_input.dart';
 
@@ -79,11 +81,65 @@ class _RepoEditorState extends State<RepoEditor> {
 
   Widget _editRepoAcl() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text('Update Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8.0),
         Text('Repo ACL editing is not implemented yet.'.tr),
+        // todo fetch current permission and loading circular indicator
+        // then show AclEditor when data is ready
+        AclEditor(schema: RepoPermissionSchema(), initialPermissions: []),
       ],
     );
+  }
+}
+
+class RepoPermissionSchema implements PermissionSchema {
+  // todo carefully check the labels and access levels
+  @override
+  List<String> get labels => ['read&&comment'.tr, 'write'.tr, 'fullAccess'.tr];
+
+  @override
+  List<bool> decode(AccessLevel accessLevels) {
+    switch (accessLevels) {
+      case AccessLevel.none:
+        return [false, false, false];
+      case AccessLevel.read:
+        return [true, false, false];
+      case AccessLevel.update:
+        return [true, true, false];
+      case AccessLevel.create:
+        return [true, true, false];
+      case AccessLevel.write:
+        return [true, true, false];
+      case AccessLevel.fullAccess:
+        return [true, true, true];
+    }
+  }
+
+  @override
+  AccessLevel encode(List<bool> accessList) {
+    if (accessList[2]) {
+      return AccessLevel.fullAccess;
+    } else if (accessList[1]) {
+      return AccessLevel.write;
+    } else if (accessList[0]) {
+      return AccessLevel.read;
+    } else {
+      return AccessLevel.none;
+    }
+  }
+
+  @override
+  List<int> merge(List<int> currentIndices) {
+    if (currentIndices.contains(2)) {
+      return [0, 1, 2];
+    } else if (currentIndices.contains(1)) {
+      return [0, 1];
+    } else if (currentIndices.contains(0)) {
+      return [0];
+    } else {
+      return [];
+    }
   }
 }

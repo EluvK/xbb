@@ -78,8 +78,15 @@ class __RepoListsState extends State<_RepoLists> {
 
   Widget repoList(BuildContext context) {
     return Obx(() {
+      List<String> taggedRepoIds = postController
+          .onViewPosts(filters: [ColorTagFilter.fromColorTag(settingController.colorTag)])
+          .map((post) => post.body.repoId)
+          .toSet()
+          .toList();
       List<RepoDataItem> repos = repoController.onViewRepos(
-        filters: [ColorTagFilter.fromColorTag(settingController.colorTag)],
+        filters: [
+          OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedRepoIds)]),
+        ],
       );
       print("build repo card repo number: ${repos.length}");
       if (repos.isEmpty) {
