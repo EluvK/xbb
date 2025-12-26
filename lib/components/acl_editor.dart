@@ -19,7 +19,9 @@ class AclEditor extends StatefulWidget {
   final PermissionSchema schema;
   final List<Permission> initialPermissions;
 
-  const AclEditor({super.key, required this.schema, required this.initialPermissions});
+  final Function(List<Permission>) onSavePermissions;
+
+  const AclEditor({super.key, required this.schema, required this.initialPermissions, required this.onSavePermissions});
 
   @override
   State<AclEditor> createState() => _AclEditorState();
@@ -52,6 +54,19 @@ class _AclEditorState extends State<AclEditor> {
     });
   }
 
+  bool _isModified() {
+    if (_authList.length != widget.initialPermissions.length) {
+      return true;
+    }
+    for (int i = 0; i < _authList.length; i++) {
+      if (_authList[i].user != widget.initialPermissions[i].user ||
+          _authList[i].accessLevel != widget.initialPermissions[i].accessLevel) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -71,9 +86,11 @@ class _AclEditorState extends State<AclEditor> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () {
-              // todo
-            },
+            onPressed: _isModified()
+                ? () {
+                    widget.onSavePermissions(_authList);
+                  }
+                : null,
             child: const Text('保存权限变更'),
           ),
         ),

@@ -88,7 +88,14 @@ class _RepoEditorState extends State<RepoEditor> {
         Text('Repo ACL editing is not implemented yet.'.tr),
         // todo fetch current permission and loading circular indicator
         // then show AclEditor when data is ready
-        AclEditor(schema: RepoPermissionSchema(), initialPermissions: []),
+        AclEditor(
+          schema: RepoPermissionSchema(),
+          initialPermissions: [],
+          onSavePermissions: (newPermissions) {
+            // todo save permissions
+            print('New Permissions: $newPermissions');
+          },
+        ),
       ],
     );
   }

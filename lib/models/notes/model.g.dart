@@ -178,7 +178,6 @@ class RepoController extends GetxController {
     if (index != -1) {
       _items[index] = fetchedItem;
     }
-    // print('Replaced local Repo with id: $id, new id: ${fetchedItem.id}');
     if (currentRepoId.value == id && fetchedItem.id != id) {
       // update current selected id if changed by server generated id
       currentRepoId.value = fetchedItem.id;
@@ -268,9 +267,7 @@ class _RepoSyncEngine {
 
   void delete(String id, bool deleteFromServer) {
     RepoRepository().deleteFromLocalDb(id);
-    if (!deleteFromServer) {
-      return;
-    }
+    if (!deleteFromServer) return;
     try {
       client.delete('xbb', 'repo', id);
     } catch (e) {
@@ -455,7 +452,6 @@ class PostController extends GetxController {
     if (index != -1) {
       _items[index] = fetchedItem;
     }
-    // print('Replaced local Post with id: $id, new id: ${fetchedItem.id}');
     if (currentPostId.value == id && fetchedItem.id != id) {
       // update current selected id if changed by server generated id
       currentPostId.value = fetchedItem.id;
@@ -545,9 +541,7 @@ class _PostSyncEngine {
 
   void delete(String id, bool deleteFromServer) {
     PostRepository().deleteFromLocalDb(id);
-    if (!deleteFromServer) {
-      return;
-    }
+    if (!deleteFromServer) return;
     try {
       client.delete('xbb', 'post', id);
     } catch (e) {
@@ -736,7 +730,6 @@ class CommentController extends GetxController {
     if (index != -1) {
       _items[index] = fetchedItem;
     }
-    // print('Replaced local Comment with id: $id, new id: ${fetchedItem.id}');
     if (currentCommentId.value == id && fetchedItem.id != id) {
       // update current selected id if changed by server generated id
       currentCommentId.value = fetchedItem.id;
@@ -826,9 +819,7 @@ class _CommentSyncEngine {
 
   void delete(String id, bool deleteFromServer) {
     CommentRepository().deleteFromLocalDb(id);
-    if (!deleteFromServer) {
-      return;
-    }
+    if (!deleteFromServer) return;
     try {
       client.delete('xbb', 'comment', id);
     } catch (e) {
