@@ -220,6 +220,51 @@ class RepoController extends GetxController {
   }
 }
 
+extension RepoRepositoryAcl on RepoRepository {
+  static String get tableNameAcl => 'acl';
+  Future<List<Permission>> getAcls(String dataId) async {
+    final db = await LocalStoreRepo.getDb();
+    final List<Map<String, dynamic>> maps = await db.query(tableNameAcl, where: 'data_id = ?', whereArgs: [dataId]);
+    if (maps.isEmpty) {
+      return [];
+    }
+    final permissionsJson = maps.first['permissions'] as String;
+    final List<dynamic> permissionsList = json.decode(permissionsJson) as List<dynamic>;
+    return permissionsList.map((e) => Permission.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> setAcls(String dataId, List<Permission> permissions) async {
+    final db = await LocalStoreRepo.getDb();
+    final permissionsJson = json.encode(permissions.map((e) => e.toJson()).toList());
+    await db.insert(tableNameAcl, {
+      'data_id': dataId,
+      'permissions': permissionsJson,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+}
+
+extension RepoControllerAcl on RepoController {
+  Future<List<Permission>> getAcls(String dataId) async {
+    try {
+      final List<Permission> getAcls = await client.getAcls('xbb', 'repo', dataId);
+      await RepoRepository().setAcls(dataId, getAcls);
+      return getAcls;
+    } catch (e) {
+      print("Error fetching ACLs from server: $e");
+      return await RepoRepository().getAcls(dataId);
+    }
+  }
+
+  Future<void> setAcls(String dataId, List<Permission> permissions) async {
+    try {
+      await client.updateAcls('xbb', 'repo', dataId, permissions);
+      await RepoRepository().setAcls(dataId, permissions);
+    } catch (e) {
+      print("Error updating ACLs to server: $e");
+    }
+  }
+}
+
 class _RepoSyncEngine {
   final SyncStoreClient client;
   _RepoSyncEngine(this.client);

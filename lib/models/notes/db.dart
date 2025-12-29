@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'model.dart';
 
 import 'package:path/path.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class NotesDB {
@@ -26,6 +28,7 @@ class NotesDB {
           await db.execute(LocalStoreRepo.onCreateTableRepoSQL);
           await db.execute(LocalStorePost.onCreateTablePostSQL);
           await db.execute(LocalStoreComment.onCreateTableCommentSQL);
+          await db.execute(onCreateTableAcl);
         },
       ),
     );

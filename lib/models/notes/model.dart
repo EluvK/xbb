@@ -32,7 +32,7 @@ Future<void> reInit<T extends GetxController>(
   }
 }
 
-@Repository(collectionName: 'xbb', tableName: 'repo', db: NotesDB)
+@Repository(collectionName: 'xbb', tableName: 'repo', db: NotesDB, withAcls: true)
 @freezed
 abstract class Repo with _$Repo {
   const factory Repo({required String name, required String status, String? description}) = _Repo;

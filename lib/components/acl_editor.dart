@@ -19,7 +19,7 @@ class AclEditor extends StatefulWidget {
   final PermissionSchema schema;
   final List<Permission> initialPermissions;
 
-  final Function(List<Permission>) onSavePermissions;
+  final Future<void> Function(List<Permission>) onSavePermissions;
 
   const AclEditor({super.key, required this.schema, required this.initialPermissions, required this.onSavePermissions});
 
@@ -74,21 +74,23 @@ class _AclEditorState extends State<AclEditor> {
       children: [
         _buildHeader(),
         const Divider(),
-
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _authList.length,
-          itemBuilder: (context, index) => _buildUserRow(index),
-        ),
+        if (_authList.isEmpty)
+          Padding(padding: const EdgeInsets.all(16.0), child: Text('No members with permissions yet.'.tr)),
+        if (_authList.isNotEmpty)
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _authList.length,
+            itemBuilder: (context, index) => _buildUserRow(index),
+          ),
         const Padding(padding: EdgeInsets.symmetric(horizontal: 16.0), child: Divider()),
         if (_otherList.isNotEmpty) _buildPendingArea(),
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
             onPressed: _isModified()
-                ? () {
-                    widget.onSavePermissions(_authList);
+                ? () async {
+                    await widget.onSavePermissions(_authList);
                   }
                 : null,
             child: const Text('保存权限变更'),

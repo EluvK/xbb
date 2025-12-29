@@ -15,10 +15,13 @@ class RepoEditor extends StatefulWidget {
 
 class _RepoEditorState extends State<RepoEditor> {
   late Repo _editedRepo;
+  final RepoController repoController = Get.find<RepoController>();
+  late Future<List<Permission>> _initialPermissionsFuture;
 
   @override
   void initState() {
     _editedRepo = widget.repoItem.body.copyWith();
+    _initialPermissionsFuture = repoController.getAcls(widget.repoItem.id);
     super.initState();
   }
 
@@ -28,7 +31,25 @@ class _RepoEditorState extends State<RepoEditor> {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
-        child: ListView(children: [_editRepo(), _editRepoAcl()]),
+        child: ListView(
+          children: [
+            _editRepo(),
+            // todo maybe make it a common util component later
+            FutureBuilder(
+              future: _initialPermissionsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Text('Error loading ACLs: ${snapshot.error}');
+                } else {
+                  final initialPermissions = snapshot.data as List<Permission>;
+                  return _editRepoAcl(initialPermissions);
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -79,21 +100,20 @@ class _RepoEditorState extends State<RepoEditor> {
     );
   }
 
-  Widget _editRepoAcl() {
+  Widget _editRepoAcl(List<Permission> initialPermissions) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('Update Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8.0),
-        Text('Repo ACL editing is not implemented yet.'.tr),
-        // todo fetch current permission and loading circular indicator
-        // then show AclEditor when data is ready
         AclEditor(
           schema: RepoPermissionSchema(),
-          initialPermissions: [],
-          onSavePermissions: (newPermissions) {
-            // todo save permissions
-            print('New Permissions: $newPermissions');
+          initialPermissions: initialPermissions,
+          onSavePermissions: (newPermissions) async {
+            await repoController.setAcls(widget.repoItem.id, newPermissions);
+            setState(() {
+              _initialPermissionsFuture = Future.value(newPermissions);
+            });
           },
         ),
       ],
