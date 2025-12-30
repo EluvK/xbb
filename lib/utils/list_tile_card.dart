@@ -54,11 +54,11 @@ extension ColorTagExtension on ColorTag {
       case ColorTag.green:
         return Colors.lightGreen[400];
       case ColorTag.blue:
-        return Colors.blue;
+        return Colors.blue[400];
       case ColorTag.yellow:
         return Colors.yellow[400];
       case ColorTag.orange:
-        return Colors.orange;
+        return Colors.orange[400];
       case ColorTag.gray:
         return Colors.grey[400];
       case ColorTag.none:
@@ -199,7 +199,7 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
       moreContent = Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: buttons);
     } else if (moreContentState == _MoreContentState.preview) {
       moreContent = Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Text(widget.enableLongPressPreview ?? ''),
       );
     }
@@ -241,7 +241,12 @@ class _InlineColorPickerButtonState extends State<InlineColorPickerButton> {
               selectedTag: widget.value,
               onChanged: (tag) {
                 widget.onChanged(tag);
-                setState(() => expanded = false);
+                // should wait for inner animation to finish
+                Future.delayed(const Duration(milliseconds: 200), () {
+                  if (mounted) {
+                    setState(() => expanded = false);
+                  }
+                });
               },
             )
           : IconButton(
@@ -274,15 +279,20 @@ class ColorPickerButtons extends StatelessWidget {
         final selected = selectedTag == tag;
         return GestureDetector(
           onTap: () => onChanged(tag),
-          child: Container(
-            width: iconSize,
-            height: iconSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: tag.toColor(),
-              border: selected
-                  ? Border.all(color: Theme.of(context).colorScheme.outline, width: iconSize / 5.0)
-                  : Border.all(color: Theme.of(context).colorScheme.outline, width: 0.5),
+          child: AnimatedScale(
+            scale: selected ? 1.3 : 0.9,
+            duration: const Duration(milliseconds: 150),
+            child: Container(
+              width: iconSize,
+              height: iconSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: tag.toColor()?.withAlpha(selected ? 255 : 198),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: selected ? iconSize / 6.0 : 0.5,
+                ),
+              ),
             ),
           ),
         );

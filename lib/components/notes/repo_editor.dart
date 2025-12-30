@@ -124,23 +124,23 @@ class _RepoEditorState extends State<RepoEditor> {
 class RepoPermissionSchema implements PermissionSchema {
   // todo carefully check the labels and access levels
   @override
-  List<String> get labels => ['read&&comment'.tr, 'write'.tr, 'fullAccess'.tr];
+  List<String> get labels => ['share'.tr, 'editable'.tr, 'fullAccess'.tr];
 
   @override
-  List<bool> decode(AccessLevel accessLevels) {
-    switch (accessLevels) {
+  List<bool> decode(AccessLevel accessLevel) {
+    switch (accessLevel) {
       case AccessLevel.none:
         return [false, false, false];
-      case AccessLevel.read:
-        return [true, false, false];
-      case AccessLevel.update:
-        return [true, true, false];
       case AccessLevel.create:
-        return [true, true, false];
+        return [true, false, false];
       case AccessLevel.write:
         return [true, true, false];
       case AccessLevel.fullAccess:
         return [true, true, true];
+      // unimplemented;
+      case AccessLevel.read:
+      case AccessLevel.update:
+        return [false, false, false];
     }
   }
 
@@ -151,22 +151,24 @@ class RepoPermissionSchema implements PermissionSchema {
     } else if (accessList[1]) {
       return AccessLevel.write;
     } else if (accessList[0]) {
-      return AccessLevel.read;
+      return AccessLevel.create;
     } else {
       return AccessLevel.none;
     }
   }
 
   @override
-  List<int> merge(List<int> currentIndices) {
-    if (currentIndices.contains(2)) {
-      return [0, 1, 2];
-    } else if (currentIndices.contains(1)) {
-      return [0, 1];
-    } else if (currentIndices.contains(0)) {
-      return [0];
-    } else {
-      return [];
+  List<int> disableOverlappingSelections(AccessLevel accessLevel) {
+    switch (accessLevel) {
+      case AccessLevel.create:
+        return [0];
+      case AccessLevel.fullAccess:
+        return [0, 1];
+      case AccessLevel.none:
+      case AccessLevel.read:
+      case AccessLevel.update:
+      case AccessLevel.write:
+        return [];
     }
   }
 }

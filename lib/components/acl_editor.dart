@@ -7,12 +7,12 @@ import 'package:xbb/controller/user.dart';
 abstract class PermissionSchema {
   List<String> get labels;
   // from access level to this labels' bool list
-  List<bool> decode(AccessLevel accessLevels);
+  List<bool> decode(AccessLevel accessLevel);
   // from this labels' bool list to access level
   AccessLevel encode(List<bool> selections);
 
-  // merge current indices within this schema
-  List<int> merge(List<int> currentIndices);
+  // disable overlapping selections
+  List<int> disableOverlappingSelections(AccessLevel accessLevel);
 }
 
 class AclEditor extends StatefulWidget {
@@ -51,6 +51,10 @@ class _AclEditorState extends State<AclEditor> {
       currentSelections[labelIndex] = !currentSelections[labelIndex];
       final newAccessLevel = widget.schema.encode(currentSelections);
       _authList[userIndex] = Permission(user: currentPermission.user, accessLevel: newAccessLevel);
+      if (newAccessLevel == AccessLevel.none) {
+        _otherList.add(userManagerController.getUserProfile(currentPermission.user)!);
+        _authList.removeAt(userIndex);
+      }
     });
   }
 
@@ -123,7 +127,6 @@ class _AclEditorState extends State<AclEditor> {
       children: [
         Expanded(
           flex: 2,
-
           child: Column(
             children: [
               buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: true),
@@ -137,7 +140,9 @@ class _AclEditorState extends State<AclEditor> {
           (pIndex) => Expanded(
             child: Checkbox(
               value: widget.schema.decode(user.accessLevel)[pIndex],
-              onChanged: (_) => _onToggle(index, pIndex),
+              onChanged: widget.schema.disableOverlappingSelections(user.accessLevel).contains(pIndex)
+                  ? null
+                  : (_) => _onToggle(index, pIndex),
             ),
           ),
         ),

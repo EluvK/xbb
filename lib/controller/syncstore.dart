@@ -53,6 +53,7 @@ class SyncStoreControl extends GetxController {
   }
 }
 
+// todo maybe rename this and the key name.
 class AppCacheManager {
   static CacheManager? _instance;
 
