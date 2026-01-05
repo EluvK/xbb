@@ -169,8 +169,13 @@ class __RepoListsState extends State<_RepoLists> {
             ),
             IconButton(
               onPressed: () async {
-                await repoController.trySyncAll();
-                await postController.trySyncAll();
+                await repoController.syncOwned();
+                await repoController.syncGranted();
+                await repoController.rebuildLocal();
+                // todo, post might sync in child granularity
+                await postController.syncOwned();
+                await postController.syncGranted();
+                await postController.rebuildLocal();
               },
               icon: const Icon(Icons.refresh),
             ),

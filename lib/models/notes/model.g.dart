@@ -168,9 +168,16 @@ class RepoController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
-  Future<void> trySyncAll() async {
-    await _syncEngine.syncAll();
-    await rebuildLocal();
+  Future<void> syncChildren(String parentId) async {
+    await _syncEngine.syncChildren(parentId);
+  }
+
+  Future<void> syncOwned() async {
+    await _syncEngine.syncOwned();
+  }
+
+  Future<void> syncGranted() async {
+    await _syncEngine.syncGranted();
   }
 
   void _replaceLocal(String id, RepoDataItem fetchedItem) {
@@ -210,13 +217,13 @@ class RepoController extends GetxController {
     RepoRepository().updateToLocalDb(item);
   }
 
-  void deleteData(String id) {
+  void deleteData(String id, {bool deleteFromServer = false}) {
     _items.removeWhere((item) => item.id == id);
     if (currentRepoId.value == id) {
       currentRepoId.value = null;
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    _syncEngine.delete(id, status != SyncStatus.deleted);
+    _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
   }
 }
 
@@ -320,7 +327,8 @@ class _RepoSyncEngine {
     }
   }
 
-  Future<void> syncAll() async {
+  Future<void> syncOwned() async {
+    final currentUserId = client.currentUserId();
     try {
       String? nextMarker;
       final serviceIds = <String>{};
@@ -330,27 +338,72 @@ class _RepoSyncEngine {
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
           final RepoDataItem? localItem = await RepoRepository().getFromLocalDb(summary.id);
-          if (localItem == null) {
-            // new from server
-            final RepoDataItem item = await client.get<Repo>('xbb', 'repo', summary.id, Repo.fromJson);
-            await RepoRepository().addToLocalDb(item);
-          } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
-            // update local data.
-            final RepoDataItem item = await client.get<Repo>('xbb', 'repo', summary.id, Repo.fromJson);
-            await RepoRepository().updateToLocalDb(item);
-          } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
-            // local data is newer, need to sync to server
-            localItem.syncStatus = SyncStatus.failed;
-            await RepoRepository().updateToLocalDb(localItem);
-          } else if (localItem.syncStatus == SyncStatus.deleted) {
-            // same updatedAt but marked as deleted as local before
-            localItem.syncStatus = SyncStatus.archived;
-            await RepoRepository().updateToLocalDb(localItem);
-          }
+          await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
       final localItems = await RepoRepository().listFromLocalDb();
+      for (RepoDataItem localItem in localItems) {
+        if (localItem.owner != currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await RepoRepository().updateToLocalDb(localItem);
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
+  Future<void> syncGranted() async {
+    final currentUserId = client.currentUserId();
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      do {
+        final ListResponse resp = await client.list('xbb', 'repo', withPermission: true, limit: 50, marker: nextMarker);
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final RepoDataItem? localItem = await RepoRepository().getFromLocalDb(summary.id);
+          await _compareRemote(localItem, summary);
+        }
+      } while (nextMarker != null);
+      // clean up local data that are deleted from server
+      final localItems = await RepoRepository().listFromLocalDb();
+      for (RepoDataItem localItem in localItems) {
+        if (localItem.owner == currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await RepoRepository().updateToLocalDb(localItem);
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
+  Future<void> syncChildren(String parentId) async {
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      do {
+        final ListResponse resp = await client.list('xbb', 'repo', parentId: parentId, limit: 50, marker: nextMarker);
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final RepoDataItem? localItem = await RepoRepository().getFromLocalDb(summary.id);
+          await _compareRemote(localItem, summary);
+        }
+      } while (nextMarker != null);
+      // clean up local data that are deleted from server
+      final localItems = await RepoRepository().listFromLocalDb(parentId: parentId);
       for (RepoDataItem localItem in localItems) {
         if (!serviceIds.contains(localItem.id)) {
           localItem.syncStatus = SyncStatus.deleted;
@@ -360,6 +413,26 @@ class _RepoSyncEngine {
     } catch (e) {
       // todo more error handling?
       rethrow;
+    }
+  }
+
+  Future<void> _compareRemote(RepoDataItem? localItem, DataItemSummary summary) async {
+    if (localItem == null) {
+      // new from server
+      final RepoDataItem item = await client.get<Repo>('xbb', 'repo', summary.id, Repo.fromJson);
+      await RepoRepository().addToLocalDb(item);
+    } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
+      // update local data.
+      final RepoDataItem item = await client.get<Repo>('xbb', 'repo', summary.id, Repo.fromJson);
+      await RepoRepository().updateToLocalDb(item);
+    } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
+      // local data is newer, need to sync to server
+      localItem.syncStatus = SyncStatus.failed;
+      await RepoRepository().updateToLocalDb(localItem);
+    } else if (localItem.syncStatus == SyncStatus.deleted) {
+      // same updatedAt but marked as deleted as local before
+      localItem.syncStatus = SyncStatus.archived;
+      await RepoRepository().updateToLocalDb(localItem);
     }
   }
 }
@@ -487,9 +560,16 @@ class PostController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
-  Future<void> trySyncAll() async {
-    await _syncEngine.syncAll();
-    await rebuildLocal();
+  Future<void> syncChildren(String parentId) async {
+    await _syncEngine.syncChildren(parentId);
+  }
+
+  Future<void> syncOwned() async {
+    await _syncEngine.syncOwned();
+  }
+
+  Future<void> syncGranted() async {
+    await _syncEngine.syncGranted();
   }
 
   void _replaceLocal(String id, PostDataItem fetchedItem) {
@@ -529,13 +609,13 @@ class PostController extends GetxController {
     PostRepository().updateToLocalDb(item);
   }
 
-  void deleteData(String id) {
+  void deleteData(String id, {bool deleteFromServer = false}) {
     _items.removeWhere((item) => item.id == id);
     if (currentPostId.value == id) {
       currentPostId.value = null;
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    _syncEngine.delete(id, status != SyncStatus.deleted);
+    _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
   }
 }
 
@@ -594,7 +674,8 @@ class _PostSyncEngine {
     }
   }
 
-  Future<void> syncAll() async {
+  Future<void> syncOwned() async {
+    final currentUserId = client.currentUserId();
     try {
       String? nextMarker;
       final serviceIds = <String>{};
@@ -604,27 +685,72 @@ class _PostSyncEngine {
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
           final PostDataItem? localItem = await PostRepository().getFromLocalDb(summary.id);
-          if (localItem == null) {
-            // new from server
-            final PostDataItem item = await client.get<Post>('xbb', 'post', summary.id, Post.fromJson);
-            await PostRepository().addToLocalDb(item);
-          } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
-            // update local data.
-            final PostDataItem item = await client.get<Post>('xbb', 'post', summary.id, Post.fromJson);
-            await PostRepository().updateToLocalDb(item);
-          } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
-            // local data is newer, need to sync to server
-            localItem.syncStatus = SyncStatus.failed;
-            await PostRepository().updateToLocalDb(localItem);
-          } else if (localItem.syncStatus == SyncStatus.deleted) {
-            // same updatedAt but marked as deleted as local before
-            localItem.syncStatus = SyncStatus.archived;
-            await PostRepository().updateToLocalDb(localItem);
-          }
+          await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
       final localItems = await PostRepository().listFromLocalDb();
+      for (PostDataItem localItem in localItems) {
+        if (localItem.owner != currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await PostRepository().updateToLocalDb(localItem);
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
+  Future<void> syncGranted() async {
+    final currentUserId = client.currentUserId();
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      do {
+        final ListResponse resp = await client.list('xbb', 'post', withPermission: true, limit: 50, marker: nextMarker);
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final PostDataItem? localItem = await PostRepository().getFromLocalDb(summary.id);
+          await _compareRemote(localItem, summary);
+        }
+      } while (nextMarker != null);
+      // clean up local data that are deleted from server
+      final localItems = await PostRepository().listFromLocalDb();
+      for (PostDataItem localItem in localItems) {
+        if (localItem.owner == currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await PostRepository().updateToLocalDb(localItem);
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
+  Future<void> syncChildren(String parentId) async {
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      do {
+        final ListResponse resp = await client.list('xbb', 'post', parentId: parentId, limit: 50, marker: nextMarker);
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final PostDataItem? localItem = await PostRepository().getFromLocalDb(summary.id);
+          await _compareRemote(localItem, summary);
+        }
+      } while (nextMarker != null);
+      // clean up local data that are deleted from server
+      final localItems = await PostRepository().listFromLocalDb(parentId: parentId);
       for (PostDataItem localItem in localItems) {
         if (!serviceIds.contains(localItem.id)) {
           localItem.syncStatus = SyncStatus.deleted;
@@ -634,6 +760,26 @@ class _PostSyncEngine {
     } catch (e) {
       // todo more error handling?
       rethrow;
+    }
+  }
+
+  Future<void> _compareRemote(PostDataItem? localItem, DataItemSummary summary) async {
+    if (localItem == null) {
+      // new from server
+      final PostDataItem item = await client.get<Post>('xbb', 'post', summary.id, Post.fromJson);
+      await PostRepository().addToLocalDb(item);
+    } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
+      // update local data.
+      final PostDataItem item = await client.get<Post>('xbb', 'post', summary.id, Post.fromJson);
+      await PostRepository().updateToLocalDb(item);
+    } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
+      // local data is newer, need to sync to server
+      localItem.syncStatus = SyncStatus.failed;
+      await PostRepository().updateToLocalDb(localItem);
+    } else if (localItem.syncStatus == SyncStatus.deleted) {
+      // same updatedAt but marked as deleted as local before
+      localItem.syncStatus = SyncStatus.archived;
+      await PostRepository().updateToLocalDb(localItem);
     }
   }
 }
@@ -765,9 +911,16 @@ class CommentController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
-  Future<void> trySyncAll() async {
-    await _syncEngine.syncAll();
-    await rebuildLocal();
+  Future<void> syncChildren(String parentId) async {
+    await _syncEngine.syncChildren(parentId);
+  }
+
+  Future<void> syncOwned() async {
+    await _syncEngine.syncOwned();
+  }
+
+  Future<void> syncGranted() async {
+    await _syncEngine.syncGranted();
   }
 
   void _replaceLocal(String id, CommentDataItem fetchedItem) {
@@ -807,13 +960,13 @@ class CommentController extends GetxController {
     CommentRepository().updateToLocalDb(item);
   }
 
-  void deleteData(String id) {
+  void deleteData(String id, {bool deleteFromServer = false}) {
     _items.removeWhere((item) => item.id == id);
     if (currentCommentId.value == id) {
       currentCommentId.value = null;
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    _syncEngine.delete(id, status != SyncStatus.deleted);
+    _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
   }
 }
 
@@ -872,7 +1025,8 @@ class _CommentSyncEngine {
     }
   }
 
-  Future<void> syncAll() async {
+  Future<void> syncOwned() async {
+    final currentUserId = client.currentUserId();
     try {
       String? nextMarker;
       final serviceIds = <String>{};
@@ -882,27 +1036,84 @@ class _CommentSyncEngine {
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
           final CommentDataItem? localItem = await CommentRepository().getFromLocalDb(summary.id);
-          if (localItem == null) {
-            // new from server
-            final CommentDataItem item = await client.get<Comment>('xbb', 'comment', summary.id, Comment.fromJson);
-            await CommentRepository().addToLocalDb(item);
-          } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
-            // update local data.
-            final CommentDataItem item = await client.get<Comment>('xbb', 'comment', summary.id, Comment.fromJson);
-            await CommentRepository().updateToLocalDb(item);
-          } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
-            // local data is newer, need to sync to server
-            localItem.syncStatus = SyncStatus.failed;
-            await CommentRepository().updateToLocalDb(localItem);
-          } else if (localItem.syncStatus == SyncStatus.deleted) {
-            // same updatedAt but marked as deleted as local before
-            localItem.syncStatus = SyncStatus.archived;
-            await CommentRepository().updateToLocalDb(localItem);
-          }
+          await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
       final localItems = await CommentRepository().listFromLocalDb();
+      for (CommentDataItem localItem in localItems) {
+        if (localItem.owner != currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await CommentRepository().updateToLocalDb(localItem);
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
+  Future<void> syncGranted() async {
+    final currentUserId = client.currentUserId();
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      do {
+        final ListResponse resp = await client.list(
+          'xbb',
+          'comment',
+          withPermission: true,
+          limit: 50,
+          marker: nextMarker,
+        );
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final CommentDataItem? localItem = await CommentRepository().getFromLocalDb(summary.id);
+          await _compareRemote(localItem, summary);
+        }
+      } while (nextMarker != null);
+      // clean up local data that are deleted from server
+      final localItems = await CommentRepository().listFromLocalDb();
+      for (CommentDataItem localItem in localItems) {
+        if (localItem.owner == currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await CommentRepository().updateToLocalDb(localItem);
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
+  Future<void> syncChildren(String parentId) async {
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      do {
+        final ListResponse resp = await client.list(
+          'xbb',
+          'comment',
+          parentId: parentId,
+          limit: 50,
+          marker: nextMarker,
+        );
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final CommentDataItem? localItem = await CommentRepository().getFromLocalDb(summary.id);
+          await _compareRemote(localItem, summary);
+        }
+      } while (nextMarker != null);
+      // clean up local data that are deleted from server
+      final localItems = await CommentRepository().listFromLocalDb(parentId: parentId);
       for (CommentDataItem localItem in localItems) {
         if (!serviceIds.contains(localItem.id)) {
           localItem.syncStatus = SyncStatus.deleted;
@@ -912,6 +1123,26 @@ class _CommentSyncEngine {
     } catch (e) {
       // todo more error handling?
       rethrow;
+    }
+  }
+
+  Future<void> _compareRemote(CommentDataItem? localItem, DataItemSummary summary) async {
+    if (localItem == null) {
+      // new from server
+      final CommentDataItem item = await client.get<Comment>('xbb', 'comment', summary.id, Comment.fromJson);
+      await CommentRepository().addToLocalDb(item);
+    } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
+      // update local data.
+      final CommentDataItem item = await client.get<Comment>('xbb', 'comment', summary.id, Comment.fromJson);
+      await CommentRepository().updateToLocalDb(item);
+    } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
+      // local data is newer, need to sync to server
+      localItem.syncStatus = SyncStatus.failed;
+      await CommentRepository().updateToLocalDb(localItem);
+    } else if (localItem.syncStatus == SyncStatus.deleted) {
+      // same updatedAt but marked as deleted as local before
+      localItem.syncStatus = SyncStatus.archived;
+      await CommentRepository().updateToLocalDb(localItem);
     }
   }
 }
