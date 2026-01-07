@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/user.dart';
+import 'package:xbb/utils/utils.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -125,7 +126,8 @@ class _LoginBodyState extends State<LoginBody> {
           Get.offAllNamed('/');
         } catch (e) {
           print('login error: $e');
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('login_failed'.tr)));
+          flushBar(FlushLevel.INFO, 'login_failed'.tr, 'Please check your username and password.');
+          // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('login_failed'.tr)));
         }
       },
       child: Text('login'.tr),

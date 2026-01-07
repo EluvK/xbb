@@ -266,7 +266,7 @@ class ColorPickerButtons extends StatelessWidget {
   const ColorPickerButtons({
     super.key,
     this.iconSize = 16.0,
-    this.spacing = 12.0,
+    this.spacing = 2.0,
     required this.selectedTag,
     required this.onChanged,
   });
@@ -278,19 +278,24 @@ class ColorPickerButtons extends StatelessWidget {
       children: ColorTag.values.map((tag) {
         final selected = selectedTag == tag;
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () => onChanged(tag),
-          child: AnimatedScale(
-            scale: selected ? 1.3 : 0.9,
-            duration: const Duration(milliseconds: 150),
-            child: Container(
-              width: iconSize,
-              height: iconSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: tag.toColor()?.withAlpha(selected ? 255 : 198),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline,
-                  width: selected ? iconSize / 6.0 : 0.5,
+          child: Padding(
+            // add padding for easier tap area
+            padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
+            child: AnimatedScale(
+              scale: selected ? 1.3 : 0.9,
+              duration: const Duration(milliseconds: 150),
+              child: Container(
+                width: iconSize,
+                height: iconSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: tag.toColor()?.withAlpha(selected ? 255 : 198),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                    width: selected ? iconSize / 6.0 : 0.5,
+                  ),
                 ),
               ),
             ),
