@@ -5,7 +5,7 @@ import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/user.dart';
 
 abstract class PermissionSchema {
-  List<String> get labels;
+  List<(String, String)> get labels;
   // from access level to this labels' bool list
   List<bool> decode(AccessLevel accessLevel);
   // from this labels' bool list to access level
@@ -114,7 +114,19 @@ class _AclEditorState extends State<AclEditor> {
             child: Center(child: Text('成员')),
           ),
         ),
-        ...widget.schema.labels.map((l) => Expanded(child: Center(child: Text(l)))),
+        ...widget.schema.labels.map(
+          (l) => Expanded(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              runAlignment: WrapAlignment.center,
+              spacing: 4,
+              children: [
+                Text(l.$1),
+                Tooltip(message: l.$2, child: const Icon(Icons.info_outline, size: 12)),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(width: 48),
       ],
     );

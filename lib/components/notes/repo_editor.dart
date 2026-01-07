@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/acl_editor.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/text_input.dart';
 
@@ -16,12 +17,16 @@ class RepoEditor extends StatefulWidget {
 class _RepoEditorState extends State<RepoEditor> {
   late Repo _editedRepo;
   final RepoController repoController = Get.find<RepoController>();
-  late Future<List<Permission>> _initialPermissionsFuture;
+  final UserManagerController userManagerController = Get.find<UserManagerController>();
+  Future<List<Permission>>? _initialPermissionsFuture;
 
   @override
   void initState() {
     _editedRepo = widget.repoItem.body.copyWith();
-    _initialPermissionsFuture = repoController.getAcls(widget.repoItem.id);
+    bool isSelfRepo = userManagerController.selfProfile.value?.userId == widget.repoItem.owner;
+    if (isSelfRepo) {
+      _initialPermissionsFuture = repoController.getAcls(widget.repoItem.id);
+    }
     super.initState();
   }
 
@@ -34,20 +39,23 @@ class _RepoEditorState extends State<RepoEditor> {
         child: ListView(
           children: [
             _editRepo(),
-            // todo maybe make it a common util component later
-            FutureBuilder(
-              future: _initialPermissionsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Text('Error loading ACLs: ${snapshot.error}');
-                } else {
-                  final initialPermissions = snapshot.data as List<Permission>;
-                  return _editRepoAcl(initialPermissions);
-                }
-              },
-            ),
+            _initialPermissionsFuture == null
+                // maybe show current acl for non-self repo
+                ? const SizedBox.shrink()
+                // todo maybe make it a common util component later
+                : FutureBuilder(
+                    future: _initialPermissionsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Text('Error loading ACLs: ${snapshot.error}');
+                      } else {
+                        final initialPermissions = snapshot.data as List<Permission>;
+                        return _editRepoAcl(initialPermissions);
+                      }
+                    },
+                  ),
           ],
         ),
       ),
@@ -122,23 +130,27 @@ class _RepoEditorState extends State<RepoEditor> {
 }
 
 class RepoPermissionSchema implements PermissionSchema {
-  // todo carefully check the labels and access levels
+  // todo add localization later
   @override
-  List<String> get labels => ['share'.tr, 'editable'.tr, 'fullAccess'.tr];
+  List<(String, String)> get labels => [
+    ('subscribe'.tr, 'readOnly'),
+    ('share'.tr, 'read/write/update'),
+    ('fullAccess'.tr, 'All Permissions'),
+  ];
 
   @override
   List<bool> decode(AccessLevel accessLevel) {
     switch (accessLevel) {
       case AccessLevel.none:
         return [false, false, false];
-      case AccessLevel.create:
+      case AccessLevel.read:
         return [true, false, false];
       case AccessLevel.write:
         return [true, true, false];
       case AccessLevel.fullAccess:
         return [true, true, true];
       // unimplemented;
-      case AccessLevel.read:
+      case AccessLevel.create:
       case AccessLevel.update:
         return [false, false, false];
     }
@@ -151,7 +163,7 @@ class RepoPermissionSchema implements PermissionSchema {
     } else if (accessList[1]) {
       return AccessLevel.write;
     } else if (accessList[0]) {
-      return AccessLevel.create;
+      return AccessLevel.read;
     } else {
       return AccessLevel.none;
     }
@@ -160,14 +172,14 @@ class RepoPermissionSchema implements PermissionSchema {
   @override
   List<int> disableOverlappingSelections(AccessLevel accessLevel) {
     switch (accessLevel) {
-      case AccessLevel.create:
+      case AccessLevel.write:
         return [0];
       case AccessLevel.fullAccess:
         return [0, 1];
       case AccessLevel.none:
-      case AccessLevel.read:
+      case AccessLevel.create:
       case AccessLevel.update:
-      case AccessLevel.write:
+      case AccessLevel.read:
         return [];
     }
   }

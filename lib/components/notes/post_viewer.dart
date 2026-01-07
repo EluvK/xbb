@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:xbb/controller/user.dart';
 // import 'package:xbb/components/post_comment.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/markdown.dart';
@@ -13,9 +15,16 @@ class PostViewer extends StatefulWidget {
 }
 
 class _PostViewerState extends State<PostViewer> {
+  final UserManagerController userManagerController = Get.find<UserManagerController>();
+
   @override
   Widget build(BuildContext context) {
     final Post post = widget.postItem.body;
+    final bool isSelfPost = userManagerController.selfProfile.value?.userId == widget.postItem.owner;
+    final String displayTitleUser = isSelfPost
+        ? 'Me'
+        : userManagerController.getUserProfile(widget.postItem.owner)?.name ?? widget.postItem.owner;
+
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Column(
@@ -23,7 +32,7 @@ class _PostViewerState extends State<PostViewer> {
         children: [
           // title:
           Text(
-            "${post.category} | ${detailedDateStr(widget.postItem.updatedAt)}",
+            "${post.category} | ${detailedDateStr(widget.postItem.updatedAt)} | Author: $displayTitleUser | ${post.content.length} chars",
             style: const TextStyle(fontSize: 13),
           ),
           const Divider(),

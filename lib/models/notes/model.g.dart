@@ -231,7 +231,11 @@ extension RepoRepositoryAcl on RepoRepository {
   static String get tableNameAcl => 'acl';
   Future<List<Permission>> getAcls(String dataId) async {
     final db = await LocalStoreRepo.getDb();
-    final List<Map<String, dynamic>> maps = await db.query(tableNameAcl, where: 'data_id = ?', whereArgs: [dataId]);
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableNameAcl,
+      where: 'data_id = ? AND data_collection = ?',
+      whereArgs: [dataId, 'repo'],
+    );
     if (maps.isEmpty) {
       return [];
     }
@@ -245,6 +249,7 @@ extension RepoRepositoryAcl on RepoRepository {
     final permissionsJson = json.encode(permissions.map((e) => e.toJson()).toList());
     await db.insert(tableNameAcl, {
       'data_id': dataId,
+      'data_collection': 'repo',
       'permissions': permissionsJson,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
@@ -379,7 +384,7 @@ class _RepoSyncEngine {
           continue;
         }
         if (!serviceIds.contains(localItem.id)) {
-          localItem.syncStatus = SyncStatus.deleted;
+          localItem.syncStatus = SyncStatus.hidden;
           await RepoRepository().updateToLocalDb(localItem);
         }
       }
@@ -429,8 +434,8 @@ class _RepoSyncEngine {
       // local data is newer, need to sync to server
       localItem.syncStatus = SyncStatus.failed;
       await RepoRepository().updateToLocalDb(localItem);
-    } else if (localItem.syncStatus == SyncStatus.deleted) {
-      // same updatedAt but marked as deleted as local before
+    } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+      // same updatedAt but marked as special status, need to sync to server
       localItem.syncStatus = SyncStatus.archived;
       await RepoRepository().updateToLocalDb(localItem);
     }
@@ -726,7 +731,7 @@ class _PostSyncEngine {
           continue;
         }
         if (!serviceIds.contains(localItem.id)) {
-          localItem.syncStatus = SyncStatus.deleted;
+          localItem.syncStatus = SyncStatus.hidden;
           await PostRepository().updateToLocalDb(localItem);
         }
       }
@@ -776,8 +781,8 @@ class _PostSyncEngine {
       // local data is newer, need to sync to server
       localItem.syncStatus = SyncStatus.failed;
       await PostRepository().updateToLocalDb(localItem);
-    } else if (localItem.syncStatus == SyncStatus.deleted) {
-      // same updatedAt but marked as deleted as local before
+    } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+      // same updatedAt but marked as special status, need to sync to server
       localItem.syncStatus = SyncStatus.archived;
       await PostRepository().updateToLocalDb(localItem);
     }
@@ -1083,7 +1088,7 @@ class _CommentSyncEngine {
           continue;
         }
         if (!serviceIds.contains(localItem.id)) {
-          localItem.syncStatus = SyncStatus.deleted;
+          localItem.syncStatus = SyncStatus.hidden;
           await CommentRepository().updateToLocalDb(localItem);
         }
       }
@@ -1139,8 +1144,8 @@ class _CommentSyncEngine {
       // local data is newer, need to sync to server
       localItem.syncStatus = SyncStatus.failed;
       await CommentRepository().updateToLocalDb(localItem);
-    } else if (localItem.syncStatus == SyncStatus.deleted) {
-      // same updatedAt but marked as deleted as local before
+    } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+      // same updatedAt but marked as special status, need to sync to server
       localItem.syncStatus = SyncStatus.archived;
       await CommentRepository().updateToLocalDb(localItem);
     }

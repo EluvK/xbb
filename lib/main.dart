@@ -4,6 +4,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:get/get.dart';
+import 'package:syncstore_client/syncstore_client.dart' show ApiError, ApiException;
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
@@ -14,6 +15,7 @@ import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
 import 'package:xbb/pages/notes/view_post.dart';
 import 'package:xbb/utils/translation.dart';
+import 'package:xbb/utils/utils.dart';
 
 void main() async {
   await GetStorage.init(GET_STORAGE_FILE_KEY);
@@ -33,6 +35,21 @@ void main() async {
   await syncStoreControl.ensureInitialization();
   await reInitUserManagerController(syncStoreControl.syncStoreClient);
   await reInitNotesSync(syncStoreControl.syncStoreClient);
+
+  WidgetsFlutterBinding.ensureInitialized();
+  PlatformDispatcher.instance.onError = (error, stack) {
+    // todo handle loginRequired error to redirect to login page
+    if (error is ApiException && error.error == ApiError.loginRequired) {
+      print('[Handle ERROR] Login required, redirecting to login page.');
+      // todo add alert dialog
+      Get.offAllNamed('/login');
+      flushBar(FlushLevel.INFO, "Token 过期", "需要重新登录");
+      return true;
+    }
+    print('[WARN] Uncaught platform error: $error');
+    print(stack);
+    return true;
+  };
 
   // await initCacheSetting();
   // await initRepoPost();

@@ -86,6 +86,7 @@ class __RepoListsState extends State<_RepoLists> {
       List<RepoDataItem> repos = repoController.onViewRepos(
         filters: [
           OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedRepoIds)]),
+          StatusFilter.notHidden,
         ],
       );
       print("build repo card repo number: ${repos.length}");
@@ -97,15 +98,22 @@ class __RepoListsState extends State<_RepoLists> {
       for (var repo in repos) {
         reposByOwner.putIfAbsent(repo.owner, () => []).add(repo);
       }
+      // self repo first
+      final List<String> sortedKeys = reposByOwner.keys.toList();
+      sortedKeys.sort((a, b) {
+        if (a == userManagerController.selfProfile.value?.userId) return -1;
+        if (b == userManagerController.selfProfile.value?.userId) return 1;
+        return a.compareTo(b);
+      });
 
       return ListView(
         shrinkWrap: true,
-        children: reposByOwner.entries.map((entry) {
-          String ownerId = entry.key;
-          UserProfile? ownerProfile = ownerId == userManagerController.selfProfile.value?.userId
+        children: sortedKeys.map((ownerId) {
+          bool isSelf = ownerId == userManagerController.selfProfile.value?.userId;
+          UserProfile? ownerProfile = isSelf
               ? userManagerController.selfProfile.value
               : userManagerController.userProfiles.firstWhereOrNull((p) => p.userId == ownerId);
-          List<RepoDataItem> ownerRepos = entry.value;
+          List<RepoDataItem> ownerRepos = reposByOwner[ownerId]!;
 
           final controller = _controllers.putIfAbsent(ownerId, () {
             final controller = ExpansibleController();
@@ -115,6 +123,10 @@ class __RepoListsState extends State<_RepoLists> {
           return ExpansionTile(
             title: Row(
               children: [
+                isSelf
+                    ? const Icon(Icons.star, color: Colors.orangeAccent)
+                    : const Icon(Icons.share_outlined, color: Colors.blueAccent),
+                const SizedBox(width: 4.0),
                 buildUserAvatar(context, ownerProfile?.avatarUrl, size: 16, selected: false),
                 const SizedBox(width: 8.0),
                 Text(ownerProfile?.name ?? 'Unknown User'),

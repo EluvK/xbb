@@ -31,6 +31,7 @@ class LoginBody extends StatefulWidget {
 class _LoginBodyState extends State<LoginBody> {
   SyncStoreControl ssClient = Get.find<SyncStoreControl>();
   NewSettingController settingController = Get.find<NewSettingController>();
+  UserManagerController userManagerController = Get.find<UserManagerController>();
 
   ServiceAvailability serviceAvailability = ServiceAvailability.unknown;
   UserNameAvailability userNameAvailability = UserNameAvailability.unknown;
@@ -118,6 +119,9 @@ class _LoginBodyState extends State<LoginBody> {
           userController.selfProfile.value = userProfile;
           // final settingController = Get.find<NewSettingController>();
           settingController.updateUserInfo(userName: userName, userPassword: password);
+          // fetch and update user profiles after login
+          // things like this if grows bigger can be moved specifically to a service class
+          await userManagerController.fetchAndUpdateUserProfiles();
           Get.offAllNamed('/');
         } catch (e) {
           print('login error: $e');
