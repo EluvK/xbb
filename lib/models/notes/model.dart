@@ -58,7 +58,8 @@ abstract class Post with _$Post {
 @freezed
 abstract class Comment with _$Comment {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory Comment({required String content, required String postId, String? parentId}) = _Comment;
+  const factory Comment({required String content, required String postId, String? parentId, String? paragraphId}) =
+      _Comment;
 
   factory Comment.fromJson(Map<String, dynamic> json) => _$CommentFromJson(json);
 }

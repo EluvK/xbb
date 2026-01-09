@@ -556,7 +556,7 @@ as String,
 /// @nodoc
 mixin _$Comment {
 
- String get content; String get postId; String? get parentId;
+ String get content; String get postId; String? get parentId; String? get paragraphId;
 /// Create a copy of Comment
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -569,16 +569,16 @@ $CommentCopyWith<Comment> get copyWith => _$CommentCopyWithImpl<Comment>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Comment&&(identical(other.content, content) || other.content == content)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.parentId, parentId) || other.parentId == parentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Comment&&(identical(other.content, content) || other.content == content)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.parentId, parentId) || other.parentId == parentId)&&(identical(other.paragraphId, paragraphId) || other.paragraphId == paragraphId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,content,postId,parentId);
+int get hashCode => Object.hash(runtimeType,content,postId,parentId,paragraphId);
 
 @override
 String toString() {
-  return 'Comment(content: $content, postId: $postId, parentId: $parentId)';
+  return 'Comment(content: $content, postId: $postId, parentId: $parentId, paragraphId: $paragraphId)';
 }
 
 
@@ -589,7 +589,7 @@ abstract mixin class $CommentCopyWith<$Res>  {
   factory $CommentCopyWith(Comment value, $Res Function(Comment) _then) = _$CommentCopyWithImpl;
 @useResult
 $Res call({
- String content, String postId, String? parentId
+ String content, String postId, String? parentId, String? paragraphId
 });
 
 
@@ -606,11 +606,12 @@ class _$CommentCopyWithImpl<$Res>
 
 /// Create a copy of Comment
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? content = null,Object? postId = null,Object? parentId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? content = null,Object? postId = null,Object? parentId = freezed,Object? paragraphId = freezed,}) {
   return _then(_self.copyWith(
 content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,postId: null == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String,parentId: freezed == parentId ? _self.parentId : parentId // ignore: cast_nullable_to_non_nullable
+as String?,paragraphId: freezed == paragraphId ? _self.paragraphId : paragraphId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -696,10 +697,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String content,  String postId,  String? parentId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String content,  String postId,  String? parentId,  String? paragraphId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Comment() when $default != null:
-return $default(_that.content,_that.postId,_that.parentId);case _:
+return $default(_that.content,_that.postId,_that.parentId,_that.paragraphId);case _:
   return orElse();
 
 }
@@ -717,10 +718,10 @@ return $default(_that.content,_that.postId,_that.parentId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String content,  String postId,  String? parentId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String content,  String postId,  String? parentId,  String? paragraphId)  $default,) {final _that = this;
 switch (_that) {
 case _Comment():
-return $default(_that.content,_that.postId,_that.parentId);case _:
+return $default(_that.content,_that.postId,_that.parentId,_that.paragraphId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -737,10 +738,10 @@ return $default(_that.content,_that.postId,_that.parentId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String content,  String postId,  String? parentId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String content,  String postId,  String? parentId,  String? paragraphId)?  $default,) {final _that = this;
 switch (_that) {
 case _Comment() when $default != null:
-return $default(_that.content,_that.postId,_that.parentId);case _:
+return $default(_that.content,_that.postId,_that.parentId,_that.paragraphId);case _:
   return null;
 
 }
@@ -752,12 +753,13 @@ return $default(_that.content,_that.postId,_that.parentId);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _Comment implements Comment {
-  const _Comment({required this.content, required this.postId, this.parentId});
+  const _Comment({required this.content, required this.postId, this.parentId, this.paragraphId});
   factory _Comment.fromJson(Map<String, dynamic> json) => _$CommentFromJson(json);
 
 @override final  String content;
 @override final  String postId;
 @override final  String? parentId;
+@override final  String? paragraphId;
 
 /// Create a copy of Comment
 /// with the given fields replaced by the non-null parameter values.
@@ -772,16 +774,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Comment&&(identical(other.content, content) || other.content == content)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.parentId, parentId) || other.parentId == parentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Comment&&(identical(other.content, content) || other.content == content)&&(identical(other.postId, postId) || other.postId == postId)&&(identical(other.parentId, parentId) || other.parentId == parentId)&&(identical(other.paragraphId, paragraphId) || other.paragraphId == paragraphId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,content,postId,parentId);
+int get hashCode => Object.hash(runtimeType,content,postId,parentId,paragraphId);
 
 @override
 String toString() {
-  return 'Comment(content: $content, postId: $postId, parentId: $parentId)';
+  return 'Comment(content: $content, postId: $postId, parentId: $parentId, paragraphId: $paragraphId)';
 }
 
 
@@ -792,7 +794,7 @@ abstract mixin class _$CommentCopyWith<$Res> implements $CommentCopyWith<$Res> {
   factory _$CommentCopyWith(_Comment value, $Res Function(_Comment) _then) = __$CommentCopyWithImpl;
 @override @useResult
 $Res call({
- String content, String postId, String? parentId
+ String content, String postId, String? parentId, String? paragraphId
 });
 
 
@@ -809,11 +811,12 @@ class __$CommentCopyWithImpl<$Res>
 
 /// Create a copy of Comment
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? content = null,Object? postId = null,Object? parentId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? content = null,Object? postId = null,Object? parentId = freezed,Object? paragraphId = freezed,}) {
   return _then(_Comment(
 content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,postId: null == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String,parentId: freezed == parentId ? _self.parentId : parentId // ignore: cast_nullable_to_non_nullable
+as String?,paragraphId: freezed == paragraphId ? _self.paragraphId : paragraphId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
