@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/components/new_markdown_renderer.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/markdown.dart';
 import 'package:xbb/utils/rich_editor.dart';
@@ -126,7 +127,9 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               Flexible(child: contentEditor),
               const VerticalDivider(),
               Flexible(
-                child: ListView(children: [MarkdownRenderer(data: contentTextEditingController.text)]),
+                child: ListView(
+                  children: [MarkdownRenderer(data: contentTextEditingController.text)],
+                ), // still use no-edit renderer
               ),
             ],
           );
