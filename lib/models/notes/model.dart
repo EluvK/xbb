@@ -26,7 +26,7 @@ Future<void> reInit<T extends GetxController>(
   }
   final controller = await Get.putAsync<T>(() async {
     return await creator();
-  });
+  }, permanent: true);
   if (initializer != null) {
     await initializer(controller);
   }

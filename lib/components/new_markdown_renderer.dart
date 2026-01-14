@@ -466,7 +466,7 @@ class CommentTree extends StatelessWidget {
     final UserProfile userProfile = userManagerController.selfProfile.value?.userId == comment.owner
         ? userManagerController.selfProfile.value!
         : userManagerController.getUserProfile(comment.owner) ??
-              UserProfile(userId: comment.owner, name: 'Unknown User', avatarUrl: '');
+              UserProfile(userId: comment.owner, name: 'Unknown User', avatarUrl: '', publicKey: '');
     final CommentUIController commentUIController = Get.find<CommentUIController>();
     final CommentController commentController = Get.find<CommentController>();
 

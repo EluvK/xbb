@@ -1,21 +1,41 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/user.dart' show reInitUserManagerController;
+import 'package:xbb/models/notes/model.dart' show reInitNotesSync;
+
+Future<void> reInitSyncStoreController() async {
+  if (Get.isRegistered<SyncStoreControl>()) {
+    await Get.delete<SyncStoreControl>(force: true);
+  }
+  await Get.putAsync<SyncStoreControl>(() async {
+    final ctrl = SyncStoreControl();
+    await ctrl.ensureInitialization();
+    return ctrl;
+  }, permanent: true);
+  await reInitUserManagerController();
+  await reInitNotesSync(Get.find<SyncStoreControl>().syncStoreClient);
+}
 
 class SyncStoreControl extends GetxController {
-  // todo should allow change baseUrl for different server in future
-  final String baseUrl;
   final GetStorageTokenStorage tokenStorage;
+  final NewSettingController settingController = Get.find<NewSettingController>();
 
   final Rx<SyncStoreClient?> client = Rx<SyncStoreClient?>(null);
 
-  SyncStoreControl({required this.baseUrl, required this.tokenStorage}) {
-    client.value = SyncStoreClient(baseUrl: baseUrl, tokenStorage: tokenStorage);
+  SyncStoreControl() : tokenStorage = GetStorageTokenStorage() {
+    client.value = SyncStoreClient(
+      baseUrl: settingController.syncStoreUrl,
+      tokenStorage: tokenStorage,
+      enableHpke: settingController.syncStoreHpkeEnabled,
+    );
   }
 
   get syncStoreClient => client.value;
@@ -148,5 +168,21 @@ class GetStorageTokenStorage implements TokenStorage {
   @override
   String? getUserId() {
     return settingController.userId;
+  }
+
+  @override
+  Future<PublicKey?> getHpkePubKey() {
+    final pubKeyB64 = box.read<String?>(TOKEN_HPKE_PUBKEY_KEY);
+    if (pubKeyB64 == null) {
+      return Future.value(null);
+    }
+    final pubKeyBytes = base64Decode(pubKeyB64);
+    final publicKey = SimplePublicKey(pubKeyBytes, type: KeyPairType.x25519);
+    return Future.value(publicKey);
+  }
+
+  @override
+  Future<void> setHpkePubKey(String pubKeyBase64) {
+    return box.write(TOKEN_HPKE_PUBKEY_KEY, pubKeyBase64);
   }
 }

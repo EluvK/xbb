@@ -3,6 +3,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/syncstore.dart';
 
 class User {
   String id;
@@ -12,15 +13,15 @@ class User {
   User({required this.id, required this.name, required this.avatarUrl});
 }
 
-Future<void> reInitUserManagerController(SyncStoreClient client) async {
+Future<void> reInitUserManagerController() async {
   if (Get.isRegistered<UserManagerController>()) {
     await Get.delete<UserManagerController>(force: true);
   }
   await Get.putAsync<UserManagerController>(() async {
-    final ctrl = UserManagerController(client);
+    final ctrl = UserManagerController();
     await ctrl.ensureInitialization();
     return ctrl;
-  });
+  }, permanent: true);
 }
 
 class UserManagerController extends GetxController {
@@ -28,9 +29,9 @@ class UserManagerController extends GetxController {
   final RxList<UserProfile> userProfiles = <UserProfile>[].obs;
   final Rx<UserProfile?> selfProfile = Rx<UserProfile?>(null);
   final RxList<String> friends = <String>[].obs;
-  SyncStoreClient syncStoreClient;
+  final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
 
-  UserManagerController(this.syncStoreClient);
+  UserManagerController();
   final NewSettingController settingController = Get.find<NewSettingController>();
 
   @override
@@ -73,7 +74,10 @@ class UserManagerController extends GetxController {
   // UserProfile get selfProfile => userProfiles.firstWhere((p) => p.userId == settingController.userId);
 
   Future<void> updateSelfProfile(UpdateUserProfileRequest newProfile) async {
-    UserProfile updatedProfile = await syncStoreClient.updateProfile(settingController.userId, newProfile);
+    UserProfile updatedProfile = await syncStoreControl.syncStoreClient.updateProfile(
+      settingController.userId,
+      newProfile,
+    );
     selfProfile.value = updatedProfile;
     settingController.updateUserInfo(userName: updatedProfile.name, userPassword: newProfile.password);
     _saveToStorage();
@@ -85,9 +89,9 @@ class UserManagerController extends GetxController {
 
   Future<void> fetchAndUpdateUserProfiles() async {
     try {
-      UserProfile self = await syncStoreClient.getProfile(settingController.userId);
+      UserProfile self = await syncStoreControl.syncStoreClient.getProfile(settingController.userId);
       selfProfile.value = self;
-      List<UserProfile> profiles = await syncStoreClient.getFriends();
+      List<UserProfile> profiles = await syncStoreControl.syncStoreClient.getFriends();
       userProfiles.removeWhere((p) => p.userId == settingController.userId);
       for (var profile in profiles) {
         int index = userProfiles.indexWhere((p) => p.userId == profile.userId);

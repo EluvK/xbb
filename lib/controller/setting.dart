@@ -73,8 +73,7 @@ class SettingController extends GetxController {
     String themeText = box.read('theme') ?? 'system';
     print('read theme from box $themeText');
     try {
-      themeMode.value =
-          ThemeMode.values.firstWhere((e) => e.toString() == themeText);
+      themeMode.value = ThemeMode.values.firstWhere((e) => e.toString() == themeText);
     } catch (_) {
       print('theme not found, setting to system');
       themeMode.value = ThemeMode.system;
@@ -216,8 +215,7 @@ class SettingController extends GetxController {
     _getLatestVersionThen((version) {
       if (_shouldUpdate(version)) {
         if (!manually || !doUpdateIfCan) {
-          flushBar(FlushLevel.INFO, "有新版本啦", "最新版本: $version",
-              upperPosition: true);
+          flushBar(FlushLevel.INFO, "有新版本啦", "最新版本: $version", upperPosition: true);
           setCanUpdate(true);
           return;
         }
@@ -228,8 +226,7 @@ class SettingController extends GetxController {
           print(url);
           openUrl(url);
         } else if (GetPlatform.isAndroid) {
-          String url =
-              "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$version/xbb.apk";
+          String url = "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$version/xbb.apk";
           print(url);
           downloadApk(url);
         }
@@ -249,8 +246,7 @@ bool _shouldUpdate(String latestVersion) {
     return true;
   }
   for (int i = 0; i < latestVersion.split('.').length; i++) {
-    if (int.parse(latestVersion.split('.')[i]) >
-        int.parse(VERSION.split('.')[i])) {
+    if (int.parse(latestVersion.split('.')[i]) > int.parse(VERSION.split('.')[i])) {
       return true;
     }
   }
@@ -284,6 +280,11 @@ class NewSettingController extends GetxController {
     if (user != null) {
       userInfo.value = UserInfo.fromJson(user);
     }
+    // load syncstore setting from storage
+    Map<String, dynamic>? syncstore = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY);
+    if (syncstore != null) {
+      syncStoreSetting.value = SyncStoreSetting.fromJson(syncstore);
+    }
     super.onInit();
 
     _initialized = true;
@@ -295,6 +296,17 @@ class NewSettingController extends GetxController {
       await onInit();
     }
     return;
+  }
+
+  // syncstore settings
+  final syncStoreSetting = SyncStoreSetting.defaults().obs;
+  String get syncStoreUrl => syncStoreSetting.value.url;
+  bool get syncStoreHpkeEnabled => syncStoreSetting.value.hpkeEnabled;
+  void updateSyncStoreSetting({String? baseUrl, bool? enableHpke}) {
+    syncStoreSetting.update((setting) {
+      setting?.update(baseUrl: baseUrl, enableHpke: enableHpke);
+    });
+    box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, syncStoreSetting.value.toJson());
   }
 
   // app settings
@@ -320,6 +332,40 @@ class NewSettingController extends GetxController {
       info?.update(userId: userId, userName: userName, userPassword: userPassword);
     });
     box.write(STORAGE_SETTING_USER_INFO_KEY, userInfo.value.toJson());
+  }
+}
+
+// ignore: constant_identifier_names
+const String APP_API_URI = 'http://127.0.0.1:1011/api';
+
+class SyncStoreSetting {
+  String baseUrl;
+  bool enableHpke;
+
+  get url => baseUrl;
+  get hpkeEnabled => enableHpke;
+
+  SyncStoreSetting({required this.baseUrl, required this.enableHpke});
+
+  factory SyncStoreSetting.defaults() {
+    return SyncStoreSetting(baseUrl: APP_API_URI, enableHpke: false);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'base_url': baseUrl, 'enable_hpke': enableHpke};
+  }
+
+  factory SyncStoreSetting.fromJson(Map<String, dynamic> json) {
+    return SyncStoreSetting(baseUrl: json['base_url'] ?? APP_API_URI, enableHpke: json['enable_hpke'] ?? false);
+  }
+
+  void update({String? baseUrl, bool? enableHpke}) {
+    if (baseUrl != null) {
+      this.baseUrl = baseUrl;
+    }
+    if (enableHpke != null) {
+      this.enableHpke = enableHpke;
+    }
   }
 }
 

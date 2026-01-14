@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/user.dart';
+import 'package:xbb/utils/text_input.dart';
 import 'package:xbb/utils/utils.dart';
 
 class LoginPage extends StatelessWidget {
@@ -46,7 +47,7 @@ class _LoginBodyState extends State<LoginBody> {
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        width: 300,
+        width: 340,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -57,6 +58,29 @@ class _LoginBodyState extends State<LoginBody> {
             _passwordEditor(),
             const SizedBox(height: 40),
             _loginButton(),
+            const SizedBox(height: 30),
+            const Divider(),
+            TextInputWidget(
+              title: SyncStoreInputMetaEnum.address,
+              initialValue: settingController.syncStoreUrl,
+              onChanged: (value) {
+                settingController.updateSyncStoreSetting(baseUrl: value);
+                setState(() {
+                  reInitSyncStoreController();
+                });
+              },
+            ),
+            BoolSelectorInputWidget(
+              title: SyncStoreInputMetaEnum.enableTunnel,
+              initialValue: settingController.syncStoreHpkeEnabled,
+              onChanged: (value) {
+                print('value: $value');
+                settingController.updateSyncStoreSetting(enableHpke: value);
+                setState(() {
+                  reInitSyncStoreController();
+                });
+              },
+            ),
           ],
         ),
       ),

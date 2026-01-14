@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/utils/text_input.dart';
 import 'package:xbb/utils/utils.dart';
 
 class CommonSettings extends StatefulWidget {
@@ -29,6 +31,33 @@ class _CommonSettingsState extends State<CommonSettings> {
               child(themeModeButton()),
               child(languageButton()),
               child(fontScaleButton()),
+              const Divider(),
+              Text('syncstore_setting'.tr),
+              child(
+                TextInputWidget(
+                  title: SyncStoreInputMetaEnum.address,
+                  initialValue: settingController.syncStoreUrl,
+                  onChanged: (value) {
+                    settingController.updateSyncStoreSetting(baseUrl: value);
+                    setState(() {
+                      reInitSyncStoreController();
+                    });
+                  },
+                ),
+              ),
+              child(
+                BoolSelectorInputWidget(
+                  title: SyncStoreInputMetaEnum.enableTunnel,
+                  initialValue: settingController.syncStoreHpkeEnabled,
+                  onChanged: (value) {
+                    print('value: $value');
+                    settingController.updateSyncStoreSetting(enableHpke: value);
+                    setState(() {
+                      reInitSyncStoreController();
+                    });
+                  },
+                ),
+              ),
               const Divider(),
               child(versionInfo()),
             ],
@@ -69,7 +98,7 @@ class _CommonSettingsState extends State<CommonSettings> {
         });
       },
     );
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('theme_mode'.tr), btn]);
+    return UserDefinedInputWidget(title: AppSettingMetaEnum.themeMode, widget: btn);
   }
 
   Widget languageButton() {
@@ -86,7 +115,7 @@ class _CommonSettingsState extends State<CommonSettings> {
         DropdownMenuItem(value: Locale('zh'), child: Text('中文')),
       ],
     );
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('language'.tr), btn]);
+    return UserDefinedInputWidget(title: AppSettingMetaEnum.language, widget: btn);
   }
 
   Widget fontScaleButton() {
@@ -103,7 +132,7 @@ class _CommonSettingsState extends State<CommonSettings> {
       divisions: 10,
       label: "${((settingController.fontScale - 1) * 100).toStringAsFixed(0)}%",
     );
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('font_scale'.tr), btn]);
+    return UserDefinedInputWidget(title: AppSettingMetaEnum.fontScale, widget: btn);
   }
 
   // ---

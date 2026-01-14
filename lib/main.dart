@@ -8,8 +8,6 @@ import 'package:syncstore_client/syncstore_client.dart' show ApiError, ApiExcept
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
-import 'package:xbb/controller/user.dart';
-import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
@@ -27,14 +25,7 @@ void main() async {
   final newSettingController = Get.find<NewSettingController>();
   await newSettingController.ensureInitialization();
 
-  await Get.putAsync(() async {
-    final ssClient = SyncStoreControl(baseUrl: APP_API_URI, tokenStorage: GetStorageTokenStorage());
-    return ssClient;
-  });
-  final syncStoreControl = Get.find<SyncStoreControl>();
-  await syncStoreControl.ensureInitialization();
-  await reInitUserManagerController(syncStoreControl.syncStoreClient);
-  await reInitNotesSync(syncStoreControl.syncStoreClient);
+  await reInitSyncStoreController();
 
   WidgetsFlutterBinding.ensureInitialized();
   PlatformDispatcher.instance.onError = (error, stack) {
