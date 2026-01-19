@@ -24,6 +24,7 @@ import 'package:xbb/utils/code_wrapper.dart';
 import 'package:xbb/utils/double_click.dart';
 import 'package:xbb/utils/latex.dart';
 import 'package:xbb/utils/markdown.dart';
+import 'package:xbb/utils/text_similarity.dart';
 import 'package:xbb/utils/utils.dart';
 
 class NewMarkdownRenderer extends StatelessWidget {
@@ -52,13 +53,16 @@ class NewMarkdownRenderer extends StatelessWidget {
 
     List<_ParagraphData> paragraphList = [];
 
-    final WidgetVisitor visitor = WidgetVisitor(config: config, generators: [latexGenerator]);
-    final nodes = md.Document(
-      extensionSet: md.ExtensionSet.gitHubWeb,
+    final md.Document document = md.Document(
+      extensionSet: md.ExtensionSet.gitHubFlavored,
+      encodeHtml: false, // important.
       inlineSyntaxes: [LatexSyntax()],
-    ).parseLines(data.split(WidgetVisitor.defaultSplitRegExp));
-    final spans = visitor.visit(nodes);
-    // the length of nodes and spans should be equal
+    );
+    final regExp = WidgetVisitor.defaultSplitRegExp;
+    final List<String> lines = data.split(regExp);
+    final List<md.Node> nodes = document.parseLines(lines);
+    final WidgetVisitor visitor = WidgetVisitor(config: config, generators: [latexGenerator], splitRegExp: regExp);
+    final List<SpanNode> spans = visitor.visit(nodes);
     // print("nodes length: ${nodes.length}, spans length: ${spans.length}");
     spans.asMap().forEach((index, span) {
       final richText = Text.rich(span.build());
@@ -69,12 +73,23 @@ class NewMarkdownRenderer extends StatelessWidget {
         print("[skip] node tag: ${node is md.Element ? node.tag : 'Not Element'}, index: $index");
       }
       final rawText = node.textContent;
-      final id = rawText.hashCode.toString(); // todo better fingerprint
+      // final id = rawText.hashCode.toString(); // todo better fingerprint
+      final id = TextSimilarityHasher.computeSimHash(rawText).toString();
       print(
         "[build] paragraph id: $id, index: $index, canHaveComments: $canHaveComments}, rawText: ${rawText.replaceAll('\n', ' ').substring(0, rawText.length > 10 ? 10 : rawText.length)}",
       );
       paragraphList.add(_ParagraphData(id: id, widget: richText, rawText: rawText, canHaveComments: canHaveComments));
     });
+
+    // pre separate comments by paragraph id
+    Map<String, List<CommentDataItem>> commentsByParagraphId = {};
+    for (var comment in comments) {
+      final pid = comment.body.paragraphId ?? '';
+      if (!commentsByParagraphId.containsKey(pid)) {
+        commentsByParagraphId[pid] = [];
+      }
+      commentsByParagraphId[pid]!.add(comment);
+    }
 
     return SelectionArea(
       child: Column(
@@ -212,7 +227,10 @@ class _CommentInputTriggerState extends State<CommentInputTrigger> {
       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
       child: Row(
         children: [
-          Icon(Icons.add_comment_outlined, size: 14, color: Colors.grey.shade600),
+          Tooltip(
+            message: widget.paragraphId,
+            child: Icon(Icons.add_comment_outlined, size: 14, color: Colors.grey.shade600),
+          ),
           if (_isHovering || isMobile) ...[
             const SizedBox(width: 4),
             Text("评论", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
