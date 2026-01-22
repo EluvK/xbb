@@ -82,9 +82,9 @@ class NewMarkdownRenderer extends StatelessWidget {
     });
 
     // pre separate comments by paragraph id
-    Map<String, List<CommentDataItem>> commentsByParagraphId = {};
+    Map<String?, List<CommentDataItem>> commentsByParagraphId = {};
     for (var comment in comments) {
-      final pid = comment.body.paragraphId ?? '';
+      final pid = comment.body.paragraphId;
       if (!commentsByParagraphId.containsKey(pid)) {
         commentsByParagraphId[pid] = [];
       }
@@ -102,7 +102,7 @@ class NewMarkdownRenderer extends StatelessWidget {
             // then wrap it together
             final id = entry.value.canHaveComments ? entry.value.id : null;
             final List<CommentDataItem> subComments = entry.value.canHaveComments
-                ? comments.where((element) => element.body.paragraphId == entry.value.id).toList()
+                ? commentsByParagraphId[entry.value.id] ?? []
                 : [];
             return ParagraphWrapper(
               id: id,
@@ -112,6 +112,7 @@ class NewMarkdownRenderer extends StatelessWidget {
               enableCommentFeature: entry.value.canHaveComments,
             );
           }),
+          PostEndCommentWrapper(comments: commentsByParagraphId[null] ?? [], postId: postId),
         ],
       ),
     );
@@ -156,13 +157,13 @@ class ParagraphWrapper extends StatelessWidget {
             final mode = commentUIController.currentMode.value;
             final activeId = commentUIController.activeParagraphId.value;
             if (!enableCommentFeature) return const SizedBox.shrink();
-            final bool isAddingComment = (mode != CommentMode.none && activeId == (id ?? ''));
+            final bool isAddingComment = (mode != CommentMode.none && id != null && activeId == id);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (isAddingComment) SharedCommentInput(postId: postId, paragraphId: id),
                 if (comments.isNotEmpty) CommentTree(paragraphId: id, comments: comments),
-                if (!isAddingComment) CommentInputTrigger(paragraphId: id),
+                if (!isAddingComment && id != null) CommentInputTrigger(paragraphId: id),
               ],
             );
           }),
@@ -172,10 +173,42 @@ class ParagraphWrapper extends StatelessWidget {
   }
 }
 
+class PostEndCommentWrapper extends StatelessWidget {
+  final List<CommentDataItem> comments;
+  final String postId;
+  const PostEndCommentWrapper({super.key, required this.comments, required this.postId});
+
+  @override
+  Widget build(BuildContext context) {
+    final CommentUIController commentUIController = Get.find<CommentUIController>();
+    return Column(
+      children: [
+        Text("—— End of Post ——", style: TextStyle(color: Colors.grey.shade500)),
+        const Divider(),
+        Text("Comments", style: TextStyle(color: Colors.grey.shade500)),
+        Obx(() {
+          final mode = commentUIController.currentMode.value;
+          final activeId = commentUIController.activeParagraphId.value;
+          final bool isAddingComment = (mode != CommentMode.none && activeId == null);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isAddingComment) SharedCommentInput(postId: postId, paragraphId: null),
+              if (comments.isNotEmpty) CommentTree(paragraphId: null, comments: comments),
+              if (!isAddingComment) CommentInputTrigger(paragraphId: null, alwaysShow: true),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+}
+
 class CommentInputTrigger extends StatefulWidget {
   // final VoidCallback? onTap;
   final String? paragraphId;
-  const CommentInputTrigger({super.key, this.paragraphId});
+  final bool alwaysShow;
+  const CommentInputTrigger({super.key, this.paragraphId, this.alwaysShow = false});
 
   @override
   State<CommentInputTrigger> createState() => _CommentInputTriggerState();
@@ -186,33 +219,43 @@ class _CommentInputTriggerState extends State<CommentInputTrigger> {
 
   @override
   Widget build(BuildContext context) {
-    // todo detect platform?
-    bool isMobile =
-        Theme.of(context).platform == TargetPlatform.iOS || Theme.of(context).platform == TargetPlatform.android;
-    // isMobile = true;
+    bool isMob = isMobile(); // 假设你已有此判断函数
 
+    // 逻辑修正：
+    // 1. 如果是移动端，透明度常驻为 0.2 (或你希望的低透明度)
+    // 2. 如果是桌面端，根据悬停状态在 0.0 到 1.0 之间切换
+    double targetOpacity;
+    if (isMob) {
+      targetOpacity = 0.2;
+    } else {
+      targetOpacity = _isHovering ? 1.0 : 0.0;
+    }
+    if (widget.alwaysShow) {
+      targetOpacity = 1.0;
+    }
+
+    final commentUIController = Get.find<CommentUIController>();
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
-        onTap: widget.paragraphId != null
-            ? () {
-                final commentUIController = Get.find<CommentUIController>();
-                commentUIController.setController(mode: CommentMode.addComment, paragraphId: widget.paragraphId);
-              }
-            : null,
+        onTap: () => commentUIController.setController(
+          mode: CommentMode.addComment,
+          paragraphId: widget.paragraphId,
+          label: 'New comment...',
+        ),
         behavior: HitTestBehavior.opaque,
         // 使用 SizedBox 固定高度，防止出现和消失时撑开/压缩外部布局
         child: SizedBox(
           height: 32, // 固定高度，确保布局稳定
           child: AnimatedOpacity(
-            opacity: _isHovering ? 1.0 : (isMobile ? 0.2 : 0.0),
+            opacity: targetOpacity,
             duration: const Duration(milliseconds: 200),
             child: Row(
               children: [
                 Expanded(child: Container(height: 0.5, color: Colors.grey.shade300)),
                 const SizedBox(width: 8),
-                _buildTriggerButton(isMobile),
+                _buildTriggerButton(),
               ],
             ),
           ),
@@ -221,26 +264,41 @@ class _CommentInputTriggerState extends State<CommentInputTrigger> {
     );
   }
 
-  Widget _buildTriggerButton(bool isMobile) {
+  Widget _buildTriggerButton() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
-      child: Row(
-        children: [
-          Tooltip(
-            message: widget.paragraphId,
-            child: Icon(Icons.add_comment_outlined, size: 14, color: Colors.grey.shade600),
-          ),
-          if (_isHovering || isMobile) ...[
+      child: Tooltip(
+        message: widget.paragraphId != null
+            ? 'Add comment to paragraph ${widget.paragraphId}'
+            : 'Add comment to post end',
+        child: Row(
+          children: [
+            Icon(Icons.add_comment_outlined, size: 14, color: Colors.grey.shade600),
             const SizedBox(width: 4),
             Text("评论", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
+/// Comment mode enum
+/// none: no comment input active
+/// addComment: adding new comment to paragraph or entire post
+/// replyComment: replying to an existing comment
+/// editComment: editing an existing comment
+///
+/// Mapping of parameters:
+/// ? means optional (can be null)
+/// * means required (not null)
+/// - means not applicable (should be null)
+///
+/// |             | none | add | reply | edit |
+/// | paragraphId |  -   |  ?  |  ?    |  ?   |
+/// |  commentId  |  -   |  -  |  -    |  *   |
+/// |  parentId   |  -   |  -  |  *    |  ?   |
 enum CommentMode { none, addComment, replyComment, editComment }
 
 class CommentUIController extends GetxController {
@@ -248,21 +306,34 @@ class CommentUIController extends GetxController {
   final focusNode = FocusNode();
 
   var currentMode = CommentMode.none.obs;
-  var activeParagraphId = ''.obs;
-  var activeCommentId = ''.obs;
-  var activeCommentParentId = ''.obs; // when edit a comment, we may need it's parent id
+  // use the optional string to make code more clear
+  // null means no relevant paragraph/comment
+  var activeParagraphId = Rxn<String>();
+  var activeCommentId = Rxn<String>();
+  var activeCommentParentId = Rxn<String>(); // when edit a comment, we may need it's parent id
   var activeLabel = 'New comment...'.obs;
 
   String _userDraft = "";
 
   void setController({
     required CommentMode mode,
+    required String label,
     String? paragraphId,
     String? commentId,
     String? commentParentId,
     String? initialText,
-    String? label,
   }) {
+    // validate parameters
+    if (mode == CommentMode.addComment) {
+      assert(commentId == null);
+      assert(commentParentId == null);
+    } else if (mode == CommentMode.replyComment) {
+      assert(commentId == null);
+      assert(commentParentId != null);
+    } else if (mode == CommentMode.editComment) {
+      assert(commentId != null);
+    }
+
     print(
       "[CommentUIController] setController mode: $mode, paragraphId: $paragraphId, commentId: $commentId, initialText: ${initialText != null ? initialText.substring(0, initialText.length > 10 ? 10 : initialText.length) : 'null'}",
     );
@@ -270,10 +341,10 @@ class CommentUIController extends GetxController {
       _userDraft = editController.text;
     }
     currentMode.value = mode;
-    activeParagraphId.value = paragraphId ?? '';
-    activeCommentId.value = commentId ?? '';
-    activeCommentParentId.value = commentParentId ?? '';
-    activeLabel.value = label ?? 'New comment...';
+    activeParagraphId.value = paragraphId;
+    activeCommentId.value = commentId;
+    activeCommentParentId.value = commentParentId;
+    activeLabel.value = label;
 
     if (mode == CommentMode.editComment && initialText != null) {
       editController.text = initialText;
@@ -353,6 +424,8 @@ class SharedCommentInput extends StatelessWidget {
 
     switch (commentUIController.currentMode.value) {
       case CommentMode.addComment:
+        assert(commentUIController.activeCommentParentId.value == null);
+        print("postid: $postId");
         commentController.addData(
           Comment(
             content: text,
@@ -366,20 +439,18 @@ class SharedCommentInput extends StatelessWidget {
           Comment(
             content: text,
             postId: postId,
-            parentId: commentUIController.activeCommentId.value,
+            parentId: commentUIController.activeCommentParentId.value,
             paragraphId: commentUIController.activeParagraphId.value,
           ),
         );
       case CommentMode.editComment:
-        assert(commentUIController.activeCommentId.value.isNotEmpty);
+        assert(commentUIController.activeCommentId.value != null);
         commentController.updateData(
-          commentUIController.activeCommentId.value,
+          commentUIController.activeCommentId.value!,
           Comment(
             content: text,
             postId: postId,
-            parentId: commentUIController.activeCommentParentId.value.isNotEmpty
-                ? commentUIController.activeCommentParentId.value
-                : null,
+            parentId: commentUIController.activeCommentParentId.value,
             paragraphId: commentUIController.activeParagraphId.value,
           ),
         );
@@ -422,10 +493,8 @@ class CommentTree extends StatelessWidget {
     // 渲染根评论（parentId 为 null 或 'root'）
     final rootComments = commentMap['root'] ?? [];
 
-    return SingleChildScrollView(
-      child: Column(
-        children: rootComments.map((comment) => _buildCommentWidget(context, comment, commentMap, 0)).toList(),
-      ),
+    return Column(
+      children: rootComments.map((comment) => _buildCommentWidget(context, comment, commentMap, 0)).toList(),
     );
   }
 
@@ -517,7 +586,7 @@ class CommentTree extends StatelessWidget {
                 commentUIController.setController(
                   mode: CommentMode.replyComment,
                   paragraphId: paragraphId,
-                  commentId: comment.id,
+                  commentParentId: comment.id,
                   label:
                       'Reply to ${userProfile.name}\'s `${comment.body.content.length > 6 ? '${comment.body.content.substring(0, 6)}...' : comment.body.content}`',
                 );

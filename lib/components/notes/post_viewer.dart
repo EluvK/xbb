@@ -46,14 +46,7 @@ class _PostViewerState extends State<PostViewer> {
             // content:
             Expanded(
               child: ListView(
-                children: [
-                  NewMarkdownRenderer(postId: widget.postItem.id, data: post.content, comments: comments),
-                  // MarkdownRenderer(data: post.content),
-                  const Divider(),
-                  const Divider(),
-                  // todo future need to inline comments, together with content rendering
-                  // PostComment(repoId: post.repoId, postId: post.id),
-                ],
+                children: [NewMarkdownRenderer(postId: widget.postItem.id, data: post.content, comments: comments)],
               ),
             ),
           ],
