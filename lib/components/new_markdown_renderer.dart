@@ -73,7 +73,11 @@ class NewMarkdownRenderer extends StatelessWidget {
         print("[skip] node tag: ${node is md.Element ? node.tag : 'Not Element'}, index: $index");
       }
       final rawText = node.textContent;
-      // final id = rawText.hashCode.toString(); // todo better fingerprint
+
+      // TODO the figerprint id generation should be more robust
+      // for now, some rawText may generate same fingerprint, need to improve later
+      // by adding a extra unique paragraph index?
+      // will effect the matching logic later
       final id = TextSimilarityHasher.computeSimHash(rawText).toString();
       print(
         "[build] paragraph id: $id, index: $index, canHaveComments: $canHaveComments}, rawText: ${rawText.replaceAll('\n', ' ').substring(0, rawText.length > 10 ? 10 : rawText.length)}",
@@ -145,7 +149,6 @@ class ParagraphWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CommentUIController commentUIController = Get.find<CommentUIController>();
     return Padding(
       // some as linesMargin in `MarkdownGenerator` markdown_generator.dart
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -153,20 +156,26 @@ class ParagraphWrapper extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           content,
-          Obx(() {
-            final mode = commentUIController.currentMode.value;
-            final activeId = commentUIController.activeParagraphId.value;
-            if (!enableCommentFeature) return const SizedBox.shrink();
-            final bool isAddingComment = (mode != CommentMode.none && id != null && activeId == id);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isAddingComment) SharedCommentInput(postId: postId, paragraphId: id),
-                if (comments.isNotEmpty) CommentTree(paragraphId: id, comments: comments),
-                if (!isAddingComment && id != null) CommentInputTrigger(paragraphId: id),
-              ],
-            );
-          }),
+          if (id != null)
+            GetBuilder<CommentUIController>(
+              id: id,
+              builder: (controller) {
+                bool isAddingComment =
+                    (controller.currentMode.value != CommentMode.none &&
+                    id != null &&
+                    controller.activeParagraphId.value == id);
+                return Column(
+                  children: [
+                    isAddingComment
+                        ? SharedCommentInput(postId: postId, paragraphId: id)
+                        : CommentInputTrigger(paragraphId: id),
+                    if (comments.isNotEmpty) CommentTree(paragraphId: id, comments: comments),
+                  ],
+                );
+              },
+            )
+          else
+            const SizedBox.shrink(),
         ],
       ),
     );
@@ -180,25 +189,26 @@ class PostEndCommentWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CommentUIController commentUIController = Get.find<CommentUIController>();
     return Column(
       children: [
         Text("—— End of Post ——", style: TextStyle(color: Colors.grey.shade500)),
         const Divider(),
         Text("Comments", style: TextStyle(color: Colors.grey.shade500)),
-        Obx(() {
-          final mode = commentUIController.currentMode.value;
-          final activeId = commentUIController.activeParagraphId.value;
-          final bool isAddingComment = (mode != CommentMode.none && activeId == null);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isAddingComment) SharedCommentInput(postId: postId, paragraphId: null),
-              if (comments.isNotEmpty) CommentTree(paragraphId: null, comments: comments),
-              if (!isAddingComment) CommentInputTrigger(paragraphId: null, alwaysShow: true),
-            ],
-          );
-        }),
+        GetBuilder<CommentUIController>(
+          id: 'post_end',
+          builder: (controller) {
+            bool isAddingComment =
+                (controller.currentMode.value != CommentMode.none && controller.activeParagraphId.value == null);
+            return Column(
+              children: [
+                isAddingComment
+                    ? SharedCommentInput(postId: postId, paragraphId: null)
+                    : const CommentInputTrigger(paragraphId: null, alwaysShow: true),
+                if (comments.isNotEmpty) CommentTree(paragraphId: null, comments: comments),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -341,6 +351,7 @@ class CommentUIController extends GetxController {
       _userDraft = editController.text;
     }
     currentMode.value = mode;
+    final String? oldActiveParagraphId = activeParagraphId.value;
     activeParagraphId.value = paragraphId;
     activeCommentId.value = commentId;
     activeCommentParentId.value = commentParentId;
@@ -351,15 +362,19 @@ class CommentUIController extends GetxController {
     } else if (mode == CommentMode.addComment || mode == CommentMode.replyComment) {
       editController.text = _userDraft;
     }
+    // tell GetX to update UI
+    update([oldActiveParagraphId ?? 'post_end', paragraphId ?? 'post_end']);
 
     Future.delayed(const Duration(milliseconds: 100), () => focusNode.requestFocus());
   }
 
   void cancel() {
+    final String oldActiveParagraphId = activeParagraphId.value ?? 'post_end';
     currentMode.value = CommentMode.none;
     activeParagraphId.value = '';
     activeCommentId.value = '';
     activeCommentParentId.value = '';
+    update([oldActiveParagraphId]);
   }
 
   @override
@@ -388,18 +403,16 @@ class SharedCommentInput extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Obx(() {
-            return TextField(
-              controller: commentUIController.editController,
-              focusNode: commentUIController.focusNode,
-              maxLines: null,
-              decoration: InputDecoration(
-                labelText: commentUIController.activeLabel.value,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-            );
-          }),
+          TextField(
+            controller: commentUIController.editController,
+            focusNode: commentUIController.focusNode,
+            maxLines: null,
+            decoration: InputDecoration(
+              labelText: commentUIController.activeLabel.value,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
