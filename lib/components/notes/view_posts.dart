@@ -104,6 +104,7 @@ class __ViewPostsState extends State<_ViewPosts> {
                 IconButton(
                   onPressed: _handleToggle,
                   icon: Icon(_isAllExpanded() ? Icons.expand_less : Icons.expand_more),
+                  tooltip: _isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
                 ),
               ],
             ),

@@ -94,7 +94,6 @@ class _HomePage extends GetResponsiveView {
                 const _GlobalColorController(),
                 // const Divider(),
                 TabBarController(tabs: tabs, tabController: tabController),
-                const Divider(),
                 Expanded(child: _LeftButton(index: currentTab)),
               ],
             ),

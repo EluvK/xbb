@@ -192,7 +192,11 @@ class __RepoListsState extends State<_RepoLists> {
               icon: const Icon(Icons.refresh),
             ),
             const Spacer(),
-            IconButton(onPressed: _handleToggle, icon: Icon(_isAllExpanded() ? Icons.expand_less : Icons.expand_more)),
+            IconButton(
+              onPressed: _handleToggle,
+              icon: Icon(_isAllExpanded() ? Icons.expand_less : Icons.expand_more),
+              tooltip: _isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
+            ),
           ],
         ),
       ],
