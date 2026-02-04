@@ -132,12 +132,19 @@ class RepoRepository {
   }
 }
 
+class _RepoDataItemFilterSubscription {
+  final RxList<RepoDataItem> filteredList;
+  final Worker worker;
+  _RepoDataItemFilterSubscription(this.filteredList, this.worker);
+}
+
 class RepoController extends GetxController {
   final SyncStoreClient client;
   final _RepoSyncEngine _syncEngine;
   RepoController(this.client) : _syncEngine = _RepoSyncEngine(client);
 
   final RxList<RepoDataItem> _items = <RepoDataItem>[].obs;
+  final Map<String, _RepoDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentRepoId = Rx<String?>(null);
 
   @override
@@ -153,6 +160,36 @@ class RepoController extends GetxController {
       await onInit();
     }
     return;
+  }
+
+  @override
+  void onClose() {
+    for (var sub in _dynamicSubscription.values) {
+      sub.worker.dispose();
+    }
+    _dynamicSubscription.clear();
+    super.onClose();
+  }
+
+  RxList<RepoDataItem> registerFilterSubscription({
+    required String filterKey,
+    List<DataItemFilter> filters = const [],
+  }) {
+    if (_dynamicSubscription.containsKey(filterKey)) {
+      return _dynamicSubscription[filterKey]!.filteredList;
+    }
+    final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    final worker = debounce(_items, (List<RepoDataItem> value) {
+      final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
+      newList.assignAll(newFiltered);
+    }, time: const Duration(milliseconds: 100));
+    _dynamicSubscription[filterKey] = _RepoDataItemFilterSubscription(newList, worker);
+    return newList;
+  }
+
+  void unregisterFilterSubscription(String filterKey) {
+    final sub = _dynamicSubscription.remove(filterKey);
+    sub?.worker.dispose();
   }
 
   Future<void> rebuildLocal() async {
@@ -529,12 +566,19 @@ class PostRepository {
   }
 }
 
+class _PostDataItemFilterSubscription {
+  final RxList<PostDataItem> filteredList;
+  final Worker worker;
+  _PostDataItemFilterSubscription(this.filteredList, this.worker);
+}
+
 class PostController extends GetxController {
   final SyncStoreClient client;
   final _PostSyncEngine _syncEngine;
   PostController(this.client) : _syncEngine = _PostSyncEngine(client);
 
   final RxList<PostDataItem> _items = <PostDataItem>[].obs;
+  final Map<String, _PostDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentPostId = Rx<String?>(null);
 
   @override
@@ -550,6 +594,36 @@ class PostController extends GetxController {
       await onInit();
     }
     return;
+  }
+
+  @override
+  void onClose() {
+    for (var sub in _dynamicSubscription.values) {
+      sub.worker.dispose();
+    }
+    _dynamicSubscription.clear();
+    super.onClose();
+  }
+
+  RxList<PostDataItem> registerFilterSubscription({
+    required String filterKey,
+    List<DataItemFilter> filters = const [],
+  }) {
+    if (_dynamicSubscription.containsKey(filterKey)) {
+      return _dynamicSubscription[filterKey]!.filteredList;
+    }
+    final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    final worker = debounce(_items, (List<PostDataItem> value) {
+      final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
+      newList.assignAll(newFiltered);
+    }, time: const Duration(milliseconds: 100));
+    _dynamicSubscription[filterKey] = _PostDataItemFilterSubscription(newList, worker);
+    return newList;
+  }
+
+  void unregisterFilterSubscription(String filterKey) {
+    final sub = _dynamicSubscription.remove(filterKey);
+    sub?.worker.dispose();
   }
 
   Future<void> rebuildLocal() async {
@@ -880,12 +954,19 @@ class CommentRepository {
   }
 }
 
+class _CommentDataItemFilterSubscription {
+  final RxList<CommentDataItem> filteredList;
+  final Worker worker;
+  _CommentDataItemFilterSubscription(this.filteredList, this.worker);
+}
+
 class CommentController extends GetxController {
   final SyncStoreClient client;
   final _CommentSyncEngine _syncEngine;
   CommentController(this.client) : _syncEngine = _CommentSyncEngine(client);
 
   final RxList<CommentDataItem> _items = <CommentDataItem>[].obs;
+  final Map<String, _CommentDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentCommentId = Rx<String?>(null);
 
   @override
@@ -901,6 +982,36 @@ class CommentController extends GetxController {
       await onInit();
     }
     return;
+  }
+
+  @override
+  void onClose() {
+    for (var sub in _dynamicSubscription.values) {
+      sub.worker.dispose();
+    }
+    _dynamicSubscription.clear();
+    super.onClose();
+  }
+
+  RxList<CommentDataItem> registerFilterSubscription({
+    required String filterKey,
+    List<DataItemFilter> filters = const [],
+  }) {
+    if (_dynamicSubscription.containsKey(filterKey)) {
+      return _dynamicSubscription[filterKey]!.filteredList;
+    }
+    final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    final worker = debounce(_items, (List<CommentDataItem> value) {
+      final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
+      newList.assignAll(newFiltered);
+    }, time: const Duration(milliseconds: 100));
+    _dynamicSubscription[filterKey] = _CommentDataItemFilterSubscription(newList, worker);
+    return newList;
+  }
+
+  void unregisterFilterSubscription(String filterKey) {
+    final sub = _dynamicSubscription.remove(filterKey);
+    sub?.worker.dispose();
   }
 
   Future<void> rebuildLocal() async {
