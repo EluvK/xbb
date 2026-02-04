@@ -648,6 +648,7 @@ class CommentTree extends StatelessWidget {
                 commentUIController.setController(
                   mode: CommentMode.editComment,
                   paragraphId: paragraphId,
+                  commentParentId: comment.body.parentId,
                   commentId: comment.id,
                   initialText: comment.body.content,
                   label: 'Edit comment...',
