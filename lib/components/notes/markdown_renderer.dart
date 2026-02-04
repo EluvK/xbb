@@ -1,16 +1,3 @@
-// todo this file contents current markdown post rendering and comment rendering.
-// while comment is only used in notes module, so we should move it inside accordingly.
-// but markdown rendering is more general, so we keep it here.
-// thus we may need to split this file into two parts later, but how to organize the comment parameter passing?
-
-// contains classes
-// - NewMarkdownRenderer
-// - ParagraphWrapper
-//  - CommentInputTrigger
-//  - SharedCommentInput
-//  - CommentTree
-// - CommentUIController
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:markdown_widget/markdown_widget.dart';
@@ -23,34 +10,53 @@ import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/code_wrapper.dart';
 import 'package:xbb/utils/double_click.dart';
 import 'package:xbb/utils/latex.dart';
-import 'package:xbb/utils/markdown.dart';
 import 'package:xbb/utils/text_similarity.dart';
 import 'package:xbb/utils/utils.dart';
 
-class NewMarkdownRenderer extends StatelessWidget {
-  final String postId;
+class SimpleMarkdownRenderer extends StatelessWidget {
   final String data;
-  final List<CommentDataItem> comments;
 
-  const NewMarkdownRenderer({super.key, required this.postId, required this.data, this.comments = const []});
+  const SimpleMarkdownRenderer({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    // todo? should move outside?
-    final _ = Get.put(CommentUIController());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final config = isDark ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
+    codeWrapper(child, text, language) => CodeWrapperWidget(child, text, language);
+    return MarkdownBlock(
+      data: data,
+      generator: MarkdownGenerator(inlineSyntaxList: [LatexSyntax()], generators: [latexGenerator]),
+      config: config.copy(
+        configs: [
+          isDark ? PreConfig.darkConfig.copy(wrapper: codeWrapper) : const PreConfig().copy(wrapper: codeWrapper),
+        ],
+      ),
+    );
+  }
+}
 
+class MarkdownWithComments extends StatelessWidget {
+  final String data;
+  final String postId;
+
+  const MarkdownWithComments({super.key, required this.data, required this.postId});
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     codeWrapper(child, text, language) => CodeWrapperWidget(child, text, language);
-
-    // noted: hand write `MarkdownGenerator` parsing to get nodes, thus we can map comments to paragraphs
-    // final generator = MarkdownGenerator(inlineSyntaxList: [LatexSyntax()], generators: [latexGenerator]);
-    // final List<Widget> contents = generator.buildWidgets(data, config: config);
     final config = (isDark ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig).copy(
       configs: [
         isDark ? PreConfig.darkConfig.copy(wrapper: codeWrapper) : const PreConfig().copy(wrapper: codeWrapper),
       ],
     );
 
+    // must init CommentUIController here
+    final _ = Get.put(CommentUIController(postId: postId));
+    return _buildMarkdownWithComments(context, config);
+  }
+
+  Widget _buildMarkdownWithComments(BuildContext context, MarkdownConfig config) {
     List<_ParagraphData> paragraphList = [];
 
     final md.Document document = md.Document(
@@ -85,38 +91,19 @@ class NewMarkdownRenderer extends StatelessWidget {
       paragraphList.add(_ParagraphData(id: id, widget: richText, rawText: rawText, canHaveComments: canHaveComments));
     });
 
-    // pre separate comments by paragraph id
-    Map<String?, List<CommentDataItem>> commentsByParagraphId = {};
-    for (var comment in comments) {
-      final pid = comment.body.paragraphId;
-      if (!commentsByParagraphId.containsKey(pid)) {
-        commentsByParagraphId[pid] = [];
-      }
-      commentsByParagraphId[pid]!.add(comment);
-    }
-
     return SelectionArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          ...paragraphList.asMap().entries.map((entry) {
-            // print("[data] ${entry.value.id} => ${entry.value.rawText}");
-            // todo find the corresponding comment for this entry
-            // then wrap it together
-            final id = entry.value.canHaveComments ? entry.value.id : null;
-            final List<CommentDataItem> subComments = entry.value.canHaveComments
-                ? commentsByParagraphId[entry.value.id] ?? []
-                : [];
-            return ParagraphWrapper(
-              id: id,
+          ...paragraphList.map(
+            (p) => ParagraphWrapper(
+              id: p.canHaveComments ? p.id : null,
               postId: postId,
-              content: entry.value.widget,
-              comments: subComments,
-              enableCommentFeature: entry.value.canHaveComments,
-            );
-          }),
-          PostEndCommentWrapper(comments: commentsByParagraphId[null] ?? [], postId: postId),
+              content: p.widget,
+              enableCommentFeature: p.canHaveComments,
+            ),
+          ),
+          PostEndCommentWrapper(postId: postId),
         ],
       ),
     );
@@ -136,14 +123,12 @@ class ParagraphWrapper extends StatelessWidget {
   final String? id; // we need to identify paragraph for comment mapping
   final String postId;
   final Widget content;
-  final List<CommentDataItem> comments;
   final bool enableCommentFeature;
   const ParagraphWrapper({
     super.key,
     required this.id,
     required this.postId,
     required this.content,
-    required this.comments,
     required this.enableCommentFeature,
   });
 
@@ -156,14 +141,13 @@ class ParagraphWrapper extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           content,
-          if (id != null)
+          if (enableCommentFeature && id != null)
             GetBuilder<CommentUIController>(
               id: id,
               builder: (controller) {
+                final comments = controller.commentsMap[id] ?? [];
                 bool isAddingComment =
-                    (controller.currentMode.value != CommentMode.none &&
-                    id != null &&
-                    controller.activeParagraphId.value == id);
+                    (controller.currentMode.value != CommentMode.none && controller.activeParagraphId.value == id);
                 return Column(
                   children: [
                     isAddingComment
@@ -183,9 +167,8 @@ class ParagraphWrapper extends StatelessWidget {
 }
 
 class PostEndCommentWrapper extends StatelessWidget {
-  final List<CommentDataItem> comments;
   final String postId;
-  const PostEndCommentWrapper({super.key, required this.comments, required this.postId});
+  const PostEndCommentWrapper({super.key, required this.postId});
 
   @override
   Widget build(BuildContext context) {
@@ -197,6 +180,7 @@ class PostEndCommentWrapper extends StatelessWidget {
         GetBuilder<CommentUIController>(
           id: 'post_end',
           builder: (controller) {
+            final comments = controller.commentsMap[null] ?? [];
             bool isAddingComment =
                 (controller.currentMode.value != CommentMode.none && controller.activeParagraphId.value == null);
             return Column(
@@ -314,6 +298,8 @@ enum CommentMode { none, addComment, replyComment, editComment }
 class CommentUIController extends GetxController {
   final editController = TextEditingController();
   final focusNode = FocusNode();
+  final String postId;
+  CommentUIController({required this.postId});
 
   var currentMode = CommentMode.none.obs;
   // use the optional string to make code more clear
@@ -324,6 +310,65 @@ class CommentUIController extends GetxController {
   var activeLabel = 'New comment...'.obs;
 
   String _userDraft = "";
+
+  var commentsMap = <String?, List<CommentDataItem>>{};
+
+  @override
+  void onInit() {
+    super.onInit();
+
+    final CommentController commentController = Get.find<CommentController>();
+
+    // init commentsMap by registering filtered stream
+    final registeredComments = commentController.registerFilterSubscription(
+      filterKey: 'post_$postId',
+      filters: [ParentIdFilter(postId)],
+    );
+    print('debug: setInitialComments, comments length: ${registeredComments.length}');
+    var map = <String?, List<CommentDataItem>>{};
+    for (var c in registeredComments) {
+      final pid = c.body.paragraphId;
+      map.putIfAbsent(pid, () => []).add(c);
+    }
+    commentsMap = map;
+
+    debounce(registeredComments, (updatedComments) {
+      print("debug: CommentUIController detected comment changes, try sync all");
+      var newMap = <String?, List<CommentDataItem>>{};
+      for (var c in updatedComments) {
+        final pid = c.body.paragraphId;
+        newMap.putIfAbsent(pid, () => []).add(c);
+      }
+
+      final allPossibleKeys = <String?>{...commentsMap.keys, ...newMap.keys};
+
+      for (var key in allPossibleKeys) {
+        final newList = newMap[key] ?? [];
+        final oldList = commentsMap[key] ?? [];
+        if (!_areCommentListsEqual(newList, oldList)) {
+          commentsMap[key] = newList;
+          print("精准刷新段落: ${key ?? 'post_end'}");
+          update([key ?? 'post_end']);
+        }
+      }
+    }, time: const Duration(milliseconds: 100));
+  }
+
+  bool _areCommentListsEqual(List<CommentDataItem> list1, List<CommentDataItem> list2) {
+    if (list1.length != list2.length) {
+      return false;
+    }
+    list1.sort((a, b) => a.id.compareTo(b.id));
+    list2.sort((a, b) => a.id.compareTo(b.id));
+    for (int i = 0; i < list1.length; i++) {
+      if (list1[i].id != list2[i].id ||
+          list1[i].updatedAt != list2[i].updatedAt ||
+          list1[i].body.content != list2[i].body.content) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   void setController({
     required CommentMode mode,
@@ -435,41 +480,31 @@ class SharedCommentInput extends StatelessWidget {
     final CommentController commentController = Get.find<CommentController>();
     final CommentUIController commentUIController = Get.find<CommentUIController>();
 
+    String? parentId;
+    String? paragraphId;
+    bool isUpdate = false;
     switch (commentUIController.currentMode.value) {
       case CommentMode.addComment:
         assert(commentUIController.activeCommentParentId.value == null);
         print("postid: $postId");
-        commentController.addData(
-          Comment(
-            content: text,
-            postId: postId,
-            parentId: null,
-            paragraphId: commentUIController.activeParagraphId.value,
-          ),
-        );
+        parentId = null;
+        paragraphId = commentUIController.activeParagraphId.value;
       case CommentMode.replyComment:
-        commentController.addData(
-          Comment(
-            content: text,
-            postId: postId,
-            parentId: commentUIController.activeCommentParentId.value,
-            paragraphId: commentUIController.activeParagraphId.value,
-          ),
-        );
+        parentId = commentUIController.activeCommentParentId.value;
+        paragraphId = commentUIController.activeParagraphId.value;
       case CommentMode.editComment:
         assert(commentUIController.activeCommentId.value != null);
-        commentController.updateData(
-          commentUIController.activeCommentId.value!,
-          Comment(
-            content: text,
-            postId: postId,
-            parentId: commentUIController.activeCommentParentId.value,
-            paragraphId: commentUIController.activeParagraphId.value,
-          ),
-        );
+        parentId = commentUIController.activeCommentParentId.value;
+        paragraphId = commentUIController.activeParagraphId.value;
+        isUpdate = true;
       case CommentMode.none:
         assert(false); // should not happen
-      // do nothing
+    }
+    final comment = Comment(content: text, postId: postId, parentId: parentId, paragraphId: paragraphId);
+    if (isUpdate) {
+      commentController.updateData(commentUIController.activeCommentId.value!, comment);
+    } else {
+      commentController.addData(comment);
     }
   }
 }
@@ -553,7 +588,7 @@ class CommentTree extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch, // 横向拉伸
             children: [
               commentAuthor(context, comment),
-              MarkdownRenderer(data: comment.body.content),
+              SimpleMarkdownRenderer(data: comment.body.content),
             ],
           ),
         ),
