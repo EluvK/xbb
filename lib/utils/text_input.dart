@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 abstract interface class TitleInterface {
-  String get _title;
-  IconData get _icon;
-  Color get _color;
+  String get gTitle;
+  IconData get gIcon;
+  Color get gColor;
 }
 
 enum SyncStoreInputMetaEnum implements TitleInterface {
@@ -11,7 +11,7 @@ enum SyncStoreInputMetaEnum implements TitleInterface {
   enableTunnel;
 
   @override
-  Color get _color {
+  Color get gColor {
     switch (this) {
       case SyncStoreInputMetaEnum.address:
         return Colors.orange;
@@ -21,7 +21,7 @@ enum SyncStoreInputMetaEnum implements TitleInterface {
   }
 
   @override
-  IconData get _icon {
+  IconData get gIcon {
     switch (this) {
       case SyncStoreInputMetaEnum.address:
         return Icons.cloud;
@@ -31,7 +31,7 @@ enum SyncStoreInputMetaEnum implements TitleInterface {
   }
 
   @override
-  String get _title {
+  String get gTitle {
     switch (this) {
       case SyncStoreInputMetaEnum.address:
         return '服务器地址';
@@ -47,7 +47,7 @@ enum AppSettingMetaEnum implements TitleInterface {
   fontScale;
 
   @override
-  Color get _color {
+  Color get gColor {
     switch (this) {
       case AppSettingMetaEnum.themeMode:
         return Colors.purple;
@@ -59,7 +59,7 @@ enum AppSettingMetaEnum implements TitleInterface {
   }
 
   @override
-  IconData get _icon {
+  IconData get gIcon {
     switch (this) {
       case AppSettingMetaEnum.themeMode:
         return Icons.brightness_6;
@@ -71,7 +71,7 @@ enum AppSettingMetaEnum implements TitleInterface {
   }
 
   @override
-  String get _title {
+  String get gTitle {
     switch (this) {
       case AppSettingMetaEnum.themeMode:
         return '主题模式';
@@ -83,12 +83,47 @@ enum AppSettingMetaEnum implements TitleInterface {
   }
 }
 
+enum AppFeatureMetaEnum implements TitleInterface {
+  enableNotes,
+  settings;
+
+  @override
+  Color get gColor {
+    switch (this) {
+      case AppFeatureMetaEnum.enableNotes:
+        return Colors.green;
+      case AppFeatureMetaEnum.settings:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  IconData get gIcon {
+    switch (this) {
+      case AppFeatureMetaEnum.enableNotes:
+        return Icons.library_books_outlined;
+      case AppFeatureMetaEnum.settings:
+        return Icons.settings_rounded;
+    }
+  }
+
+  @override
+  String get gTitle {
+    switch (this) {
+      case AppFeatureMetaEnum.enableNotes:
+        return '启用笔记功能';
+      case AppFeatureMetaEnum.settings:
+        return '设置';
+    }
+  }
+}
+
 enum InputTitleEnum implements TitleInterface {
   title,
   description;
 
   @override
-  Color get _color {
+  Color get gColor {
     switch (this) {
       case InputTitleEnum.title:
         return Colors.blue;
@@ -98,7 +133,7 @@ enum InputTitleEnum implements TitleInterface {
   }
 
   @override
-  IconData get _icon {
+  IconData get gIcon {
     switch (this) {
       case InputTitleEnum.title:
         return Icons.title;
@@ -108,7 +143,7 @@ enum InputTitleEnum implements TitleInterface {
   }
 
   @override
-  String get _title {
+  String get gTitle {
     switch (this) {
       case InputTitleEnum.title:
         return '名称';
@@ -151,18 +186,18 @@ class TextInputWidget extends StatelessWidget {
           child: Row(
             children: [
               Material(
-                color: title._color,
+                color: title.gColor,
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
                   height: 32,
                   width: 32,
-                  child: Center(child: Icon(title._icon, color: Colors.white)),
+                  child: Center(child: Icon(title.gIcon, color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 // flex: 1,
-                child: Text(title._title, style: Theme.of(context).textTheme.bodyMedium),
+                child: Text(title.gTitle, style: Theme.of(context).textTheme.bodyMedium),
               ),
               Flexible(
                 flex: 2,
@@ -206,17 +241,17 @@ class UserDefinedInputWidget extends StatelessWidget {
           child: Row(
             children: [
               Material(
-                color: title._color,
+                color: title.gColor,
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
                   height: 32,
                   width: 32,
-                  child: Center(child: Icon(title._icon, color: Colors.white)),
+                  child: Center(child: Icon(title.gIcon, color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(title._title, style: Theme.of(context).textTheme.bodyMedium),
+                child: Text(title.gTitle, style: Theme.of(context).textTheme.bodyMedium),
                 // flex: 1,
               ),
               Flexible(
@@ -247,16 +282,16 @@ class BoolSelectorInputWidget extends StatelessWidget {
           child: Row(
             children: [
               Material(
-                color: title._color,
+                color: title.gColor,
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
                   height: 32,
                   width: 32,
-                  child: Center(child: Icon(title._icon, color: Colors.white)),
+                  child: Center(child: Icon(title.gIcon, color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(title._title, style: Theme.of(context).textTheme.bodyMedium)),
+              Expanded(child: Text(title.gTitle, style: Theme.of(context).textTheme.bodyMedium)),
               Flexible(
                 flex: 2,
                 child: Align(

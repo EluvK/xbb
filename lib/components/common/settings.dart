@@ -59,6 +59,18 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               ),
               const Divider(),
+              Text('app_feature_management'.tr),
+              child(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableNotes,
+                  initialValue: settingController.notesEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableNotes: value);
+                    setState(() {});
+                  },
+                ),
+              ),
+              const Divider(),
               child(versionInfo()),
             ],
           ),

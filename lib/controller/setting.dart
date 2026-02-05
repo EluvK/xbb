@@ -6,7 +6,6 @@ import 'package:get_storage/get_storage.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/constant.dart';
-import 'package:xbb/utils/predefined.dart';
 import 'package:xbb/utils/utils.dart';
 
 bool initFirstTime() {
@@ -275,6 +274,16 @@ class NewSettingController extends GetxController {
     if (app != null) {
       appSetting.value = AppSetting.fromJson(app);
     }
+    // load app feature management from storage
+    Map<String, dynamic>? feature = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY);
+    if (feature != null) {
+      appFeaturesManagement.value = AppFeaturesManagement.fromJson(feature);
+    }
+    // load user interface history cache from storage
+    Map<String, dynamic>? uiCache = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INTERFACE_HISTORY_CACHE_KEY);
+    if (uiCache != null) {
+      _userInterfaceHistoryCache.value = UserInterfaceHistoryCache.fromJson(uiCache);
+    }
     // load user info from storage
     Map<String, dynamic>? user = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INFO_KEY);
     if (user != null) {
@@ -320,6 +329,26 @@ class NewSettingController extends GetxController {
       setting?.update(themeMode: themeMode, fontScale: fontScale, locale: locale, colorTag: colorTag);
     });
     box.write(STORAGE_SETTING_APP_SETTINGS_KEY, appSetting.value.toJson());
+  }
+
+  // app feature management
+  final appFeaturesManagement = AppFeaturesManagement.defaults().obs;
+  bool get notesEnabled => appFeaturesManagement.value.notesEnabled;
+  void updateAppFeaturesManagement({bool? enableNotes}) {
+    appFeaturesManagement.update((feature) {
+      feature?.update(enableNotes: enableNotes);
+    });
+    box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, appFeaturesManagement.value.toJson());
+  }
+
+  // user interface history cache
+  final _userInterfaceHistoryCache = UserInterfaceHistoryCache.defaults().obs;
+  String? get notesLastOpenedRepoId => _userInterfaceHistoryCache.value.notesLastOpenedRepoId;
+  void updateUserInterfaceHistoryCache({String? notesLastOpenedRepoId}) {
+    _userInterfaceHistoryCache.update((cache) {
+      cache?.update(notesLastOpenedRepoId: notesLastOpenedRepoId);
+    });
+    box.write(STORAGE_SETTING_USER_INTERFACE_HISTORY_CACHE_KEY, _userInterfaceHistoryCache.value.toJson());
   }
 
   // user info
@@ -431,6 +460,48 @@ class AppSetting {
     }
     if (colorTag != null) {
       _colorTag = colorTag;
+    }
+  }
+}
+
+class AppFeaturesManagement {
+  bool enableNotes;
+
+  get notesEnabled => enableNotes;
+  AppFeaturesManagement({required this.enableNotes});
+  factory AppFeaturesManagement.defaults() {
+    return AppFeaturesManagement(enableNotes: true);
+  }
+  Map<String, dynamic> toJson() {
+    return {'enable_notes': enableNotes};
+  }
+
+  factory AppFeaturesManagement.fromJson(Map<String, dynamic> json) {
+    return AppFeaturesManagement(enableNotes: json['enable_notes'] ?? true);
+  }
+  void update({bool? enableNotes}) {
+    if (enableNotes != null) {
+      this.enableNotes = enableNotes;
+    }
+  }
+}
+
+class UserInterfaceHistoryCache {
+  String? notesLastOpenedRepoId;
+  UserInterfaceHistoryCache({this.notesLastOpenedRepoId});
+  factory UserInterfaceHistoryCache.defaults() {
+    return UserInterfaceHistoryCache(notesLastOpenedRepoId: null);
+  }
+  Map<String, dynamic> toJson() {
+    return {'notes_last_opened_repo_id': notesLastOpenedRepoId};
+  }
+
+  factory UserInterfaceHistoryCache.fromJson(Map<String, dynamic> json) {
+    return UserInterfaceHistoryCache(notesLastOpenedRepoId: json['notes_last_opened_repo_id']);
+  }
+  void update({String? notesLastOpenedRepoId}) {
+    if (notesLastOpenedRepoId != null) {
+      this.notesLastOpenedRepoId = notesLastOpenedRepoId;
     }
   }
 }

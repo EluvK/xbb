@@ -8,13 +8,7 @@ import 'package:xbb/components/notes/view_posts.dart';
 import 'package:xbb/components/notes/view_repos.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/list_tile_card.dart' show ColorPickerButtons;
-
-final List<Tab> homeTabs = <Tab>[
-  const Tab(text: 'Notes', icon: Icon(Icons.library_books_rounded)),
-  const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
-  const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
-  const Tab(text: 'Settings', icon: Icon(Icons.settings_rounded)),
-];
+import 'package:xbb/utils/text_input.dart';
 
 enum HomeTabIndex { notes, todo, todo2, settings }
 
@@ -25,83 +19,114 @@ class HomePageWrapper extends StatefulWidget {
   State<HomePageWrapper> createState() => _HomePageWrapperState();
 }
 
-class _HomePageWrapperState extends State<HomePageWrapper> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  HomeTabIndex _currentTab = HomeTabIndex.notes;
+class _HomePageWrapperState extends State<HomePageWrapper> {
+  final NewSettingController settingController = Get.find<NewSettingController>();
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: homeTabs.length, vsync: this);
-    _tabController.addListener(_handleTabSelection);
-  }
+  HomeTabIndex _lastSelectedTab = HomeTabIndex.notes;
 
-  void _handleTabSelection() {
-    if (!_tabController.indexIsChanging && mounted) {
-      setState(() {
-        _currentTab = HomeTabIndex.values[_tabController.index];
-      });
-    }
-  }
+  final Map<HomeTabIndex, Tab> _allTabs = {
+    HomeTabIndex.notes: Tab(text: 'Notes', icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
+    HomeTabIndex.todo: const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
+    HomeTabIndex.todo2: const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
+    HomeTabIndex.settings: Tab(text: 'Settings', icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
+  };
 
-  @override
-  void dispose() {
-    _tabController.removeListener(_handleTabSelection);
-    _tabController.dispose();
-    super.dispose();
+  List<HomeTabIndex> get _activeIndices {
+    List<HomeTabIndex> indices = [];
+    if (settingController.notesEnabled) indices.add(HomeTabIndex.notes);
+    // indices.add(HomeTabIndex.todo);
+    indices.add(HomeTabIndex.settings);
+    return indices;
   }
 
   @override
   Widget build(BuildContext context) {
-    return _HomePage(tabController: _tabController, currentTab: _currentTab, tabs: homeTabs);
+    return Obx(() {
+      final activeIndices = _activeIndices;
+      final activeTabs = activeIndices.map((e) => _allTabs[e]!).toList();
+
+      int newInitialIndex = activeIndices.indexOf(_lastSelectedTab);
+      if (newInitialIndex == -1) newInitialIndex = 0;
+
+      return DefaultTabController(
+        key: ValueKey(activeIndices.length),
+        length: activeTabs.length,
+        initialIndex: newInitialIndex,
+        child: Builder(
+          builder: (context) {
+            final tabController = DefaultTabController.of(context);
+            tabController.addListener(() {
+              if (!tabController.indexIsChanging) {
+                _lastSelectedTab = activeIndices[tabController.index];
+              }
+            });
+            return _HomePage(tabController: tabController, tabs: activeTabs, activeIndices: activeIndices);
+          },
+        ),
+      );
+    });
   }
 }
 
 class _HomePage extends GetResponsiveView {
-  _HomePage({required this.tabController, required this.currentTab, required this.tabs});
+  _HomePage({required this.tabController, required this.tabs, required this.activeIndices});
+
   final TabController tabController;
-  final HomeTabIndex currentTab;
   final List<Tab> tabs;
+  final List<HomeTabIndex> activeIndices;
 
   @override
   Widget? phone() {
-    return Scaffold(
-      drawer: Drawer(
-        width: Get.width * 0.85,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TabBarController(tabs: tabs, tabController: tabController),
-            const Divider(),
-            Expanded(child: _LeftButton(index: currentTab)),
-          ],
-        ),
-      ),
-      appBar: AppBar(title: _AppBar(index: currentTab)),
-      body: _RightMain(index: currentTab),
+    return ListenableBuilder(
+      listenable: tabController,
+      builder: (context, child) {
+        final currentTab = activeIndices[tabController.index];
+
+        return Scaffold(
+          drawer: Drawer(
+            width: Get.width * 0.85,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TabBarController(tabs: tabs, tabController: tabController),
+                const Divider(),
+                Expanded(child: _LeftButton(index: currentTab)),
+              ],
+            ),
+          ),
+          appBar: AppBar(title: _AppBar(index: currentTab)),
+          body: _RightMain(index: currentTab),
+        );
+      },
     );
   }
 
   @override
   Widget? desktop() {
-    return Scaffold(
-      body: Row(
-        children: [
-          SizedBox(
-            width: min(max(Get.width * 0.3, 280), 400),
-            child: Column(
-              children: [
-                const _GlobalColorController(),
-                // const Divider(),
-                TabBarController(tabs: tabs, tabController: tabController),
-                Expanded(child: _LeftButton(index: currentTab)),
-              ],
-            ),
+    return ListenableBuilder(
+      listenable: tabController,
+      builder: (context, child) {
+        final currentTab = activeIndices[tabController.index];
+
+        return Scaffold(
+          body: Row(
+            children: [
+              SizedBox(
+                width: min(max(Get.width * 0.3, 280), 400),
+                child: Column(
+                  children: [
+                    const _GlobalColorController(),
+                    TabBarController(tabs: tabs, tabController: tabController),
+                    Expanded(child: _LeftButton(index: currentTab)),
+                  ],
+                ),
+              ),
+              const VerticalDivider(),
+              Flexible(child: _RightMain(index: currentTab)),
+            ],
           ),
-          const VerticalDivider(),
-          Flexible(child: _RightMain(index: currentTab)),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -116,7 +141,6 @@ class TabBarController extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-      // child: TabBar.secondary(tabs: tabs, controller: tabController),
       child: TabBar(
         tabs: tabs,
         controller: tabController,
@@ -146,7 +170,7 @@ class _GlobalColorControllerState extends State<_GlobalColorController> {
         alignment: Alignment.centerLeft,
         child: ColorPickerButtons(
           selectedTag: settingController.colorTag,
-          onChanged: (newTag) {
+          onSelected: (newTag) {
             setState(() {
               settingController.updateAppSetting(colorTag: newTag);
             });
@@ -163,12 +187,6 @@ class _LeftButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //   return Container(
-    //     decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-    //     child: _parts(),
-    //   );
-    // }
-    // Widget _parts() {
     switch (index) {
       case HomeTabIndex.notes:
         return const ViewRepos();
@@ -187,12 +205,6 @@ class _RightMain extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //   return Container(
-    //     decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-    //     child: _parts(),
-    //   );
-    // }
-    // Widget _parts() {
     switch (index) {
       case HomeTabIndex.notes:
         return const ViewPosts();
@@ -215,7 +227,7 @@ class _AppBar extends StatelessWidget {
       case HomeTabIndex.notes:
         return const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          // todo many work here.
+          // todo should add switchable repos here
           children: [Text('TODO s'), _GlobalColorController()],
         );
       case HomeTabIndex.todo:

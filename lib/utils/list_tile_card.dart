@@ -175,7 +175,7 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
         buttons.add(
           InlineColorPickerButton(
             value: widget.dataItem.colorTag,
-            onChanged: (tag) {
+            onSelected: (tag) {
               setState(() {
                 widget.dataItem.colorTag = tag;
               });
@@ -221,9 +221,9 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
 
 class InlineColorPickerButton extends StatefulWidget {
   final ColorTag value;
-  final ValueChanged<ColorTag> onChanged;
+  final ValueChanged<ColorTag> onSelected;
 
-  const InlineColorPickerButton({super.key, required this.value, required this.onChanged});
+  const InlineColorPickerButton({super.key, required this.value, required this.onSelected});
 
   @override
   State<InlineColorPickerButton> createState() => _InlineColorPickerButtonState();
@@ -239,8 +239,8 @@ class _InlineColorPickerButtonState extends State<InlineColorPickerButton> {
       child: expanded
           ? ColorPickerButtons(
               selectedTag: widget.value,
-              onChanged: (tag) {
-                widget.onChanged(tag);
+              onSelected: (tag) {
+                widget.onSelected(tag);
                 // should wait for inner animation to finish
                 Future.delayed(const Duration(milliseconds: 200), () {
                   if (mounted) {
@@ -261,25 +261,25 @@ class ColorPickerButtons extends StatelessWidget {
   final double iconSize;
   final double spacing;
   final ColorTag selectedTag;
-  final ValueChanged<ColorTag> onChanged;
+  final ValueChanged<ColorTag> onSelected;
 
   const ColorPickerButtons({
     super.key,
     this.iconSize = 16.0,
     this.spacing = 2.0,
     required this.selectedTag,
-    required this.onChanged,
+    required this.onSelected,
   });
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
       spacing: spacing,
-      children: ColorTag.values.map((tag) {
+      children: ColorTag.values.where((tag) => tag != ColorTag.none).map((tag) {
         final selected = selectedTag == tag;
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => onChanged(tag),
+          onTap: () => {selected ? onSelected(ColorTag.none) : onSelected(tag)},
           child: Padding(
             // add padding for easier tap area
             padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),

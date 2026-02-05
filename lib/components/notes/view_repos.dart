@@ -151,6 +151,7 @@ class __RepoListsState extends State<_RepoLists> {
       onTap: () {
         setState(() {
           repoController.onSelectRepo(repo.id);
+          settingController.updateUserInterfaceHistoryCache(notesLastOpenedRepoId: repo.id);
         });
         // Close the drawer on phone when tab changes
         if (MediaQuery.of(context).size.width < 600) {

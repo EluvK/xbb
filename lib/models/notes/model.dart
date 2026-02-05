@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/notes/db.dart';
 
 part 'model.g.dart';
@@ -15,6 +16,12 @@ Future<void> reInitNotesSync(SyncStoreClient client) async {
   await reInit<RepoController>(() => RepoController(client), (c) => c.ensureInitialization());
   await reInit<PostController>(() => PostController(client), (c) => c.ensureInitialization());
   await reInit<CommentController>(() => CommentController(client), (c) => c.ensureInitialization());
+
+  final RepoController repoController = Get.find<RepoController>();
+  final NewSettingController settingController = Get.find<NewSettingController>();
+  if (settingController.notesLastOpenedRepoId != null) {
+    repoController.onSelectRepo(settingController.notesLastOpenedRepoId!);
+  }
 }
 
 Future<void> reInit<T extends GetxController>(
