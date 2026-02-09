@@ -81,26 +81,33 @@ class _SelfProfileState extends State<_SelfProfile> {
   }
 
   Widget _selfAvatar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Obx(() {
       Widget selfAvatar = buildUserAvatar(context, userManagerController.selfProfile.value?.avatarUrl, size: 36.0);
       return InkWell(
         onTap: () {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return _EditProfileDialog(
-                currentProfile: userManagerController.selfProfile.value!,
-                onSave: (newProfile) {
-                  setState(() {
-                    userManagerController.updateSelfProfile(newProfile);
-                  });
-                },
-              );
-            },
-          );
+          Get.toNamed('/profile');
         },
         customBorder: const CircleBorder(),
-        child: selfAvatar,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            selfAvatar,
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colorScheme.primaryContainer, width: 2),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.edit_rounded, size: 14, color: colorScheme.onPrimary),
+              ),
+            ),
+          ],
+        ),
       );
     });
   }
@@ -112,153 +119,6 @@ class _SelfProfileState extends State<_SelfProfile> {
       },
       label: Text('change_user'.tr),
       icon: const Icon(Icons.login_rounded),
-    );
-  }
-}
-
-class _EditProfileDialog extends StatefulWidget {
-  final UserProfile currentProfile;
-  final Function(UpdateUserProfileRequest) onSave;
-  const _EditProfileDialog({required this.currentProfile, required this.onSave});
-
-  @override
-  State<_EditProfileDialog> createState() => _EditProfileDialogState();
-}
-
-class _EditProfileDialogState extends State<_EditProfileDialog> {
-  TextEditingController avatarUrlController = TextEditingController();
-  TextEditingController nameController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-
-  String? _selectAssetAvatarName;
-
-  bool _passwordVisible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.currentProfile.avatarUrl != null && widget.currentProfile.avatarUrl!.startsWith('assets://')) {
-      _selectAssetAvatarName = widget.currentProfile.avatarUrl;
-    } else if (widget.currentProfile.avatarUrl != null && widget.currentProfile.avatarUrl!.startsWith('http')) {
-      _selectAssetAvatarName = null;
-      avatarUrlController.text = widget.currentProfile.avatarUrl!;
-    }
-    nameController = TextEditingController(text: widget.currentProfile.name);
-    passwordController = TextEditingController();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.9,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Text('edit_profile'.tr, style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
-              _avatarMatrix(),
-              TextField(
-                controller: avatarUrlController,
-                decoration: InputDecoration(labelText: 'input_optional_avatar_url'.tr),
-                minLines: 1,
-                maxLines: 3,
-                onChanged: (value) {
-                  if (value.isNotEmpty && value.startsWith('http')) {
-                    setState(() {
-                      _selectAssetAvatarName = null;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 20.0),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(labelText: 'name'.tr),
-              ),
-              TextField(
-                controller: passwordController,
-                decoration: InputDecoration(
-                  labelText: 'password'.tr,
-                  suffixIcon: IconButton(
-                    icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () {
-                      setState(() {
-                        _passwordVisible = !_passwordVisible;
-                      });
-                    },
-                  ),
-                ),
-                obscureText: !_passwordVisible,
-              ),
-              const SizedBox(height: 20.0),
-              _buildSaveButton(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _avatarMatrix() {
-    print('building avatar matrix');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          double totalWidth = constraints.maxWidth;
-          double cardWidth = 48.0;
-          int maxCardCountPerRow = min((totalWidth / cardWidth).toInt(), 12);
-          double spacing = (totalWidth - (maxCardCountPerRow * cardWidth)) / (maxCardCountPerRow + 1);
-          return Wrap(
-            spacing: spacing,
-            runSpacing: 8.0,
-            alignment: WrapAlignment.start,
-            children: predefinedAvatar.map((avatar) {
-              return InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () {
-                  setState(() {
-                    _selectAssetAvatarName = avatar.name;
-                    avatarUrlController.clear();
-                  });
-                },
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: buildUserAvatar(
-                        context,
-                        avatar.url,
-                        size: 24.0,
-                        selected: _selectAssetAvatarName == avatar.name,
-                      ),
-                    ),
-                    // Text(avatar.name),
-                  ],
-                ),
-              );
-            }).toList(),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSaveButton() {
-    return ElevatedButton(
-      onPressed: () {
-        final newProfile = UpdateUserProfileRequest(
-          name: nameController.text,
-          password: passwordController.text.isNotEmpty ? passwordController.text : null,
-          avatarUrl: _selectAssetAvatarName ?? (avatarUrlController.text.isNotEmpty ? avatarUrlController.text : null),
-        );
-        widget.onSave(newProfile);
-        Navigator.pop(context);
-      },
-      child: Text('save'.tr),
     );
   }
 }

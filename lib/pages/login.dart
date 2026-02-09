@@ -14,7 +14,7 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('XBB')),
-      body: const LoginBody(),
+      body: const Center(child: SizedBox(width: 340, child: LoginBody())),
     );
   }
 }
@@ -45,45 +45,40 @@ class _LoginBodyState extends State<LoginBody> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 340,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // add a title, and maybe server status here.
-            const Text('Connecting...', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            _nameEditor(),
-            const SizedBox(height: 20),
-            _passwordEditor(),
-            const SizedBox(height: 40),
-            _loginButton(),
-            const SizedBox(height: 30),
-            const Divider(),
-            TextInputWidget(
-              title: SyncStoreInputMetaEnum.address,
-              initialValue: settingController.syncStoreUrl,
-              onChanged: (value) {
-                settingController.updateSyncStoreSetting(baseUrl: value);
-                setState(() {
-                  reInitSyncStoreController();
-                });
-              },
-            ),
-            BoolSelectorInputWidget(
-              title: SyncStoreInputMetaEnum.enableTunnel,
-              initialValue: settingController.syncStoreHpkeEnabled,
-              onChanged: (value) {
-                print('value: $value');
-                settingController.updateSyncStoreSetting(enableHpke: value);
-                setState(() {
-                  reInitSyncStoreController();
-                });
-              },
-            ),
-          ],
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // add a title, and maybe server status here.
+        const Text('Connecting...', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        _nameEditor(),
+        const SizedBox(height: 20),
+        _passwordEditor(),
+        const SizedBox(height: 40),
+        _loginButton(),
+        const SizedBox(height: 30),
+        const Divider(),
+        TextInputWidget(
+          title: SyncStoreInputMetaEnum.address,
+          initialValue: settingController.syncStoreUrl,
+          onChanged: (value) {
+            settingController.updateSyncStoreSetting(baseUrl: value);
+            setState(() {
+              reInitSyncStoreController();
+            });
+          },
         ),
-      ),
+        BoolSelectorInputWidget(
+          title: SyncStoreInputMetaEnum.enableTunnel,
+          initialValue: settingController.syncStoreHpkeEnabled,
+          onChanged: (value) {
+            print('value: $value');
+            settingController.updateSyncStoreSetting(enableHpke: value);
+            setState(() {
+              reInitSyncStoreController();
+            });
+          },
+        ),
+      ],
     );
   }
 

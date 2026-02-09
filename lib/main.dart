@@ -12,6 +12,7 @@ import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
 import 'package:xbb/pages/notes/view_post.dart';
+import 'package:xbb/pages/profile.dart';
 import 'package:xbb/utils/translation.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -87,6 +88,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/', page: () => const HomePageWrapper()),
         // GetPage(name: '/login', page: () => const RegisterPage()),
         GetPage(name: '/login', page: () => const LoginPage()),
+        GetPage(name: '/profile', page: () => const ProfilePage()),
         GetPage(name: '/notes/view-post', page: () => const ViewPostPage()),
         GetPage(name: '/notes/edit-post', page: () => const EditPostPage()),
         // GetPage(name: '/view-post', page: () => const ViewPostPage()),
