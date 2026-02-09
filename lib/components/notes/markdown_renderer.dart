@@ -50,9 +50,6 @@ class MarkdownWithComments extends StatelessWidget {
         isDark ? PreConfig.darkConfig.copy(wrapper: codeWrapper) : const PreConfig().copy(wrapper: codeWrapper),
       ],
     );
-
-    // must init CommentUIController here
-    final _ = Get.put(CommentUIController(postId: postId));
     return _buildMarkdownWithComments(context, config);
   }
 
@@ -80,29 +77,24 @@ class MarkdownWithComments extends StatelessWidget {
       }
       final rawText = node.textContent;
 
-      // TODO the figerprint id generation should be more robust
-      // for now, some rawText may generate same fingerprint, need to improve later
-      // by adding a extra unique paragraph index?
-      // will effect the matching logic later
-      final id = TextSimilarityHasher.computeSimHash(rawText).toString();
+      final hash = TextSimilarityHasher.computeSimHash(rawText);
       print(
-        "[build] paragraph id: $id, index: $index, canHaveComments: $canHaveComments}, rawText: ${rawText.replaceAll('\n', ' ').substring(0, rawText.length > 10 ? 10 : rawText.length)}",
+        "[build] paragraph hash: $hash, index: $index, canHaveComments: $canHaveComments}, rawText: ${rawText.replaceAll('\n', ' ').substring(0, rawText.length > 10 ? 10 : rawText.length)}",
       );
-      paragraphList.add(_ParagraphData(id: id, widget: richText, rawText: rawText, canHaveComments: canHaveComments));
+      paragraphList.add(
+        _ParagraphData(index: index, hash: hash, widget: richText, rawText: rawText, canHaveComments: canHaveComments),
+      );
     });
 
+    // must init CommentUIController before building UI
+    final _ = Get.put(
+      CommentUIController(postId: postId, paragraphHashes: paragraphList.map((e) => e.hash.toString()).toList()),
+    );
     return SelectionArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ...paragraphList.map(
-            (p) => ParagraphWrapper(
-              id: p.canHaveComments ? p.id : null,
-              postId: postId,
-              content: p.widget,
-              enableCommentFeature: p.canHaveComments,
-            ),
-          ),
+          ...paragraphList.map((p) => _ParagraphWrapper(p, postId)),
           PostEndCommentWrapper(postId: postId),
         ],
       ),
@@ -111,54 +103,81 @@ class MarkdownWithComments extends StatelessWidget {
 }
 
 class _ParagraphData {
-  final String id; // fingerprint id
+  final int index;
+  final int hash;
   final Widget widget;
   final String rawText;
   final bool canHaveComments;
 
-  _ParagraphData({required this.id, required this.widget, required this.rawText, required this.canHaveComments});
+  _ParagraphData({
+    required this.index,
+    required this.hash,
+    required this.widget,
+    required this.rawText,
+    required this.canHaveComments,
+  });
 }
 
-class ParagraphWrapper extends StatelessWidget {
-  final String? id; // we need to identify paragraph for comment mapping
+class _ParagraphWrapper extends StatelessWidget {
+  final _ParagraphData data;
   final String postId;
-  final Widget content;
-  final bool enableCommentFeature;
-  const ParagraphWrapper({
-    super.key,
-    required this.id,
-    required this.postId,
-    required this.content,
-    required this.enableCommentFeature,
-  });
+  const _ParagraphWrapper(this.data, this.postId);
 
   @override
   Widget build(BuildContext context) {
+    final pid = paragraphId(data.index, data.hash.toString());
     return Padding(
       // some as linesMargin in `MarkdownGenerator` markdown_generator.dart
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          content,
-          if (enableCommentFeature && id != null)
+          data.widget,
+          if (data.canHaveComments) ...[
             GetBuilder<CommentUIController>(
-              id: id,
+              id: "unmatched_${data.hash}",
               builder: (controller) {
-                final comments = controller.commentsMap[id] ?? [];
-                bool isAddingComment =
-                    (controller.currentMode.value != CommentMode.none && controller.activeParagraphId.value == id);
+                final unmatchedEntry = controller.commentsUnmatched[data.hash.toString()];
+                if (unmatchedEntry == null) {
+                  return const SizedBox.shrink();
+                }
+                final comments = unmatchedEntry.$1;
+                final originalHash = unmatchedEntry.$2;
+                final distance = unmatchedEntry.$3;
+                print(
+                  "[render unmatched] paragraph id: $pid, originalHash: $originalHash, distance: $distance, comments length: ${comments.length}",
+                );
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    isAddingComment
-                        ? SharedCommentInput(postId: postId, paragraphId: id)
-                        : CommentInputTrigger(paragraphId: id),
-                    if (comments.isNotEmpty) CommentTree(paragraphId: id, comments: comments),
+                    // todo make it a button to confirm adding comment to this paragraph
+                    Text(
+                      "Unmatched Comments (original paragraph hash: $originalHash, distance: $distance)",
+                      style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold),
+                    ),
+                    CommentTree(paragraphId: pid, comments: comments),
+                    const Divider(),
                   ],
                 );
               },
-            )
-          else
+            ),
+            GetBuilder<CommentUIController>(
+              id: pid,
+              builder: (controller) {
+                final comments = controller.commentsMap[pid] ?? [];
+                bool isAddingComment =
+                    (controller.currentMode.value != CommentMode.none && controller.activeParagraphId.value == pid);
+                return Column(
+                  children: [
+                    isAddingComment
+                        ? SharedCommentInput(postId: postId, paragraphId: pid)
+                        : CommentInputTriggerInline(paragraphId: pid),
+                    if (comments.isNotEmpty) CommentTree(paragraphId: pid, comments: comments),
+                  ],
+                );
+              },
+            ),
+          ] else
             const SizedBox.shrink(),
         ],
       ),
@@ -175,8 +194,30 @@ class PostEndCommentWrapper extends StatelessWidget {
     return Column(
       children: [
         Text("—— End of Post ——", style: TextStyle(color: Colors.grey.shade500)),
-        const Divider(),
-        Text("Comments", style: TextStyle(color: Colors.grey.shade500)),
+        // const Divider(),
+        const SizedBox(height: 10),
+        // Text("Comments", style: TextStyle(color: Colors.grey.shade500)),
+        GetBuilder<CommentUIController>(
+          id: 'no_close_match',
+          builder: (controller) {
+            final comments = controller.commentsUnmatched[null]?.$1 ?? [];
+            if (comments.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // todo make it a button to move comment to a matched paragraph or left at post end
+                Text(
+                  "Unmatched Comments (no close match found)",
+                  style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold),
+                ),
+                CommentTree(paragraphId: null, comments: comments),
+                const Divider(),
+              ],
+            );
+          },
+        ),
         GetBuilder<CommentUIController>(
           id: 'post_end',
           builder: (controller) {
@@ -187,7 +228,8 @@ class PostEndCommentWrapper extends StatelessWidget {
               children: [
                 isAddingComment
                     ? SharedCommentInput(postId: postId, paragraphId: null)
-                    : const CommentInputTrigger(paragraphId: null, alwaysShow: true),
+                    : const CommentInputTriggerAtEnd(),
+                const SizedBox(height: 10),
                 if (comments.isNotEmpty) CommentTree(paragraphId: null, comments: comments),
               ],
             );
@@ -198,17 +240,43 @@ class PostEndCommentWrapper extends StatelessWidget {
   }
 }
 
-class CommentInputTrigger extends StatefulWidget {
-  // final VoidCallback? onTap;
-  final String? paragraphId;
-  final bool alwaysShow;
-  const CommentInputTrigger({super.key, this.paragraphId, this.alwaysShow = false});
+class CommentInputTriggerAtEnd extends StatefulWidget {
+  const CommentInputTriggerAtEnd({super.key});
 
   @override
-  State<CommentInputTrigger> createState() => _CommentInputTriggerState();
+  State<CommentInputTriggerAtEnd> createState() => _CommentInputTriggerAtEndState();
 }
 
-class _CommentInputTriggerState extends State<CommentInputTrigger> {
+class _CommentInputTriggerAtEndState extends State<CommentInputTriggerAtEnd> {
+  @override
+  Widget build(BuildContext context) {
+    final commentUIController = Get.find<CommentUIController>();
+    return ElevatedButton(
+      onPressed: () {
+        commentUIController.setController(mode: CommentMode.addComment, paragraphId: null, label: 'New comment...');
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.add_comment_outlined, size: 14, color: Colors.grey.shade600),
+          const SizedBox(width: 4),
+          Text("写条新评论~", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+        ],
+      ),
+    );
+  }
+}
+
+class CommentInputTriggerInline extends StatefulWidget {
+  // final VoidCallback? onTap;
+  final String paragraphId;
+  const CommentInputTriggerInline({super.key, required this.paragraphId});
+
+  @override
+  State<CommentInputTriggerInline> createState() => _CommentInputTriggerInlineState();
+}
+
+class _CommentInputTriggerInlineState extends State<CommentInputTriggerInline> {
   bool _isHovering = false;
 
   @override
@@ -223,9 +291,6 @@ class _CommentInputTriggerState extends State<CommentInputTrigger> {
       targetOpacity = 0.2;
     } else {
       targetOpacity = _isHovering ? 1.0 : 0.0;
-    }
-    if (widget.alwaysShow) {
-      targetOpacity = 1.0;
     }
 
     final commentUIController = Get.find<CommentUIController>();
@@ -263,9 +328,7 @@ class _CommentInputTriggerState extends State<CommentInputTrigger> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
       child: Tooltip(
-        message: widget.paragraphId != null
-            ? 'Add comment to paragraph ${widget.paragraphId}'
-            : 'Add comment to post end',
+        message: 'Add comment to paragraph ${widget.paragraphId}',
         child: Row(
           children: [
             Icon(Icons.add_comment_outlined, size: 14, color: Colors.grey.shade600),
@@ -277,6 +340,8 @@ class _CommentInputTriggerState extends State<CommentInputTrigger> {
     );
   }
 }
+
+String paragraphId(int index, String hash) => "${index}_$hash";
 
 /// Comment mode enum
 /// none: no comment input active
@@ -299,7 +364,8 @@ class CommentUIController extends GetxController {
   final editController = TextEditingController();
   final focusNode = FocusNode();
   final String postId;
-  CommentUIController({required this.postId});
+  final List<String> paragraphHashes;
+  CommentUIController({required this.postId, required this.paragraphHashes});
 
   var currentMode = CommentMode.none.obs;
   // use the optional string to make code more clear
@@ -312,6 +378,9 @@ class CommentUIController extends GetxController {
   String _userDraft = "";
 
   var commentsMap = <String?, List<CommentDataItem>>{};
+  // Key: 当前文章中存在的 paragraphHash (closestHash)
+  // Value: List 包含 (评论列表, 原始评论中的错误cHash, 距离)
+  var commentsUnmatched = <String?, (List<CommentDataItem> comments, String originalHash, int distance)>{};
 
   @override
   void onInit() {
@@ -325,33 +394,85 @@ class CommentUIController extends GetxController {
       filters: [ParentIdFilter(postId)],
     );
     print('debug: setInitialComments, comments length: ${registeredComments.length}');
-    var map = <String?, List<CommentDataItem>>{};
-    for (var c in registeredComments) {
-      final pid = c.body.paragraphId;
-      map.putIfAbsent(pid, () => []).add(c);
-    }
+
+    var (map, unmatchedComments) = _updateComments(registeredComments);
     commentsMap = map;
+    commentsUnmatched = unmatchedComments;
 
     debounce(registeredComments, (updatedComments) {
       print("debug: CommentUIController detected comment changes, try sync all");
-      var newMap = <String?, List<CommentDataItem>>{};
-      for (var c in updatedComments) {
-        final pid = c.body.paragraphId;
-        newMap.putIfAbsent(pid, () => []).add(c);
-      }
+      var (newMap, unmatchedComments) = _updateComments(updatedComments);
 
       final allPossibleKeys = <String?>{...commentsMap.keys, ...newMap.keys};
-
+      // final allPossibleKeys = <String?>{...commentsMap.keys, ...newMap.keys};
       for (var key in allPossibleKeys) {
-        final newList = newMap[key] ?? [];
-        final oldList = commentsMap[key] ?? [];
-        if (!_areCommentListsEqual(newList, oldList)) {
-          commentsMap[key] = newList;
+        if (!_areCommentListsEqual(newMap[key] ?? [], commentsMap[key] ?? [])) {
+          commentsMap[key] = newMap[key] ?? [];
           print("精准刷新段落: ${key ?? 'post_end'}");
           update([key ?? 'post_end']);
         }
       }
+
+      // 对于所有未匹配评论当前的吸附段落，直接整体刷新，因为数量通常不多
+      final allUnmatchedKeys = <String?>{...commentsUnmatched.keys, ...unmatchedComments.keys}.toSet();
+      commentsUnmatched = unmatchedComments;
+      for (var key in allUnmatchedKeys) {
+        if (key != null) {
+          update(["unmatched_$key"]);
+        } else {
+          update(['no_close_match']);
+        }
+      }
     }, time: const Duration(milliseconds: 100));
+  }
+
+  _updateComments(List<CommentDataItem> allComments) {
+    var newMap = <String?, List<CommentDataItem>>{};
+    var newUnmatched = <String?, (List<CommentDataItem>, String, int)>{};
+
+    for (var c in allComments) {
+      final cIndex = c.body.paragraphIndex;
+      final cHash = c.body.paragraphHash;
+
+      if (cIndex != null && cHash != null) {
+        if (paragraphHashes.contains(cHash)) {
+          // here can't use cIndex to build pid directly,
+          // because when new index is added, the old comments may need to remap to new pid
+          // so we need to find this current index from paragraphHashes, rebuild pid
+          final actualPid = paragraphId(paragraphHashes.indexOf(cHash), cHash);
+          newMap.putIfAbsent(actualPid, () => []).add(c);
+        } else {
+          String closestHash = '';
+          int closestDistance = 65;
+
+          // 寻找最接近的当前段落
+          for (var ph in paragraphHashes) {
+            final distance = TextSimilarityHasher.getHammingDistance(int.parse(cHash), int.parse(ph));
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestHash = ph;
+            }
+          }
+
+          if (closestHash.isNotEmpty && closestDistance <= 10) {
+            if (!newUnmatched.containsKey(closestHash)) {
+              newUnmatched[closestHash] = ([c], cHash, closestDistance);
+            } else {
+              final existing = newUnmatched[closestHash]!;
+              newUnmatched[closestHash] = ([...existing.$1, c], existing.$2, existing.$3);
+            }
+          } else {
+            // no close match found, put all to post end
+            newUnmatched[null] = ([...(newUnmatched[null]?.$1 ?? []), c], cHash, closestDistance);
+          }
+        }
+      } else {
+        newMap.putIfAbsent(null, () => []).add(c);
+      }
+    }
+    print("newMap keys: ${newMap.keys.toList()}");
+    print("newUnmatched keys: ${newUnmatched.keys.toList()}");
+    return (newMap, newUnmatched);
   }
 
   bool _areCommentListsEqual(List<CommentDataItem> list1, List<CommentDataItem> list2) {
@@ -481,26 +602,35 @@ class SharedCommentInput extends StatelessWidget {
     final CommentUIController commentUIController = Get.find<CommentUIController>();
 
     String? parentId;
-    String? paragraphId;
+    int? paragraphIndex;
+    String? paragraphHash;
     bool isUpdate = false;
     switch (commentUIController.currentMode.value) {
       case CommentMode.addComment:
         assert(commentUIController.activeCommentParentId.value == null);
         print("postid: $postId");
         parentId = null;
-        paragraphId = commentUIController.activeParagraphId.value;
       case CommentMode.replyComment:
         parentId = commentUIController.activeCommentParentId.value;
-        paragraphId = commentUIController.activeParagraphId.value;
       case CommentMode.editComment:
         assert(commentUIController.activeCommentId.value != null);
         parentId = commentUIController.activeCommentParentId.value;
-        paragraphId = commentUIController.activeParagraphId.value;
         isUpdate = true;
       case CommentMode.none:
         assert(false); // should not happen
     }
-    final comment = Comment(content: text, postId: postId, parentId: parentId, paragraphId: paragraphId);
+    if (commentUIController.activeParagraphId.value != null) {
+      final parts = commentUIController.activeParagraphId.value!.split('_');
+      paragraphIndex = int.tryParse(parts[0]);
+      paragraphHash = parts[1];
+    }
+    final comment = Comment(
+      content: text,
+      postId: postId,
+      parentId: parentId,
+      paragraphIndex: paragraphIndex,
+      paragraphHash: paragraphHash,
+    );
     if (isUpdate) {
       commentController.updateData(commentUIController.activeCommentId.value!, comment);
     } else {
