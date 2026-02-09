@@ -33,14 +33,16 @@ _Comment _$CommentFromJson(Map<String, dynamic> json) => _Comment(
   content: json['content'] as String,
   postId: json['post_id'] as String,
   parentId: json['parent_id'] as String?,
-  paragraphId: json['paragraph_id'] as String?,
+  paragraphIndex: (json['paragraph_index'] as num?)?.toInt(),
+  paragraphHash: json['paragraph_hash'] as String?,
 );
 
 Map<String, dynamic> _$CommentToJson(_Comment instance) => <String, dynamic>{
   'content': instance.content,
   'post_id': instance.postId,
   'parent_id': instance.parentId,
-  'paragraph_id': instance.paragraphId,
+  'paragraph_index': instance.paragraphIndex,
+  'paragraph_hash': instance.paragraphHash,
 };
 
 // **************************************************************************
