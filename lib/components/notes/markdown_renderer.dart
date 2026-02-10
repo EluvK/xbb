@@ -147,17 +147,70 @@ class _ParagraphWrapper extends StatelessWidget {
                 print(
                   "[render unmatched] paragraph id: $pid, originalHash: $originalHash, distance: $distance, comments length: ${comments.length}",
                 );
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // todo make it a button to confirm adding comment to this paragraph
-                    Text(
-                      "Unmatched Comments (original paragraph hash: $originalHash, distance: $distance)",
-                      style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold),
-                    ),
-                    CommentTree(paragraphId: pid, comments: comments),
-                    const Divider(),
-                  ],
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withAlpha(10),
+                    border: Border.all(color: Colors.red.withAlpha(50)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8, // 水平间距
+                        runSpacing: 4, // 垂直间距（如果换行）
+                        alignment: WrapAlignment.start,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.warning_amber_rounded, size: 16, color: Colors.red.shade400),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  "这些评论似乎是属于这个段落的（相似度：${similarityFromDistance(distance)}），但原始段落已被修改。",
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FilledButton.icon(
+                                onPressed: () => controller.migrateComments(
+                                  comments: comments,
+                                  targetPid: pid, // pid 是当前段落的 ID
+                                ),
+                                icon: const Icon(Icons.auto_fix_high, size: 14),
+                                label: const Text("修正到此段"),
+                                // style: TextButton.styleFrom(foregroundColor: Colors.blue),
+                              ),
+                              const SizedBox(width: 8),
+                              FilledButton.icon(
+                                onPressed: () => controller.migrateComments(
+                                  comments: comments,
+                                  targetPid: null, // 迁移为文末普通评论
+                                ),
+                                icon: const Icon(Icons.arrow_downward, size: 14),
+                                label: const Text("转为通用评论"),
+                                // style: TextButton.styleFrom(foregroundColor: Colors.blue),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20),
+                      CommentTree(paragraphId: pid, comments: comments),
+                    ],
+                  ),
                 );
               },
             ),
@@ -191,30 +244,43 @@ class PostEndCommentWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final commentUIController = Get.find<CommentUIController>();
     return Column(
       children: [
         Text("—— End of Post ——", style: TextStyle(color: Colors.grey.shade500)),
-        // const Divider(),
         const SizedBox(height: 10),
-        // Text("Comments", style: TextStyle(color: Colors.grey.shade500)),
         GetBuilder<CommentUIController>(
           id: 'no_close_match',
           builder: (controller) {
-            final comments = controller.commentsUnmatched[null]?.$1 ?? [];
-            if (comments.isEmpty) {
-              return const SizedBox.shrink();
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // todo make it a button to move comment to a matched paragraph or left at post end
-                Text(
-                  "Unmatched Comments (no close match found)",
-                  style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.bold),
-                ),
-                CommentTree(paragraphId: null, comments: comments),
-                const Divider(),
-              ],
+            final entry = controller.commentsUnmatched[null];
+            if (entry == null || entry.$1.isEmpty) return const SizedBox.shrink();
+
+            final comments = entry.$1;
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.orange.withAlpha(15), borderRadius: BorderRadius.circular(8)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      const Expanded(child: Text("以下评论所属段落已消失或改动过大")),
+                      FilledButton.icon(
+                        onPressed: () => controller.migrateComments(
+                          comments: comments,
+                          targetPid: null, // 迁移为文末普通评论
+                        ),
+                        label: const Text("转为通用评论"),
+                        icon: const Icon(Icons.arrow_downward),
+                      ),
+                    ],
+                  ),
+                  CommentTree(paragraphId: null, comments: comments),
+                  const Divider(),
+                ],
+              ),
             );
           },
         ),
@@ -228,41 +294,26 @@ class PostEndCommentWrapper extends StatelessWidget {
               children: [
                 isAddingComment
                     ? SharedCommentInput(postId: postId, paragraphId: null)
-                    : const CommentInputTriggerAtEnd(),
+                    // CommentInputTriggerAtEnd
+                    : ElevatedButton.icon(
+                        onPressed: () {
+                          commentUIController.setController(
+                            mode: CommentMode.addComment,
+                            paragraphId: null,
+                            label: 'New comment...',
+                          );
+                        },
+                        label: const Text("写条新评论~", style: TextStyle(fontSize: 14)),
+                        icon: const Icon(Icons.add_comment_outlined, size: 14),
+                      ),
                 const SizedBox(height: 10),
+                const Divider(),
                 if (comments.isNotEmpty) CommentTree(paragraphId: null, comments: comments),
               ],
             );
           },
         ),
       ],
-    );
-  }
-}
-
-class CommentInputTriggerAtEnd extends StatefulWidget {
-  const CommentInputTriggerAtEnd({super.key});
-
-  @override
-  State<CommentInputTriggerAtEnd> createState() => _CommentInputTriggerAtEndState();
-}
-
-class _CommentInputTriggerAtEndState extends State<CommentInputTriggerAtEnd> {
-  @override
-  Widget build(BuildContext context) {
-    final commentUIController = Get.find<CommentUIController>();
-    return ElevatedButton(
-      onPressed: () {
-        commentUIController.setController(mode: CommentMode.addComment, paragraphId: null, label: 'New comment...');
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.add_comment_outlined, size: 14, color: Colors.grey.shade600),
-          const SizedBox(width: 4),
-          Text("写条新评论~", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-        ],
-      ),
     );
   }
 }
@@ -284,11 +335,11 @@ class _CommentInputTriggerInlineState extends State<CommentInputTriggerInline> {
     bool isMob = isMobile(); // 假设你已有此判断函数
 
     // 逻辑修正：
-    // 1. 如果是移动端，透明度常驻为 0.2 (或你希望的低透明度)
+    // 1. 如果是移动端，透明度常驻为 0.4 (或你希望的低透明度)
     // 2. 如果是桌面端，根据悬停状态在 0.0 到 1.0 之间切换
     double targetOpacity;
     if (isMob) {
-      targetOpacity = 0.2;
+      targetOpacity = 0.4;
     } else {
       targetOpacity = _isHovering ? 1.0 : 0.0;
     }
@@ -342,6 +393,12 @@ class _CommentInputTriggerInlineState extends State<CommentInputTriggerInline> {
 }
 
 String paragraphId(int index, String hash) => "${index}_$hash";
+
+String similarityFromDistance(int distance) {
+  if (distance >= 64) return "0%";
+  double similarity = (64 - distance) / 64;
+  return "${(similarity * 100).toStringAsFixed(2)}%";
+}
 
 /// Comment mode enum
 /// none: no comment input active
@@ -549,6 +606,41 @@ class CommentUIController extends GetxController {
     focusNode.dispose();
     super.onClose();
   }
+
+  void clearDraft() {
+    _userDraft = "";
+    editController.clear();
+  }
+
+  /// 批量迁移评论到指定段落
+  /// [targetPid] 如果为 null，表示迁移到文章末尾
+  Future<void> migrateComments({required List<CommentDataItem> comments, String? targetPid}) async {
+    final CommentController commentController = Get.find<CommentController>();
+
+    int? newIndex;
+    String? newHash;
+
+    if (targetPid != null) {
+      final parts = targetPid.split('_');
+      newIndex = int.tryParse(parts[0]);
+      newHash = parts[1];
+    }
+
+    // 批量更新
+    for (var c in comments) {
+      // 保持原有内容，仅更新定位信息
+      final updatedComment = Comment(
+        content: c.body.content,
+        postId: postId,
+        parentId: c.body.parentId,
+        paragraphIndex: newIndex,
+        paragraphHash: newHash,
+      );
+      commentController.updateData(c.id, updatedComment);
+    }
+
+    flushBar(FlushLevel.OK, "迁移成功", "已将 ${comments.length} 条评论同步至 ${targetPid == null ? '文章末尾' : '新段落'}");
+  }
 }
 
 class SharedCommentInput extends StatelessWidget {
@@ -636,6 +728,7 @@ class SharedCommentInput extends StatelessWidget {
     } else {
       commentController.addData(comment);
     }
+    commentUIController.clearDraft();
   }
 }
 
