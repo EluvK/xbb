@@ -133,7 +133,8 @@ class RepoPermissionSchema implements PermissionSchema {
   // todo add localization later
   @override
   List<(String, String)> get labels => [
-    ('subscribe'.tr, 'readOnly'),
+    ('spy'.tr, 'readOnly'),
+    ('subscribe'.tr, 'read/comment'),
     ('share'.tr, 'read/write/update'),
     ('fullAccess'.tr, 'All Permissions'),
   ];
@@ -142,15 +143,18 @@ class RepoPermissionSchema implements PermissionSchema {
   List<bool> decode(AccessLevel accessLevel) {
     switch (accessLevel) {
       case AccessLevel.none:
-        return [false, false, false];
+        return [false, false, false, false];
       case AccessLevel.read:
-        return [true, false, false];
+        return [true, false, false, false];
+      case AccessLevel.read_append2:
+        return [true, true, false, false];
       case AccessLevel.write:
-        return [true, true, false];
+        return [true, true, true, false];
       case AccessLevel.fullAccess:
-        return [true, true, true];
+        return [true, true, true, true];
       // unimplemented;
-      case AccessLevel.create:
+      case AccessLevel.read_append1:
+      case AccessLevel.read_append3:
       case AccessLevel.update:
         return [false, false, false];
     }
@@ -158,10 +162,12 @@ class RepoPermissionSchema implements PermissionSchema {
 
   @override
   AccessLevel encode(List<bool> accessList) {
-    if (accessList[2]) {
+    if (accessList[3]) {
       return AccessLevel.fullAccess;
-    } else if (accessList[1]) {
+    } else if (accessList[2]) {
       return AccessLevel.write;
+    } else if (accessList[1]) {
+      return AccessLevel.read_append2;
     } else if (accessList[0]) {
       return AccessLevel.read;
     } else {
@@ -172,12 +178,15 @@ class RepoPermissionSchema implements PermissionSchema {
   @override
   List<int> disableOverlappingSelections(AccessLevel accessLevel) {
     switch (accessLevel) {
-      case AccessLevel.write:
+      case AccessLevel.read_append2:
         return [0];
-      case AccessLevel.fullAccess:
+      case AccessLevel.write:
         return [0, 1];
+      case AccessLevel.fullAccess:
+        return [0, 1, 2];
       case AccessLevel.none:
-      case AccessLevel.create:
+      case AccessLevel.read_append1:
+      case AccessLevel.read_append3:
       case AccessLevel.update:
       case AccessLevel.read:
         return [];
