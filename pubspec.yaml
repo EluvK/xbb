@@ -55,12 +55,14 @@ dependencies:
   freezed_annotation: ^3.1.0
   syncstore_client:
     git:
-      url: https://github.com/EluvK/syncstore_client.git/syncstore_client
+      url: https://github.com/EluvK/syncstore_client.git
       ref: master
+      path: syncstore_client
   sync_annotation:
     git:
-      url: https://github.com/EluvK/syncstore_client.git/sync_annotation
+      url: https://github.com/EluvK/syncstore_client.git
       ref: master
+      path: sync_annotation
   flutter_cache_manager: ^3.4.1
   cached_network_image: ^3.4.1
   cryptography: ^2.9.0
@@ -75,8 +77,9 @@ dev_dependencies:
     sdk: flutter
   sync_generator:
     git:
-      url: https://github.com/EluvK/syncstore_client.git/sync_generator
+      url: https://github.com/EluvK/syncstore_client.git
       ref: master
+      path: sync_generator
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -84,6 +87,16 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+
+dependency_overrides:
+  sync_annotation:
+    git:
+      url: https://github.com/EluvK/syncstore_client.git
+      path: sync_annotation
+  syncstore_client:
+    git:
+      url: https://github.com/EluvK/syncstore_client.git
+      path: syncstore_client
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
