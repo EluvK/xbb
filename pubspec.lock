@@ -620,10 +620,10 @@ packages:
     dependency: "direct main"
     description:
       name: ota_update
-      sha256: "8c47531b655f8fcf9961dc7758a933a9ccbcbe1c77a7ec52e5c5cfc2ec367ba7"
+      sha256: "1f4c7c3c4f306729a6c00b84435096ce2d8b28439013f7237173acc699b2abc8"
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
-    version: "6.0.0"
+    version: "7.1.0"
   package_config:
     dependency: transitive
     description:
