@@ -3,9 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/common/avatar.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/user.dart';
-import 'package:xbb/utils/predefined.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -45,7 +45,7 @@ class _ProfileBodyState extends State<ProfileBody> {
     super.initState();
     currentProfile = userManagerController.selfProfile.value!;
     if (currentProfile.avatarUrl == null) {
-      _selectAssetAvatarName = predefinedAvatar.first.name;
+      _selectAssetAvatarName = Avatar.defaultAvatar().name;
     } else {
       if (currentProfile.avatarUrl!.startsWith('assets://')) {
         _selectAssetAvatarName = currentProfile.avatarUrl;
@@ -202,7 +202,7 @@ class _ProfileBodyState extends State<ProfileBody> {
             spacing: spacing,
             runSpacing: 8.0,
             alignment: WrapAlignment.start,
-            children: predefinedAvatar.map((avatar) {
+            children: predefinedAvatarList().map((avatar) {
               return InkWell(
                 customBorder: const CircleBorder(),
                 onTap: () {

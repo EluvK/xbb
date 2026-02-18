@@ -1,17 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/components/common/avatar.dart';
 import 'package:xbb/controller/syncstore.dart';
-import 'package:xbb/utils/predefined.dart';
 
 Widget buildUserAvatar(BuildContext context, String? avatarUrl, {double size = 30.0, selected = true}) {
   // final colorScheme = Theme.of(context).colorScheme;
-  String url = avatarUrl ?? defaultAvatar.url;
+  String url = avatarUrl ?? Avatar.defaultAvatar().url;
   final border = selected
       ? Border.all(width: 3.0, color: Colors.lightGreen.shade700)
       : Border.all(width: 3.0, color: Colors.transparent);
   if (url.startsWith(ASSETS_PREFIX)) {
-    url = predefinedAvatar.firstWhere((avatar) => avatar.name == url, orElse: () => defaultAvatar).url;
+    url = predefinedAvatarList().firstWhere((avatar) => avatar.name == url, orElse: () => Avatar.defaultAvatar()).url;
   }
   SyncStoreControl ssClient = Get.find<SyncStoreControl>();
   return Container(

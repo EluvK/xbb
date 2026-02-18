@@ -1,12 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:syncstore_client/syncstore_client.dart' show UpdateUserProfileRequest, UserProfile;
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart';
-import 'package:xbb/utils/predefined.dart';
 
 class CommonProfile extends StatefulWidget {
   const CommonProfile({super.key});

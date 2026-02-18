@@ -142,6 +142,7 @@ class _LoginBodyState extends State<LoginBody> {
           // fetch and update user profiles after login
           // things like this if grows bigger can be moved specifically to a service class
           await userManagerController.fetchAndUpdateUserProfiles();
+          await reInitSyncStoreController();
           Get.offAllNamed('/');
         } catch (e) {
           print('login error: $e');

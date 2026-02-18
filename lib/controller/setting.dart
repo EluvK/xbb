@@ -521,7 +521,7 @@ class UserInfo {
       _userPassword = userPassword;
 
   factory UserInfo.unknown() {
-    return UserInfo(userId: '', userName: '', userPassword: '');
+    return UserInfo(userId: 'unknown', userName: '', userPassword: '');
   }
 
   Map<String, dynamic> toJson() {
