@@ -1,7 +1,4 @@
 // ignore_for_file: constant_identifier_names
-
-const String APP_API_URI = 'http://127.0.0.1:10101/api';
-
 const String GET_STORAGE_FILE_KEY = 'XbbGetStorage2';
 
 const String TOKEN_ACCESS_KEY = 'AccessToken';

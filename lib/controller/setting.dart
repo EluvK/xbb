@@ -364,9 +364,6 @@ class NewSettingController extends GetxController {
   }
 }
 
-// ignore: constant_identifier_names
-const String APP_API_URI = 'http://127.0.0.1:1011/api';
-
 class SyncStoreSetting {
   String baseUrl;
   bool enableHpke;
@@ -377,7 +374,7 @@ class SyncStoreSetting {
   SyncStoreSetting({required this.baseUrl, required this.enableHpke});
 
   factory SyncStoreSetting.defaults() {
-    return SyncStoreSetting(baseUrl: APP_API_URI, enableHpke: false);
+    return SyncStoreSetting(baseUrl: 'http://127.0.0.1:10101/api', enableHpke: false);
   }
 
   Map<String, dynamic> toJson() {
@@ -385,7 +382,10 @@ class SyncStoreSetting {
   }
 
   factory SyncStoreSetting.fromJson(Map<String, dynamic> json) {
-    return SyncStoreSetting(baseUrl: json['base_url'] ?? APP_API_URI, enableHpke: json['enable_hpke'] ?? false);
+    return SyncStoreSetting(
+      baseUrl: json['base_url'] ?? 'http://127.0.0.1:10101/api',
+      enableHpke: json['enable_hpke'] ?? false,
+    );
   }
 
   void update({String? baseUrl, bool? enableHpke}) {

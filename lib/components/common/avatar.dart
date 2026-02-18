@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-// import 'package:xbb/constant.dart' show APP_API_URI;
 import 'package:xbb/controller/setting.dart';
 
 class Avatar {
