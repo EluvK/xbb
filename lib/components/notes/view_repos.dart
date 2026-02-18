@@ -185,6 +185,7 @@ class __RepoListsState extends State<_RepoLists> {
                 await repoController.syncOwned();
                 await repoController.syncGranted();
                 await repoController.rebuildLocal();
+                await repoController.syncAcls();
                 // todo, post might sync in child granularity
                 await postController.syncOwned();
                 await postController.syncGranted();

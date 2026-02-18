@@ -15,6 +15,99 @@ abstract class PermissionSchema {
   List<int> disableOverlappingSelections(AccessLevel accessLevel);
 }
 
+class AclViewer extends StatefulWidget {
+  final PermissionSchema schema;
+  final List<Permission> permissions;
+
+  const AclViewer({super.key, required this.schema, required this.permissions});
+
+  @override
+  State<AclViewer> createState() => _AclViewerState();
+}
+
+class _AclViewerState extends State<AclViewer> {
+  final UserManagerController userManagerController = Get.find<UserManagerController>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildHeader(),
+        const Divider(),
+        if (widget.permissions.isEmpty)
+          Padding(padding: const EdgeInsets.all(16.0), child: Text('No members with permissions.'.tr)),
+        if (widget.permissions.isNotEmpty)
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: widget.permissions.length,
+            itemBuilder: (context, index) => _buildUserRow(index),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        const Expanded(
+          flex: 2,
+          child: Padding(
+            padding: EdgeInsets.all(8),
+            child: Center(child: Text('成员')),
+          ),
+        ),
+        ...widget.schema.labels.map(
+          (l) => Expanded(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              runAlignment: WrapAlignment.center,
+              spacing: 4,
+              children: [
+                Text(l.$1),
+                Tooltip(message: l.$2, child: const Icon(Icons.info_outline, size: 12)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 48),
+      ],
+    );
+  }
+
+  Widget _buildUserRow(int index) {
+    final permission = widget.permissions[index];
+    final userProfile = userManagerController.selfProfile.value?.userId == permission.user
+        ? userManagerController.selfProfile.value
+        : userManagerController.userProfiles.firstWhereOrNull((p) => p.userId == permission.user);
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Column(
+            children: [
+              buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: true),
+              const SizedBox(height: 4),
+              Text(userProfile?.name ?? 'Unknown User', style: const TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+        ...List.generate(
+          widget.schema.labels.length,
+          (pIndex) => Expanded(
+            child: Checkbox(
+              value: widget.schema.decode(permission.accessLevel)[pIndex],
+              onChanged: null, // Disabled for read-only
+            ),
+          ),
+        ),
+        const SizedBox(width: 48), // Placeholder for removed icon button
+      ],
+    );
+  }
+}
+
 class AclEditor extends StatefulWidget {
   final PermissionSchema schema;
   final List<Permission> initialPermissions;

@@ -5,6 +5,7 @@ import 'package:xbb/components/acl_editor.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/text_input.dart';
+import 'package:xbb/utils/view_widget.dart';
 
 class RepoEditor extends StatefulWidget {
   const RepoEditor({super.key, required this.repoItem});
@@ -16,6 +17,8 @@ class RepoEditor extends StatefulWidget {
 
 class _RepoEditorState extends State<RepoEditor> {
   late Repo _editedRepo;
+  late final bool isSelfRepo;
+  late final bool canEditRepoInfo;
   final RepoController repoController = Get.find<RepoController>();
   final UserManagerController userManagerController = Get.find<UserManagerController>();
   Future<List<Permission>>? _initialPermissionsFuture;
@@ -23,10 +26,8 @@ class _RepoEditorState extends State<RepoEditor> {
   @override
   void initState() {
     _editedRepo = widget.repoItem.body.copyWith();
-    bool isSelfRepo = userManagerController.selfProfile.value?.userId == widget.repoItem.owner;
-    if (isSelfRepo) {
-      _initialPermissionsFuture = repoController.getAcls(widget.repoItem.id);
-    }
+    isSelfRepo = userManagerController.selfProfile.value?.userId == widget.repoItem.owner;
+    _initialPermissionsFuture = repoController.getAclRefresh(widget.repoItem.id);
     super.initState();
   }
 
@@ -36,94 +37,109 @@ class _RepoEditorState extends State<RepoEditor> {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
-        child: ListView(
-          children: [
-            _editRepo(),
-            _initialPermissionsFuture == null
-                // maybe show current acl for non-self repo
-                ? const SizedBox.shrink()
-                // todo maybe make it a common util component later
-                : FutureBuilder(
-                    future: _initialPermissionsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Text('Error loading ACLs: ${snapshot.error}');
-                      } else {
-                        final initialPermissions = snapshot.data as List<Permission>;
-                        return _editRepoAcl(initialPermissions);
-                      }
-                    },
-                  ),
-          ],
+        child: FutureBuilder(
+          future: _initialPermissionsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Text('Error loading ACLs: ${snapshot.error}');
+            } else {
+              final initialPermissions = snapshot.data as List<Permission>;
+              return ListView(
+                children: [_editRepo(initialPermissions), const Divider(), _editRepoAcl(initialPermissions)],
+              );
+            }
+          },
         ),
       ),
     );
   }
 
-  Widget _editRepo() {
-    return Column(
-      children: [
-        Text('Update Repo Info'.tr, style: Theme.of(context).textTheme.titleMedium),
-        TextInputWidget(
-          title: InputTitleEnum.title,
-          initialValue: _editedRepo.name,
-          onChanged: (value) {
-            _editedRepo = _editedRepo.copyWith(name: value);
-          },
-        ),
-        TextInputWidget(
-          title: InputTitleEnum.description,
-          initialValue: _editedRepo.description ?? '',
-          onChanged: (value) {
-            _editedRepo = _editedRepo.copyWith(description: value);
-          },
-          optional: true,
-        ),
-        const SizedBox(height: 12.0),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('cancel'.tr),
-            ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: () {
-                // save repo
-                final repoController = Get.find<RepoController>();
-                repoController.updateData(widget.repoItem.id, _editedRepo);
-                Navigator.pop(context);
-              },
-              child: Text('save'.tr),
-            ),
-          ],
-        ),
-        const Divider(),
-      ],
-    );
+  Widget _editRepo(List<Permission> initialPermissions) {
+    bool canEditRepoInfo =
+        isSelfRepo ||
+        initialPermissions.any(
+          (perm) =>
+              perm.accessLevel == AccessLevel.write ||
+              perm.accessLevel == AccessLevel.update ||
+              perm.accessLevel == AccessLevel.fullAccess,
+        );
+    if (canEditRepoInfo) {
+      return Column(
+        children: [
+          Text('Update Repo Info'.tr, style: Theme.of(context).textTheme.titleMedium),
+          TextInputWidget(
+            title: InputTitleEnum.title,
+            initialValue: _editedRepo.name,
+            onChanged: (value) {
+              _editedRepo = _editedRepo.copyWith(name: value);
+            },
+          ),
+          TextInputWidget(
+            title: InputTitleEnum.description,
+            initialValue: _editedRepo.description ?? '',
+            onChanged: (value) {
+              _editedRepo = _editedRepo.copyWith(description: value);
+            },
+            optional: true,
+          ),
+          const SizedBox(height: 12.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('cancel'.tr),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () {
+                  // save repo
+                  final repoController = Get.find<RepoController>();
+                  repoController.updateData(widget.repoItem.id, _editedRepo);
+                  Navigator.pop(context);
+                },
+                child: Text('save'.tr),
+              ),
+            ],
+          ),
+          const Divider(),
+        ],
+      );
+    } else {
+      return Column(
+        children: [
+          Text('Repo Info'.tr, style: Theme.of(context).textTheme.titleMedium),
+          TextViewWidget(title: InputTitleEnum.title, value: _editedRepo.name),
+          TextViewWidget(title: InputTitleEnum.description, value: _editedRepo.description ?? ''),
+        ],
+      );
+    }
   }
 
   Widget _editRepoAcl(List<Permission> initialPermissions) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Update Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium),
+        isSelfRepo
+            ? Text('Update Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium)
+            : Text('Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8.0),
-        AclEditor(
-          schema: RepoPermissionSchema(),
-          initialPermissions: initialPermissions,
-          onSavePermissions: (newPermissions) async {
-            await repoController.setAcls(widget.repoItem.id, newPermissions);
-            setState(() {
-              _initialPermissionsFuture = Future.value(newPermissions);
-            });
-          },
-        ),
+        isSelfRepo
+            ? AclEditor(
+                schema: RepoPermissionSchema(),
+                initialPermissions: initialPermissions,
+                onSavePermissions: (newPermissions) async {
+                  await repoController.setAcls(widget.repoItem.id, newPermissions);
+                  setState(() {
+                    _initialPermissionsFuture = Future.value(newPermissions);
+                  });
+                },
+              )
+            : AclViewer(schema: RepoPermissionSchema(), permissions: initialPermissions),
       ],
     );
   }

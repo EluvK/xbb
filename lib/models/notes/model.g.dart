@@ -297,7 +297,22 @@ extension RepoRepositoryAcl on RepoRepository {
 }
 
 extension RepoControllerAcl on RepoController {
-  Future<List<Permission>> getAcls(String dataId) async {
+  Future<void> syncAcls() async {
+    try {
+      for (var item in _items) {
+        final serviceAcls = await client.getAcls('xbb', 'repo', item.id);
+        await RepoRepository().setAcls(item.id, serviceAcls);
+      }
+    } catch (e) {
+      print("Error syncing ACLs: $e");
+    }
+  }
+
+  Future<List<Permission>> getAclLocal(String dataId) async {
+    return await RepoRepository().getAcls(dataId);
+  }
+
+  Future<List<Permission>> getAclRefresh(String dataId) async {
     try {
       final List<Permission> getAcls = await client.getAcls('xbb', 'repo', dataId);
       await RepoRepository().setAcls(dataId, getAcls);

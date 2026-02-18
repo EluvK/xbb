@@ -56,12 +56,13 @@ class EditRepoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = Get.arguments;
     final RepoDataItem repo = args?[0];
-    return withPopAlert(
-      context,
-      Scaffold(
-        appBar: AppBar(title: Text('edit_repo'.trParams({'repoName': repo.body.name}))),
-        body: RepoEditor(repoItem: repo),
-      ),
+    return
+    // withPopAlert(
+    // context,
+    Scaffold(
+      appBar: AppBar(title: Text('edit_repo'.trParams({'repoName': repo.body.name}))),
+      body: RepoEditor(repoItem: repo),
+      // ),
     );
   }
 }
