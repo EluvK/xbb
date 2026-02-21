@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/controller/utils.dart';
 import 'package:xbb/utils/text_input.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -71,6 +72,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               ),
               const Divider(),
+              Text('app_version'.tr),
               child(versionInfo()),
             ],
           ),
@@ -150,12 +152,17 @@ class _CommonSettingsState extends State<CommonSettings> {
   // ---
 
   Widget versionInfo() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Text('version'.tr),
-        Text(VERSION),
-      ],
+    final SettingController settingController = Get.find<SettingController>();
+    return Center(
+      child: ElevatedButton.icon(
+        onPressed: settingController.appCanUpdate
+            ? () {
+                checkUpdate(true);
+              }
+            : null,
+        icon: const Icon(Icons.update),
+        label: const Text(VERSION),
+      ),
     );
   }
 }
