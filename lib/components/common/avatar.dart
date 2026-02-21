@@ -8,7 +8,7 @@ class Avatar {
   const Avatar({required this.name, required this.url});
 
   factory Avatar.defaultAvatar() {
-    final NewSettingController settingController = Get.find<NewSettingController>();
+    final SettingController settingController = Get.find<SettingController>();
     final url = settingController.syncStoreUrl;
     return Avatar(name: '${ASSETS_PREFIX}psyduck', url: '$url/fs/private/common/avatar/psyduck.png');
   }
@@ -17,7 +17,7 @@ class Avatar {
 const String ASSETS_PREFIX = 'assets://';
 
 Iterable<Avatar> predefinedAvatarList() {
-  final NewSettingController settingController = Get.find<NewSettingController>();
+  final SettingController settingController = Get.find<SettingController>();
   final url = settingController.syncStoreUrl;
   return predefinedAvatarNamePathMap.entries.map((entry) {
     return Avatar(name: entry.key, url: '$url${entry.value}');

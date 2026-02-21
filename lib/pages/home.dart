@@ -20,7 +20,7 @@ class HomePageWrapper extends StatefulWidget {
 }
 
 class _HomePageWrapperState extends State<HomePageWrapper> {
-  final NewSettingController settingController = Get.find<NewSettingController>();
+  final SettingController settingController = Get.find<SettingController>();
 
   HomeTabIndex _lastSelectedTab = HomeTabIndex.notes;
 
@@ -160,7 +160,7 @@ class _GlobalColorController extends StatefulWidget {
 }
 
 class _GlobalColorControllerState extends State<_GlobalColorController> {
-  final settingController = Get.find<NewSettingController>();
+  final settingController = Get.find<SettingController>();
   @override
   Widget build(BuildContext context) {
     return Container(

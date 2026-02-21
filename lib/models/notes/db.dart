@@ -14,7 +14,7 @@ class NotesDB {
   static Map<String, Database> _dbCache = {};
 
   Future<Database> getDb() async {
-    final userId = Get.find<NewSettingController>().userId;
+    final userId = Get.find<SettingController>().userId;
     if (_dbCache.containsKey(userId)) {
       return _dbCache[userId]!;
     }

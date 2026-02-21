@@ -13,7 +13,7 @@ class CommonSettings extends StatefulWidget {
 }
 
 class _CommonSettingsState extends State<CommonSettings> {
-  final settingController = Get.find<NewSettingController>();
+  final settingController = Get.find<SettingController>();
 
   @override
   Widget build(BuildContext context) {

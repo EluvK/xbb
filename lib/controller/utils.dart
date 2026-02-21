@@ -5,7 +5,7 @@ import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/utils/utils.dart';
 
 checkUpdate(bool autoExecUpdate) async {
-  final NewSettingController settingController = Get.find<NewSettingController>();
+  final SettingController settingController = Get.find<SettingController>();
   final canUpdate = settingController.appCanUpdate;
   if (!canUpdate) {
     final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
@@ -22,6 +22,9 @@ checkUpdate(bool autoExecUpdate) async {
     }
   }
   if (!autoExecUpdate) {
+    // sleep 2s to make sure the flush bar is shown before opening url
+    await Future.delayed(const Duration(seconds: 2));
+    flushBar(FlushLevel.INFO, "记得更新新版本", "请前往设置页面更新");
     return;
   }
   if (GetPlatform.isWindows) {
@@ -48,7 +51,7 @@ bool _shouldUpdate(String latestVersion) {
 }
 
 void _downloadApk(String url) {
-  final settingController = Get.find<NewSettingController>();
+  final settingController = Get.find<SettingController>();
   try {
     OtaUpdate().execute(url, destinationFilename: "xbb.apk").listen((event) {
       print('event: $event');

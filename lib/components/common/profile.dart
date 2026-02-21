@@ -12,7 +12,7 @@ class CommonProfile extends StatefulWidget {
 }
 
 class _CommonProfileState extends State<CommonProfile> {
-  final settingController = Get.find<NewSettingController>();
+  final settingController = Get.find<SettingController>();
 
   @override
   Widget build(BuildContext context) {

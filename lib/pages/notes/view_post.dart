@@ -11,7 +11,7 @@ class ViewPostPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = Get.arguments;
     final PostDataItem post = args[0];
-    final settingController = Get.find<NewSettingController>();
+    final settingController = Get.find<SettingController>();
     // todo
     bool editable = (post.owner == settingController.userId);
     editable = true;

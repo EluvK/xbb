@@ -32,7 +32,7 @@ class LoginBody extends StatefulWidget {
 
 class _LoginBodyState extends State<LoginBody> {
   SyncStoreControl ssClient = Get.find<SyncStoreControl>();
-  NewSettingController settingController = Get.find<NewSettingController>();
+  SettingController settingController = Get.find<SettingController>();
   UserManagerController userManagerController = Get.find<UserManagerController>();
 
   ServiceAvailability serviceAvailability = ServiceAvailability.unknown;
@@ -137,7 +137,6 @@ class _LoginBodyState extends State<LoginBody> {
           final UserProfile userProfile = await ssClient.login(userName, password);
           final userController = Get.find<UserManagerController>();
           userController.selfProfile.value = userProfile;
-          // final settingController = Get.find<NewSettingController>();
           settingController.updateUserInfo(userName: userName, userPassword: password);
           // fetch and update user profiles after login
           // things like this if grows bigger can be moved specifically to a service class

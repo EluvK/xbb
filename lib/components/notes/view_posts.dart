@@ -34,7 +34,7 @@ class _ViewPosts extends StatefulWidget {
 class __ViewPostsState extends State<_ViewPosts> {
   final postController = Get.find<PostController>();
   final repoController = Get.find<RepoController>();
-  final settingController = Get.find<NewSettingController>();
+  final settingController = Get.find<SettingController>();
 
   bool _allExpanded = true;
   bool _isAllExpanded() {

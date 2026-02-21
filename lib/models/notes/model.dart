@@ -18,7 +18,7 @@ Future<void> reInitNotesSync(SyncStoreClient client) async {
   await reInit<CommentController>(() => CommentController(client), (c) => c.ensureInitialization());
 
   final RepoController repoController = Get.find<RepoController>();
-  final NewSettingController settingController = Get.find<NewSettingController>();
+  final SettingController settingController = Get.find<SettingController>();
   if (settingController.notesLastOpenedRepoId != null) {
     repoController.onSelectRepo(settingController.notesLastOpenedRepoId!);
   }

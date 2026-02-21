@@ -5,7 +5,7 @@ import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/constant.dart';
 
 bool initFirstTime() {
-  var settingController = Get.find<NewSettingController>();
+  var settingController = Get.find<SettingController>();
   if (settingController.userId.isNotEmpty && settingController.userName.isNotEmpty) {
     print('already done first init before');
     return false;
@@ -14,7 +14,7 @@ bool initFirstTime() {
   return true;
 }
 
-class NewSettingController extends GetxController {
+class SettingController extends GetxController {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
 
   @override

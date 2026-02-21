@@ -30,7 +30,7 @@ class _RepoLists extends StatefulWidget {
 class __RepoListsState extends State<_RepoLists> {
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
-  final settingController = Get.find<NewSettingController>();
+  final settingController = Get.find<SettingController>();
   final userManagerController = Get.find<UserManagerController>();
 
   bool _allExpanded = true;

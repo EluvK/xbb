@@ -32,7 +32,7 @@ class UserManagerController extends GetxController {
   final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
 
   UserManagerController();
-  final NewSettingController settingController = Get.find<NewSettingController>();
+  final SettingController settingController = Get.find<SettingController>();
 
   @override
   Future<void> onInit() async {

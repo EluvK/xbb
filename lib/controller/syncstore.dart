@@ -26,7 +26,7 @@ Future<void> reInitSyncStoreController() async {
 
 class SyncStoreControl extends GetxController {
   final GetStorageTokenStorage tokenStorage;
-  final NewSettingController settingController = Get.find<NewSettingController>();
+  final SettingController settingController = Get.find<SettingController>();
 
   final Rx<SyncStoreClient?> client = Rx<SyncStoreClient?>(null);
 
@@ -142,7 +142,7 @@ class _SyncStoreFileServiceResponse extends FileServiceResponse {
 
 class GetStorageTokenStorage implements TokenStorage {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
-  final NewSettingController settingController = Get.find<NewSettingController>();
+  final SettingController settingController = Get.find<SettingController>();
 
   //  override TokenStorage
   @override

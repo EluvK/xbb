@@ -21,11 +21,11 @@ void main() async {
   await GetStorage.init(GET_STORAGE_FILE_KEY);
 
   await Get.putAsync(() async {
-    final controller = NewSettingController();
+    final controller = SettingController();
     return controller;
   });
-  final newSettingController = Get.find<NewSettingController>();
-  await newSettingController.ensureInitialization();
+  final settingController = Get.find<SettingController>();
+  await settingController.ensureInitialization();
 
   await reInitSyncStoreController();
 
@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settingController = Get.find<NewSettingController>();
+    final settingController = Get.find<SettingController>();
 
     checkUpdate(false);
 
