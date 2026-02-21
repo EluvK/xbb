@@ -36,7 +36,7 @@ class _AclViewerState extends State<AclViewer> {
         _buildHeader(),
         const Divider(),
         if (widget.permissions.isEmpty)
-          Padding(padding: const EdgeInsets.all(16.0), child: Text('No members with permissions.'.tr)),
+          Padding(padding: const EdgeInsets.all(16.0), child: Text('no_members_with_permissions'.tr)),
         if (widget.permissions.isNotEmpty)
           ListView.builder(
             shrinkWrap: true,
@@ -89,7 +89,7 @@ class _AclViewerState extends State<AclViewer> {
             children: [
               buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: true),
               const SizedBox(height: 4),
-              Text(userProfile?.name ?? 'Unknown User', style: const TextStyle(fontSize: 12)),
+              Text(userProfile?.name ?? 'unknown_user'.tr, style: const TextStyle(fontSize: 12)),
             ],
           ),
         ),
@@ -172,7 +172,7 @@ class _AclEditorState extends State<AclEditor> {
         _buildHeader(),
         const Divider(),
         if (_authList.isEmpty)
-          Padding(padding: const EdgeInsets.all(16.0), child: Text('No members with permissions yet.'.tr)),
+          Padding(padding: const EdgeInsets.all(16.0), child: Text('no_members_with_permissions_yet'.tr)),
         if (_authList.isNotEmpty)
           ListView.builder(
             shrinkWrap: true,
@@ -190,7 +190,7 @@ class _AclEditorState extends State<AclEditor> {
                     await widget.onSavePermissions(_authList);
                   }
                 : null,
-            child: const Text('保存权限变更'),
+            child: Text('save_permission_changes'.tr),
           ),
         ),
       ],
@@ -236,7 +236,7 @@ class _AclEditorState extends State<AclEditor> {
             children: [
               buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: true),
               const SizedBox(height: 4),
-              Text(userProfile?.name ?? 'Unknown User', style: const TextStyle(fontSize: 12)),
+              Text(userProfile?.name ?? 'unknown_user'.tr, style: const TextStyle(fontSize: 12)),
             ],
           ),
         ),
@@ -265,7 +265,7 @@ class _AclEditorState extends State<AclEditor> {
   Widget _buildPendingArea() {
     return Column(
       children: [
-        Text('Add Members'.tr, style: Theme.of(context).textTheme.titleMedium),
+        Text('add_members'.tr, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8.0),
         Wrap(
           spacing: 8,

@@ -68,7 +68,7 @@ class _RepoEditorState extends State<RepoEditor> {
     if (canEditRepoInfo) {
       return Column(
         children: [
-          Text('Update Repo Info'.tr, style: Theme.of(context).textTheme.titleMedium),
+          Text('update_repo_info'.tr, style: Theme.of(context).textTheme.titleMedium),
           TextInputWidget(
             title: InputTitleEnum.title,
             initialValue: _editedRepo.name,
@@ -112,7 +112,7 @@ class _RepoEditorState extends State<RepoEditor> {
     } else {
       return Column(
         children: [
-          Text('Repo Info'.tr, style: Theme.of(context).textTheme.titleMedium),
+          Text('repo_info'.tr, style: Theme.of(context).textTheme.titleMedium),
           TextViewWidget(title: InputTitleEnum.title, value: _editedRepo.name),
           TextViewWidget(title: InputTitleEnum.description, value: _editedRepo.description ?? ''),
         ],
@@ -125,8 +125,8 @@ class _RepoEditorState extends State<RepoEditor> {
       mainAxisSize: MainAxisSize.min,
       children: [
         isSelfRepo
-            ? Text('Update Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium)
-            : Text('Repo ACL'.tr, style: Theme.of(context).textTheme.titleMedium),
+            ? Text('update_repo_acl'.tr, style: Theme.of(context).textTheme.titleMedium)
+            : Text('repo_acl'.tr, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8.0),
         isSelfRepo
             ? AclEditor(
@@ -146,13 +146,12 @@ class _RepoEditorState extends State<RepoEditor> {
 }
 
 class RepoPermissionSchema implements PermissionSchema {
-  // todo add localization later
   @override
   List<(String, String)> get labels => [
-    ('spy'.tr, 'readOnly'),
-    ('subscribe'.tr, 'read/comment'),
-    ('share'.tr, 'read/write/update'),
-    ('fullAccess'.tr, 'All Permissions'),
+    ('perm_spy'.tr, 'readOnly'),
+    ('perm_subscribe'.tr, 'read/comment'),
+    ('perm_share'.tr, 'read/write/update'),
+    ('perm_full_access'.tr, 'All Permissions'),
   ];
 
   @override

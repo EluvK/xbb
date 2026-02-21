@@ -7,9 +7,252 @@ class Translation extends Translations {
   static final Map<String, Map<String, String>> _keys =
       _TranslationHelper.loadTranslations();
 }
-
 class _TranslationHelper {
   static final Map<String, dynamic> _translations = {
+    // --- Components: ACL & Members (权限管理) ---
+    "no_members_with_permissions": {
+      "en_US": "No members with permissions.",
+      "zh_CN": "暂无成员拥有权限",
+    },
+    "no_members_with_permissions_yet": {
+      "en_US": "No members with permissions yet.",
+      "zh_CN": "目前还没有成员拥有权限",
+    },
+    "save_permission_changes": {
+      "en_US": "Save Permission Changes",
+      "zh_CN": "保存权限变更",
+    },
+    "add_members": {
+      "en_US": "Add Members",
+      "zh_CN": "添加成员",
+    },
+
+    // --- Components: Common & Settings (通用与设置) ---
+    "unknown_user": {
+      "en_US": "Unknown User",
+      "zh_CN": "未知用户",
+    },
+    "change_user": {
+      "en_US": "Change User",
+      "zh_CN": "切换用户",
+    },
+    "friend_profiles": {
+      "en_US": "Friend Profiles",
+      "zh_CN": "好友资料",
+    },
+    "refresh": {
+      "en_US": "Refresh",
+      "zh_CN": "刷新",
+    },
+    "app_setting": {
+      "en_US": "App Settings",
+      "zh_CN": "应用设置",
+    },
+    "syncstore_setting": {
+      "en_US": "SyncStore Settings",
+      "zh_CN": "同步存储设置",
+    },
+    "app_feature_management": {
+      "en_US": "Feature Management",
+      "zh_CN": "功能管理",
+    },
+    "app_version": {
+      "en_US": "App Version",
+      "zh_CN": "版本信息",
+    },
+    "mode_light": {
+      "en_US": "Light Mode",
+      "zh_CN": "亮色模式",
+    },
+    "mode_system": {
+      "en_US": "System Default",
+      "zh_CN": "跟随系统",
+    },
+    "mode_dark": {
+      "en_US": "Dark Mode",
+      "zh_CN": "暗黑模式",
+    },
+
+    // --- Components: Notes & Editor (笔记与编辑器) ---
+    "reply": {
+      "en_US": "Reply",
+      "zh_CN": "回复",
+    },
+    "edit": {
+      "en_US": "Edit",
+      "zh_CN": "编辑",
+    },
+    "delete": {
+      "en_US": "Delete",
+      "zh_CN": "删除",
+    },
+    "delete_comment": {
+      "en_US": "Delete Comment",
+      "zh_CN": "删除评论",
+    },
+    "cancel": {
+      "en_US": "Cancel",
+      "zh_CN": "取消",
+    },
+    "save": {
+      "en_US": "Save",
+      "zh_CN": "保存",
+    },
+    "update_repo_info": {
+      "en_US": "Update Repo Info",
+      "zh_CN": "更新仓库信息",
+    },
+    "repo_info": {
+      "en_US": "Repo Info",
+      "zh_CN": "仓库信息",
+    },
+    "update_repo_acl": {
+      "en_US": "Update Repo ACL",
+      "zh_CN": "更新仓库权限",
+    },
+    "repo_acl": {
+      "en_US": "Repo ACL",
+      "zh_CN": "仓库权限",
+    },
+    "perm_spy": {
+      "en_US": "Spy",
+      "zh_CN": "只读查看",
+    },
+    "perm_subscribe": {
+      "en_US": "Subscribe",
+      "zh_CN": "阅读与评论",
+    },
+    "perm_share": {
+      "en_US": "Share",
+      "zh_CN": "读写更新",
+    },
+    "perm_full_access": {
+      "en_US": "Full Access",
+      "zh_CN": "全部权限",
+    },
+    "expand_less_all": {
+      "en_US": "Collapse All",
+      "zh_CN": "全部收起",
+    },
+    "expand_more_all": {
+      "en_US": "Expand All",
+      "zh_CN": "全部展开",
+    },
+
+    // --- Pages: Login & Profile (登录与个人资料) ---
+    "user_name": {
+      "en_US": "Username",
+      "zh_CN": "用户名",
+    },
+    "password": {
+      "en_US": "Password",
+      "zh_CN": "密码",
+    },
+    "login": {
+      "en_US": "Login",
+      "zh_CN": "登录",
+    },
+    "login_failed": {
+      "en_US": "Login Failed",
+      "zh_CN": "登录失败",
+    },
+    "input_display_name": {
+      "en_US": "Display Name",
+      "zh_CN": "显示名称",
+    },
+    "input_optional_avatar_url": {
+      "en_US": "Avatar URL (Optional)",
+      "zh_CN": "头像链接 (可选)",
+    },
+
+    // --- Pages: Route Titles (页面标题/动态参数) ---
+    "new_post": {
+      "en_US": "New Post",
+      "zh_CN": "新建帖子",
+    },
+    "edit_post": {
+      "en_US": "Edit Post: @postName",
+      "zh_CN": "编辑帖子: @postName",
+    },
+    "view_post": {
+      "en_US": "View Post: @postName",
+      "zh_CN": "查看帖子: @postName",
+    },
+    "edit_repo": {
+      "en_US": "Edit Repo: @repoName",
+      "zh_CN": "编辑仓库: @repoName",
+    },
+
+    // --- Utils: Feedback & Sync (提示与同步结果) ---
+    "clear_child_data_plz": {
+      "en_US": "Please clear child data first.",
+      "zh_CN": "请先清理子数据",
+    },
+    "double_click_title": {
+      "en_US": "Double Click to Confirm",
+      "zh_CN": "双击以确认",
+    },
+    "back_check_title": {
+      "en_US": "Unsaved Changes",
+      "zh_CN": "更改未保存",
+    },
+    "back_check_content": {
+      "en_US": "Are you sure you want to leave? Your changes will be lost.",
+      "zh_CN": "确定要离开吗？未保存的内容将会丢失。",
+    },
+    "back_check_cancel": {
+      "en_US": "Stay",
+      "zh_CN": "留下",
+    },
+    "back_check_confirm": {
+      "en_US": "Leave",
+      "zh_CN": "离开",
+    },
+    // --- Utils: Template (模板) ---
+    "app_server_url": {
+      "en_US": "App Server URL",
+      "zh_CN": "服务器地址",
+    },
+    "app_enable_tunnel": {
+      "en_US": "Enable Tunnel",
+      "zh_CN": "启用隧道",
+    },
+    "app_theme_mode": {
+      "en_US": "Theme Mode",
+      "zh_CN": "主题模式",
+    },
+    "app_language": {
+      "en_US": "Language",
+      "zh_CN": "语言",
+    },
+    "app_font_scale": {
+      "en_US": "Font Scale",
+      "zh_CN": "字体缩放",
+    },
+    "app_enable_note_feature": {
+      "en_US": "Enable Note Feature",
+      "zh_CN": "启用笔记功能",
+    },
+    "app_enable_setting": {
+      "en_US": "Enable Setting",
+      "zh_CN": "启用设置",
+    },
+    "input_title": {
+      "en_US": "Title",
+      "zh_CN": "名称",
+    },
+    "input_description": {
+      "en_US": "Description",
+      "zh_CN": "描述",
+    },
+    "optional": {
+      "en_US": "(Optional)",
+      "zh_CN": "(可选)",
+    },
+//   }; // below is old. keep for a while.
+// }
+// class _TranslationHelper {
+//   static final Map<String, dynamic> _translations = {
     "app_name": {
       "en_US": "xbb",
       "zh_CN": "小本本",
@@ -26,29 +269,9 @@ class _TranslationHelper {
       "en_US": "update all",
       "zh_CN": "全部更新",
     },
-    "change_user": {
-      "en_US": "Change User",
-      "zh_CN": "切换用户",
-    },
     "new_repo": {
       "en_US": "New Repo",
       "zh_CN": "创建新小本本",
-    },
-    "edit_repo": {
-      "en_US": "Edit Repo `@repoName`",
-      "zh_CN": "修改 `@repoName`",
-    },
-    "new_post": {
-      "en_US": "New Post",
-      "zh_CN": "写新笔记",
-    },
-    "edit_post": {
-      "en_US": "Edit Post `@postName`",
-      "zh_CN": "修改 `@postName`",
-    },
-    "view_post": {
-      "en_US": "@postName",
-      "zh_CN": "@postName",
     },
     "comment_list": {
       "en_US": "Comments",
@@ -66,34 +289,6 @@ class _TranslationHelper {
       "en_US": "Cancel Reply",
       "zh_CN": "取消回复",
     },
-    "save": {
-      "en_US": "Save",
-      "zh_CN": "保存",
-    },
-    "cancel": {
-      "en_US": "Cancel",
-      "zh_CN": "取消",
-    },
-    "reply": {
-      "en_US": "Reply",
-      "zh_CN": "回复",
-    },
-    "edit": {
-      "en_US": "Edit",
-      "zh_CN": "修改",
-    },
-    "delete": {
-      "en_US": "Delete",
-      "zh_CN": "删除",
-    },
-    "delete_comment": {
-      "en_US": "Delete Comment",
-      "zh_CN": "删除评论",
-    },
-    "update_failed": {
-      "en_US": "Update Failed",
-      "zh_CN": "更新失败",
-    },
     "my_repo_update": {
       "en_US": "Sync My Repos",
       "zh_CN": "同步成功",
@@ -105,26 +300,6 @@ class _TranslationHelper {
     "update_current_repo": {
       "en_US": "Update Current Repo",
       "zh_CN": "更新当前仓库",
-    },
-    "update_result_new_posts_cnt": {
-      "en_US": "@count New Posts",
-      "zh_CN": "新增 @count 篇笔记",
-    },
-    "update_result_update_posts_cnt": {
-      "en_US": "@count Updated Posts",
-      "zh_CN": "更新 @count 篇笔记",
-    },
-    "update_result_delete_posts_cnt": {
-      "en_US": "@count Deleted Posts",
-      "zh_CN": "删除 @count 篇笔记",
-    },
-    "update_result_update_comments_cnt": {
-      "en_US": "@count Updated Comments",
-      "zh_CN": "更新 @count 条评论",
-    },
-    "update_result_nothing": {
-      "en_US": "No Updates",
-      "zh_CN": "没有任何更新噢。",
     },
     "repo_type_self": {
       "en_US": "Self",
@@ -146,29 +321,9 @@ class _TranslationHelper {
       "en_US": "Shared Link",
       "zh_CN": "分享链接",
     },
-    "back_check_title": {
-      "en_US": "Are you sure?",
-      "zh_CN": "确定退出？",
-    },
-    "back_check_content": {
-      "en_US": "Are you sure you want to leave this page?",
-      "zh_CN": "未保存的内容会丢失",
-    },
-    "back_check_confirm": {
-      "en_US": "Leave",
-      "zh_CN": "确认离开",
-    },
-    "back_check_cancel": {
-      "en_US": "Never Mind",
-      "zh_CN": "取消",
-    },
     "setting": {
       "en_US": "Setting",
       "zh_CN": "设置",
-    },
-    "app_setting": {
-      "en_US": "App Setting",
-      "zh_CN": "应用设置",
     },
     "sync_setting": {
       "en_US": "Sync Setting",
@@ -177,18 +332,6 @@ class _TranslationHelper {
     "theme_mode": {
       "en_US": "Theme Mode",
       "zh_CN": "主题模式",
-    },
-    "mode_light": {
-      "en_US": "Light",
-      "zh_CN": "亮色",
-    },
-    "mode_system": {
-      "en_US": "System",
-      "zh_CN": "跟随系统",
-    },
-    "mode_dark": {
-      "en_US": "Dark",
-      "zh_CN": "暗色",
     },
     "language": {
       "en_US": "Language",
@@ -217,10 +360,6 @@ class _TranslationHelper {
     "auto_sync_subscribe_repo": {
       "en_US": "Sync Subscribe Repo At Startup",
       "zh_CN": "启动时同步订阅的小本本",
-    },
-    "double_click_title": {
-      "en_US": "Double Click Check!",
-      "zh_CN": "双击确认！",
     },
     "template": {
       "en_US": "",

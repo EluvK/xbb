@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 abstract interface class TitleInterface {
   String get gTitle;
@@ -34,9 +35,9 @@ enum SyncStoreInputMetaEnum implements TitleInterface {
   String get gTitle {
     switch (this) {
       case SyncStoreInputMetaEnum.address:
-        return '服务器地址';
+        return 'app_server_url'.tr;
       case SyncStoreInputMetaEnum.enableTunnel:
-        return '启用加密隧道';
+        return 'app_enable_tunnel'.tr;
     }
   }
 }
@@ -74,11 +75,11 @@ enum AppSettingMetaEnum implements TitleInterface {
   String get gTitle {
     switch (this) {
       case AppSettingMetaEnum.themeMode:
-        return '主题模式';
+        return 'app_theme_mode'.tr;
       case AppSettingMetaEnum.language:
-        return '语言';
+        return 'app_language'.tr;
       case AppSettingMetaEnum.fontScale:
-        return '字体大小';
+        return 'app_font_scale'.tr;
     }
   }
 }
@@ -111,9 +112,9 @@ enum AppFeatureMetaEnum implements TitleInterface {
   String get gTitle {
     switch (this) {
       case AppFeatureMetaEnum.enableNotes:
-        return '启用笔记功能';
+        return 'app_enable_note_feature'.tr;
       case AppFeatureMetaEnum.settings:
-        return '设置';
+        return 'app_enable_setting'.tr;
     }
   }
 }
@@ -146,9 +147,9 @@ enum InputTitleEnum implements TitleInterface {
   String get gTitle {
     switch (this) {
       case InputTitleEnum.title:
-        return '名称';
+        return 'input_title'.tr;
       case InputTitleEnum.description:
-        return '描述';
+        return 'input_description'.tr;
     }
   }
 }
@@ -208,7 +209,7 @@ class TextInputWidget extends StatelessWidget {
                   decoration: InputDecoration(
                     isDense: true,
                     contentPadding: const EdgeInsets.all(8),
-                    hintText: optional ? '(可选)' : '',
+                    hintText: optional ? 'optional'.tr : '',
                     hintStyle: const TextStyle(color: Colors.grey),
                   ),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),

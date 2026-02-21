@@ -69,7 +69,7 @@ class _SelfProfileState extends State<_SelfProfile> {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0),
         child: Text(
-          userManagerController.selfProfile.value?.name ?? 'unknown'.tr,
+          userManagerController.selfProfile.value?.name ?? 'unknown_user'.tr,
           style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
         ),
       );

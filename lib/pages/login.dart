@@ -99,7 +99,7 @@ class _LoginBodyState extends State<LoginBody> {
     return TextField(
       focusNode: focus,
       controller: nameController,
-      decoration: InputDecoration(labelText: 'userName'.tr),
+      decoration: InputDecoration(labelText: 'user_name'.tr),
       onChanged: (value) => setState(() {}),
       onSubmitted: (String name) {
         focus.unfocus();
