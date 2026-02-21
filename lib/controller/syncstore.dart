@@ -71,6 +71,16 @@ class SyncStoreControl extends GetxController {
       rethrow;
     }
   }
+
+  Future<String> fetchVersionInfo(String appName) async {
+    try {
+      final res = await client.value!.download('/fs/public/$appName/version', isPublic: true);
+      return utf8.decode(res);
+    } on ApiException catch (e) {
+      print('Error during fetching version info: ${e.message}');
+      rethrow;
+    }
+  }
 }
 
 // todo maybe rename this and the key name.
