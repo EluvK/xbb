@@ -20,6 +20,61 @@ class ViewRepos extends StatelessWidget {
   }
 }
 
+class RepoQuickSwitcher extends StatelessWidget {
+  const RepoQuickSwitcher({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final repoController = Get.find<RepoController>();
+    final postController = Get.find<PostController>();
+    final settingController = Get.find<SettingController>();
+
+    return Obx(() {
+      List<String> taggedRepoIds = postController
+          .onViewPosts(filters: [ColorTagFilter.fromColorTag(settingController.colorTag)])
+          .map((post) => post.body.repoId)
+          .toSet()
+          .toList();
+      List<RepoDataItem> repos = repoController.onViewRepos(
+        filters: [
+          OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedRepoIds)]),
+          StatusFilter.notHidden,
+        ],
+      );
+
+      if (repos.isEmpty) {
+        return const Text('...');
+      }
+
+      final current = repos.firstWhereOrNull((r) => r.id == repoController.currentRepoId.value);
+      final title = current?.body.name ?? 'Select Repo';
+
+      return PopupMenuButton<RepoDataItem>(
+        tooltip: 'Switch repository',
+        itemBuilder: (ctx) => repos.map((r) => PopupMenuItem(value: r, child: Text(r.body.name))).toList(),
+        onSelected: (r) {
+          repoController.onSelectRepo(r.id);
+          settingController.updateUserInterfaceHistoryCache(notesLastOpenedRepoId: r.id);
+          if (MediaQuery.of(context).size.width < 600) {
+            final scaffoldState = Scaffold.maybeOf(context);
+            if (scaffoldState != null && scaffoldState.isDrawerOpen) {
+              Navigator.of(context).pop();
+            }
+          }
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
+            const SizedBox(width: 2),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
+      );
+    });
+  }
+}
+
 class _RepoLists extends StatefulWidget {
   const _RepoLists();
 

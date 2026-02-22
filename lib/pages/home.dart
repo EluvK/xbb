@@ -94,7 +94,7 @@ class _HomePage extends GetResponsiveView {
               ],
             ),
           ),
-          appBar: AppBar(title: _AppBar(index: currentTab)),
+          appBar: AppBar(title: _AppBar(index: currentTab), titleSpacing: 0.0),
           body: _RightMain(index: currentTab),
         );
       },
@@ -144,6 +144,14 @@ class TabBarController extends StatelessWidget {
       child: TabBar(
         tabs: tabs,
         controller: tabController,
+        onTap: (int _) {
+          if (!tabController.indexIsChanging) {
+            final scaffoldState = Scaffold.maybeOf(context);
+            if (scaffoldState != null && scaffoldState.isDrawerOpen) {
+              Navigator.of(context).pop();
+            }
+          }
+        },
         labelColor: Theme.of(context).colorScheme.primary,
         unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
         indicatorColor: Theme.of(context).colorScheme.primary,
@@ -227,8 +235,10 @@ class _AppBar extends StatelessWidget {
       case HomeTabIndex.notes:
         return const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          // todo should add switchable repos here
-          children: [Text('TODO s'), _GlobalColorController()],
+          children: [
+            Flexible(child: RepoQuickSwitcher()),
+            _GlobalColorController(),
+          ],
         );
       case HomeTabIndex.todo:
       case HomeTabIndex.todo2:
