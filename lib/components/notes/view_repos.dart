@@ -186,9 +186,11 @@ class __RepoListsState extends State<_RepoLists> {
                 await repoController.syncGranted();
                 await repoController.rebuildLocal();
                 await repoController.syncAcls();
-                // todo, post might sync in child granularity
                 await postController.syncOwned();
-                await postController.syncGranted();
+                for (var repo in repoController.onViewRepos(filters: [StatusFilter.notHidden])) {
+                  print('syncing children for repo ${repo.id}');
+                  await postController.syncChildren(repo.id);
+                }
                 await postController.rebuildLocal();
               },
               icon: const Icon(Icons.refresh),
