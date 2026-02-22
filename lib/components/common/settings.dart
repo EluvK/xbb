@@ -157,7 +157,7 @@ class _CommonSettingsState extends State<CommonSettings> {
       child: ElevatedButton.icon(
         onPressed: settingController.appCanUpdate
             ? () {
-                checkUpdate(true);
+                checkUpdate(autoExecUpdate: true, forceCheck: true);
               }
             : null,
         icon: const Icon(Icons.update),

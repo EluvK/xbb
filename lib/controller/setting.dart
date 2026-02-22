@@ -80,12 +80,14 @@ class SettingController extends GetxController {
   Locale get locale => appSetting.value.locale;
   ColorTag get colorTag => appSetting.value.colorTag;
   bool get appCanUpdate => appSetting.value.canUpdate;
+  DateTime? get appLastCheckedUpdateTime => appSetting.value.lastUpdateCheckTime;
   void updateAppSetting({
     ThemeMode? themeMode,
     double? fontScale,
     Locale? locale,
     ColorTag? colorTag,
     bool? canUpdate,
+    DateTime? lastCheckedUpdateTime,
   }) {
     appSetting.update((setting) {
       setting?.update(
@@ -94,6 +96,7 @@ class SettingController extends GetxController {
         locale: locale,
         colorTag: colorTag,
         canUpdate: canUpdate,
+        lastCheckedUpdateTime: lastCheckedUpdateTime,
       );
     });
     box.write(STORAGE_SETTING_APP_SETTINGS_KEY, appSetting.value.toJson());
@@ -172,12 +175,14 @@ class AppSetting {
   Locale _locale;
   ColorTag _colorTag = ColorTag.none;
   bool _canUpdate = false;
+  DateTime? _lastCheckedUpdateTime;
 
   get themeMode => _themeMode;
   get fontScale => _fontScale;
   get locale => _locale;
   get colorTag => _colorTag;
   get canUpdate => _canUpdate;
+  get lastUpdateCheckTime => _lastCheckedUpdateTime;
 
   AppSetting({
     required ThemeMode themeMode,
@@ -185,11 +190,13 @@ class AppSetting {
     required Locale locale,
     required ColorTag colorTag,
     required bool canUpdate,
+    required DateTime? lastCheckedUpdateTime,
   }) : _themeMode = themeMode,
        _fontScale = fontScale,
        _locale = locale,
        _colorTag = colorTag,
-       _canUpdate = canUpdate;
+       _canUpdate = canUpdate,
+       _lastCheckedUpdateTime = lastCheckedUpdateTime;
 
   factory AppSetting.defaults() {
     return AppSetting(
@@ -198,6 +205,7 @@ class AppSetting {
       locale: const Locale('en'),
       colorTag: ColorTag.none,
       canUpdate: false,
+      lastCheckedUpdateTime: null,
     );
   }
 
@@ -208,6 +216,7 @@ class AppSetting {
       'locale': _locale.languageCode,
       'color_tag': _colorTag.toString(),
       'can_update': _canUpdate,
+      'last_checked_update_time': _lastCheckedUpdateTime?.toIso8601String(),
     };
   }
 
@@ -225,16 +234,28 @@ class AppSetting {
       orElse: () => ColorTag.none,
     );
     bool canUpdate = json['can_update'] ?? false;
+    DateTime? lastCheckedUpdateTime;
+    if (json['last_checked_update_time'] != null) {
+      lastCheckedUpdateTime = DateTime.tryParse(json['last_checked_update_time']);
+    }
     return AppSetting(
       themeMode: themeMode,
       fontScale: fontScale,
       locale: locale,
       colorTag: colorTag,
       canUpdate: canUpdate,
+      lastCheckedUpdateTime: lastCheckedUpdateTime,
     );
   }
 
-  void update({ThemeMode? themeMode, double? fontScale, Locale? locale, ColorTag? colorTag, bool? canUpdate}) {
+  void update({
+    ThemeMode? themeMode,
+    double? fontScale,
+    Locale? locale,
+    ColorTag? colorTag,
+    bool? canUpdate,
+    DateTime? lastCheckedUpdateTime,
+  }) {
     if (themeMode != null) {
       _themeMode = themeMode;
     }
@@ -249,6 +270,9 @@ class AppSetting {
     }
     if (canUpdate != null) {
       _canUpdate = canUpdate;
+    }
+    if (lastCheckedUpdateTime != null) {
+      _lastCheckedUpdateTime = lastCheckedUpdateTime;
     }
   }
 }

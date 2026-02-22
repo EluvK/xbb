@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingController = Get.find<SettingController>();
 
-    checkUpdate(false);
+    checkUpdate();
 
     // print(settingController.lastAutoLoadTimestamp);
     // bool inMinimumUpdateInterval = DateTime.now()

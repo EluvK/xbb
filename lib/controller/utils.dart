@@ -4,9 +4,17 @@ import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/utils/utils.dart';
 
-checkUpdate(bool autoExecUpdate) async {
-  await Future.delayed(const Duration(seconds: 3)); // delay a bit to avoid checking update too early before syncstore controller is ready
+checkUpdate({bool autoExecUpdate = false, bool forceCheck = false}) async {
+  // delay a bit to avoid checking update too early before syncstore controller is ready
+  await Future.delayed(const Duration(seconds: 3));
   final SettingController settingController = Get.find<SettingController>();
+  final lastCheckUpdate = settingController.appLastCheckedUpdateTime;
+  if (!forceCheck &&
+      lastCheckUpdate != null &&
+      DateTime.now().difference(lastCheckUpdate) < const Duration(minutes: 30)) {
+    print('Last checked update at $lastCheckUpdate, skipping check.');
+    return;
+  }
   final canUpdate = settingController.appCanUpdate;
   if (!canUpdate) {
     final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
@@ -15,9 +23,9 @@ checkUpdate(bool autoExecUpdate) async {
     print(version);
     if (_shouldUpdate(version)) {
       flushBar(FlushLevel.INFO, "有新版本啦！", "当前版本: ${VERSION}, 最新版本: $version");
-      settingController.updateAppSetting(canUpdate: true);
+      settingController.updateAppSetting(canUpdate: true, lastCheckedUpdateTime: DateTime.now());
     } else {
-      settingController.updateAppSetting(canUpdate: false);
+      settingController.updateAppSetting(canUpdate: false, lastCheckedUpdateTime: DateTime.now());
       print('No update needed. Current version: ${VERSION}, Latest version: $version');
       return;
     }
