@@ -154,24 +154,50 @@ enum InputTitleEnum implements TitleInterface {
   }
 }
 
-class TextInputWidget extends StatelessWidget {
-  TextInputWidget({
+class TextInputWidget extends StatefulWidget {
+  const TextInputWidget({
     super.key,
     required this.title,
-    required this.onChanged,
+    required this.onFinished,
     required this.initialValue,
     this.onFocusChange,
     this.autoFocus = false,
     this.optional = false,
   });
-  final focusNode = FocusNode();
-
   final TitleInterface title;
   final String initialValue;
   final void Function(bool)? onFocusChange;
   final bool autoFocus;
   final bool optional;
-  final void Function(String) onChanged;
+  final void Function(String) onFinished;
+
+  @override
+  State<TextInputWidget> createState() => _TextInputWidgetState();
+}
+
+class _TextInputWidgetState extends State<TextInputWidget> {
+  late FocusNode _focusNode;
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+    _focusNode = FocusNode();
+
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        widget.onFinished(_controller.text);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,44 +205,44 @@ class TextInputWidget extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          focusNode.requestFocus();
+          _focusNode.requestFocus();
         },
-        onFocusChange: onFocusChange,
+        onFocusChange: widget.onFocusChange,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(6, 6, 10, 6),
           child: Row(
             children: [
               Material(
-                color: title.gColor,
+                color: widget.title.gColor,
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
                   height: 32,
                   width: 32,
-                  child: Center(child: Icon(title.gIcon, color: Colors.white)),
+                  child: Center(child: Icon(widget.title.gIcon, color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 // flex: 1,
-                child: Text(title.gTitle, style: Theme.of(context).textTheme.bodyMedium),
+                child: Text(widget.title.gTitle, style: Theme.of(context).textTheme.bodyMedium),
               ),
               Flexible(
                 flex: 2,
                 child: TextField(
-                  autofocus: autoFocus,
-                  focusNode: focusNode,
-                  controller: TextEditingController(text: initialValue),
+                  autofocus: widget.autoFocus,
+                  focusNode: _focusNode,
+                  controller: _controller,
                   decoration: InputDecoration(
                     isDense: true,
                     contentPadding: const EdgeInsets.all(8),
-                    hintText: optional ? 'optional'.tr : '',
+                    hintText: widget.optional ? 'optional'.tr : '',
                     hintStyle: const TextStyle(color: Colors.grey),
                   ),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
-                  onChanged: (value) {
+                  onSubmitted: (value) {
                     print(value);
-                    onChanged(value);
+                    widget.onFinished(value);
                   },
                 ),
               ),

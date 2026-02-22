@@ -72,14 +72,14 @@ class _RepoEditorState extends State<RepoEditor> {
           TextInputWidget(
             title: InputTitleEnum.title,
             initialValue: _editedRepo.name,
-            onChanged: (value) {
+            onFinished: (value) {
               _editedRepo = _editedRepo.copyWith(name: value);
             },
           ),
           TextInputWidget(
             title: InputTitleEnum.description,
             initialValue: _editedRepo.description ?? '',
-            onChanged: (value) {
+            onFinished: (value) {
               _editedRepo = _editedRepo.copyWith(description: value);
             },
             optional: true,

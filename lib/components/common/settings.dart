@@ -38,7 +38,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                 TextInputWidget(
                   title: SyncStoreInputMetaEnum.address,
                   initialValue: settingController.syncStoreUrl,
-                  onChanged: (value) {
+                  onFinished: (value) {
                     settingController.updateSyncStoreSetting(baseUrl: value);
                     setState(() {
                       reInitSyncStoreController();

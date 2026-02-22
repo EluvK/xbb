@@ -108,7 +108,7 @@ class __ViewPostsState extends State<_ViewPosts> {
                 ),
               ],
             ),
-            postList(posts),
+            Expanded(child: postList(posts)),
           ],
         );
       }
@@ -175,7 +175,6 @@ class __ViewPostsState extends State<_ViewPosts> {
     }
 
     return ListView(
-      shrinkWrap: true,
       children: categoryMap.entries.map((entry) {
         final category = entry.key;
         final posts = entry.value;

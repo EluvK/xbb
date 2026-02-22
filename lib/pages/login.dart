@@ -60,7 +60,8 @@ class _LoginBodyState extends State<LoginBody> {
         TextInputWidget(
           title: SyncStoreInputMetaEnum.address,
           initialValue: settingController.syncStoreUrl,
-          onChanged: (value) {
+          onFinished: (value) {
+            // print('onFinished: $value');
             settingController.updateSyncStoreSetting(baseUrl: value);
             setState(() {
               reInitSyncStoreController();
