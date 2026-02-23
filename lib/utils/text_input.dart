@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/utils/utils.dart';
 
 abstract interface class TitleInterface {
   String get gTitle;
@@ -242,6 +243,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                   textAlign: TextAlign.center,
                   onSubmitted: (value) {
                     print(value);
+                    flushBar(FlushLevel.OK, null, "Saved", upperPosition: true);
                     widget.onFinished(value);
                   },
                 ),

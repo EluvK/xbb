@@ -11,6 +11,7 @@ import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart' show reInitUserManagerController;
 import 'package:xbb/models/notes/model.dart' show reInitNotesSync;
 
+/// ALERT: any page that call this should make sure use the new created controller.
 Future<void> reInitSyncStoreController() async {
   if (Get.isRegistered<SyncStoreControl>()) {
     await Get.delete<SyncStoreControl>(force: true);

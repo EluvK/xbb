@@ -140,6 +140,22 @@ class _TranslationHelper {
     },
 
     // --- Pages: Login & Profile (登录与个人资料) ---
+    "login_page_title": {
+      "en_US": "Login",
+      "zh_CN": "登录",
+    },
+    "service_status_ok": {
+      "en_US": "Service Available",
+      "zh_CN": "服务在线",
+    },
+    "service_status_not_available": {
+      "en_US": "Service Not Available",
+      "zh_CN": "服务不可用",
+    },
+    "service_status_checking": {
+      "en_US": "Checking Service Status...",
+      "zh_CN": "正在检测服务状态...",
+    },
     "user_name": {
       "en_US": "Username",
       "zh_CN": "用户名",
@@ -155,6 +171,10 @@ class _TranslationHelper {
     "login_failed": {
       "en_US": "Login Failed",
       "zh_CN": "登录失败",
+    },
+    "login_failed_message": {
+      "en_US": "Please check your username and password.",
+      "zh_CN": "请检查用户名和密码",
     },
     "input_display_name": {
       "en_US": "Display Name",

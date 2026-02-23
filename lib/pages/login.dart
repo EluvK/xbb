@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
@@ -31,9 +33,11 @@ class LoginBody extends StatefulWidget {
 }
 
 class _LoginBodyState extends State<LoginBody> {
-  SyncStoreControl ssClient = Get.find<SyncStoreControl>();
-  SettingController settingController = Get.find<SettingController>();
-  UserManagerController userManagerController = Get.find<UserManagerController>();
+  // controller might be rebuild during this page's lifecycle,
+  // so we should use the get sugar to find the latest one.
+  SyncStoreControl get ssClient => Get.find<SyncStoreControl>();
+  SettingController get settingController => Get.find<SettingController>();
+  UserManagerController get userManagerController => Get.find<UserManagerController>();
 
   ServiceAvailability serviceAvailability = ServiceAvailability.unknown;
   UserNameAvailability userNameAvailability = UserNameAvailability.unknown;
@@ -43,13 +47,17 @@ class _LoginBodyState extends State<LoginBody> {
   final focus = FocusNode();
   bool _passwordVisible = false;
 
+  Timer? _serviceCheckTimer;
+  bool _isChecking = false;
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // add a title, and maybe server status here.
-        const Text('Connecting...', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text('login_page_title'.tr, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        _buildStatusIndicator(),
         _nameEditor(),
         const SizedBox(height: 20),
         _passwordEditor(),
@@ -60,23 +68,22 @@ class _LoginBodyState extends State<LoginBody> {
         TextInputWidget(
           title: SyncStoreInputMetaEnum.address,
           initialValue: settingController.syncStoreUrl,
-          onFinished: (value) {
+          onFinished: (value) async {
             // print('onFinished: $value');
             settingController.updateSyncStoreSetting(baseUrl: value);
-            setState(() {
-              reInitSyncStoreController();
-            });
+            await reInitSyncStoreController();
+            checkServiceAvailability();
+            setState(() {});
           },
         ),
         BoolSelectorInputWidget(
           title: SyncStoreInputMetaEnum.enableTunnel,
           initialValue: settingController.syncStoreHpkeEnabled,
-          onChanged: (value) {
+          onChanged: (value) async {
             print('value: $value');
             settingController.updateSyncStoreSetting(enableHpke: value);
-            setState(() {
-              reInitSyncStoreController();
-            });
+            await reInitSyncStoreController();
+            setState(() {});
           },
         ),
       ],
@@ -85,6 +92,7 @@ class _LoginBodyState extends State<LoginBody> {
 
   @override
   void initState() {
+    super.initState();
     focus.addListener(() {
       if (!focus.hasFocus && nameController.text.isNotEmpty) {
         if (settingController.userName == nameController.text) return;
@@ -93,7 +101,71 @@ class _LoginBodyState extends State<LoginBody> {
         setState(() {});
       }
     });
-    super.initState();
+    checkServiceAvailability();
+    _serviceCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) => checkServiceAvailability());
+  }
+
+  @override
+  void dispose() {
+    _serviceCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  void checkServiceAvailability() async {
+    if (_isChecking) return;
+    _isChecking = true;
+    setState(() {
+      serviceAvailability = ServiceAvailability.checking;
+    });
+    try {
+      final result = await ssClient.checkHealth();
+      setState(() {
+        serviceAvailability = result ? ServiceAvailability.available : ServiceAvailability.notAvailable;
+      });
+    } catch (e) {
+      setState(() {
+        serviceAvailability = ServiceAvailability.notAvailable;
+      });
+    } finally {
+      _isChecking = false;
+    }
+  }
+
+  Widget _buildStatusIndicator() {
+    Color color;
+    String text;
+
+    switch (serviceAvailability) {
+      case ServiceAvailability.available:
+        color = Colors.green;
+        text = 'service_status_ok'.tr;
+        break;
+      case ServiceAvailability.notAvailable:
+        color = Colors.red;
+        text = 'service_status_not_available'.tr;
+        break;
+      case ServiceAvailability.unknown:
+      default:
+        color = Colors.grey;
+        text = 'service_status_checking'.tr;
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(text, style: TextStyle(color: color, fontSize: 12)),
+        if (_isChecking) ...[
+          const SizedBox(width: 8),
+          const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2)),
+        ],
+      ],
+    );
   }
 
   Widget _nameEditor() {
@@ -146,8 +218,7 @@ class _LoginBodyState extends State<LoginBody> {
           Get.offAllNamed('/');
         } catch (e) {
           print('login error: $e');
-          flushBar(FlushLevel.INFO, 'login_failed'.tr, 'Please check your username and password.');
-          // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('login_failed'.tr)));
+          flushBar(FlushLevel.INFO, 'login_failed'.tr, 'login_failed_message'.tr);
         }
       },
       child: Text('login'.tr),

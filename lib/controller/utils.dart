@@ -9,40 +9,44 @@ checkUpdate({bool autoExecUpdate = false, bool forceCheck = false}) async {
   await Future.delayed(const Duration(seconds: 3));
   final SettingController settingController = Get.find<SettingController>();
   final lastCheckUpdate = settingController.appLastCheckedUpdateTime;
+
+  print('lastCheckUpdate: $lastCheckUpdate, forceCheck: $forceCheck');
+
   if (!forceCheck &&
       lastCheckUpdate != null &&
       DateTime.now().difference(lastCheckUpdate) < const Duration(minutes: 30)) {
-    print('Last checked update at $lastCheckUpdate, skipping check.');
+    print('Checking too frequently, skipping.');
     return;
   }
-  final canUpdate = settingController.appCanUpdate;
-  if (!canUpdate) {
-    final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
+  final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
+
+  if (forceCheck || !settingController.appCanUpdate) {
     final version = await syncStoreControl.fetchVersionInfo('xbb');
-    print('Fetched version info: $version');
-    print(version);
-    if (_shouldUpdate(version)) {
-      flushBar(FlushLevel.INFO, "有新版本啦！", "当前版本: ${VERSION}, 最新版本: $version");
-      settingController.updateAppSetting(canUpdate: true, lastCheckedUpdateTime: DateTime.now());
+    bool hasNewVersion = _shouldUpdate(version);
+
+    settingController.updateAppSetting(canUpdate: hasNewVersion, lastCheckedUpdateTime: DateTime.now());
+
+    if (hasNewVersion) {
+      flushBar(FlushLevel.INFO, "有新版本啦！", "当前版本: $VERSION, 最新版本: $version");
     } else {
-      settingController.updateAppSetting(canUpdate: false, lastCheckedUpdateTime: DateTime.now());
-      print('No update needed. Current version: ${VERSION}, Latest version: $version');
+      print('No update needed.');
       return;
     }
   }
+
   if (!autoExecUpdate) {
-    // sleep 2s to make sure the flush bar is shown before opening url
     await Future.delayed(const Duration(seconds: 2));
     flushBar(FlushLevel.INFO, "记得更新新版本", "请前往设置页面更新");
+
+    settingController.updateAppSetting(lastCheckedUpdateTime: DateTime.now());
     return;
   }
+
   if (GetPlatform.isWindows) {
     String url = "${settingController.syncStoreUrl}/fs/public/xbb/master/xbb_desktop_windows_setup.exe";
-    print('Opening URL: $url');
     openUrl(url);
   } else if (GetPlatform.isAndroid) {
     String url = "${settingController.syncStoreUrl}/fs/public/xbb/master/xbb.apk";
-    print('Opening URL: $url');
     _downloadApk(url);
   }
 }
