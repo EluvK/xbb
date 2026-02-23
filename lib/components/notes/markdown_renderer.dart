@@ -800,6 +800,7 @@ class CommentTree extends StatelessWidget {
         print('[Auto-Archive] Comment ${comment.id} is now archived');
         // comment.syncStatus == SyncStatus.archived;
         Get.find<CommentController>().onUpdateLocalField(comment.id, syncStatus: SyncStatus.archived);
+        Get.find<PostController>().rebuildLocal();
         // commentController.rebuildLocal();
       });
     }
