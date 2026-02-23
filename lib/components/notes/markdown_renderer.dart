@@ -792,17 +792,45 @@ class CommentTree extends StatelessWidget {
   }
 
   Widget commentCard(BuildContext context, CommentDataItem comment) {
+    final CommentUIController commentUIController = Get.find<CommentUIController>();
+
+    // todo it's not the same comments that updated...
+    if (comment.syncStatus == SyncStatus.synced) {
+      Future.delayed(const Duration(seconds: 3), () {
+        print('[Auto-Archive] Comment ${comment.id} is now archived');
+        // comment.syncStatus == SyncStatus.archived;
+        Get.find<CommentController>().onUpdateLocalField(comment.id, syncStatus: SyncStatus.archived);
+        // commentController.rebuildLocal();
+      });
+    }
+
     return Obx(() {
-      final CommentUIController commentUIController = Get.find<CommentUIController>();
-      final shouldHighlight = commentUIController.activeCommentId.value == comment.id;
+      final isEdit =
+          commentUIController.currentMode.value == CommentMode.editComment &&
+          commentUIController.activeCommentId.value == comment.id;
+      final isReply =
+          commentUIController.currentMode.value == CommentMode.replyComment &&
+          commentUIController.activeCommentParentId.value == comment.id;
+      final isNew = comment.syncStatus == SyncStatus.synced;
+      Color borderColor = Colors.grey.withAlpha(50);
+      double borderWidth = 1.2;
+      Color shadowColor = Colors.transparent;
+      if (isNew) {
+        shadowColor = Colors.lightGreen.withAlpha(100);
+        borderColor = Colors.lightGreen.withAlpha(180);
+        borderWidth = 1.5;
+      }
+      if (isEdit || isReply) {
+        shadowColor = Colors.lightBlue.withAlpha(100);
+        borderColor = Colors.lightBlue.withAlpha(180);
+        borderWidth = 1.5;
+      }
+      // todo animated container to smoothly transition between states
       return Card(
         margin: const EdgeInsets.symmetric(vertical: 4.0),
-        shadowColor: shouldHighlight ? Colors.lightBlue : null,
+        shadowColor: shadowColor,
         shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: shouldHighlight ? Colors.lightBlue.withAlpha(180) : Colors.grey.withAlpha(50),
-            width: shouldHighlight ? 1.5 : 1.2,
-          ),
+          side: BorderSide(color: borderColor, width: borderWidth),
           borderRadius: BorderRadius.circular(8.0),
         ),
         child: Padding(
@@ -833,6 +861,14 @@ class CommentTree extends StatelessWidget {
       children: [
         Row(
           children: [
+            Text(comment.syncStatus.toString()),
+            ElevatedButton(
+              onPressed: () {
+                commentController.onUpdateLocalField(comment.id, syncStatus: SyncStatus.synced);
+                commentController.rebuildLocal();
+              },
+              child: Text('test'),
+            ),
             buildUserAvatar(context, userProfile.avatarUrl, size: 16, selected: true),
             const SizedBox(width: 12.0),
             Column(

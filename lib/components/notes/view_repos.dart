@@ -200,7 +200,8 @@ class __RepoListsState extends State<_RepoLists> {
   Widget _repoListTileCard(RepoDataItem repo) {
     return ListTileCard(
       dataItem: repo,
-      onUpdateLocalField: () => repoController.onUpdateLocalField(repo.id),
+      onUpdateLocalField: ({ColorTag? colorTag, SyncStatus? syncStatus}) =>
+          repoController.onUpdateLocalField(repo.id, colorTag: colorTag, syncStatus: syncStatus),
       title: repo.body.name,
       subtitle: repo.body.description,
       onTap: () {

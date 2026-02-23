@@ -11,6 +11,9 @@ class ViewPosts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final RepoController repoController = Get.find<RepoController>();
+    final PostController postController = Get.find<PostController>();
+    final CommentController commentController = Get.find<CommentController>();
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -19,7 +22,21 @@ class ViewPosts extends StatelessWidget {
         },
         child: const Icon(Icons.add),
       ),
-      body: const _ViewPosts(),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          print('refreshing posts');
+          final repoId = repoController.currentRepoId.value;
+          if (repoId != null) {
+            postController.syncChildren(repoId);
+            for (var post in postController.onViewPosts(filters: [ParentIdFilter(repoId)])) {
+              commentController.syncChildren(post.id);
+            }
+            postController.rebuildLocal();
+            commentController.rebuildLocal();
+          }
+        },
+        child: const _ViewPosts(),
+      ),
     );
   }
 }
@@ -34,6 +51,7 @@ class _ViewPosts extends StatefulWidget {
 class __ViewPostsState extends State<_ViewPosts> {
   final postController = Get.find<PostController>();
   final repoController = Get.find<RepoController>();
+  final commentController = Get.find<CommentController>();
   final settingController = Get.find<SettingController>();
 
   bool _allExpanded = true;
@@ -197,8 +215,8 @@ class __ViewPostsState extends State<_ViewPosts> {
   Widget _postListCard(post) {
     return ListTileCard(
       dataItem: post,
-      onUpdateLocalField: () {
-        postController.onUpdateLocalField(post.id);
+      onUpdateLocalField: ({ColorTag? colorTag, SyncStatus? syncStatus}) {
+        postController.onUpdateLocalField(post.id, colorTag: colorTag, syncStatus: syncStatus);
         // tricky way to refresh parent repo list. should be better.
         repoController.rebuildLocal();
       },
@@ -212,6 +230,8 @@ class __ViewPostsState extends State<_ViewPosts> {
           : '${post.body.content.substring(0, 300)}...',
       onEditButton: () => Get.toNamed('/notes/edit-post', arguments: [post]),
       onDeleteButton: () => postController.deleteData(post.id),
+      enableChildrenUpdateNumber: () =>
+          commentController.onViewComments(filters: [ParentIdFilter(post.id), StatusFilter.synced]).length,
     );
   }
 }

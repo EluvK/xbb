@@ -22,7 +22,7 @@ class ListTileCard<T> extends StatefulWidget {
   });
 
   final DataItem<T> dataItem;
-  final Function() onUpdateLocalField;
+  final Function({ColorTag? colorTag, SyncStatus? syncStatus}) onUpdateLocalField;
   final String? title;
   final String? subtitle;
   final Function() onTap;
@@ -132,8 +132,7 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
       onTap: () {
         if (isNew) {
           setState(() {
-            widget.dataItem.syncStatus = SyncStatus.archived;
-            widget.onUpdateLocalField();
+            widget.onUpdateLocalField(syncStatus: SyncStatus.archived);
           });
         }
         widget.onTap();
@@ -156,11 +155,10 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
             onPressed: () {
               setState(() {
                 if (isArchived) {
-                  widget.dataItem.syncStatus = SyncStatus.synced;
+                  widget.onUpdateLocalField(syncStatus: SyncStatus.synced);
                 } else if (isNew) {
-                  widget.dataItem.syncStatus = SyncStatus.archived;
+                  widget.onUpdateLocalField(syncStatus: SyncStatus.archived);
                 }
-                widget.onUpdateLocalField();
               });
             },
             icon: isArchived ? const Icon(Icons.mark_email_unread_rounded) : const Icon(Icons.mark_email_read_rounded),
@@ -177,9 +175,8 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
             value: widget.dataItem.colorTag,
             onSelected: (tag) {
               setState(() {
-                widget.dataItem.colorTag = tag;
+                widget.onUpdateLocalField(colorTag: tag);
               });
-              widget.onUpdateLocalField();
             },
           ),
         );

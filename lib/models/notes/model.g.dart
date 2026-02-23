@@ -253,8 +253,14 @@ class RepoController extends GetxController {
     });
   }
 
-  void onUpdateLocalField(String id) {
+  void onUpdateLocalField(String id, {ColorTag? colorTag, SyncStatus? syncStatus}) {
     final item = _items.firstWhere((item) => item.id == id);
+    if (colorTag != null) {
+      item.colorTag = colorTag;
+    }
+    if (syncStatus != null) {
+      item.syncStatus = syncStatus;
+    }
     RepoRepository().updateToLocalDb(item);
   }
 
@@ -702,8 +708,14 @@ class PostController extends GetxController {
     });
   }
 
-  void onUpdateLocalField(String id) {
+  void onUpdateLocalField(String id, {ColorTag? colorTag, SyncStatus? syncStatus}) {
     final item = _items.firstWhere((item) => item.id == id);
+    if (colorTag != null) {
+      item.colorTag = colorTag;
+    }
+    if (syncStatus != null) {
+      item.syncStatus = syncStatus;
+    }
     PostRepository().updateToLocalDb(item);
   }
 
@@ -1090,8 +1102,14 @@ class CommentController extends GetxController {
     });
   }
 
-  void onUpdateLocalField(String id) {
+  void onUpdateLocalField(String id, {ColorTag? colorTag, SyncStatus? syncStatus}) {
     final item = _items.firstWhere((item) => item.id == id);
+    if (colorTag != null) {
+      item.colorTag = colorTag;
+    }
+    if (syncStatus != null) {
+      item.syncStatus = syncStatus;
+    }
     CommentRepository().updateToLocalDb(item);
   }
 
