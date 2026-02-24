@@ -92,15 +92,17 @@ class UserManagerController extends GetxController {
       UserProfile self = await syncStoreControl.syncStoreClient.getProfile(settingController.userId);
       selfProfile.value = self;
       List<UserProfile> profiles = await syncStoreControl.syncStoreClient.getFriends();
-      userProfiles.removeWhere((p) => p.userId == settingController.userId);
-      for (var profile in profiles) {
-        int index = userProfiles.indexWhere((p) => p.userId == profile.userId);
-        if (index != -1) {
-          userProfiles[index] = profile;
-        } else {
-          userProfiles.add(profile);
-        }
-      }
+      userProfiles.value = profiles;
+      // userProfiles.removeWhere((p) => p.userId == settingController.userId);
+      // userProfiles.removeWhere((p) => !profiles.any((f) => f.userId == p.userId));
+      // for (var profile in profiles) {
+      //   int index = userProfiles.indexWhere((p) => p.userId == profile.userId);
+      //   if (index != -1) {
+      //     userProfiles[index] = profile;
+      //   } else {
+      //     userProfiles.add(profile);
+      //   }
+      // }
 
       friends.value = profiles.map((p) => p.userId).toList();
       _saveToStorage();

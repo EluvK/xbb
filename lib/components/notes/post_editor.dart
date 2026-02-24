@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/rich_editor.dart';
@@ -49,9 +50,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   late Post editPost;
 
   reloadCandidateCategory(String repoId) async {
-    // todo
-    candidateCategory = <String>{}; // mock a empty set for now
-    // candidateCategory = await postController.fetchRepoPostCategories(repoId);
+    candidateCategory = <String>{};
+    for (var post in postController.onViewPosts(filters: [ParentIdFilter(repoId)])) {
+      candidateCategory.add(post.body.category);
+    }
     print('reload: ${candidateCategory.join(',')}');
   }
 
