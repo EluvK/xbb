@@ -31,15 +31,18 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   PlatformDispatcher.instance.onError = (error, stack) {
-    // todo handle loginRequired error to redirect to login page
     if (error is ApiException && error.error == ApiError.loginRequired) {
       print('[Handle ERROR] Login required, redirecting to login page.');
-      // todo add alert dialog
       Get.offAllNamed('/login');
       flushBar(FlushLevel.INFO, "Token 过期", "需要重新登录");
       return true;
     }
-    print('[WARN] Uncaught platform error: $error');
+    if (error is ApiException) {
+      print('[API ERROR] ${error.error}: ${error.message}');
+      flushBar(FlushLevel.WARNING, "API 错误", "${error.error}: ${error.message}");
+      return true;
+    }
+    flushBar(FlushLevel.WARNING, "未知错误", "$error");
     print(stack);
     return true;
   };

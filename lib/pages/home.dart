@@ -85,13 +85,15 @@ class _HomePage extends GetResponsiveView {
         return Scaffold(
           drawer: Drawer(
             width: Get.width * 0.85,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TabBarController(tabs: tabs, tabController: tabController),
-                const Divider(),
-                Expanded(child: _LeftButton(index: currentTab)),
-              ],
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TabBarController(tabs: tabs, tabController: tabController),
+                  const Divider(),
+                  Expanded(child: _LeftButton(index: currentTab)),
+                ],
+              ),
             ),
           ),
           appBar: AppBar(title: _AppBar(index: currentTab), titleSpacing: 0.0),

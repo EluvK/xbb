@@ -27,12 +27,12 @@ class ViewPosts extends StatelessWidget {
           print('refreshing posts');
           final repoId = repoController.currentRepoId.value;
           if (repoId != null) {
-            postController.syncChildren(repoId);
+            await postController.syncChildren(repoId);
             for (var post in postController.onViewPosts(filters: [ParentIdFilter(repoId)])) {
-              commentController.syncChildren(post.id);
+              await commentController.syncChildren(post.id);
             }
-            postController.rebuildLocal();
-            commentController.rebuildLocal();
+            await postController.rebuildLocal();
+            await commentController.rebuildLocal();
           }
         },
         child: const _ViewPosts(),
@@ -111,7 +111,10 @@ class __ViewPostsState extends State<_ViewPosts> {
           filters.add(PostContentFilter(searchFilterTextController.text));
         }
         print("filters length: ${filters.length}");
-        List<PostDataItem> posts = postController.onViewPosts(filters: filters);
+        final List<PostDataItem> posts = postController.registerFilterSubscription(
+          filterKey: 'view_posts',
+          filters: filters,
+        );
         print("build post card post number: ${posts.length}");
         body = Column(
           children: [
@@ -236,12 +239,16 @@ class __ViewPostsState extends State<_ViewPosts> {
   }
 }
 
-class PostContentFilter extends DataItemBodyFilter<Post> {
+class PostContentFilter extends DataItemBodyEquatableFilter<Post> {
   final String contentRegexString;
-  PostContentFilter(this.contentRegexString);
+  PostContentFilter(this.contentRegexString) : _regex = RegExp(contentRegexString, caseSensitive: false);
+  final RegExp _regex;
+
   @override
   bool applyBody(Post body) {
-    final regex = RegExp(contentRegexString, caseSensitive: false);
-    return regex.hasMatch(body.content) || regex.hasMatch(body.title) || regex.hasMatch(body.category);
+    return _regex.hasMatch(body.content) || _regex.hasMatch(body.title) || _regex.hasMatch(body.category);
   }
+
+  @override
+  List<Object?> get props => [contentRegexString];
 }
