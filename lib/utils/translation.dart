@@ -176,9 +176,17 @@ class _TranslationHelper {
       "en_US": "Please check your username and password.",
       "zh_CN": "请检查用户名和密码",
     },
-    "input_display_name": {
-      "en_US": "Display Name",
-      "zh_CN": "显示名称",
+    "edit_profile": {
+      "en_US": "Edit Profile",
+      "zh_CN": "编辑资料",
+    },
+    "change_nick_name": {
+      "en_US": "Change Nick Name",
+      "zh_CN": "修改昵称",
+    },
+    "change_password": {
+      "en_US": "Change Password",
+      "zh_CN": "修改密码",
     },
     "input_optional_avatar_url": {
       "en_US": "Avatar URL (Optional)",

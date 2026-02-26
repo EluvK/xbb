@@ -64,7 +64,7 @@ class _ProfileBodyState extends State<ProfileBody> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Edit Profile Page', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text('edit_profile'.tr, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 20),
         _avatarEditor(),
         const SizedBox(height: 10),
@@ -72,7 +72,7 @@ class _ProfileBodyState extends State<ProfileBody> {
         const SizedBox(height: 10),
         TextField(
           controller: nameController,
-          decoration: InputDecoration(border: const OutlineInputBorder(), labelText: 'input_display_name'.tr),
+          decoration: InputDecoration(border: const OutlineInputBorder(), labelText: 'change_nick_name'.tr),
           onChanged: (value) {
             setState(() {
               _isChanged = true;
@@ -89,7 +89,7 @@ class _ProfileBodyState extends State<ProfileBody> {
           },
           decoration: InputDecoration(
             border: const OutlineInputBorder(),
-            labelText: 'password'.tr,
+            labelText: 'change_password'.tr,
             suffixIcon: IconButton(
               icon: Icon(_passwordVisible ? Icons.visibility : Icons.visibility_off),
               onPressed: () {

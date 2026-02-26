@@ -862,14 +862,14 @@ class CommentTree extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(comment.syncStatus.toString()),
-            ElevatedButton(
-              onPressed: () {
-                commentController.onUpdateLocalField(comment.id, syncStatus: SyncStatus.synced);
-                commentController.rebuildLocal();
-              },
-              child: Text('test'),
-            ),
+            // Text(comment.syncStatus.toString()),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     commentController.onUpdateLocalField(comment.id, syncStatus: SyncStatus.synced);
+            //     commentController.rebuildLocal();
+            //   },
+            //   child: Text('test'),
+            // ),
             buildUserAvatar(context, userProfile.avatarUrl, size: 16, selected: true),
             const SizedBox(width: 12.0),
             Column(
