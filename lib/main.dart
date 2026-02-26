@@ -102,7 +102,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
         // GetPage(name: '/setting', page: () => const SettingPage()),
       ],
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: true,
       themeMode: themeMode,
       theme: FlexThemeData.light(
         scheme: FlexScheme.blumineBlue,

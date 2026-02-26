@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/user.dart';
+import 'package:xbb/utils/double_click.dart';
 import 'package:xbb/utils/text_input.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -45,6 +47,7 @@ class _LoginBodyState extends State<LoginBody> {
   late final nameController = TextEditingController(text: settingController.userName);
   final passwordController = TextEditingController();
   final focus = FocusNode();
+  bool _saveForQuickLogin = false;
   bool _passwordVisible = false;
 
   Timer? _serviceCheckTimer;
@@ -60,12 +63,17 @@ class _LoginBodyState extends State<LoginBody> {
         Text('login_page_title'.tr, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         _buildStatusIndicator(),
         _nameEditor(),
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
         _passwordEditor(),
-        const SizedBox(height: 40),
+        const SizedBox(height: 20),
         _loginButton(),
-        const SizedBox(height: 30),
         const Divider(),
+        Text('quick_login_title'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        _buildQuickLoginList(),
+        const SizedBox(height: 10),
+        const Divider(),
+        Text('syncstore_setting'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         TextInputWidget(
           title: SyncStoreInputMetaEnum.address,
           initialValue: settingController.syncStoreUrl,
@@ -201,14 +209,7 @@ class _LoginBodyState extends State<LoginBody> {
     );
   }
 
-  Widget _loginButton() {
-    return ElevatedButton(
-      onPressed: _isLoggingIn ? null : __execLogin,
-      child: _isLoggingIn ? const CircularProgressIndicator() : Text('login'.tr),
-    );
-  }
-
-  __execLogin() async {
+  execLogin() async {
     final userName = nameController.text;
     final password = passwordController.text;
 
@@ -218,6 +219,12 @@ class _LoginBodyState extends State<LoginBody> {
       final userController = Get.find<UserManagerController>();
       userController.selfProfile.value = userProfile;
       settingController.updateUserInfo(userName: userName, userPassword: password);
+      if (_saveForQuickLogin) {
+        settingController.updateQuickLoginInfo(
+          userId: userProfile.userId,
+          userInfo: UserInfo.fromProfile(userProfile, password: password),
+        );
+      }
       // fetch and update user profiles after login
       // things like this if grows bigger can be moved specifically to a service class
       await userManagerController.fetchAndUpdateUserProfiles();
@@ -234,5 +241,102 @@ class _LoginBodyState extends State<LoginBody> {
         setState(() => _isLoggingIn = false);
       }
     }
+  }
+
+  Widget _loginButton() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton(
+          onPressed: _isLoggingIn ? null : execLogin,
+          child: _isLoggingIn ? const CircularProgressIndicator() : Text('login'.tr),
+        ),
+        InkWell(
+          onTap: () => setState(() => _saveForQuickLogin = !_saveForQuickLogin),
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Checkbox(
+                    visualDensity: VisualDensity.compact,
+                    value: _saveForQuickLogin,
+                    onChanged: null,
+                    // (value) => setState(() => _saveForQuickLogin = value ?? false),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text('save_for_quick_login_hint'.tr, style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickLoginList() {
+    final quickLogins = settingController.quickLogins.value.quickLoginMap;
+    if (quickLogins.isEmpty) {
+      return Text('non_quick_login_hint'.tr);
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: quickLogins.entries.map((entry) {
+        // final userId = entry.key;
+        final UserInfo info = entry.value;
+        // final password = entry.value;
+        return Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                InkWell(
+                  customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  onTap: () {
+                    nameController.text = info.name;
+                    passwordController.text = info.password;
+                    _saveForQuickLogin = true;
+                    execLogin();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(4.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: buildUserAvatar(context, info.avatarUrl, size: 36, selected: false),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: DoubleClickButton(
+                    buttonBuilder: (onPressed) => IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: onPressed,
+                      icon: const Icon(Icons.close, size: 24, color: Colors.red),
+                      // tooltip: 'delete'.tr,
+                    ),
+                    onDoubleClick: () {
+                      settingController.updateQuickLoginInfo(userId: info.id, userInfo: null);
+                    },
+                    firstClickHint: 'delete_quick_login_message'.trParams({'userName': info.name}),
+                    upperPosition: true,
+                  ),
+                ),
+              ],
+            ),
+            Text(info.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ],
+        );
+      }).toList(),
+    );
   }
 }

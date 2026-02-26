@@ -144,6 +144,22 @@ class _TranslationHelper {
       "en_US": "Login",
       "zh_CN": "登录",
     },
+    "quick_login_title": {
+      "en_US": "Quick Login",
+      "zh_CN": "快速登录",
+    },
+    "non_quick_login_hint": {
+      "en_US": "No quick login info yet.",
+      "zh_CN": "暂无快速登录信息",
+    },
+    "save_for_quick_login_hint": {
+      "en_US": "Save password",
+      "zh_CN": "保存密码",
+    },
+    "delete_quick_login_message": {
+      "en_US": "Delete quick login info for @userName?",
+      "zh_CN": "删除 `@userName` 的快速登录信息吗？",
+    },
     "service_status_ok": {
       "en_US": "Service Available",
       "zh_CN": "服务在线",

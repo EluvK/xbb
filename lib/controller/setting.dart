@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
+import 'package:syncstore_client/syncstore_client.dart' show ColorTag, UserProfile;
 import 'package:xbb/constant.dart';
 
 bool initFirstTime() {
@@ -40,6 +40,11 @@ class SettingController extends GetxController {
     Map<String, dynamic>? user = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INFO_KEY);
     if (user != null) {
       userInfo.value = UserInfo.fromJson(user);
+    }
+    // load quick login info from storage
+    Map<String, dynamic>? quickLogin = box.read<Map<String, dynamic>?>(STORAGE_SETTING_QUICK_LOGIN_KEY);
+    if (quickLogin != null) {
+      quickLogins.value = QuickLoginInfo.fromJson(quickLogin);
     }
     // load syncstore setting from storage
     Map<String, dynamic>? syncstore = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY);
@@ -132,6 +137,27 @@ class SettingController extends GetxController {
       info?.update(userId: userId, userName: userName, userPassword: userPassword);
     });
     box.write(STORAGE_SETTING_USER_INFO_KEY, userInfo.value.toJson());
+  }
+
+  // quick login info
+  final quickLogins = QuickLoginInfo.defaults().obs;
+  UserInfo? quickLoginUser(String userId) => quickLogins.value.quickLoginMap[userId];
+  void updateQuickLoginInfo({String? userId, UserInfo? userInfo}) {
+    quickLogins.update((ql) {
+      ql?.update(userId: userId, userInfo: userInfo);
+    });
+    box.write(STORAGE_SETTING_QUICK_LOGIN_KEY, quickLogins.value.toJson());
+  }
+
+  // mainly for update user's name/avatar when user has already quick login info before
+  void updateQuickLoginInfoIfExist(String userId, UserProfile profile) {
+    final existing = quickLogins.value.quickLoginMap[userId];
+    if (existing != null) {
+      updateQuickLoginInfo(
+        userId: userId,
+        userInfo: UserInfo.fromProfile(profile, password: existing.password),
+      );
+    }
   }
 }
 
@@ -323,29 +349,51 @@ class UserInfo {
   String _userId;
   String _userName;
   String _userPassword;
+  String? _userAvatarUrl;
 
   get id => _userId;
   get name => _userName;
   get password => _userPassword;
+  get avatarUrl => _userAvatarUrl;
 
-  UserInfo({required String userId, required String userName, required String userPassword})
+  UserInfo({required String userId, required String userName, required String userPassword, String? userAvatarUrl})
     : _userId = userId,
       _userName = userName,
-      _userPassword = userPassword;
+      _userPassword = userPassword,
+      _userAvatarUrl = userAvatarUrl;
+
+  factory UserInfo.fromProfile(UserProfile profile, {required String password}) {
+    return UserInfo(
+      userId: profile.userId,
+      userName: profile.name,
+      userPassword: password,
+      userAvatarUrl: profile.avatarUrl,
+    );
+  }
 
   factory UserInfo.unknown() {
-    return UserInfo(userId: 'unknown', userName: '', userPassword: '');
+    return UserInfo(userId: 'unknown', userName: '', userPassword: '', userAvatarUrl: null);
   }
 
   Map<String, dynamic> toJson() {
-    return {'user_id': _userId, 'user_name': _userName, 'user_password': _userPassword};
+    return {
+      'user_id': _userId,
+      'user_name': _userName,
+      'user_password': _userPassword,
+      'user_avatar_url': _userAvatarUrl,
+    };
   }
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
-    return UserInfo(userId: json['user_id'], userName: json['user_name'], userPassword: json['user_password']);
+    return UserInfo(
+      userId: json['user_id'],
+      userName: json['user_name'],
+      userPassword: json['user_password'],
+      userAvatarUrl: json['user_avatar_url'],
+    );
   }
 
-  void update({String? userId, String? userName, String? userPassword}) {
+  void update({String? userId, String? userName, String? userPassword, String? userAvatarUrl}) {
     if (userId != null) {
       _userId = userId;
     }
@@ -354,6 +402,37 @@ class UserInfo {
     }
     if (userPassword != null) {
       _userPassword = userPassword;
+    }
+    if (userAvatarUrl != null) {
+      _userAvatarUrl = userAvatarUrl;
+    }
+  }
+}
+
+class QuickLoginInfo {
+  Map<String, UserInfo> quickLoginMap;
+  QuickLoginInfo({required this.quickLoginMap});
+  factory QuickLoginInfo.defaults() {
+    return QuickLoginInfo(quickLoginMap: {});
+  }
+  Map<String, dynamic> toJson() {
+    return {'quick_login_map': quickLoginMap.map((key, value) => MapEntry(key, value.toJson()))};
+  }
+
+  factory QuickLoginInfo.fromJson(Map<String, dynamic> json) {
+    return QuickLoginInfo(
+      quickLoginMap:
+          (json['quick_login_map'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(key, UserInfo.fromJson(value)),
+          ) ??
+          {},
+    );
+  }
+  void update({String? userId, UserInfo? userInfo}) {
+    if (userId != null && userInfo != null) {
+      quickLoginMap[userId] = userInfo;
+    } else if (userId != null && userInfo == null) {
+      quickLoginMap.remove(userId);
     }
   }
 }

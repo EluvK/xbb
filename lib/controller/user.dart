@@ -80,6 +80,7 @@ class UserManagerController extends GetxController {
     );
     selfProfile.value = updatedProfile;
     settingController.updateUserInfo(userName: updatedProfile.name, userPassword: newProfile.password);
+    settingController.updateQuickLoginInfoIfExist(updatedProfile.userId, updatedProfile);
     _saveToStorage();
   }
 
