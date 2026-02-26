@@ -13,7 +13,7 @@ part of 'model.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$Repo {
+mixin _$Repo implements DiagnosticableTreeMixin {
 
  String get name; String get status; String? get description;
 /// Create a copy of Repo
@@ -25,6 +25,12 @@ $RepoCopyWith<Repo> get copyWith => _$RepoCopyWithImpl<Repo>(this as Repo, _$ide
   /// Serializes this Repo to a JSON map.
   Map<String, dynamic> toJson();
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'Repo'))
+    ..add(DiagnosticsProperty('name', name))..add(DiagnosticsProperty('status', status))..add(DiagnosticsProperty('description', description));
+}
 
 @override
 bool operator ==(Object other) {
@@ -36,7 +42,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,name,status,description);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'Repo(name: $name, status: $status, description: $description)';
 }
 
@@ -210,7 +216,7 @@ return $default(_that.name,_that.status,_that.description);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _Repo implements Repo {
+class _Repo with DiagnosticableTreeMixin implements Repo {
   const _Repo({required this.name, required this.status, this.description});
   factory _Repo.fromJson(Map<String, dynamic> json) => _$RepoFromJson(json);
 
@@ -228,6 +234,12 @@ _$RepoCopyWith<_Repo> get copyWith => __$RepoCopyWithImpl<_Repo>(this, _$identit
 Map<String, dynamic> toJson() {
   return _$RepoToJson(this, );
 }
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'Repo'))
+    ..add(DiagnosticsProperty('name', name))..add(DiagnosticsProperty('status', status))..add(DiagnosticsProperty('description', description));
+}
 
 @override
 bool operator ==(Object other) {
@@ -239,7 +251,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,name,status,description);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'Repo(name: $name, status: $status, description: $description)';
 }
 
@@ -282,7 +294,7 @@ as String?,
 
 
 /// @nodoc
-mixin _$Post {
+mixin _$Post implements DiagnosticableTreeMixin {
 
  String get title; String get category; String get content; String get repoId;
 /// Create a copy of Post
@@ -294,6 +306,12 @@ $PostCopyWith<Post> get copyWith => _$PostCopyWithImpl<Post>(this as Post, _$ide
   /// Serializes this Post to a JSON map.
   Map<String, dynamic> toJson();
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'Post'))
+    ..add(DiagnosticsProperty('title', title))..add(DiagnosticsProperty('category', category))..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('repoId', repoId));
+}
 
 @override
 bool operator ==(Object other) {
@@ -305,7 +323,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,title,category,content,repoId);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'Post(title: $title, category: $category, content: $content, repoId: $repoId)';
 }
 
@@ -480,7 +498,7 @@ return $default(_that.title,_that.category,_that.content,_that.repoId);case _:
 /// @nodoc
 
 @JsonSerializable(fieldRename: FieldRename.snake)
-class _Post implements Post {
+class _Post with DiagnosticableTreeMixin implements Post {
   const _Post({required this.title, required this.category, required this.content, required this.repoId});
   factory _Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
 
@@ -499,6 +517,12 @@ _$PostCopyWith<_Post> get copyWith => __$PostCopyWithImpl<_Post>(this, _$identit
 Map<String, dynamic> toJson() {
   return _$PostToJson(this, );
 }
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'Post'))
+    ..add(DiagnosticsProperty('title', title))..add(DiagnosticsProperty('category', category))..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('repoId', repoId));
+}
 
 @override
 bool operator ==(Object other) {
@@ -510,7 +534,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,title,category,content,repoId);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'Post(title: $title, category: $category, content: $content, repoId: $repoId)';
 }
 
@@ -554,7 +578,7 @@ as String,
 
 
 /// @nodoc
-mixin _$Comment {
+mixin _$Comment implements DiagnosticableTreeMixin {
 
  String get content; String get postId; String? get parentId; int? get paragraphIndex; String? get paragraphHash;
 /// Create a copy of Comment
@@ -566,6 +590,12 @@ $CommentCopyWith<Comment> get copyWith => _$CommentCopyWithImpl<Comment>(this as
   /// Serializes this Comment to a JSON map.
   Map<String, dynamic> toJson();
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'Comment'))
+    ..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('postId', postId))..add(DiagnosticsProperty('parentId', parentId))..add(DiagnosticsProperty('paragraphIndex', paragraphIndex))..add(DiagnosticsProperty('paragraphHash', paragraphHash));
+}
 
 @override
 bool operator ==(Object other) {
@@ -577,7 +607,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,content,postId,parentId,paragraphIndex,paragraphHash);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'Comment(content: $content, postId: $postId, parentId: $parentId, paragraphIndex: $paragraphIndex, paragraphHash: $paragraphHash)';
 }
 
@@ -753,7 +783,7 @@ return $default(_that.content,_that.postId,_that.parentId,_that.paragraphIndex,_
 /// @nodoc
 
 @JsonSerializable(fieldRename: FieldRename.snake)
-class _Comment implements Comment {
+class _Comment with DiagnosticableTreeMixin implements Comment {
   const _Comment({required this.content, required this.postId, this.parentId, this.paragraphIndex, this.paragraphHash});
   factory _Comment.fromJson(Map<String, dynamic> json) => _$CommentFromJson(json);
 
@@ -773,6 +803,12 @@ _$CommentCopyWith<_Comment> get copyWith => __$CommentCopyWithImpl<_Comment>(thi
 Map<String, dynamic> toJson() {
   return _$CommentToJson(this, );
 }
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'Comment'))
+    ..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('postId', postId))..add(DiagnosticsProperty('parentId', parentId))..add(DiagnosticsProperty('paragraphIndex', paragraphIndex))..add(DiagnosticsProperty('paragraphHash', paragraphHash));
+}
 
 @override
 bool operator ==(Object other) {
@@ -784,7 +820,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,content,postId,parentId,paragraphIndex,paragraphHash);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'Comment(content: $content, postId: $postId, parentId: $parentId, paragraphIndex: $paragraphIndex, paragraphHash: $paragraphHash)';
 }
 

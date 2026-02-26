@@ -136,8 +136,9 @@ class RepoRepository {
 
 class _RepoDataItemFilterSubscription {
   final RxList<RepoDataItem> filteredList;
+  final List<DataItemFilter> appliedFilters;
   final Worker worker;
-  _RepoDataItemFilterSubscription(this.filteredList, this.worker);
+  _RepoDataItemFilterSubscription(this.filteredList, this.appliedFilters, this.worker);
 }
 
 class RepoController extends GetxController {
@@ -177,15 +178,17 @@ class RepoController extends GetxController {
     required String filterKey,
     List<DataItemFilter> filters = const [],
   }) {
-    if (_dynamicSubscription.containsKey(filterKey)) {
-      return _dynamicSubscription[filterKey]!.filteredList;
+    final existing = _dynamicSubscription[filterKey];
+    if (existing != null && listEquals(existing.appliedFilters, filters)) {
+      return existing.filteredList;
     }
     final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    existing?.worker.dispose();
     final worker = debounce(_items, (List<RepoDataItem> value) {
       final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
       newList.assignAll(newFiltered);
     }, time: const Duration(milliseconds: 100));
-    _dynamicSubscription[filterKey] = _RepoDataItemFilterSubscription(newList, worker);
+    _dynamicSubscription[filterKey] = _RepoDataItemFilterSubscription(newList, filters, worker);
     return newList;
   }
 
@@ -196,6 +199,7 @@ class RepoController extends GetxController {
 
   Future<void> rebuildLocal() async {
     _items.value = await RepoRepository().listFromLocalDb();
+    _items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   void onSelectRepo(String id) {
@@ -591,8 +595,9 @@ class PostRepository {
 
 class _PostDataItemFilterSubscription {
   final RxList<PostDataItem> filteredList;
+  final List<DataItemFilter> appliedFilters;
   final Worker worker;
-  _PostDataItemFilterSubscription(this.filteredList, this.worker);
+  _PostDataItemFilterSubscription(this.filteredList, this.appliedFilters, this.worker);
 }
 
 class PostController extends GetxController {
@@ -632,15 +637,17 @@ class PostController extends GetxController {
     required String filterKey,
     List<DataItemFilter> filters = const [],
   }) {
-    if (_dynamicSubscription.containsKey(filterKey)) {
-      return _dynamicSubscription[filterKey]!.filteredList;
+    final existing = _dynamicSubscription[filterKey];
+    if (existing != null && listEquals(existing.appliedFilters, filters)) {
+      return existing.filteredList;
     }
     final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    existing?.worker.dispose();
     final worker = debounce(_items, (List<PostDataItem> value) {
       final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
       newList.assignAll(newFiltered);
     }, time: const Duration(milliseconds: 100));
-    _dynamicSubscription[filterKey] = _PostDataItemFilterSubscription(newList, worker);
+    _dynamicSubscription[filterKey] = _PostDataItemFilterSubscription(newList, filters, worker);
     return newList;
   }
 
@@ -651,6 +658,7 @@ class PostController extends GetxController {
 
   Future<void> rebuildLocal() async {
     _items.value = await PostRepository().listFromLocalDb();
+    _items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   void onSelectPost(String id) {
@@ -985,8 +993,9 @@ class CommentRepository {
 
 class _CommentDataItemFilterSubscription {
   final RxList<CommentDataItem> filteredList;
+  final List<DataItemFilter> appliedFilters;
   final Worker worker;
-  _CommentDataItemFilterSubscription(this.filteredList, this.worker);
+  _CommentDataItemFilterSubscription(this.filteredList, this.appliedFilters, this.worker);
 }
 
 class CommentController extends GetxController {
@@ -1026,15 +1035,17 @@ class CommentController extends GetxController {
     required String filterKey,
     List<DataItemFilter> filters = const [],
   }) {
-    if (_dynamicSubscription.containsKey(filterKey)) {
-      return _dynamicSubscription[filterKey]!.filteredList;
+    final existing = _dynamicSubscription[filterKey];
+    if (existing != null && listEquals(existing.appliedFilters, filters)) {
+      return existing.filteredList;
     }
     final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    existing?.worker.dispose();
     final worker = debounce(_items, (List<CommentDataItem> value) {
       final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
       newList.assignAll(newFiltered);
     }, time: const Duration(milliseconds: 100));
-    _dynamicSubscription[filterKey] = _CommentDataItemFilterSubscription(newList, worker);
+    _dynamicSubscription[filterKey] = _CommentDataItemFilterSubscription(newList, filters, worker);
     return newList;
   }
 
@@ -1045,6 +1056,7 @@ class CommentController extends GetxController {
 
   Future<void> rebuildLocal() async {
     _items.value = await CommentRepository().listFromLocalDb();
+    _items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   void onSelectComment(String id) {
