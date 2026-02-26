@@ -172,6 +172,10 @@ class _TranslationHelper {
       "en_US": "Login Failed",
       "zh_CN": "登录失败",
     },
+    "login_success_message": {
+      "en_US": "Welcome back, @userName!",
+      "zh_CN": "欢迎回来, @userName!",
+    },
     "login_failed_message": {
       "en_US": "Please check your username and password.",
       "zh_CN": "请检查用户名和密码",
@@ -272,6 +276,10 @@ class _TranslationHelper {
     "input_description": {
       "en_US": "Description",
       "zh_CN": "描述",
+    },
+    "input_saved": {
+      "en_US": "Saved",
+      "zh_CN": "已保存",
     },
     "optional": {
       "en_US": "(Optional)",

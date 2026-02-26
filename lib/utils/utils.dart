@@ -73,6 +73,10 @@ String detailedDateStr(DateTime dt) {
 // ignore: constant_identifier_names
 enum FlushLevel { OK, INFO, WARNING }
 
+void successSimpleFlushBar(String message) {
+  flushBar(FlushLevel.OK, null, message, upperPosition: true);
+}
+
 void flushBar(FlushLevel level, String? title, String? message,
     {bool upperPosition = false}) {
   Color? color;

@@ -49,6 +49,7 @@ class _LoginBodyState extends State<LoginBody> {
 
   Timer? _serviceCheckTimer;
   bool _isChecking = false;
+  bool _isLoggingIn = false;
 
   @override
   Widget build(BuildContext context) {
@@ -202,26 +203,36 @@ class _LoginBodyState extends State<LoginBody> {
 
   Widget _loginButton() {
     return ElevatedButton(
-      onPressed: () async {
-        final userName = nameController.text;
-        final password = passwordController.text;
-
-        try {
-          final UserProfile userProfile = await ssClient.login(userName, password);
-          final userController = Get.find<UserManagerController>();
-          userController.selfProfile.value = userProfile;
-          settingController.updateUserInfo(userName: userName, userPassword: password);
-          // fetch and update user profiles after login
-          // things like this if grows bigger can be moved specifically to a service class
-          await userManagerController.fetchAndUpdateUserProfiles();
-          await reInitSyncStoreController();
-          Get.offAllNamed('/');
-        } catch (e) {
-          print('login error: $e');
-          flushBar(FlushLevel.INFO, 'login_failed'.tr, 'login_failed_message'.tr);
-        }
-      },
-      child: Text('login'.tr),
+      onPressed: _isLoggingIn ? null : __execLogin,
+      child: _isLoggingIn ? const CircularProgressIndicator() : Text('login'.tr),
     );
+  }
+
+  __execLogin() async {
+    final userName = nameController.text;
+    final password = passwordController.text;
+
+    try {
+      setState(() => _isLoggingIn = true);
+      final UserProfile userProfile = await ssClient.login(userName, password);
+      final userController = Get.find<UserManagerController>();
+      userController.selfProfile.value = userProfile;
+      settingController.updateUserInfo(userName: userName, userPassword: password);
+      // fetch and update user profiles after login
+      // things like this if grows bigger can be moved specifically to a service class
+      await userManagerController.fetchAndUpdateUserProfiles();
+      await reInitSyncStoreController();
+      if (mounted) {
+        Get.offAllNamed('/');
+        successSimpleFlushBar('login_success_message'.trParams({'userName': userProfile.name}));
+      }
+    } catch (e) {
+      print('login error: $e');
+      flushBar(FlushLevel.WARNING, 'login_failed'.tr, 'login_failed_message'.tr);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoggingIn = false);
+      }
+    }
   }
 }

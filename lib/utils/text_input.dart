@@ -243,7 +243,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                   textAlign: TextAlign.center,
                   onSubmitted: (value) {
                     print(value);
-                    flushBar(FlushLevel.OK, null, "Saved", upperPosition: true);
+                    successSimpleFlushBar('input_saved'.tr);
                     widget.onFinished(value);
                   },
                 ),
