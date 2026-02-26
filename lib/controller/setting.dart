@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag, UserProfile;
 import 'package:xbb/constant.dart';
+import 'package:xbb/controller/utils.dart';
 
 bool initFirstTime() {
   var settingController = Get.find<SettingController>();
@@ -14,8 +15,47 @@ bool initFirstTime() {
   return true;
 }
 
+// task: List<({double weight, Future<void> Function() action})> tasks,
+Future<void> runSyncTaskWithStatus(List<dynamic> tasks, {double from = 0.0, double to = 100.0}) async {
+  final normalizedTasks = tasks.map((t) {
+    if (t is Future Function()) {
+      return (weight: 1.0, action: t);
+    } else if (t is ({double weight, Future Function() action})) {
+      return t;
+    }
+    throw ArgumentError("任务格式不支持");
+  }).toList();
+
+  double totalWeight = normalizedTasks.fold(0, (sum, item) => sum + item.weight);
+  double currentCompletedWeight = 0;
+  print('total weight: $totalWeight');
+
+  final settingController = Get.find<SettingController>();
+
+  for (var task in normalizedTasks) {
+    await task.action();
+    currentCompletedWeight += task.weight;
+    int progress = ((currentCompletedWeight / totalWeight) * (to - from) + from).toInt();
+    settingController.updateUserInterfaceHistoryCache(notesSyncProgress: progress);
+    print('当前同步进度: $progress%');
+  }
+  settingController.updateUserInterfaceHistoryCache(notesSyncProgress: to.toInt());
+}
+
 class SettingController extends GetxController {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
+
+  @override
+  void onReady() {
+    super.onReady();
+    onLateInit();
+  }
+
+  onLateInit() async {
+    // delay a bit to avoid checking update too early before syncstore controller is ready
+    await Future.delayed(const Duration(seconds: 5));
+    checkUpdate();
+  }
 
   @override
   Future onInit() async {
@@ -120,9 +160,10 @@ class SettingController extends GetxController {
   // user interface history cache
   final _userInterfaceHistoryCache = UserInterfaceHistoryCache.defaults().obs;
   String? get notesLastOpenedRepoId => _userInterfaceHistoryCache.value.notesLastOpenedRepoId;
-  void updateUserInterfaceHistoryCache({String? notesLastOpenedRepoId}) {
+  int get notesSyncProgress => _userInterfaceHistoryCache.value.notesSyncProgress;
+  void updateUserInterfaceHistoryCache({String? notesLastOpenedRepoId, int? notesSyncProgress}) {
     _userInterfaceHistoryCache.update((cache) {
-      cache?.update(notesLastOpenedRepoId: notesLastOpenedRepoId);
+      cache?.update(notesLastOpenedRepoId: notesLastOpenedRepoId, notesSyncProgress: notesSyncProgress);
     });
     box.write(STORAGE_SETTING_USER_INTERFACE_HISTORY_CACHE_KEY, _userInterfaceHistoryCache.value.toJson());
   }
@@ -327,20 +368,27 @@ class AppFeaturesManagement {
 
 class UserInterfaceHistoryCache {
   String? notesLastOpenedRepoId;
-  UserInterfaceHistoryCache({this.notesLastOpenedRepoId});
+  int notesSyncProgress;
+  UserInterfaceHistoryCache({this.notesLastOpenedRepoId, required this.notesSyncProgress});
   factory UserInterfaceHistoryCache.defaults() {
-    return UserInterfaceHistoryCache(notesLastOpenedRepoId: null);
+    return UserInterfaceHistoryCache(notesLastOpenedRepoId: null, notesSyncProgress: 100);
   }
   Map<String, dynamic> toJson() {
-    return {'notes_last_opened_repo_id': notesLastOpenedRepoId};
+    return {'notes_last_opened_repo_id': notesLastOpenedRepoId, 'notes_sync_progress': notesSyncProgress};
   }
 
   factory UserInterfaceHistoryCache.fromJson(Map<String, dynamic> json) {
-    return UserInterfaceHistoryCache(notesLastOpenedRepoId: json['notes_last_opened_repo_id']);
+    return UserInterfaceHistoryCache(
+      notesLastOpenedRepoId: json['notes_last_opened_repo_id'],
+      notesSyncProgress: json['notes_sync_progress'] ?? 100,
+    );
   }
-  void update({String? notesLastOpenedRepoId}) {
+  void update({String? notesLastOpenedRepoId, int? notesSyncProgress}) {
     if (notesLastOpenedRepoId != null) {
       this.notesLastOpenedRepoId = notesLastOpenedRepoId;
+    }
+    if (notesSyncProgress != null) {
+      this.notesSyncProgress = notesSyncProgress;
     }
   }
 }

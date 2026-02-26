@@ -5,8 +5,6 @@ import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/utils/utils.dart';
 
 checkUpdate({bool autoExecUpdate = false, bool forceCheck = false}) async {
-  // delay a bit to avoid checking update too early before syncstore controller is ready
-  await Future.delayed(const Duration(seconds: 3));
   final SettingController settingController = Get.find<SettingController>();
   final lastCheckUpdate = settingController.appLastCheckedUpdateTime;
 

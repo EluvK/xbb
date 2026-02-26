@@ -8,7 +8,6 @@ import 'package:syncstore_client/syncstore_client.dart' show ApiError, ApiExcept
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
-import 'package:xbb/controller/utils.dart';
 import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
@@ -63,9 +62,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingController = Get.find<SettingController>();
-
-    checkUpdate();
-
     // print(settingController.lastAutoLoadTimestamp);
     // bool inMinimumUpdateInterval = DateTime.now()
     //     .subtract(const Duration(minutes: 1))

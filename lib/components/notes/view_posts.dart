@@ -27,17 +27,59 @@ class ViewPosts extends StatelessWidget {
           print('refreshing posts');
           final repoId = repoController.currentRepoId.value;
           if (repoId != null) {
-            await postController.syncChildren(repoId);
-            for (var post in postController.onViewPosts(filters: [ParentIdFilter(repoId)])) {
-              await commentController.syncChildren(post.id);
-            }
-            await postController.rebuildLocal();
-            await commentController.rebuildLocal();
+            await runSyncTaskWithStatus([() => postController.syncChildren(repoId)], from: 0, to: 20);
+            final posts = postController.onViewPosts(filters: [ParentIdFilter(repoId)]);
+            await runSyncTaskWithStatus(
+              [
+                ...posts.map((post) {
+                  return () => commentController.syncChildren(post.id);
+                }),
+                () => postController.rebuildLocal(),
+                () => commentController.rebuildLocal(),
+              ],
+              from: 20,
+              to: 100,
+            );
           }
         },
-        child: const _ViewPosts(),
+        child: const Column(
+          children: [
+            NoteSyncProgressBar(),
+            Expanded(child: _ViewPosts()),
+          ],
+        ),
       ),
     );
+  }
+}
+
+// maybe future we can add a global progress bar for everything?
+class NoteSyncProgressBar extends StatelessWidget {
+  const NoteSyncProgressBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final settingController = Get.find<SettingController>();
+
+    return Obx(() {
+      final progress = settingController.notesSyncProgress;
+      final bool isActive = progress > 0 && progress < 100;
+      return AnimatedOpacity(
+        opacity: isActive ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 300),
+        child: isActive
+            ? SizedBox(
+                height: 2,
+                child: LinearProgressIndicator(
+                  value: progress / 100,
+                  minHeight: 2,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                ),
+              )
+            : const SizedBox.shrink(),
+      );
+    });
   }
 }
 

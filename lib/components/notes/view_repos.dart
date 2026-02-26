@@ -238,16 +238,28 @@ class __RepoListsState extends State<_RepoLists> {
             ),
             IconButton(
               onPressed: () async {
-                await repoController.syncOwned();
-                await repoController.syncGranted();
-                await repoController.rebuildLocal();
-                await repoController.syncAcls();
-                await postController.syncOwned();
-                for (var repo in repoController.onViewRepos(filters: [StatusFilter.notHidden])) {
-                  print('syncing children for repo ${repo.id}');
-                  await postController.syncChildren(repo.id);
-                }
-                await postController.rebuildLocal();
+                await runSyncTaskWithStatus(
+                  [
+                    () => repoController.syncOwned(),
+                    () => repoController.syncGranted(),
+                    () => repoController.rebuildLocal(),
+                    () => repoController.syncAcls(),
+                    () => postController.syncOwned(),
+                  ],
+                  from: 0.0,
+                  to: 50.0,
+                );
+                final repos = repoController.onViewRepos(filters: [StatusFilter.notHidden]);
+                await runSyncTaskWithStatus(
+                  [
+                    ...repos.map((repo) {
+                      return () => postController.syncChildren(repo.id);
+                    }),
+                    () => postController.rebuildLocal(),
+                  ],
+                  from: 50.0,
+                  to: 100.0,
+                );
               },
               icon: const Icon(Icons.refresh),
             ),

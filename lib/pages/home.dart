@@ -117,7 +117,10 @@ class _HomePage extends GetResponsiveView {
                 width: min(max(Get.width * 0.3, 280), 400),
                 child: Column(
                   children: [
-                    const _GlobalColorController(),
+                    Container(
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+                      child: const _GlobalColorController(),
+                    ),
                     TabBarController(tabs: tabs, tabController: tabController),
                     Expanded(child: _LeftButton(index: currentTab)),
                   ],
@@ -175,7 +178,6 @@ class _GlobalColorControllerState extends State<_GlobalColorController> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
       child: Align(
         alignment: Alignment.centerLeft,
         child: ColorPickerButtons(
