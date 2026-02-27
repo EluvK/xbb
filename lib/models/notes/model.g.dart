@@ -206,6 +206,17 @@ class RepoController extends GetxController {
     currentRepoId.value = id;
   }
 
+  DataItem<Repo>? getRepo(String id) {
+    return _items.firstWhereOrNull((item) => item.id == id);
+  }
+
+  List<T> getRepoDetails<T>({
+    List<DataItemFilter> filters = const [],
+    required T Function(RepoDataItem item) selector,
+  }) {
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
+  }
+
   List<RepoDataItem> onViewRepos({List<DataItemFilter> filters = const []}) {
     if (filters.isEmpty) {
       return _items;
@@ -665,6 +676,17 @@ class PostController extends GetxController {
     currentPostId.value = id;
   }
 
+  DataItem<Post>? getPost(String id) {
+    return _items.firstWhereOrNull((item) => item.id == id);
+  }
+
+  List<T> getPostDetails<T>({
+    List<DataItemFilter> filters = const [],
+    required T Function(PostDataItem item) selector,
+  }) {
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
+  }
+
   List<PostDataItem> onViewPosts({List<DataItemFilter> filters = const []}) {
     if (filters.isEmpty) {
       return _items;
@@ -1061,6 +1083,17 @@ class CommentController extends GetxController {
 
   void onSelectComment(String id) {
     currentCommentId.value = id;
+  }
+
+  DataItem<Comment>? getComment(String id) {
+    return _items.firstWhereOrNull((item) => item.id == id);
+  }
+
+  List<T> getCommentDetails<T>({
+    List<DataItemFilter> filters = const [],
+    required T Function(CommentDataItem item) selector,
+  }) {
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
   }
 
   List<CommentDataItem> onViewComments({List<DataItemFilter> filters = const []}) {

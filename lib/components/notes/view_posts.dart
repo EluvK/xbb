@@ -29,11 +29,14 @@ class ViewPosts extends StatelessWidget {
           final repoId = repoController.currentRepoId.value;
           if (repoId != null) {
             await runSyncTaskWithStatus([() => postController.syncChildren(repoId)], from: 0, to: 20);
-            final posts = postController.onViewPosts(filters: [ParentIdFilter(repoId)]);
+            final postsId = postController.getPostDetails(
+              selector: (post) => post.id,
+              filters: [ParentIdFilter(repoId)],
+            );
             await runSyncTaskWithStatus(
               [
-                ...posts.map((post) {
-                  return () => commentController.syncChildren(post.id);
+                ...postsId.map((postId) {
+                  return () => commentController.syncChildren(postId);
                 }),
                 () => postController.rebuildLocal(),
                 () => commentController.rebuildLocal(),
@@ -98,21 +101,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
   final settingController = Get.find<SettingController>();
 
   late Rx<String?> currentRepoId = repoController.currentRepoId;
-  // List<DataItemFilter> currentFilters = [];
-  RxList<PostDataItem> viewPosts = <PostDataItem>[].obs;
   final searchFilterTextController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    viewPosts = postController.registerFilterSubscription(filterKey: 'view_posts', filters: []);
-  }
-
-  @override
-  void dispose() {
-    postController.unregisterFilterSubscription('view_posts');
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +118,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
         if (searchFilterTextController.text.isNotEmpty) {
           filters.add(PostContentFilter(searchFilterTextController.text));
         }
-        viewPosts = postController.registerFilterSubscription(filterKey: 'view_posts', filters: filters);
+        final viewPosts = postController.getPostDetails(selector: (post) => post, filters: filters);
         body = Column(
           children: [
             Row(

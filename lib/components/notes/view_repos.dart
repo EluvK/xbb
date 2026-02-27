@@ -31,15 +31,14 @@ class RepoQuickSwitcher extends StatelessWidget {
     final settingController = Get.find<SettingController>();
 
     return Obx(() {
-      final taggedRepos = postController.registerFilterSubscription(
-        filterKey: "taggedReposForRepoQuickSwitcher",
+      final taggedReposId = postController.getPostDetails(
+        selector: (post) => post.id,
         filters: [ColorTagFilter.fromColorTag(settingController.colorTag)],
       );
-      List<String> taggedRepoIds = taggedRepos.map((post) => post.body.repoId).toSet().toList();
-      final repos = repoController.registerFilterSubscription(
-        filterKey: "repoNameForRepoQuickSwitcher",
+      final repos = repoController.getRepoDetails(
+        selector: (repo) => repo,
         filters: [
-          OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedRepoIds)]),
+          OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedReposId.toList())]),
           StatusFilter.notHidden,
         ],
       );
@@ -102,14 +101,16 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
 
   Widget repoList(BuildContext context) {
     return Obx(() {
-      List<String> taggedRepoIds = postController
-          .onViewPosts(filters: [ColorTagFilter.fromColorTag(settingController.colorTag)])
-          .map((post) => post.body.repoId)
-          .toSet()
-          .toList();
-      List<RepoDataItem> repos = repoController.onViewRepos(
+      final taggedRepoIds = postController
+          .getPostDetails(
+            selector: (post) => post.body.repoId,
+            filters: [ColorTagFilter.fromColorTag(settingController.colorTag)],
+          )
+          .toSet();
+      final repos = repoController.getRepoDetails(
+        selector: (repo) => repo,
         filters: [
-          OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedRepoIds)]),
+          OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedRepoIds.toList())]),
           StatusFilter.notHidden,
         ],
       );
@@ -205,11 +206,14 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
                   from: 0.0,
                   to: 50.0,
                 );
-                final repos = repoController.onViewRepos(filters: [StatusFilter.notHidden]);
+                final reposId = repoController.getRepoDetails(
+                  selector: (repo) => repo.id,
+                  filters: [StatusFilter.notHidden],
+                );
                 await runSyncTaskWithStatus(
                   [
-                    ...repos.map((repo) {
-                      return () => postController.syncChildren(repo.id);
+                    ...reposId.map((repoId) {
+                      return () => postController.syncChildren(repoId);
                     }),
                     () => postController.rebuildLocal(),
                   ],

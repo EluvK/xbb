@@ -49,13 +49,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   late Post editPost;
 
-  RxList<RepoDataItem> repoListForName = <RepoDataItem>[].obs;
-
   reloadCandidateCategory(String repoId) async {
-    candidateCategory = <String>{};
-    for (var post in postController.onViewPosts(filters: [ParentIdFilter(repoId)])) {
-      candidateCategory.add(post.body.category);
-    }
+    candidateCategory = postController
+        .getPostDetails(selector: (post) => post.body.category, filters: [ParentIdFilter(repoId)])
+        .toSet();
     print('reload: ${candidateCategory.join(',')}');
   }
 
@@ -70,17 +67,12 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         editPost = editPost.copyWith(content: contentTextEditingController.text);
       });
     });
-    repoListForName = repoController.registerFilterSubscription(
-      filterKey: "repoNameForPostEditor",
-      filters: [StatusFilter.notHidden],
-    );
   }
 
   @override
   void dispose() {
     contentTextEditingController.dispose();
     categoryTextEditingController.dispose();
-    repoController.unregisterFilterSubscription("repoNameForPostEditor");
     super.dispose();
   }
 
@@ -144,6 +136,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   }
 
   Widget _toolsWidget() {
+    final repoListIdNames = repoController.getRepoDetails(
+      selector: (repo) => (repo.id, repo.body.name),
+      filters: [StatusFilter.notHidden],
+    );
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -151,10 +147,10 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         Flexible(
           child: DropdownButtonFormField(
             isExpanded: true,
-            items: repoListForName.map((e) {
+            items: repoListIdNames.map((e) {
               return DropdownMenuItem(
-                value: e.id,
-                child: Text(e.body.name, style: const TextStyle(fontSize: 14)),
+                value: e.$1,
+                child: Text(e.$2, style: const TextStyle(fontSize: 14)),
               );
             }).toList(),
             decoration: const InputDecoration(
