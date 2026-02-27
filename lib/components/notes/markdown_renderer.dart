@@ -439,14 +439,21 @@ class CommentUIController extends GetxController {
   // Value: List 包含 (评论列表, 原始评论中的错误cHash, 距离)
   var commentsUnmatched = <String?, (List<CommentDataItem> comments, String originalHash, int distance)>{};
 
+  final CommentController commentController = Get.find<CommentController>();
+  RxList<CommentDataItem> registeredComments = <CommentDataItem>[].obs;
+
+  @override
+  void dispose() {
+    editController.dispose();
+    focusNode.dispose();
+    commentController.unregisterFilterSubscription('post_$postId');
+    super.dispose();
+  }
+
   @override
   void onInit() {
     super.onInit();
-
-    final CommentController commentController = Get.find<CommentController>();
-
-    // init commentsMap by registering filtered stream
-    final registeredComments = commentController.registerFilterSubscription(
+    registeredComments = commentController.registerFilterSubscription(
       filterKey: 'post_$postId',
       filters: [ParentIdFilter(postId)],
     );
@@ -860,32 +867,38 @@ class CommentTree extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            // Text(comment.syncStatus.toString()),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     commentController.onUpdateLocalField(comment.id, syncStatus: SyncStatus.synced);
-            //     commentController.rebuildLocal();
-            //   },
-            //   child: Text('test'),
-            // ),
-            buildUserAvatar(context, userProfile.avatarUrl, size: 16, selected: true),
-            const SizedBox(width: 12.0),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(userProfile.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                  // `updatedAt == createdAt` is not accurate as updated is written by server
-                  comment.updatedAt.subtract(const Duration(seconds: 1)).isBefore(comment.createdAt)
-                      ? readableDateStr(comment.createdAt)
-                      : "${readableDateStr(comment.createdAt)}, edited at ${readableDateStr(comment.updatedAt)}",
-                  style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+        Flexible(
+          child: Row(
+            children: [
+              // Text(comment.syncStatus.toString()),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     commentController.onUpdateLocalField(comment.id, syncStatus: SyncStatus.synced);
+              //     commentController.rebuildLocal();
+              //   },
+              //   child: Text('test'),
+              // ),
+              buildUserAvatar(context, userProfile.avatarUrl, size: 16, selected: true),
+              const SizedBox(width: 12.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(userProfile.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      // `updatedAt == createdAt` is not accurate as updated is written by server
+                      comment.updatedAt.subtract(const Duration(seconds: 1)).isBefore(comment.createdAt)
+                          ? readableDateStr(comment.createdAt)
+                          : "${readableDateStr(comment.createdAt)}, edited at ${readableDateStr(comment.updatedAt)}",
+                      style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
         Row(
           children: [

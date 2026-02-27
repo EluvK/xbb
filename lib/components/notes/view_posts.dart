@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/utils/expansible_list.dart';
 import 'package:xbb/utils/list_tile_card.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -90,74 +91,45 @@ class _ViewPosts extends StatefulWidget {
   State<_ViewPosts> createState() => __ViewPostsState();
 }
 
-class __ViewPostsState extends State<_ViewPosts> {
+class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
   final postController = Get.find<PostController>();
   final repoController = Get.find<RepoController>();
   final commentController = Get.find<CommentController>();
   final settingController = Get.find<SettingController>();
 
-  bool _allExpanded = true;
-  bool _isAllExpanded() {
-    for (var controller in _controllers.values) {
-      if (!controller.isExpanded) {
-        return false;
-      }
-    }
-    return true;
+  late Rx<String?> currentRepoId = repoController.currentRepoId;
+  // List<DataItemFilter> currentFilters = [];
+  RxList<PostDataItem> viewPosts = <PostDataItem>[].obs;
+  final searchFilterTextController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    viewPosts = postController.registerFilterSubscription(filterKey: 'view_posts', filters: []);
   }
 
-  final Map<String, ExpansibleController> _controllers = {};
-  bool _isProcessing = false;
-  void _toggleAll(bool expand) {
-    for (var controller in _controllers.values) {
-      if (expand) {
-        controller.expand();
-      } else {
-        controller.collapse();
-      }
-    }
-  }
-
-  void _handleToggle() async {
-    if (_isProcessing) return;
-    _isProcessing = true;
-    setState(() {
-      _allExpanded = !_allExpanded;
-    });
-    _toggleAll(_allExpanded);
-    await Future.delayed(const Duration(milliseconds: 300));
-    _isProcessing = false;
+  @override
+  void dispose() {
+    postController.unregisterFilterSubscription('view_posts');
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final currentRepoId = repoController.currentRepoId.value;
       Widget body;
-      if (currentRepoId == null) {
+      if (currentRepoId.value == null) {
         body = const Center(child: Text('No repository selected.'));
       } else {
-        List<DataItemFilter> filters = [ParentIdFilter(currentRepoId)];
-        if (repoController
-            .onViewRepos(
-              filters: [
-                IdsFilter([currentRepoId]),
-                ColorTagFilter.fromColorTag(settingController.colorTag),
-              ],
-            )
-            .isEmpty) {
+        List<DataItemFilter> filters = [ParentIdFilter(currentRepoId.value!)];
+        if (repoController.getRepo(currentRepoId.value!)?.colorTag != settingController.colorTag) {
           // if the current repo matches the color tag filter, we don't need to add extra filter.
           filters.add(ColorTagFilter.fromColorTag(settingController.colorTag));
         }
         if (searchFilterTextController.text.isNotEmpty) {
           filters.add(PostContentFilter(searchFilterTextController.text));
         }
-        print("filters length: ${filters.length}");
-        final List<PostDataItem> posts = postController.registerFilterSubscription(
-          filterKey: 'view_posts',
-          filters: filters,
-        );
-        print("build post card post number: ${posts.length}");
+        viewPosts = postController.registerFilterSubscription(filterKey: 'view_posts', filters: filters);
         body = Column(
           children: [
             Row(
@@ -165,26 +137,24 @@ class __ViewPostsState extends State<_ViewPosts> {
                 Expanded(child: searchFilter()),
                 // todo maybe move to next line if we have more buttons, remove this row.
                 IconButton(
-                  onPressed: _handleToggle,
-                  icon: Icon(_isAllExpanded() ? Icons.expand_less : Icons.expand_more),
-                  tooltip: _isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
+                  onPressed: toggleAll,
+                  icon: Icon(isAllExpanded() ? Icons.expand_less : Icons.expand_more),
+                  tooltip: isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
                 ),
               ],
             ),
-            Expanded(child: postList(posts)),
+            Expanded(child: postList(viewPosts)),
           ],
         );
       }
-      final colorScheme = Theme.of(context).colorScheme;
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
-        decoration: BoxDecoration(color: colorScheme.surface),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
         child: body,
       );
     });
   }
 
-  final searchFilterTextController = TextEditingController();
   Widget searchFilter() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(10.0, 4.0, 10.0, 8.0),
@@ -227,33 +197,18 @@ class __ViewPostsState extends State<_ViewPosts> {
   }
 
   Widget postList(List<PostDataItem> posts) {
-    print("build post card post number: ${posts.length}");
-    if (posts.isEmpty) {
-      return const Center(child: Text('No posts found.'));
-    }
-
     final Map<String, List<PostDataItem>> categoryMap = {};
     for (var postItem in posts) {
       categoryMap.putIfAbsent(postItem.body.category, () => []).add(postItem);
     }
 
-    return ListView(
-      children: categoryMap.entries.map((entry) {
-        final category = entry.key;
-        final posts = entry.value;
-        final controller = _controllers.putIfAbsent(category, () {
-          final controller = ExpansibleController();
-          controller.expand();
-          return controller;
-        });
-        return ExpansionTile(
-          title: Text(category),
-          controller: controller,
-          controlAffinity: ListTileControlAffinity.leading,
-          tilePadding: const EdgeInsets.fromLTRB(8.0, 0.0, 12.0, 0.0),
-          children: posts.map((post) => _postListCard(post)).toList(),
-        );
-      }).toList(),
+    return GroupedExpansionList(
+      groupedData: categoryMap,
+      controllerProvider: getController,
+      tilePadding: const EdgeInsets.fromLTRB(8.0, 0.0, 12.0, 0.0),
+      controlAffinity: ListTileControlAffinity.leading,
+      titleBuilder: (category, _) => Text(category),
+      itemBuilder: (post) => _postListCard(post),
     );
   }
 

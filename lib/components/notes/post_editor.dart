@@ -49,6 +49,8 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   late Post editPost;
 
+  RxList<RepoDataItem> repoListForName = <RepoDataItem>[].obs;
+
   reloadCandidateCategory(String repoId) async {
     candidateCategory = <String>{};
     for (var post in postController.onViewPosts(filters: [ParentIdFilter(repoId)])) {
@@ -59,6 +61,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   @override
   void initState() {
+    super.initState();
     editPost = widget.post;
     contentTextEditingController.text = editPost.content;
     categoryTextEditingController.text = editPost.category;
@@ -67,13 +70,17 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         editPost = editPost.copyWith(content: contentTextEditingController.text);
       });
     });
-    super.initState();
+    repoListForName = repoController.registerFilterSubscription(
+      filterKey: "repoNameForPostEditor",
+      filters: [StatusFilter.notHidden],
+    );
   }
 
   @override
   void dispose() {
     contentTextEditingController.dispose();
     categoryTextEditingController.dispose();
+    repoController.unregisterFilterSubscription("repoNameForPostEditor");
     super.dispose();
   }
 
@@ -144,7 +151,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         Flexible(
           child: DropdownButtonFormField(
             isExpanded: true,
-            items: repoController.onViewRepos().map((e) {
+            items: repoListForName.map((e) {
               return DropdownMenuItem(
                 value: e.id,
                 child: Text(e.body.name, style: const TextStyle(fontSize: 14)),
@@ -164,7 +171,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               print('select repo:$value');
               await reloadCandidateCategory(value);
             },
-            value: editPost.repoId,
+            initialValue: editPost.repoId,
           ),
         ),
         const Padding(padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 0.0), child: Text('/')),

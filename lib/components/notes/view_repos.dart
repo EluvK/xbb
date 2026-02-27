@@ -5,6 +5,7 @@ import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/utils/expansible_list.dart';
 import 'package:xbb/utils/list_tile_card.dart';
 
 class ViewRepos extends StatelessWidget {
@@ -30,12 +31,13 @@ class RepoQuickSwitcher extends StatelessWidget {
     final settingController = Get.find<SettingController>();
 
     return Obx(() {
-      List<String> taggedRepoIds = postController
-          .onViewPosts(filters: [ColorTagFilter.fromColorTag(settingController.colorTag)])
-          .map((post) => post.body.repoId)
-          .toSet()
-          .toList();
-      List<RepoDataItem> repos = repoController.onViewRepos(
+      final taggedRepos = postController.registerFilterSubscription(
+        filterKey: "taggedReposForRepoQuickSwitcher",
+        filters: [ColorTagFilter.fromColorTag(settingController.colorTag)],
+      );
+      List<String> taggedRepoIds = taggedRepos.map((post) => post.body.repoId).toSet().toList();
+      final repos = repoController.registerFilterSubscription(
+        filterKey: "repoNameForRepoQuickSwitcher",
         filters: [
           OrFilter([ColorTagFilter.fromColorTag(settingController.colorTag), IdsFilter(taggedRepoIds)]),
           StatusFilter.notHidden,
@@ -82,44 +84,11 @@ class _RepoLists extends StatefulWidget {
   State<_RepoLists> createState() => __RepoListsState();
 }
 
-class __RepoListsState extends State<_RepoLists> {
+class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
   final settingController = Get.find<SettingController>();
   final userManagerController = Get.find<UserManagerController>();
-
-  bool _allExpanded = true;
-  bool _isAllExpanded() {
-    for (var controller in _controllers.values) {
-      if (!controller.isExpanded) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  final Map<String, ExpansibleController> _controllers = {};
-  bool _isProcessing = false;
-  void _toggleAll(bool expand) {
-    for (var controller in _controllers.values) {
-      if (expand) {
-        controller.expand();
-      } else {
-        controller.collapse();
-      }
-    }
-  }
-
-  void _handleToggle() async {
-    if (_isProcessing) return;
-    _isProcessing = true;
-    setState(() {
-      _allExpanded = !_allExpanded;
-    });
-    _toggleAll(_allExpanded);
-    await Future.delayed(const Duration(milliseconds: 300));
-    _isProcessing = false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,11 +113,6 @@ class __RepoListsState extends State<_RepoLists> {
           StatusFilter.notHidden,
         ],
       );
-      print("build repo card repo number: ${repos.length}");
-      if (repos.isEmpty) {
-        return const Center(child: Text('No repositories found.'));
-      }
-
       final Map<String, List<RepoDataItem>> reposByOwner = {};
       for (var repo in repos) {
         reposByOwner.putIfAbsent(repo.owner, () => []).add(repo);
@@ -160,41 +124,33 @@ class __RepoListsState extends State<_RepoLists> {
         if (b == userManagerController.selfProfile.value?.userId) return 1;
         return a.compareTo(b);
       });
-
-      return ListView(
-        shrinkWrap: true,
-        children: sortedKeys.map((ownerId) {
-          bool isSelf = ownerId == userManagerController.selfProfile.value?.userId;
-          UserProfile? ownerProfile = isSelf
-              ? userManagerController.selfProfile.value
-              : userManagerController.userProfiles.firstWhereOrNull((p) => p.userId == ownerId);
-          List<RepoDataItem> ownerRepos = reposByOwner[ownerId]!;
-
-          final controller = _controllers.putIfAbsent(ownerId, () {
-            final controller = ExpansibleController();
-            controller.expand();
-            return controller;
-          });
-          return ExpansionTile(
-            title: Row(
-              children: [
-                isSelf
-                    ? const Icon(Icons.star, color: Colors.orangeAccent)
-                    : const Icon(Icons.share_outlined, color: Colors.blueAccent),
-                const SizedBox(width: 4.0),
-                buildUserAvatar(context, ownerProfile?.avatarUrl, size: 16, selected: false),
-                const SizedBox(width: 8.0),
-                Text(ownerProfile?.name ?? 'Unknown User'),
-              ],
-            ),
-            tilePadding: const EdgeInsets.fromLTRB(2.0, 0.0, 12.0, 0.0),
-            controller: controller,
-            controlAffinity: ListTileControlAffinity.trailing,
-            children: ownerRepos.map((repo) => _repoListTileCard(repo)).toList(),
-          );
-        }).toList(),
+      return GroupedExpansionList<String, RepoDataItem>(
+        groupedData: sortedKeys.asMap().map((index, ownerId) => MapEntry(ownerId, reposByOwner[ownerId]!)),
+        controllerProvider: getController,
+        tilePadding: const EdgeInsets.fromLTRB(2.0, 0.0, 12.0, 0.0),
+        controlAffinity: ListTileControlAffinity.trailing,
+        titleBuilder: (ownerId, _) => _buildUserTitle(ownerId),
+        itemBuilder: (repo) => _repoListTileCard(repo),
       );
     });
+  }
+
+  Widget _buildUserTitle(String ownerId) {
+    bool isSelf = ownerId == userManagerController.selfProfile.value?.userId;
+    UserProfile? ownerProfile = isSelf
+        ? userManagerController.selfProfile.value
+        : userManagerController.userProfiles.firstWhereOrNull((p) => p.userId == ownerId);
+    return Row(
+      children: [
+        isSelf
+            ? const Icon(Icons.star, color: Colors.orangeAccent)
+            : const Icon(Icons.share_outlined, color: Colors.blueAccent),
+        const SizedBox(width: 4.0),
+        buildUserAvatar(context, ownerProfile?.avatarUrl, size: 16, selected: false),
+        const SizedBox(width: 8.0),
+        Text(ownerProfile?.name ?? 'Unknown User'),
+      ],
+    );
   }
 
   Widget _repoListTileCard(RepoDataItem repo) {
@@ -265,9 +221,9 @@ class __RepoListsState extends State<_RepoLists> {
             ),
             const Spacer(),
             IconButton(
-              onPressed: _handleToggle,
-              icon: Icon(_isAllExpanded() ? Icons.expand_less : Icons.expand_more),
-              tooltip: _isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
+              onPressed: toggleAll,
+              icon: Icon(isAllExpanded() ? Icons.expand_less : Icons.expand_more),
+              tooltip: isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
             ),
           ],
         ),
