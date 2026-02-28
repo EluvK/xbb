@@ -970,7 +970,7 @@ packages:
     description:
       path: sync_annotation
       ref: HEAD
-      resolved-ref: e6d9ced94bac4a2130fa4cb781b71611084ee423
+      resolved-ref: 853041fa0597afdd1820177a74ef0acc087719de
       url: "https://github.com/EluvK/syncstore_client.git"
     source: git
     version: "0.0.1"
@@ -979,7 +979,7 @@ packages:
     description:
       path: sync_generator
       ref: master
-      resolved-ref: e6d9ced94bac4a2130fa4cb781b71611084ee423
+      resolved-ref: 853041fa0597afdd1820177a74ef0acc087719de
       url: "https://github.com/EluvK/syncstore_client.git"
     source: git
     version: "0.0.1"
@@ -996,7 +996,7 @@ packages:
     description:
       path: syncstore_client
       ref: HEAD
-      resolved-ref: e6d9ced94bac4a2130fa4cb781b71611084ee423
+      resolved-ref: 853041fa0597afdd1820177a74ef0acc087719de
       url: "https://github.com/EluvK/syncstore_client.git"
     source: git
     version: "1.0.0"
