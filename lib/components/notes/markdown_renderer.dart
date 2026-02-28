@@ -4,6 +4,7 @@ import 'package:markdown_widget/markdown_widget.dart';
 // ignore: depend_on_referenced_packages
 import 'package:markdown/markdown.dart' as md;
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/common/permission.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
@@ -38,8 +39,16 @@ class SimpleMarkdownRenderer extends StatelessWidget {
 class MarkdownWithComments extends StatelessWidget {
   final String data;
   final String postId;
+  final String repoOwnedId;
+  final List<Permission> permissions;
 
-  const MarkdownWithComments({super.key, required this.data, required this.postId});
+  const MarkdownWithComments({
+    super.key,
+    required this.data,
+    required this.postId,
+    required this.repoOwnedId,
+    required this.permissions,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -81,14 +90,17 @@ class MarkdownWithComments extends StatelessWidget {
       print(
         "[build] paragraph hash: $hash, index: $index, canHaveComments: $canHaveComments}, rawText: ${rawText.replaceAll('\n', ' ').substring(0, rawText.length > 10 ? 10 : rawText.length)}",
       );
-      paragraphList.add(
-        _ParagraphData(index: index, hash: hash, widget: richText, rawText: rawText, canHaveComments: canHaveComments),
-      );
+      paragraphList.add(_ParagraphData(index, hash, richText, rawText, canHaveComments));
     });
 
     // must init CommentUIController before building UI
     final _ = Get.put(
-      CommentUIController(postId: postId, paragraphHashes: paragraphList.map((e) => e.hash.toString()).toList()),
+      CommentUIController(
+        postId: postId,
+        repoOwnedId: repoOwnedId,
+        paragraphHashes: paragraphList.map((e) => e.hash.toString()).toList(),
+        permissions: permissions,
+      ),
     );
     return SelectionArea(
       child: Column(
@@ -109,13 +121,7 @@ class _ParagraphData {
   final String rawText;
   final bool canHaveComments;
 
-  _ParagraphData({
-    required this.index,
-    required this.hash,
-    required this.widget,
-    required this.rawText,
-    required this.canHaveComments,
-  });
+  _ParagraphData(this.index, this.hash, this.widget, this.rawText, this.canHaveComments);
 }
 
 class _ParagraphWrapper extends StatelessWidget {
@@ -290,22 +296,22 @@ class PostEndCommentWrapper extends StatelessWidget {
             final comments = controller.commentsMap[null] ?? [];
             bool isAddingComment =
                 (controller.currentMode.value != CommentMode.none && controller.activeParagraphId.value == null);
+            Widget newCommitInputWidget = isAddingComment
+                ? SharedCommentInput(postId: postId, paragraphId: null)
+                : ElevatedButton.icon(
+                    onPressed: () {
+                      commentUIController.setController(
+                        mode: CommentMode.addComment,
+                        paragraphId: null,
+                        label: 'New comment...',
+                      );
+                    },
+                    label: const Text("写条新评论~", style: TextStyle(fontSize: 14)),
+                    icon: const Icon(Icons.add_comment_outlined, size: 14),
+                  );
             return Column(
               children: [
-                isAddingComment
-                    ? SharedCommentInput(postId: postId, paragraphId: null)
-                    // CommentInputTriggerAtEnd
-                    : ElevatedButton.icon(
-                        onPressed: () {
-                          commentUIController.setController(
-                            mode: CommentMode.addComment,
-                            paragraphId: null,
-                            label: 'New comment...',
-                          );
-                        },
-                        label: const Text("写条新评论~", style: TextStyle(fontSize: 14)),
-                        icon: const Icon(Icons.add_comment_outlined, size: 14),
-                      ),
+                commentUIController.canNewComment ? newCommitInputWidget : const SizedBox.shrink(),
                 const SizedBox(height: 10),
                 const Divider(),
                 if (comments.isNotEmpty) CommentTree(paragraphId: null, comments: comments),
@@ -421,8 +427,15 @@ class CommentUIController extends GetxController {
   final editController = TextEditingController();
   final focusNode = FocusNode();
   final String postId;
+  final String repoOwnedId;
   final List<String> paragraphHashes;
-  CommentUIController({required this.postId, required this.paragraphHashes});
+  final List<Permission> permissions;
+  CommentUIController({
+    required this.postId,
+    required this.repoOwnedId,
+    required this.paragraphHashes,
+    required this.permissions,
+  });
 
   var currentMode = CommentMode.none.obs;
   // use the optional string to make code more clear
@@ -450,6 +463,11 @@ class CommentUIController extends GetxController {
     super.dispose();
   }
 
+  late final bool canNewComment;
+  Map<String, bool> canDeleteComment = {};
+  Map<String, bool> canReplyComment = {};
+  Map<String, bool> canEditComment = {};
+
   @override
   void onInit() {
     super.onInit();
@@ -458,6 +476,18 @@ class CommentUIController extends GetxController {
       filters: [ParentIdFilter(postId)],
     );
     print('debug: setInitialComments, comments length: ${registeredComments.length}');
+    print('debug: repoOwnedId: $repoOwnedId, permissions: ${permissions.map((p) => p.accessLevel).toList()}');
+
+    // new comment with ownerId would skip permission check, so just put a dummy id here
+    canNewComment = oncePermissionCheck(NotesFeatureRequires.newComment, '', permissions, repoOwnedId);
+    for (var o in registeredComments.map((c) => c.owner).toSet()) {
+      canDeleteComment[o] = oncePermissionCheck(NotesFeatureRequires.deleteComment, o, permissions, repoOwnedId);
+      canReplyComment[o] = oncePermissionCheck(NotesFeatureRequires.replyComment, o, permissions, repoOwnedId);
+      canEditComment[o] = oncePermissionCheck(NotesFeatureRequires.editComment, o, permissions, repoOwnedId);
+    }
+    print(
+      'debug: canNewComment: $canNewComment, canDeleteComment: $canDeleteComment, canReplyComment: $canReplyComment, canEditComment: $canEditComment',
+    );
 
     var (map, unmatchedComments) = _updateComments(registeredComments);
     commentsMap = map;
@@ -486,6 +516,11 @@ class CommentUIController extends GetxController {
         } else {
           update(['no_close_match']);
         }
+      }
+      for (var o in updatedComments.map((c) => c.owner).toSet()) {
+        canDeleteComment[o] = oncePermissionCheck(NotesFeatureRequires.deleteComment, o, permissions, repoOwnedId);
+        canReplyComment[o] = oncePermissionCheck(NotesFeatureRequires.replyComment, o, permissions, repoOwnedId);
+        canEditComment[o] = oncePermissionCheck(NotesFeatureRequires.editComment, o, permissions, repoOwnedId);
       }
     }, time: const Duration(milliseconds: 100));
   }
@@ -762,18 +797,20 @@ class CommentTree extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 按照时间排序，最新的在最上面
     comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    // 构建评论树
+    final Set<String> allIds = comments.map((c) => c.id).toSet();
     final commentMap = _buildCommentDataTree(comments);
+    final List<Widget> rootWidgets = [];
+    for (var comment in comments) {
+      final pId = comment.body.parentId;
+      if (pId == null || pId == 'root') {
+        rootWidgets.add(_buildCommentWidget(context, comment, commentMap, 0));
+      } else if (!allIds.contains(pId)) {
+        rootWidgets.add(_buildCommentWidget(context, comment, commentMap, 1, isOrphan: true));
+      }
+    }
 
-    // 渲染根评论（parentId 为 null 或 'root'）
-    final rootComments = commentMap['root'] ?? [];
-
-    return Column(
-      children: rootComments.map((comment) => _buildCommentWidget(context, comment, commentMap, 0)).toList(),
-    );
+    return Column(children: rootWidgets);
   }
 
   // 递归渲染评论树
@@ -781,11 +818,28 @@ class CommentTree extends StatelessWidget {
     BuildContext context,
     CommentDataItem comment,
     Map<String, List<CommentDataItem>> commentMap,
-    int level,
-  ) {
+    int level, {
+    bool isOrphan = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (isOrphan)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.link_off_rounded, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    "original_comment_unavailable".tr,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+                  ),
+                ],
+              ),
+            ),
+          ),
         // 当前评论
         Padding(
           padding: EdgeInsets.only(left: 16.0 * level), // 根据层级缩进
@@ -902,44 +956,49 @@ class CommentTree extends StatelessWidget {
         ),
         Row(
           children: [
-            IconButton(
-              onPressed: () {
-                commentUIController.setController(
-                  mode: CommentMode.replyComment,
-                  paragraphId: paragraphId,
-                  commentParentId: comment.id,
-                  label:
-                      'Reply to ${userProfile.name}\'s `${comment.body.content.length > 6 ? '${comment.body.content.substring(0, 6)}...' : comment.body.content}`',
-                );
-              },
-              icon: const Icon(Icons.reply_rounded),
-              tooltip: 'reply'.tr,
-            ),
-            // todo add permission check visibility
-            IconButton(
-              onPressed: () {
-                commentUIController.setController(
-                  mode: CommentMode.editComment,
-                  paragraphId: paragraphId,
-                  commentParentId: comment.body.parentId,
-                  commentId: comment.id,
-                  initialText: comment.body.content,
-                  label: 'Edit comment...',
-                );
-              },
-              icon: const Icon(Icons.edit_rounded),
-              tooltip: 'edit'.tr,
-            ),
-            // todo add permission check visibility
-            DoubleClickButton(
-              buttonBuilder: (onPressed) =>
-                  IconButton(onPressed: onPressed, icon: const Icon(Icons.delete_rounded), tooltip: 'delete'.tr),
-              onDoubleClick: () {
-                commentController.deleteData(comment.id);
-              },
-              firstClickHint: 'delete_comment'.tr,
-              upperPosition: true,
-            ),
+            (commentUIController.canReplyComment[comment.owner] ?? false)
+                ? IconButton(
+                    onPressed: () {
+                      commentUIController.setController(
+                        mode: CommentMode.replyComment,
+                        paragraphId: paragraphId,
+                        commentParentId: comment.id,
+                        label:
+                            'Reply to ${userProfile.name}\'s `${comment.body.content.length > 6 ? '${comment.body.content.substring(0, 6)}...' : comment.body.content}`',
+                      );
+                    },
+                    icon: const Icon(Icons.reply_rounded),
+                    tooltip: 'reply'.tr,
+                  )
+                : const SizedBox.shrink(),
+
+            (commentUIController.canEditComment[comment.owner] ?? false)
+                ? IconButton(
+                    onPressed: () {
+                      commentUIController.setController(
+                        mode: CommentMode.editComment,
+                        paragraphId: paragraphId,
+                        commentParentId: comment.body.parentId,
+                        commentId: comment.id,
+                        initialText: comment.body.content,
+                        label: 'Edit comment...',
+                      );
+                    },
+                    icon: const Icon(Icons.edit_rounded),
+                    tooltip: 'edit'.tr,
+                  )
+                : const SizedBox.shrink(),
+            (commentUIController.canDeleteComment[comment.owner] ?? false)
+                ? DoubleClickButton(
+                    buttonBuilder: (onPressed) =>
+                        IconButton(onPressed: onPressed, icon: const Icon(Icons.delete_rounded), tooltip: 'delete'.tr),
+                    onDoubleClick: () {
+                      commentController.deleteData(comment.id);
+                    },
+                    firstClickHint: 'delete_comment'.tr,
+                    upperPosition: true,
+                  )
+                : const SizedBox.shrink(),
           ],
         ),
       ],
