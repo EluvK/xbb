@@ -17,14 +17,6 @@ class ViewPostPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('view_post'.trParams({"postName": post.body.title})),
         actions: [
-          IconButton(
-            onPressed: () async {
-              CommentController commentController = Get.find<CommentController>();
-              await commentController.syncChildren(post.id);
-              await commentController.rebuildLocal();
-            },
-            icon: const Icon(Icons.sync),
-          ),
           PermissionBox(
             feature: NotesFeatureRequires.updatePost,
             ownerId: post.owner,
