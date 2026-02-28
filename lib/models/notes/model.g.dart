@@ -147,12 +147,18 @@ class RepoController extends GetxController {
   RepoController(this.client) : _syncEngine = _RepoSyncEngine(client);
 
   final RxList<RepoDataItem> _items = <RepoDataItem>[].obs;
+  final RxMap<String, List<Permission>> _aclCache = <String, List<Permission>>{}.obs;
   final Map<String, _RepoDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentRepoId = Rx<String?>(null);
 
   @override
   Future<void> onInit() async {
     await rebuildLocal();
+    // preload ACLs for all items to make sure UI can get ACL info immediately
+    // this can be optimized by only load ACL when needed and cache it.
+    for (var item in _items) {
+      await getAclLocal(item.id);
+    }
     super.onInit();
     _initialized = true;
   }
@@ -323,6 +329,7 @@ extension RepoControllerAcl on RepoController {
       for (var item in _items) {
         final serviceAcls = await client.getAcls('xbb', 'repo', item.id);
         await RepoRepository().setAcls(item.id, serviceAcls);
+        _aclCache[item.id] = serviceAcls;
       }
     } catch (e) {
       print("Error syncing ACLs: $e");
@@ -330,13 +337,17 @@ extension RepoControllerAcl on RepoController {
   }
 
   Future<List<Permission>> getAclLocal(String dataId) async {
-    return await RepoRepository().getAcls(dataId);
+    final localAcls = await RepoRepository().getAcls(dataId);
+    _aclCache[dataId] = localAcls;
+    return localAcls;
   }
 
+  List<Permission> getAclCached(String dataId) => _aclCache[dataId] ?? [];
   Future<List<Permission>> getAclRefresh(String dataId) async {
     try {
       final List<Permission> getAcls = await client.getAcls('xbb', 'repo', dataId);
       await RepoRepository().setAcls(dataId, getAcls);
+      _aclCache[dataId] = getAcls;
       return getAcls;
     } catch (e) {
       print("Error fetching ACLs from server: $e");
@@ -348,6 +359,7 @@ extension RepoControllerAcl on RepoController {
     try {
       await client.updateAcls('xbb', 'repo', dataId, permissions);
       await RepoRepository().setAcls(dataId, permissions);
+      _aclCache[dataId] = permissions;
     } catch (e) {
       print("Error updating ACLs to server: $e");
     }
@@ -617,12 +629,14 @@ class PostController extends GetxController {
   PostController(this.client) : _syncEngine = _PostSyncEngine(client);
 
   final RxList<PostDataItem> _items = <PostDataItem>[].obs;
+
   final Map<String, _PostDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentPostId = Rx<String?>(null);
 
   @override
   Future<void> onInit() async {
     await rebuildLocal();
+
     super.onInit();
     _initialized = true;
   }
@@ -1026,12 +1040,14 @@ class CommentController extends GetxController {
   CommentController(this.client) : _syncEngine = _CommentSyncEngine(client);
 
   final RxList<CommentDataItem> _items = <CommentDataItem>[].obs;
+
   final Map<String, _CommentDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentCommentId = Rx<String?>(null);
 
   @override
   Future<void> onInit() async {
     await rebuildLocal();
+
     super.onInit();
     _initialized = true;
   }
