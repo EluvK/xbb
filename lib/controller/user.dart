@@ -112,4 +112,52 @@ class UserManagerController extends GetxController {
       // handle error
     }
   }
+
+  bool checkPermission(
+    FeaturePermission permission,
+    String resourceOwnerId,
+    List<Permission> resourceAcls, {
+    String? resourceRootOwnerId,
+  }) {
+    if (selfProfile.value == null) {
+      return false; // Not initialized, deny access
+    }
+    if (selfProfile.value!.userId == resourceOwnerId || selfProfile.value!.userId == resourceRootOwnerId) {
+      print('debug: user is owner, grant access');
+      return true;
+    }
+    Permission? userPermission = resourceAcls.firstWhereOrNull((p) => p.user == selfProfile.value!.userId);
+    if (userPermission == null) {
+      print('debug: no specific permission found for user, deny access');
+      return false;
+    }
+    int userAclMask = ACLMask.fromAccessLevel(userPermission.accessLevel);
+    bool granted = ACLMask.has(userAclMask, permission.requiredAclMask);
+    print(
+      'debug: user permission level: ${userPermission.accessLevel}, required level: ${permission.requiredAclMask} (mask: $userAclMask), access granted: $granted',
+    );
+    return granted;
+  }
+}
+
+abstract class FeaturePermission {
+  int get requiredAclMask;
+}
+
+// todo maybe move somewhere else?
+enum NotesFeatureRequires implements FeaturePermission {
+  updateRepo(ACLMask.updateOnly),
+  updatePost(ACLMask.updateOnly),
+  deleteRepo(ACLMask.deleteOnly),
+  deletePost(ACLMask.deleteOnly),
+  newComment(ACLMask.append2Below),
+  replyComment(ACLMask.append2Below),
+  editComment(ACLMask.updateOnly),
+  deleteComment(ACLMask.deleteOnly),
+  fullAccess(ACLMask.fullAccess);
+
+  @override
+  final int requiredAclMask;
+
+  const NotesFeatureRequires(this.requiredAclMask);
 }

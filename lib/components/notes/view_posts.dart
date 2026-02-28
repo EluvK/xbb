@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/expansible_list.dart';
 import 'package:xbb/utils/list_tile_card.dart';
@@ -99,6 +100,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
   final repoController = Get.find<RepoController>();
   final commentController = Get.find<CommentController>();
   final settingController = Get.find<SettingController>();
+  final userManagerController = Get.find<UserManagerController>();
 
   late Rx<String?> currentRepoId = repoController.currentRepoId;
   final searchFilterTextController = TextEditingController();
@@ -201,7 +203,9 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
     );
   }
 
-  Widget _postListCard(post) {
+  Widget _postListCard(PostDataItem post) {
+    final permission = repoController.getAclCached(post.body.repoId);
+    final repoOwnerId = repoController.getRepo(post.body.repoId)?.owner;
     return ListTileCard(
       dataItem: post,
       onUpdateLocalField: ({ColorTag? colorTag, SyncStatus? syncStatus}) {
@@ -217,7 +221,19 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
       enableLongPressPreview: post.body.content.length <= 300
           ? post.body.content
           : '${post.body.content.substring(0, 300)}...',
+      canEditCheck: () => userManagerController.checkPermission(
+        NotesFeatureRequires.updatePost,
+        post.owner,
+        permission,
+        resourceRootOwnerId: repoOwnerId,
+      ),
       onEditButton: () => Get.toNamed('/notes/edit-post', arguments: [post]),
+      canDelete: () => userManagerController.checkPermission(
+        NotesFeatureRequires.deletePost,
+        post.owner,
+        permission,
+        resourceRootOwnerId: repoOwnerId,
+      ),
       onDeleteButton: () => postController.deleteData(post.id),
       enableChildrenUpdateNumber: () =>
           commentController.onViewComments(filters: [ParentIdFilter(post.id), StatusFilter.synced]).length,

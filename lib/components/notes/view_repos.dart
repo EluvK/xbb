@@ -155,6 +155,7 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
   }
 
   Widget _repoListTileCard(RepoDataItem repo) {
+    List<Permission> permission = repoController.getAclCached(repo.id);
     return ListTileCard(
       dataItem: repo,
       onUpdateLocalField: ({ColorTag? colorTag, SyncStatus? syncStatus}) =>
@@ -173,7 +174,10 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
       },
       isSelected: repoController.currentRepoId.value == repo.id,
       enableSwitchArchivedStatus: false,
+      canEditCheck: () =>
+          userManagerController.checkPermission(NotesFeatureRequires.updateRepo, repo.owner, permission),
       onEditButton: () => Get.toNamed('/notes/edit-repo', arguments: [repo]),
+      canDelete: () => userManagerController.checkPermission(NotesFeatureRequires.deleteRepo, repo.owner, permission),
       onDeleteButton: () => repoController.deleteData(repo.id),
       onDeleteButtonCondition: () => postController.onViewPosts(filters: [ParentIdFilter(repo.id)]).isEmpty,
       enableChildrenUpdateNumber: () =>

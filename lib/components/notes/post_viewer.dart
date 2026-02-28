@@ -15,6 +15,7 @@ class PostViewer extends StatefulWidget {
 
 class _PostViewerState extends State<PostViewer> {
   final UserManagerController userManagerController = Get.find<UserManagerController>();
+  final RepoController repoController = Get.find<RepoController>();
   final CommentController commentController = Get.find<CommentController>();
 
   @override
@@ -39,7 +40,14 @@ class _PostViewerState extends State<PostViewer> {
           // content:
           Expanded(
             child: ListView(
-              children: [MarkdownWithComments(postId: widget.postItem.id, data: post.content)],
+              children: [
+                MarkdownWithComments(
+                  postId: widget.postItem.id,
+                  data: post.content,
+                  repoOwnedId: repoController.getRepo(post.repoId)!.owner,
+                  permissions: repoController.getAclCached(post.repoId),
+                ),
+              ],
             ),
           ),
         ],

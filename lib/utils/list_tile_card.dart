@@ -15,11 +15,13 @@ class ListTileCard<T> extends StatefulWidget {
     this.isSelected = false,
     this.enableSwitchArchivedStatus = true,
     this.enableSwitchColorTag = true,
+    this.canEditCheck,
     this.onEditButton,
+    this.canDelete,
     this.onDeleteButton,
     this.onDeleteButtonCondition,
     this.enableChildrenUpdateNumber,
-  });
+  }) : assert(canEditCheck == null || onEditButton != null, 'canEditCheck is provided but onEditButton is null');
 
   final DataItem<T> dataItem;
   final Function({ColorTag? colorTag, SyncStatus? syncStatus}) onUpdateLocalField;
@@ -37,7 +39,9 @@ class ListTileCard<T> extends StatefulWidget {
 
   final bool enableSwitchArchivedStatus;
   final bool enableSwitchColorTag;
+  final bool Function()? canEditCheck;
   final Function()? onEditButton;
+  final bool Function()? canDelete;
   final Function()? onDeleteButton;
   final bool Function()? onDeleteButtonCondition;
   final int Function()? enableChildrenUpdateNumber;
@@ -166,9 +170,6 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
           ),
         );
       }
-      if (widget.onEditButton != null) {
-        buttons.add(IconButton(onPressed: widget.onEditButton, icon: const Icon(Icons.edit_rounded), tooltip: '编辑'));
-      }
       if (widget.enableSwitchColorTag) {
         buttons.add(
           InlineColorPickerButton(
@@ -181,11 +182,23 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
           ),
         );
       }
-      if (widget.onDeleteButton != null) {
+      if (widget.canEditCheck != null && widget.onEditButton != null) {
+        buttons.add(
+          IconButton(
+            onPressed: widget.canEditCheck!() ? widget.onEditButton : null,
+            icon: const Icon(Icons.edit_rounded),
+            tooltip: '编辑',
+          ),
+        );
+      }
+      if (widget.canDelete != null && widget.onDeleteButton != null) {
         buttons.add(
           DoubleClickButton(
-            buttonBuilder: (onPressed) =>
-                IconButton(onPressed: onPressed, icon: const Icon(Icons.delete_rounded), tooltip: '删除'),
+            buttonBuilder: (onPressed) => IconButton(
+              onPressed: widget.canDelete!() ? onPressed : null,
+              icon: const Icon(Icons.delete_rounded),
+              tooltip: '删除',
+            ),
             onDoubleClick: widget.onDeleteButton!,
             firstClickHint: '双击删除',
             firstClickCheckCondition: widget.onDeleteButtonCondition,
