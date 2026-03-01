@@ -150,27 +150,27 @@ jobs:
           version_str=$(cat pubspec.yaml | grep 'version: ' | sed 's/version: //')
           version_number=$(echo $version_str | cut -d'+' -f1)
           build_number=$(echo $version_str | cut -d'+' -f2)
-          flutter build apk --release --dart-define="APP_VERSION=$version_number" --dart-define="APP_BUILD_NUMBER=$build_number"
+          flutter build apk --release --split-per-abi --dart-define="APP_VERSION=$version_number" --dart-define="APP_BUILD_NUMBER=$build_number"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: xbb.apk
-          path: build/app/outputs/apk/release/app-release.apk
+          name: xbb-apks
+          path: build/app/outputs/flutter-apk/app-*-release.apk
 
-      - name: Upload apk to release
+      - name: Upload all apk to release
         uses: svenstaro/upload-release-action@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
           repo_token: ${{ secrets.XBB_GITHUB_TOKEN }}
-          file: build/app/outputs/apk/release/app-release.apk
-          asset_name: xbb.apk
+          file: build/app/outputs/flutter-apk/app-*-release.apk
+          file_glob: true
           tag: ${{ github.ref }}
           overwrite: true
       
       - name: Move to directory
         run: |
-          mkdir ${{ env.DIR }} && cp build/app/outputs/apk/release/app-release.apk ${{ env.DIR }}/xbb.apk
+          mkdir -p ${{ env.DIR }} && cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk ${{ env.DIR }}/xbb.apk
 
       - name: Upload windows setup exe to R2
         uses: ryand56/r2-upload-action@v1.3.4
