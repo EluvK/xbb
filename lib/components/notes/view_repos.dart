@@ -199,31 +199,7 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
             ),
             IconButton(
               onPressed: () async {
-                await runSyncTaskWithStatus(
-                  [
-                    () => repoController.syncOwned(),
-                    () => repoController.syncGranted(),
-                    () => repoController.rebuildLocal(),
-                    () => repoController.syncAcls(),
-                    () => postController.syncOwned(),
-                  ],
-                  from: 0.0,
-                  to: 50.0,
-                );
-                final reposId = repoController.getRepoDetails(
-                  selector: (repo) => repo.id,
-                  filters: [StatusFilter.notHidden],
-                );
-                await runSyncTaskWithStatus(
-                  [
-                    ...reposId.map((repoId) {
-                      return () => postController.syncChildren(repoId);
-                    }),
-                    () => postController.rebuildLocal(),
-                  ],
-                  from: 50.0,
-                  to: 100.0,
-                );
+                await onReadySyncAll();
               },
               icon: const Icon(Icons.refresh),
             ),

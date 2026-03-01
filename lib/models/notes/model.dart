@@ -23,6 +23,34 @@ Future<void> reInitNotesSync(SyncStoreClient client) async {
   if (settingController.notesLastOpenedRepoId != null) {
     repoController.onSelectRepo(settingController.notesLastOpenedRepoId!);
   }
+  onReadySyncAll();
+}
+
+Future<void> onReadySyncAll() async {
+  final repoController = Get.find<RepoController>();
+  final postController = Get.find<PostController>();
+  await runSyncTaskWithStatus(
+    [
+      () => repoController.syncOwned(),
+      () => repoController.syncGranted(),
+      () => repoController.rebuildLocal(),
+      () => repoController.syncAcls(),
+      () => postController.syncOwned(),
+    ],
+    from: 0.0,
+    to: 50.0,
+  );
+  final reposId = repoController.getRepoDetails(selector: (repo) => repo.id, filters: [StatusFilter.notHidden]);
+  await runSyncTaskWithStatus(
+    [
+      ...reposId.map((repoId) {
+        return () => postController.syncChildren(repoId);
+      }),
+      () => postController.rebuildLocal(),
+    ],
+    from: 50.0,
+    to: 100.0,
+  );
 }
 
 Future<void> reInit<T extends GetxController>(

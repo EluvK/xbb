@@ -46,14 +46,7 @@ void main() async {
     return true;
   };
 
-  // await initCacheSetting();
-  // await initRepoPost();
   runApp(const MyApp());
-}
-
-void autoLoadAtStart() {
-  // checkIfUpdate();
-  // initUpdatePosts();
 }
 
 class MyApp extends StatelessWidget {
@@ -62,16 +55,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingController = Get.find<SettingController>();
-    // print(settingController.lastAutoLoadTimestamp);
-    // bool inMinimumUpdateInterval = DateTime.now()
-    //     .subtract(const Duration(minutes: 1))
-    //     .isBefore(settingController.lastAutoLoadTimestamp.value);
     bool first = initFirstTime();
     String initialRoute = first ? '/login' : '/';
-    // if (!first && !settingController.quickReloadMode.value && !inMinimumUpdateInterval) {
-    //   settingController.lastAutoLoadTimestamp.value = DateTime.now();
-    //   autoLoadAtStart();
-    // }
 
     ThemeMode themeMode = settingController.themeMode;
     print('load themeMode: $themeMode');
@@ -88,15 +73,11 @@ class MyApp extends StatelessWidget {
       locale: locale,
       getPages: [
         GetPage(name: '/', page: () => const HomePageWrapper()),
-        // GetPage(name: '/login', page: () => const RegisterPage()),
         GetPage(name: '/login', page: () => const LoginPage()),
         GetPage(name: '/profile', page: () => const ProfilePage()),
         GetPage(name: '/notes/view-post', page: () => const ViewPostPage()),
         GetPage(name: '/notes/edit-post', page: () => const EditPostPage()),
-        // GetPage(name: '/view-post', page: () => const ViewPostPage()),
-        // GetPage(name: '/edit-post', page: () => const EditPostPage()),
         GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
-        // GetPage(name: '/setting', page: () => const SettingPage()),
       ],
       debugShowCheckedModeBanner: true,
       themeMode: themeMode,
@@ -106,7 +87,7 @@ class MyApp extends StatelessWidget {
         blendLevel: 7,
         subThemesData: const FlexSubThemesData(
           blendOnLevel: 10,
-          useTextTheme: true,
+          useMaterial3Typography: true,
           useM2StyleDividerInM3: true,
           alignedDropdown: true,
           useInputDecoratorThemeInDialogs: true,
@@ -124,7 +105,7 @@ class MyApp extends StatelessWidget {
         blendLevel: 14,
         subThemesData: const FlexSubThemesData(
           blendOnLevel: 20,
-          useTextTheme: true,
+          useMaterial3Typography: true,
           useM2StyleDividerInM3: true,
           alignedDropdown: true,
           useInputDecoratorThemeInDialogs: true,
