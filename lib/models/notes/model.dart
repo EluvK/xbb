@@ -8,6 +8,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/models/notes/db.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -31,6 +32,17 @@ Future<void> onReadySyncAll() async {
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
   final commentController = Get.find<CommentController>();
+  final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
+  try {
+    final result = await ssClient.checkHealth();
+    if (!result) {
+      print('SyncStore health check failed, skipping initial sync.');
+      flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
+      return;
+    }
+  } catch (e) {
+    return;
+  }
   try {
     await runSyncTaskWithStatus(
       [
@@ -43,11 +55,7 @@ Future<void> onReadySyncAll() async {
       to: 15.0,
     );
     await runSyncTaskWithStatus(
-      [
-        () => postController.syncOwned(),
-        () => postController.syncGranted(),
-        () => postController.rebuildLocal(),
-      ],
+      [() => postController.syncOwned(), () => postController.syncGranted(), () => postController.rebuildLocal()],
       from: 15.0,
       to: 75.0,
     );
@@ -62,12 +70,11 @@ Future<void> onReadySyncAll() async {
       from: 75.0,
       to: 100.0,
     );
+    successSimpleFlushBar("同步完成");
   } catch (e) {
     print('Error during initial sync: $e');
     flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
-  } finally {
-    successSimpleFlushBar("同步完成");
-  }
+  } finally {}
 }
 
 Future<void> reInit<T extends GetxController>(
