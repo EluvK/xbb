@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:xbb/components/common/update.dart';
@@ -82,7 +83,8 @@ void _executeAppUpdate(
     }
   } else {
     if (GetPlatform.isWindows) {
-      String url = "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$urlVersion/xbb_desktop_windows_setup.exe";
+      String url =
+          "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$urlVersion/xbb_desktop_windows_setup.exe";
       openUrl(url);
     } else if (GetPlatform.isAndroid) {
       String url = "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$urlVersion/xbb.apk";
@@ -93,7 +95,7 @@ void _executeAppUpdate(
 }
 
 bool _shouldUpdate(String latestVersion) {
-  if (VERSION == 'DEBUG') {
+  if (VERSION == debugVersionLiteral) {
     return true;
   }
   for (int i = 0; i < latestVersion.split('.').length; i++) {
@@ -122,5 +124,13 @@ void _downloadApk(String url) {
   } catch (e) {
     print('Failed to make OTA update. Details: $e');
     flushBar(FlushLevel.WARNING, 'Failed', 'Failed to make OTA update $e');
+  }
+}
+
+debugOnlyWidget(Widget child) {
+  if (VERSION == debugVersionLiteral) {
+    return child;
+  } else {
+    return const SizedBox.shrink();
   }
 }

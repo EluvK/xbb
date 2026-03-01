@@ -180,6 +180,15 @@ class RepoController extends GetxController {
     super.onClose();
   }
 
+  /// ALERT: this will delete all local data, use with caution.
+  Future<void> clearLocal() async {
+    final ids = _items.map((e) => e.id).toList();
+    for (var id in ids) {
+      await RepoRepository().deleteFromLocalDb(id);
+    }
+    await rebuildLocal();
+  }
+
   RxList<RepoDataItem> registerFilterSubscription({
     required String filterKey,
     List<DataItemFilter> filters = const [],
@@ -658,6 +667,15 @@ class PostController extends GetxController {
     super.onClose();
   }
 
+  /// ALERT: this will delete all local data, use with caution.
+  Future<void> clearLocal() async {
+    final ids = _items.map((e) => e.id).toList();
+    for (var id in ids) {
+      await PostRepository().deleteFromLocalDb(id);
+    }
+    await rebuildLocal();
+  }
+
   RxList<PostDataItem> registerFilterSubscription({
     required String filterKey,
     List<DataItemFilter> filters = const [],
@@ -1067,6 +1085,15 @@ class CommentController extends GetxController {
     }
     _dynamicSubscription.clear();
     super.onClose();
+  }
+
+  /// ALERT: this will delete all local data, use with caution.
+  Future<void> clearLocal() async {
+    final ids = _items.map((e) => e.id).toList();
+    for (var id in ids) {
+      await CommentRepository().deleteFromLocalDb(id);
+    }
+    await rebuildLocal();
   }
 
   RxList<CommentDataItem> registerFilterSubscription({

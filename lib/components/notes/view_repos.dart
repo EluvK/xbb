@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart';
+import 'package:xbb/controller/utils.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/expansible_list.dart';
 import 'package:xbb/utils/list_tile_card.dart';
@@ -202,6 +203,19 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
                 await onReadySyncAll();
               },
               icon: const Icon(Icons.refresh),
+            ),
+            debugOnlyWidget(
+              IconButton(
+                onPressed: () async {
+                  final CommentController commentController = Get.find<CommentController>();
+                  await commentController.clearLocal();
+                  final PostController postController = Get.find<PostController>();
+                  await postController.clearLocal();
+                  final RepoController repoController = Get.find<RepoController>();
+                  await repoController.clearLocal();
+                },
+                icon: const Icon(Icons.warning_amber_outlined),
+              ),
             ),
             const Spacer(),
             IconButton(

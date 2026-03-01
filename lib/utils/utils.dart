@@ -5,9 +5,11 @@ import 'package:get_time_ago/get_time_ago.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+const String debugVersionLiteral = 'DEBUG';
+
 // ignore: constant_identifier_names
 const String VERSION =
-    String.fromEnvironment('APP_VERSION', defaultValue: 'DEBUG');
+    String.fromEnvironment('APP_VERSION', defaultValue: debugVersionLiteral);
 
 // ignore: constant_identifier_names
 const String APP_BUILD_NUMBER =
