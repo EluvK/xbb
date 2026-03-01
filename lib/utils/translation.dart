@@ -57,8 +57,20 @@ class _TranslationHelper {
       "zh_CN": "功能管理",
     },
     "app_version": {
-      "en_US": "App Version",
-      "zh_CN": "版本信息",
+      "en_US": "App Version @version",
+      "zh_CN": "版本信息 @version",
+    },
+    "check_update": {
+      "en_US": "Check for Update",
+      "zh_CN": "查询更新",
+    },
+    "do_update": {
+      "en_US": "Update",
+      "zh_CN": "更新",
+    },
+    "download_manually": {
+      "en_US": "Download Manually",
+      "zh_CN": "手动下载",
     },
     "mode_light": {
       "en_US": "Light Mode",

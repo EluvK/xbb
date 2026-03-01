@@ -72,8 +72,8 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               ),
               const Divider(),
-              Text('app_version'.tr),
-              child(versionInfo()),
+              Text('app_version'.trParams({'version': VERSION})),
+              child(versionInfo(context)),
             ],
           ),
         ),
@@ -151,18 +151,31 @@ class _CommonSettingsState extends State<CommonSettings> {
 
   // ---
 
-  Widget versionInfo() {
-    final SettingController settingController = Get.find<SettingController>();
+  Widget versionInfo(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
-      child: ElevatedButton.icon(
-        onPressed: settingController.appCanUpdate
-            ? () {
-                checkUpdate(autoExecUpdate: true, forceCheck: true);
-              }
-            : null,
-        icon: const Icon(Icons.update),
-        label: const Text(VERSION),
-      ),
+      child: Obx(() {
+        final bool isChecking = settingController.isCheckingUpdate;
+        final bool hasUpdate = settingController.appCanUpdate;
+        final Widget icon = isChecking
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(colorScheme.onPrimary),
+                ),
+              )
+            : const Icon(Icons.update);
+        final Widget label = isChecking
+            ? Text('check_update'.tr)
+            : (hasUpdate ? Text('do_update'.tr) : Text('check_update'.tr));
+        return ElevatedButton.icon(
+          onPressed: isChecking ? null : () => checkUpdate(forceCheck: true),
+          icon: icon,
+          label: label,
+        );
+      }),
     );
   }
 }

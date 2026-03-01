@@ -82,6 +82,16 @@ class SyncStoreControl extends GetxController {
       rethrow;
     }
   }
+
+  Future<String> fetchReleaseNotes(String appName) async {
+    try {
+      final res = await client.value!.download('/fs/public/$appName/CHANGELOG', isPublic: true);
+      return utf8.decode(res);
+    } on ApiException catch (e) {
+      print('Error during fetching release notes: ${e.message}');
+      rethrow;
+    }
+  }
 }
 
 // todo maybe rename this and the key name.

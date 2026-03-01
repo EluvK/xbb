@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 // ignore: constant_identifier_names
 const String VERSION =
-    String.fromEnvironment('APP_VERSION', defaultValue: 'debug');
+    String.fromEnvironment('APP_VERSION', defaultValue: 'DEBUG');
 
 // ignore: constant_identifier_names
 const String APP_BUILD_NUMBER =

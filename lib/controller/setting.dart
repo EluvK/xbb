@@ -106,6 +106,9 @@ class SettingController extends GetxController {
 
   // memory state
   final downloadProgress = 0.0.obs;
+  final _isCheckingUpdate = false.obs;
+  bool get isCheckingUpdate => _isCheckingUpdate.value;
+  set isCheckingUpdate(bool value) => _isCheckingUpdate.value = value;
 
   // syncstore settings
   final syncStoreSetting = SyncStoreSetting.defaults().obs;

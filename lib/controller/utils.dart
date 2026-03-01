@@ -1,10 +1,12 @@
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:ota_update/ota_update.dart';
+import 'package:xbb/components/common/update.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/utils/utils.dart';
 
-checkUpdate({bool autoExecUpdate = false, bool forceCheck = false}) async {
+checkUpdate({bool forceCheck = false}) async {
   final SettingController settingController = Get.find<SettingController>();
   final lastCheckUpdate = settingController.appLastCheckedUpdateTime;
 
@@ -16,41 +18,82 @@ checkUpdate({bool autoExecUpdate = false, bool forceCheck = false}) async {
     print('Checking too frequently, skipping.');
     return;
   }
-  final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
 
-  if (forceCheck || !settingController.appCanUpdate) {
-    final version = await syncStoreControl.fetchVersionInfo('xbb');
-    bool hasNewVersion = _shouldUpdate(version);
-
-    settingController.updateAppSetting(canUpdate: hasNewVersion, lastCheckedUpdateTime: DateTime.now());
-
-    if (hasNewVersion) {
-      flushBar(FlushLevel.INFO, "有新版本啦！", "当前版本: $VERSION, 最新版本: $version");
-    } else {
-      print('No update needed.');
-      return;
-    }
-  }
-
-  if (!autoExecUpdate) {
-    await Future.delayed(const Duration(seconds: 2));
-    flushBar(FlushLevel.INFO, "记得更新新版本", "请前往设置页面更新");
-
-    settingController.updateAppSetting(lastCheckedUpdateTime: DateTime.now());
+  final bool shouldFetchVersion = forceCheck || !settingController.appCanUpdate;
+  if (!shouldFetchVersion) {
+    print('Already aware of latest version, skipping fetch.');
     return;
   }
 
-  if (GetPlatform.isWindows) {
-    String url = "${settingController.syncStoreUrl}/fs/public/xbb/master/xbb_desktop_windows_setup.exe";
-    openUrl(url);
-  } else if (GetPlatform.isAndroid) {
-    String url = "${settingController.syncStoreUrl}/fs/public/xbb/master/xbb.apk";
-    _downloadApk(url);
+  if (settingController.isCheckingUpdate) {
+    print('Update check already running, cancelling duplicate request.');
+    return;
+  }
+
+  settingController.isCheckingUpdate = true;
+  try {
+    final SyncStoreControl syncStoreControl = Get.find<SyncStoreControl>();
+
+    String version;
+    String? releaseNotes;
+    try {
+      version = await syncStoreControl.fetchVersionInfo('xbb');
+      try {
+        releaseNotes = await syncStoreControl.fetchReleaseNotes('xbb');
+      } catch (e) {
+        print('Failed to fetch release notes: $e');
+      }
+    } catch (e) {
+      print('Failed to fetch version info: $e');
+      flushBar(FlushLevel.WARNING, 'Failed', '无法获取版本信息 $e');
+      return;
+    }
+    final bool hasNewVersion = _shouldUpdate(version);
+
+    settingController.updateAppSetting(canUpdate: hasNewVersion, lastCheckedUpdateTime: DateTime.now());
+
+    showUpdateDialog(
+      latestVersion: version,
+      releaseNotes: releaseNotes,
+      hasNewVersion: hasNewVersion,
+      onUpdate: (bool nightly, bool throughProxy) =>
+          _executeAppUpdate(settingController, version, nightly: nightly, throughProxy: throughProxy),
+    );
+  } finally {
+    settingController.isCheckingUpdate = false;
+  }
+}
+
+void _executeAppUpdate(
+  SettingController settingController,
+  String version, {
+  bool nightly = false,
+  bool throughProxy = false,
+}) {
+  // execute update
+  final urlVersion = nightly ? 'master' : version;
+  if (!throughProxy) {
+    if (GetPlatform.isWindows) {
+      String url = "${settingController.syncStoreUrl}/fs/public/xbb/$urlVersion/xbb_desktop_windows_setup.exe";
+      openUrl(url);
+    } else if (GetPlatform.isAndroid) {
+      String url = "${settingController.syncStoreUrl}/fs/public/xbb/$urlVersion/xbb.apk";
+      _downloadApk(url);
+    }
+  } else {
+    if (GetPlatform.isWindows) {
+      String url = "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$urlVersion/xbb_desktop_windows_setup.exe";
+      openUrl(url);
+    } else if (GetPlatform.isAndroid) {
+      String url = "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$urlVersion/xbb.apk";
+      Clipboard.setData(ClipboardData(text: url));
+      flushBar(FlushLevel.OK, 'URL Copied', '下载链接已复制到剪贴板，请在浏览器中打开下载:\n$url');
+    }
   }
 }
 
 bool _shouldUpdate(String latestVersion) {
-  if (VERSION == 'debug') {
+  if (VERSION == 'DEBUG') {
     return true;
   }
   for (int i = 0; i < latestVersion.split('.').length; i++) {
