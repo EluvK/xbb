@@ -98,7 +98,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
           onPressed: widget.hasNewVersion ? () => widget.onUpdate(false, throughProxy) : null,
           child: Text('do_update'.tr),
         ),
-        ElevatedButton(onPressed: () => widget.onUpdate(true, throughProxy), child: Text('${'do_update'.tr} (nightly)')),
+        ElevatedButton(
+          onPressed: () => widget.onUpdate(true, throughProxy),
+          child: Text('${'do_update'.tr} (nightly)'),
+        ),
       ],
     );
   }

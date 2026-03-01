@@ -18,10 +18,12 @@ class ViewPosts extends StatelessWidget {
     final CommentController commentController = Get.find<CommentController>();
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          print("click add post");
-          Get.toNamed('/notes/edit-post', arguments: [null]);
-        },
+        onPressed: repoController.currentRepoId.value == null
+            ? null
+            : () {
+                print("click add post");
+                Get.toNamed('/notes/edit-post', arguments: [null]);
+              },
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(

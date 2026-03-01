@@ -132,6 +132,7 @@ class _ParagraphWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pid = paragraphId(data.index, data.hash.toString());
+    final commentUIController = Get.find<CommentUIController>();
     return Padding(
       // some as linesMargin in `MarkdownGenerator` markdown_generator.dart
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -226,11 +227,12 @@ class _ParagraphWrapper extends StatelessWidget {
                 final comments = controller.commentsMap[pid] ?? [];
                 bool isAddingComment =
                     (controller.currentMode.value != CommentMode.none && controller.activeParagraphId.value == pid);
+                Widget newCommitInputWidget = isAddingComment
+                    ? SharedCommentInput(postId: postId, paragraphId: pid)
+                    : CommentInputTriggerInline(paragraphId: pid);
                 return Column(
                   children: [
-                    isAddingComment
-                        ? SharedCommentInput(postId: postId, paragraphId: pid)
-                        : CommentInputTriggerInline(paragraphId: pid),
+                    commentUIController.canNewComment ? newCommitInputWidget : const SizedBox.shrink(),
                     if (comments.isNotEmpty) CommentTree(paragraphId: pid, comments: comments),
                   ],
                 );
@@ -464,8 +466,8 @@ class CommentUIController extends GetxController {
   }
 
   late final bool canNewComment;
+  late final bool canReplyComment;
   Map<String, bool> canDeleteComment = {};
-  Map<String, bool> canReplyComment = {};
   Map<String, bool> canEditComment = {};
 
   @override
@@ -480,9 +482,9 @@ class CommentUIController extends GetxController {
 
     // new comment with ownerId would skip permission check, so just put a dummy id here
     canNewComment = oncePermissionCheck(NotesFeatureRequires.newComment, '', permissions, repoOwnedId);
+    canReplyComment = oncePermissionCheck(NotesFeatureRequires.replyComment, '', permissions, repoOwnedId);
     for (var o in registeredComments.map((c) => c.owner).toSet()) {
       canDeleteComment[o] = oncePermissionCheck(NotesFeatureRequires.deleteComment, o, permissions, repoOwnedId);
-      canReplyComment[o] = oncePermissionCheck(NotesFeatureRequires.replyComment, o, permissions, repoOwnedId);
       canEditComment[o] = oncePermissionCheck(NotesFeatureRequires.editComment, o, permissions, repoOwnedId);
     }
     print(
@@ -519,7 +521,6 @@ class CommentUIController extends GetxController {
       }
       for (var o in updatedComments.map((c) => c.owner).toSet()) {
         canDeleteComment[o] = oncePermissionCheck(NotesFeatureRequires.deleteComment, o, permissions, repoOwnedId);
-        canReplyComment[o] = oncePermissionCheck(NotesFeatureRequires.replyComment, o, permissions, repoOwnedId);
         canEditComment[o] = oncePermissionCheck(NotesFeatureRequires.editComment, o, permissions, repoOwnedId);
       }
     }, time: const Duration(milliseconds: 100));
@@ -956,7 +957,7 @@ class CommentTree extends StatelessWidget {
         ),
         Row(
           children: [
-            (commentUIController.canReplyComment[comment.owner] ?? false)
+            commentUIController.canReplyComment
                 ? IconButton(
                     onPressed: () {
                       commentUIController.setController(
