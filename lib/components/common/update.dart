@@ -88,13 +88,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
             ],
           ),
         ),
-        ElevatedButton(
-          onPressed: widget.hasNewVersion ? () => widget.onUpdate(false, throughProxy) : null,
-          child: Text('do_update'.tr),
-        ),
-        ElevatedButton(
-          onPressed: () => widget.onUpdate(true, throughProxy),
-          child: Text('${'do_update'.tr} (nightly)'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ElevatedButton(
+              onPressed: widget.hasNewVersion ? () => widget.onUpdate(false, throughProxy) : null,
+              child: Text('do_update'.tr),
+            ),
+            ElevatedButton(
+              onPressed: () => widget.onUpdate(true, throughProxy),
+              child: Text('${'do_update'.tr} (nightly)'),
+            ),
+          ],
         ),
       ],
     );
