@@ -46,8 +46,9 @@ Future<void> onReadySyncAll() async {
   try {
     await runSyncTaskWithStatus(
       [
-        () => repoController.syncOwned(),
-        () => repoController.syncGranted(),
+        // () => repoController.syncOwned(),
+        // () => repoController.syncGranted(),
+        () => repoController.syncAll(batchSize: 100),
         () => repoController.rebuildLocal(),
         () => repoController.syncAcls(),
       ],
@@ -55,14 +56,20 @@ Future<void> onReadySyncAll() async {
       to: 15.0,
     );
     await runSyncTaskWithStatus(
-      [() => postController.syncOwned(), () => postController.syncGranted(), () => postController.rebuildLocal()],
+      [
+        // () => postController.syncOwned(),
+        // () => postController.syncGranted(),
+        () => postController.syncAll(batchSize: 40),
+        () => postController.rebuildLocal(),
+      ],
       from: 15.0,
       to: 75.0,
     );
     await runSyncTaskWithStatus(
       [
-        () => commentController.syncOwned(),
-        () => commentController.syncGranted(),
+        // () => commentController.syncOwned(),
+        // () => commentController.syncGranted(),
+        () => commentController.syncAll(batchSize: 60),
         () => commentController.rebuildLocal(),
         () => postController.rebuildLocal(),
         () => repoController.rebuildLocal(),

@@ -239,6 +239,10 @@ class RepoController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
+  Future<void> syncAll({int batchSize = 20}) async {
+    await _syncEngine.syncAllData(batchSize: batchSize);
+  }
+
   Future<void> syncChildren(String parentId) async {
     await _syncEngine.syncChildren(parentId);
   }
@@ -430,13 +434,83 @@ class _RepoSyncEngine {
     }
   }
 
+  Future<void> syncAllData({int batchSize = 20}) async {
+    final currentUserId = client.currentUserId();
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      final needGetIds = <String>{};
+      // 1. list all data ids from server, and compare with local data to find out which data need to fetch details and which data are deleted from server.
+      do {
+        final ListResponse resp = await client.list(
+          'xbb',
+          'repo',
+          withPermission: true,
+          limit: 200,
+          marker: nextMarker,
+        );
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final RepoDataItem? localItem = await RepoRepository().getFromLocalDb(summary.id);
+          if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
+            // only get details for new created or updated items, otherwise just skip to save performance.
+            needGetIds.add(summary.id);
+          } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
+            // local data is newer, need to sync to server
+            localItem.syncStatus = SyncStatus.failed;
+            await RepoRepository().updateToLocalDb(localItem);
+          } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+            // same updatedAt but marked as special status, need to sync to server
+            localItem.syncStatus = SyncStatus.archived;
+            await RepoRepository().updateToLocalDb(localItem);
+          }
+        }
+      } while (nextMarker != null);
+      // 2. clean up local data that are deleted from server
+      final localItems = await RepoRepository().listFromLocalDb();
+      for (RepoDataItem localItem in localItems) {
+        if (localItem.owner != currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await RepoRepository().updateToLocalDb(localItem);
+        }
+      }
+
+      // 3. batch get details for items that need to be updated or created locally
+      final needGetIdsList = needGetIds.toList();
+      for (var i = 0; i < needGetIdsList.length;) {
+        final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
+        final batchItems = await client.batchGet('xbb', 'repo', batchIds, Repo.fromJson);
+        for (var item in batchItems.items) {
+          await RepoRepository().upsertToLocalDb(item);
+        }
+        final truncated = batchItems.truncated;
+        if (truncated != null) {
+          i = needGetIdsList.indexOf(truncated);
+          if (i == -1) {
+            // just in case, if truncated id is not found in the list, fallback to next batch.
+            i += batchSize;
+          }
+        } else {
+          i += batchSize;
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
   Future<void> syncOwned() async {
     final currentUserId = client.currentUserId();
     try {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('xbb', 'repo', limit: 50, marker: nextMarker);
+        final ListResponse resp = await client.list('xbb', 'repo', limit: 200, marker: nextMarker);
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
@@ -467,7 +541,13 @@ class _RepoSyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('xbb', 'repo', withPermission: true, limit: 50, marker: nextMarker);
+        final ListResponse resp = await client.list(
+          'xbb',
+          'repo',
+          withPermission: true,
+          limit: 200,
+          marker: nextMarker,
+        );
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
@@ -497,7 +577,7 @@ class _RepoSyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('xbb', 'repo', parentId: parentId, limit: 50, marker: nextMarker);
+        final ListResponse resp = await client.list('xbb', 'repo', parentId: parentId, limit: 200, marker: nextMarker);
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
@@ -726,6 +806,10 @@ class PostController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
+  Future<void> syncAll({int batchSize = 20}) async {
+    await _syncEngine.syncAllData(batchSize: batchSize);
+  }
+
   Future<void> syncChildren(String parentId) async {
     await _syncEngine.syncChildren(parentId);
   }
@@ -846,13 +930,83 @@ class _PostSyncEngine {
     }
   }
 
+  Future<void> syncAllData({int batchSize = 20}) async {
+    final currentUserId = client.currentUserId();
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      final needGetIds = <String>{};
+      // 1. list all data ids from server, and compare with local data to find out which data need to fetch details and which data are deleted from server.
+      do {
+        final ListResponse resp = await client.list(
+          'xbb',
+          'post',
+          withPermission: true,
+          limit: 200,
+          marker: nextMarker,
+        );
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final PostDataItem? localItem = await PostRepository().getFromLocalDb(summary.id);
+          if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
+            // only get details for new created or updated items, otherwise just skip to save performance.
+            needGetIds.add(summary.id);
+          } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
+            // local data is newer, need to sync to server
+            localItem.syncStatus = SyncStatus.failed;
+            await PostRepository().updateToLocalDb(localItem);
+          } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+            // same updatedAt but marked as special status, need to sync to server
+            localItem.syncStatus = SyncStatus.archived;
+            await PostRepository().updateToLocalDb(localItem);
+          }
+        }
+      } while (nextMarker != null);
+      // 2. clean up local data that are deleted from server
+      final localItems = await PostRepository().listFromLocalDb();
+      for (PostDataItem localItem in localItems) {
+        if (localItem.owner != currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await PostRepository().updateToLocalDb(localItem);
+        }
+      }
+
+      // 3. batch get details for items that need to be updated or created locally
+      final needGetIdsList = needGetIds.toList();
+      for (var i = 0; i < needGetIdsList.length;) {
+        final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
+        final batchItems = await client.batchGet('xbb', 'post', batchIds, Post.fromJson);
+        for (var item in batchItems.items) {
+          await PostRepository().upsertToLocalDb(item);
+        }
+        final truncated = batchItems.truncated;
+        if (truncated != null) {
+          i = needGetIdsList.indexOf(truncated);
+          if (i == -1) {
+            // just in case, if truncated id is not found in the list, fallback to next batch.
+            i += batchSize;
+          }
+        } else {
+          i += batchSize;
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
   Future<void> syncOwned() async {
     final currentUserId = client.currentUserId();
     try {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('xbb', 'post', limit: 50, marker: nextMarker);
+        final ListResponse resp = await client.list('xbb', 'post', limit: 200, marker: nextMarker);
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
@@ -883,7 +1037,13 @@ class _PostSyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('xbb', 'post', withPermission: true, limit: 50, marker: nextMarker);
+        final ListResponse resp = await client.list(
+          'xbb',
+          'post',
+          withPermission: true,
+          limit: 200,
+          marker: nextMarker,
+        );
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
@@ -913,7 +1073,7 @@ class _PostSyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('xbb', 'post', parentId: parentId, limit: 50, marker: nextMarker);
+        final ListResponse resp = await client.list('xbb', 'post', parentId: parentId, limit: 200, marker: nextMarker);
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
@@ -1146,6 +1306,10 @@ class CommentController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
   }
 
+  Future<void> syncAll({int batchSize = 20}) async {
+    await _syncEngine.syncAllData(batchSize: batchSize);
+  }
+
   Future<void> syncChildren(String parentId) async {
     await _syncEngine.syncChildren(parentId);
   }
@@ -1266,13 +1430,83 @@ class _CommentSyncEngine {
     }
   }
 
+  Future<void> syncAllData({int batchSize = 20}) async {
+    final currentUserId = client.currentUserId();
+    try {
+      String? nextMarker;
+      final serviceIds = <String>{};
+      final needGetIds = <String>{};
+      // 1. list all data ids from server, and compare with local data to find out which data need to fetch details and which data are deleted from server.
+      do {
+        final ListResponse resp = await client.list(
+          'xbb',
+          'comment',
+          withPermission: true,
+          limit: 200,
+          marker: nextMarker,
+        );
+        nextMarker = resp.pageInfo.nextMarker;
+        for (var summary in resp.items) {
+          serviceIds.add(summary.id);
+          final CommentDataItem? localItem = await CommentRepository().getFromLocalDb(summary.id);
+          if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
+            // only get details for new created or updated items, otherwise just skip to save performance.
+            needGetIds.add(summary.id);
+          } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
+            // local data is newer, need to sync to server
+            localItem.syncStatus = SyncStatus.failed;
+            await CommentRepository().updateToLocalDb(localItem);
+          } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+            // same updatedAt but marked as special status, need to sync to server
+            localItem.syncStatus = SyncStatus.archived;
+            await CommentRepository().updateToLocalDb(localItem);
+          }
+        }
+      } while (nextMarker != null);
+      // 2. clean up local data that are deleted from server
+      final localItems = await CommentRepository().listFromLocalDb();
+      for (CommentDataItem localItem in localItems) {
+        if (localItem.owner != currentUserId) {
+          continue;
+        }
+        if (!serviceIds.contains(localItem.id)) {
+          localItem.syncStatus = SyncStatus.deleted;
+          await CommentRepository().updateToLocalDb(localItem);
+        }
+      }
+
+      // 3. batch get details for items that need to be updated or created locally
+      final needGetIdsList = needGetIds.toList();
+      for (var i = 0; i < needGetIdsList.length;) {
+        final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
+        final batchItems = await client.batchGet('xbb', 'comment', batchIds, Comment.fromJson);
+        for (var item in batchItems.items) {
+          await CommentRepository().upsertToLocalDb(item);
+        }
+        final truncated = batchItems.truncated;
+        if (truncated != null) {
+          i = needGetIdsList.indexOf(truncated);
+          if (i == -1) {
+            // just in case, if truncated id is not found in the list, fallback to next batch.
+            i += batchSize;
+          }
+        } else {
+          i += batchSize;
+        }
+      }
+    } catch (e) {
+      // todo more error handling?
+      rethrow;
+    }
+  }
+
   Future<void> syncOwned() async {
     final currentUserId = client.currentUserId();
     try {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('xbb', 'comment', limit: 50, marker: nextMarker);
+        final ListResponse resp = await client.list('xbb', 'comment', limit: 200, marker: nextMarker);
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
@@ -1307,7 +1541,7 @@ class _CommentSyncEngine {
           'xbb',
           'comment',
           withPermission: true,
-          limit: 50,
+          limit: 200,
           marker: nextMarker,
         );
         nextMarker = resp.pageInfo.nextMarker;
@@ -1343,7 +1577,7 @@ class _CommentSyncEngine {
           'xbb',
           'comment',
           parentId: parentId,
-          limit: 50,
+          limit: 200,
           marker: nextMarker,
         );
         nextMarker = resp.pageInfo.nextMarker;
