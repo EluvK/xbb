@@ -15,14 +15,13 @@ checkUpdate({bool forceCheck = false}) async {
 
   if (!forceCheck &&
       lastCheckUpdate != null &&
-      DateTime.now().difference(lastCheckUpdate) < const Duration(minutes: 30)) {
+      DateTime.now().difference(lastCheckUpdate) < const Duration(hours: 24)) {
     print('Checking too frequently, skipping.');
     return;
   }
 
-  final bool shouldFetchVersion = forceCheck || !settingController.appCanUpdate;
-  if (!shouldFetchVersion) {
-    print('Already aware of latest version, skipping fetch.');
+  if (!forceCheck && settingController.appCanUpdate) {
+    print('Already aware of latest version, skipping fetch except force check.');
     return;
   }
 
@@ -53,13 +52,15 @@ checkUpdate({bool forceCheck = false}) async {
 
     settingController.updateAppSetting(canUpdate: hasNewVersion, lastCheckedUpdateTime: DateTime.now());
 
-    showUpdateDialog(
-      latestVersion: version,
-      releaseNotes: releaseNotes,
-      hasNewVersion: hasNewVersion,
-      onUpdate: (bool nightly, bool throughProxy) =>
-          _executeAppUpdate(settingController, version, nightly: nightly, throughProxy: throughProxy),
-    );
+    if (hasNewVersion || forceCheck) {
+      showUpdateDialog(
+        latestVersion: version,
+        releaseNotes: releaseNotes,
+        hasNewVersion: hasNewVersion,
+        onUpdate: (bool nightly, bool throughProxy) =>
+            _executeAppUpdate(settingController, version, nightly: nightly, throughProxy: throughProxy),
+      );
+    }
   } finally {
     settingController.isCheckingUpdate = false;
   }

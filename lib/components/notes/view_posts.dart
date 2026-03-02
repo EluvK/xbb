@@ -123,17 +123,19 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
           filters.add(PostContentFilter(searchFilterTextController.text));
         }
         final viewPosts = postController.getPostDetails(selector: (post) => post, filters: filters);
+
+        final toggleAllButton = IconButton(
+          onPressed: toggleAll,
+          icon: Icon(isAllExpanded() ? Icons.expand_less : Icons.expand_more),
+          tooltip: isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
+        );
         body = Column(
           children: [
             Row(
               children: [
                 Expanded(child: searchFilter()),
                 // todo maybe move to next line if we have more buttons, remove this row.
-                IconButton(
-                  onPressed: toggleAll,
-                  icon: Icon(isAllExpanded() ? Icons.expand_less : Icons.expand_more),
-                  tooltip: isAllExpanded() ? 'expand_less_all'.tr : 'expand_more_all'.tr,
-                ),
+                toggleAllButton,
               ],
             ),
             Expanded(child: postList(viewPosts)),
@@ -200,7 +202,41 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
       controllerProvider: getController,
       tilePadding: const EdgeInsets.fromLTRB(8.0, 0.0, 12.0, 0.0),
       controlAffinity: ListTileControlAffinity.leading,
-      titleBuilder: (category, _) => Text(category),
+      titleBuilder: (category, _) {
+        final currentPosts = categoryMap[category]!;
+        final bool hasUnread = currentPosts.any(
+          (post) =>
+              post.syncStatus != SyncStatus.archived ||
+              commentController
+                  .getCommentDetails(selector: (c) => c, filters: [ParentIdFilter(post.id)])
+                  .any((comment) => comment.syncStatus != SyncStatus.archived),
+        );
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(category),
+            if (hasUnread)
+              IconButton(
+                onPressed: () {
+                  for (var post in currentPosts) {
+                    postController.onUpdateLocalField(post.id, syncStatus: SyncStatus.archived);
+                    for (var commentId in commentController.getCommentDetails(
+                      selector: (c) => c.id,
+                      filters: [ParentIdFilter(post.id)],
+                    )) {
+                      commentController.onUpdateLocalField(commentId, syncStatus: SyncStatus.archived);
+                    }
+                    repoController.rebuildLocal();
+                  }
+                },
+                icon: const Icon(Icons.mark_email_read),
+                tooltip: 'mark_all_as_read'.tr,
+              )
+            else
+              const SizedBox.shrink(),
+          ],
+        );
+      },
       itemBuilder: (post) => _postListCard(post),
     );
   }

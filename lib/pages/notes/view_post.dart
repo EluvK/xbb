@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:xbb/components/common/permission.dart';
 import 'package:xbb/components/notes/post_viewer.dart';
 import 'package:xbb/controller/user.dart';
+import 'package:xbb/controller/utils.dart';
 import 'package:xbb/models/notes/model.dart';
 
 class ViewPostPage extends StatelessWidget {
@@ -17,9 +18,20 @@ class ViewPostPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('view_post'.trParams({"postName": post.body.title})),
         actions: [
+          debugOnlyWidget(
+            IconButton(
+              onPressed: () async {
+                CommentController commentController = Get.find<CommentController>();
+                await commentController.syncChildren(post.id);
+                await commentController.rebuildLocal();
+              },
+              icon: const Icon(Icons.sync),
+            ),
+          ),
           PermissionBox(
             feature: NotesFeatureRequires.updatePost,
             ownerId: post.owner,
+            rootOwnerId: repoController.getRepo(post.body.repoId)?.owner,
             acls: repoController.getAclCached(post.body.repoId),
             child: IconButton(
               onPressed: () {

@@ -123,12 +123,12 @@ class UserManagerController extends GetxController {
       return false; // Not initialized, deny access
     }
     if (selfProfile.value!.userId == resourceOwnerId || selfProfile.value!.userId == resourceRootOwnerId) {
-      print('debug: user is owner, grant access');
+      print('debug: user is owner, grant access $permission');
       return true;
     }
     Permission? userPermission = resourceAcls.firstWhereOrNull((p) => p.user == selfProfile.value!.userId);
     if (userPermission == null) {
-      print('debug: no specific permission found for user, deny access');
+      print('debug: no specific permission found for user, deny access $permission');
       return false;
     }
     int userAclMask = ACLMask.fromAccessLevel(userPermission.accessLevel);

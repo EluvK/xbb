@@ -76,11 +76,12 @@ class MarkdownWithComments extends StatelessWidget {
     final WidgetVisitor visitor = WidgetVisitor(config: config, generators: [latexGenerator], splitRegExp: regExp);
     final List<SpanNode> spans = visitor.visit(nodes);
     // print("nodes length: ${nodes.length}, spans length: ${spans.length}");
+    final supportTags = ['p', 'blockquote', 'pre', 'ul', 'ol'];
     spans.asMap().forEach((index, span) {
       final richText = Text.rich(span.build());
       final node = nodes[index];
-      final bool canHaveComments =
-          node is md.Element && (node.tag == 'p' || node.tag == 'blockquote' || node.tag == 'pre');
+      final bool canHaveComments = node is md.Element && supportTags.contains(node.tag);
+      // (node.tag == 'p' || node.tag == 'blockquote' || node.tag == 'pre' || node.tag == "ul" || node.tag == "ol");
       if (!canHaveComments) {
         print("[skip] node tag: ${node is md.Element ? node.tag : 'Not Element'}, index: $index");
       }
