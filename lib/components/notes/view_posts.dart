@@ -31,22 +31,25 @@ class ViewPosts extends StatelessWidget {
           print('refreshing posts');
           final repoId = repoController.currentRepoId.value;
           if (repoId != null) {
-            await runSyncTaskWithStatus([() => postController.syncChildren(repoId)], from: 0, to: 20);
+            await runSyncTaskWithStatus(
+              [() => postController.syncChildren(repoId), () => postController.rebuildLocal()],
+              from: 0,
+              to: 30,
+            );
             final postsId = postController.getPostDetails(
               selector: (post) => post.id,
               filters: [ParentIdFilter(repoId)],
             );
             await runSyncTaskWithStatus(
               [
-                ...postsId.map((postId) {
-                  return () => commentController.syncChildren(postId);
-                }),
+                () => commentController.syncMultiChildren(postsId),
                 () => postController.rebuildLocal(),
                 () => commentController.rebuildLocal(),
               ],
-              from: 20,
+              from: 30,
               to: 100,
             );
+            successSimpleFlushBar("同步完成");
           }
         },
         child: const Column(
