@@ -232,11 +232,8 @@ class RepoController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
   }
 
-  List<RepoDataItem> onViewRepos({List<DataItemFilter> filters = const []}) {
-    if (filters.isEmpty) {
-      return _items;
-    }
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
+  int getRepoCount<T>({List<DataItemFilter> filters = const []}) {
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).length;
   }
 
   Future<void> syncAll({int batchSize = 20}) async {
@@ -867,11 +864,8 @@ class PostController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
   }
 
-  List<PostDataItem> onViewPosts({List<DataItemFilter> filters = const []}) {
-    if (filters.isEmpty) {
-      return _items;
-    }
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
+  int getPostCount<T>({List<DataItemFilter> filters = const []}) {
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).length;
   }
 
   Future<void> syncAll({int batchSize = 20}) async {
@@ -1435,11 +1429,8 @@ class CommentController extends GetxController {
     return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
   }
 
-  List<CommentDataItem> onViewComments({List<DataItemFilter> filters = const []}) {
-    if (filters.isEmpty) {
-      return _items;
-    }
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).toList();
+  int getCommentCount<T>({List<DataItemFilter> filters = const []}) {
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).length;
   }
 
   Future<void> syncAll({int batchSize = 20}) async {
