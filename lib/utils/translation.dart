@@ -150,6 +150,14 @@ class _TranslationHelper {
       "en_US": "Expand All",
       "zh_CN": "全部展开",
     },
+    "search_title": {
+      "en_US": "Search",
+      "zh_CN": "搜索",
+    },
+    "mark_all_as_read": {
+      "en_US": "Mark As Read",
+      "zh_CN": "全部已读",
+    },
 
     // --- Pages: Login & Profile (登录与个人资料) ---
     "login_page_title": {

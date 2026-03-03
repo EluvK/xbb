@@ -32,7 +32,11 @@ class ViewPosts extends StatelessWidget {
           final repoId = repoController.currentRepoId.value;
           if (repoId != null) {
             await runSyncTaskWithStatus(
-              [() => postController.syncChildren(repoId), () => postController.rebuildLocal()],
+              [
+                () => repoController.getAclRefresh(repoId),
+                () => postController.syncChildren(repoId),
+                () => postController.rebuildLocal(),
+              ],
               from: 0,
               to: 30,
             );
@@ -169,7 +173,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
         decoration: InputDecoration(
           isDense: true,
           prefixIcon: const Icon(Icons.search_rounded),
-          hintText: '搜索',
+          hintText: 'search_title'.tr,
           suffixIcon: IconButton(
             onPressed: () {
               searchFilterTextController.text = '';
@@ -207,6 +211,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
       controlAffinity: ListTileControlAffinity.leading,
       titleBuilder: (category, _) {
         final currentPosts = categoryMap[category]!;
+        final bool hasSyncing = currentPosts.any((post) => post.syncStatus == SyncStatus.syncing);
         final bool hasUnread = currentPosts.any(
           (post) =>
               post.syncStatus != SyncStatus.archived ||
@@ -218,7 +223,9 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(category),
-            if (hasUnread)
+            if (hasSyncing)
+              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+            else if (hasUnread)
               IconButton(
                 onPressed: () {
                   for (var post in currentPosts) {
@@ -277,7 +284,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
       ),
       onDeleteButton: () => postController.deleteData(post.id),
       enableChildrenUpdateNumber: () =>
-          commentController.onViewComments(filters: [ParentIdFilter(post.id), StatusFilter.synced]).length,
+          commentController.getCommentCount(filters: [ParentIdFilter(post.id), StatusFilter.synced]),
     );
   }
 }

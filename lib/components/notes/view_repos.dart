@@ -57,12 +57,12 @@ class RepoQuickSwitcher extends StatelessWidget {
         onSelected: (r) {
           repoController.onSelectRepo(r.id);
           settingController.updateUserInterfaceHistoryCache(notesLastOpenedRepoId: r.id);
-          if (MediaQuery.of(context).size.width < 600) {
-            final scaffoldState = Scaffold.maybeOf(context);
-            if (scaffoldState != null && scaffoldState.isDrawerOpen) {
-              Navigator.of(context).pop();
-            }
-          }
+          // if (MediaQuery.of(context).size.width < 600) {
+          //   final scaffoldState = Scaffold.maybeOf(context);
+          //   if (scaffoldState != null && scaffoldState.isDrawerOpen) {
+          //     Navigator.of(context).pop();
+          //   }
+          // }
         },
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -180,9 +180,9 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
       onEditButton: () => Get.toNamed('/notes/edit-repo', arguments: [repo]),
       canDelete: () => userManagerController.checkPermission(NotesFeatureRequires.deleteRepo, repo.owner, permission),
       onDeleteButton: () => repoController.deleteData(repo.id),
-      onDeleteButtonCondition: () => postController.onViewPosts(filters: [ParentIdFilter(repo.id)]).isEmpty,
+      onDeleteButtonCondition: () => postController.getPostCount(filters: [ParentIdFilter(repo.id)]) == 0,
       enableChildrenUpdateNumber: () =>
-          postController.onViewPosts(filters: [ParentIdFilter(repo.id), StatusFilter.synced]).length,
+          postController.getPostCount(filters: [ParentIdFilter(repo.id), StatusFilter.synced]),
     );
   }
 
