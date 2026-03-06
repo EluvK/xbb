@@ -7,12 +7,65 @@ import 'package:get/get.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/models/tracker/db.dart';
+import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
 
-@Repository(collectionName: 'tracker', tableName: 'tracker', db: TrackerDB)
+Future<void> reInitTrackerSync(SyncStoreClient client) async {
+  await reInit<TrackerController>(() => TrackerController(client), (c) => c.ensureInitialization());
+  await reInit<TrackerRecordController>(() => TrackerRecordController(client), (c) => c.ensureInitialization());
+  // onReadySyncTracker();
+}
+
+Future<void> onReadySyncTracker() async {
+  final trackerController = Get.find<TrackerController>();
+  final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
+  try {
+    final result = await ssClient.checkHealth();
+    if (!result) {
+      print('SyncStore health check failed, skipping initial sync.');
+      flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
+      return;
+    }
+  } catch (e) {
+    return;
+  }
+  try {
+    await runSyncTaskWithStatus(
+      [
+        // () => trackerController.syncAll(batchSize: 100),
+        // () => trackerController.syncAll(batchSize: 100),
+        () => trackerController.rebuildLocal(),
+      ],
+      from: 0.0,
+      to: 100.0,
+    );
+  } catch (e) {
+    print('Error during initial sync: $e');
+    flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
+  }
+}
+
+Future<void> reInit<T extends GetxController>(
+  FutureOr<T> Function() creator,
+  FutureOr<void> Function(T controller)? initializer,
+) async {
+  if (Get.isRegistered<T>()) {
+    await Get.delete<T>(force: true);
+  }
+  final controller = await Get.putAsync<T>(() async {
+    return await creator();
+  }, permanent: true);
+  if (initializer != null) {
+    await initializer(controller);
+  }
+}
+
+@Repository(collectionName: 'tracker', tableName: 'tracker', db: TrackerDB, withAcls: true)
 @Freezed()
 abstract class Tracker with _$Tracker {
   @JsonSerializable(fieldRename: FieldRename.snake)

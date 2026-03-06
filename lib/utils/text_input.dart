@@ -87,6 +87,7 @@ enum AppSettingMetaEnum implements TitleInterface {
 
 enum AppFeatureMetaEnum implements TitleInterface {
   enableNotes,
+  enableTracker,
   settings;
 
   @override
@@ -94,6 +95,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
     switch (this) {
       case AppFeatureMetaEnum.enableNotes:
         return Colors.green;
+      case AppFeatureMetaEnum.enableTracker:
+        return Colors.orange;
       case AppFeatureMetaEnum.settings:
         return Colors.grey;
     }
@@ -104,6 +107,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
     switch (this) {
       case AppFeatureMetaEnum.enableNotes:
         return Icons.library_books_outlined;
+      case AppFeatureMetaEnum.enableTracker:
+        return Icons.track_changes;
       case AppFeatureMetaEnum.settings:
         return Icons.settings_rounded;
     }
@@ -114,6 +119,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
     switch (this) {
       case AppFeatureMetaEnum.enableNotes:
         return 'app_enable_note_feature'.tr;
+      case AppFeatureMetaEnum.enableTracker:
+        return 'app_enable_tracker_feature'.tr;
       case AppFeatureMetaEnum.settings:
         return 'app_enable_setting'.tr;
     }

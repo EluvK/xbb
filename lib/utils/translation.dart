@@ -301,6 +301,10 @@ class _TranslationHelper {
       "en_US": "Enable Note Feature",
       "zh_CN": "启用笔记功能",
     },
+    "app_enable_tracker_feature": {
+      "en_US": "Enable Tracker Feature",
+      "zh_CN": "启用追踪功能",
+    },
     "app_enable_setting": {
       "en_US": "Enable Setting",
       "zh_CN": "启用设置",

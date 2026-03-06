@@ -153,9 +153,10 @@ class SettingController extends GetxController {
   // app feature management
   final appFeaturesManagement = AppFeaturesManagement.defaults().obs;
   bool get notesEnabled => appFeaturesManagement.value.notesEnabled;
-  void updateAppFeaturesManagement({bool? enableNotes}) {
+  bool get trackerEnabled => appFeaturesManagement.value.trackerEnabled;
+  void updateAppFeaturesManagement({bool? enableNotes, bool? enableTracker}) {
     appFeaturesManagement.update((feature) {
-      feature?.update(enableNotes: enableNotes);
+      feature?.update(enableNotes: enableNotes, enableTracker: enableTracker);
     });
     box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, appFeaturesManagement.value.toJson());
   }
@@ -349,22 +350,30 @@ class AppSetting {
 
 class AppFeaturesManagement {
   bool enableNotes;
+  bool enableTracker;
 
   get notesEnabled => enableNotes;
-  AppFeaturesManagement({required this.enableNotes});
+  get trackerEnabled => enableTracker;
+  AppFeaturesManagement({required this.enableNotes, required this.enableTracker});
   factory AppFeaturesManagement.defaults() {
-    return AppFeaturesManagement(enableNotes: true);
+    return AppFeaturesManagement(enableNotes: true, enableTracker: false);
   }
   Map<String, dynamic> toJson() {
-    return {'enable_notes': enableNotes};
+    return {'enable_notes': enableNotes, 'enable_tracker': enableTracker};
   }
 
   factory AppFeaturesManagement.fromJson(Map<String, dynamic> json) {
-    return AppFeaturesManagement(enableNotes: json['enable_notes'] ?? true);
+    return AppFeaturesManagement(
+      enableNotes: json['enable_notes'] ?? true,
+      enableTracker: json['enable_tracker'] ?? false,
+    );
   }
-  void update({bool? enableNotes}) {
+  void update({bool? enableNotes, bool? enableTracker}) {
     if (enableNotes != null) {
       this.enableNotes = enableNotes;
+    }
+    if (enableTracker != null) {
+      this.enableTracker = enableTracker;
     }
   }
 }

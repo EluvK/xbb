@@ -71,6 +71,16 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
+              child(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableTracker,
+                  initialValue: settingController.trackerEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableTracker: value);
+                    setState(() {});
+                  },
+                ),
+              ),
               const Divider(),
               Text('app_version'.trParams({'version': VERSION})),
               child(versionInfo(context)),

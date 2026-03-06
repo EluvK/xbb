@@ -8,12 +8,10 @@ import 'package:url_launcher/url_launcher.dart';
 const String debugVersionLiteral = 'DEBUG';
 
 // ignore: constant_identifier_names
-const String VERSION =
-    String.fromEnvironment('APP_VERSION', defaultValue: debugVersionLiteral);
+const String VERSION = String.fromEnvironment('APP_VERSION', defaultValue: debugVersionLiteral);
 
 // ignore: constant_identifier_names
-const String APP_BUILD_NUMBER =
-    String.fromEnvironment('APP_BUILD_NUMBER', defaultValue: '0');
+const String APP_BUILD_NUMBER = String.fromEnvironment('APP_BUILD_NUMBER', defaultValue: '0');
 
 // ignore: constant_identifier_names
 const String REPO_URL = 'https://github.com/eluvk/xbb/releases';
@@ -76,11 +74,16 @@ String detailedDateStr(DateTime dt) {
 enum FlushLevel { OK, INFO, WARNING }
 
 void successSimpleFlushBar(String message) {
-  flushBar(FlushLevel.OK, null, message, upperPosition: true);
+  flushBar(FlushLevel.OK, null, message, upperPosition: true, duration: const Duration(seconds: 1));
 }
 
-void flushBar(FlushLevel level, String? title, String? message,
-    {bool upperPosition = false}) {
+void flushBar(
+  FlushLevel level,
+  String? title,
+  String? message, {
+  bool upperPosition = false,
+  Duration duration = const Duration(seconds: 2),
+}) {
   Color? color;
   IconData? icon;
   switch (level) {
@@ -100,13 +103,12 @@ void flushBar(FlushLevel level, String? title, String? message,
   Flushbar(
     title: title,
     message: message,
-    duration: const Duration(seconds: 2),
+    duration: duration,
     icon: Icon(icon, size: 28, color: color),
     margin: const EdgeInsets.all(12.0),
     borderRadius: BorderRadius.circular(8.0),
     leftBarIndicatorColor: color,
-    flushbarPosition:
-        upperPosition ? FlushbarPosition.TOP : FlushbarPosition.BOTTOM,
+    flushbarPosition: upperPosition ? FlushbarPosition.TOP : FlushbarPosition.BOTTOM,
   ).show(Get.context!);
 }
 
@@ -116,9 +118,7 @@ Future<bool?> showBackCheckDialog(BuildContext context) {
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text('back_check_title'.tr),
-        content: Text(
-          'back_check_content'.tr,
-        ),
+        content: Text('back_check_content'.tr),
         actions: <Widget>[
           TextButton(
             child: Text('back_check_cancel'.tr),
@@ -130,10 +130,7 @@ Future<bool?> showBackCheckDialog(BuildContext context) {
             // style: TextButton.styleFrom(
             //   textStyle: Theme.of(context).textTheme.labelLarge,
             // ),
-            child: Text(
-              'back_check_confirm'.tr,
-              style: TextStyle(color: Colors.red[400]),
-            ),
+            child: Text('back_check_confirm'.tr, style: TextStyle(color: Colors.red[400])),
             onPressed: () {
               Navigator.pop(context, true);
             },

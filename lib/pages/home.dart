@@ -6,11 +6,12 @@ import 'package:xbb/components/common/profile.dart';
 import 'package:xbb/components/common/settings.dart';
 import 'package:xbb/components/notes/view_posts.dart';
 import 'package:xbb/components/notes/view_repos.dart';
+import 'package:xbb/components/trackers/view_brief.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/list_tile_card.dart' show ColorPickerButtons;
 import 'package:xbb/utils/text_input.dart';
 
-enum HomeTabIndex { notes, todo, todo2, settings }
+enum HomeTabIndex { notes, tracker, todo2, settings }
 
 class HomePageWrapper extends StatefulWidget {
   const HomePageWrapper({super.key});
@@ -26,7 +27,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
 
   final Map<HomeTabIndex, Tab> _allTabs = {
     HomeTabIndex.notes: Tab(text: 'Notes', icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
-    HomeTabIndex.todo: const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
+    HomeTabIndex.tracker: Tab(text: 'Tracker', icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon))),
     HomeTabIndex.todo2: const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
     HomeTabIndex.settings: Tab(text: 'Settings', icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
   };
@@ -34,6 +35,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   List<HomeTabIndex> get _activeIndices {
     List<HomeTabIndex> indices = [];
     if (settingController.notesEnabled) indices.add(HomeTabIndex.notes);
+    if (settingController.trackerEnabled) indices.add(HomeTabIndex.tracker);
     // indices.add(HomeTabIndex.todo);
     indices.add(HomeTabIndex.settings);
     return indices;
@@ -202,7 +204,8 @@ class _LeftButton extends StatelessWidget {
     switch (index) {
       case HomeTabIndex.notes:
         return const ViewRepos();
-      case HomeTabIndex.todo:
+      case HomeTabIndex.tracker:
+        return const ViewTrackerBrief();
       case HomeTabIndex.todo2:
         return const Placeholder();
       case HomeTabIndex.settings:
@@ -220,7 +223,8 @@ class _RightMain extends StatelessWidget {
     switch (index) {
       case HomeTabIndex.notes:
         return const ViewPosts();
-      case HomeTabIndex.todo:
+      case HomeTabIndex.tracker:
+        return const Text('Tracker placeholder');
       case HomeTabIndex.todo2:
         return const Placeholder();
       case HomeTabIndex.settings:
@@ -244,7 +248,8 @@ class _AppBar extends StatelessWidget {
             _GlobalColorController(),
           ],
         );
-      case HomeTabIndex.todo:
+      case HomeTabIndex.tracker:
+        return const Text('Tracker');
       case HomeTabIndex.todo2:
       case HomeTabIndex.settings:
         return const Text('Settings');
