@@ -7,6 +7,7 @@ import 'package:xbb/components/common/settings.dart';
 import 'package:xbb/components/notes/view_posts.dart';
 import 'package:xbb/components/notes/view_repos.dart';
 import 'package:xbb/components/trackers/view_brief.dart';
+import 'package:xbb/components/trackers/view_tracker.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/list_tile_card.dart' show ColorPickerButtons;
 import 'package:xbb/utils/text_input.dart';
@@ -224,7 +225,7 @@ class _RightMain extends StatelessWidget {
       case HomeTabIndex.notes:
         return const ViewPosts();
       case HomeTabIndex.tracker:
-        return const Text('Tracker placeholder');
+        return const ViewTracker();
       case HomeTabIndex.todo2:
         return const Placeholder();
       case HomeTabIndex.settings:

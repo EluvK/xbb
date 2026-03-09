@@ -13,6 +13,7 @@ import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
 import 'package:xbb/pages/notes/view_post.dart';
 import 'package:xbb/pages/profile.dart';
+import 'package:xbb/pages/trackers/edit_tracker.dart';
 import 'package:xbb/utils/translation.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -78,6 +79,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/notes/view-post', page: () => const ViewPostPage()),
         GetPage(name: '/notes/edit-post', page: () => const EditPostPage()),
         GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
+        GetPage(name: '/tracker/edit-tracker', page: () => const EditTrackerPage()),
       ],
       debugShowCheckedModeBanner: true,
       themeMode: themeMode,
