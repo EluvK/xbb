@@ -520,7 +520,7 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
 
 /// @nodoc
 
-@JsonSerializable(fieldRename: FieldRename.snake)
+@JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
 class EventTrackerConfig with DiagnosticableTreeMixin implements TrackerConfig {
   const EventTrackerConfig({this.periodDays, required this.detailUnit, final  String? $type}): $type = $type ?? 'event';
   factory EventTrackerConfig.fromJson(Map<String, dynamic> json) => _$EventTrackerConfigFromJson(json);

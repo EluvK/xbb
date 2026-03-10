@@ -84,11 +84,10 @@ void _executeAppUpdate(
     }
   } else {
     if (GetPlatform.isWindows) {
-      String url =
-          "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$urlVersion/xbb_desktop_windows_setup.exe";
+      String url = "https://r2-xbb.508071.xyz/release/$urlVersion/xbb_desktop_windows_setup.exe";
       openUrl(url);
     } else if (GetPlatform.isAndroid) {
-      String url = "https://pub-35fb8e0d745944819b75af2768f58058.r2.dev/release/$urlVersion/xbb.apk";
+      String url = "https://r2-xbb.508071.xyz/release/$urlVersion/xbb.apk";
       Clipboard.setData(ClipboardData(text: url));
       flushBar(FlushLevel.OK, 'URL Copied', '下载链接已复制到剪贴板，请在浏览器中打开下载:\n$url');
     }

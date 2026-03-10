@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/controller/utils.dart';
 import 'package:xbb/models/tracker/model.dart';
 
 class ViewTrackerBrief extends StatelessWidget {
@@ -10,7 +11,21 @@ class ViewTrackerBrief extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 4.0),
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-      child: const _ViewTrackerBriefByCategory(),
+      child: Column(
+        // mainAxisSize: MainAxisSize.min,
+        children: [
+          debugOnlyWidget(
+            IconButton(
+              onPressed: () {
+                final trackerController = Get.find<TrackerController>();
+                trackerController.clearLocal();
+              },
+              icon: const Icon(Icons.warning_amber),
+            ),
+          ),
+          const Expanded(child: _ViewTrackerBriefByCategory()),
+        ],
+      ),
     );
   }
 }

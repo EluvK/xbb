@@ -171,6 +171,8 @@ class TextInputWidget extends StatefulWidget {
     this.onFocusChange,
     this.autoFocus = false,
     this.optional = false,
+    this.helperText,
+    this.inputType,
   });
   final TitleInterface title;
   final String initialValue;
@@ -178,6 +180,8 @@ class TextInputWidget extends StatefulWidget {
   final bool autoFocus;
   final bool optional;
   final void Function(String) onFinished;
+  final String? helperText;
+  final TextInputType? inputType;
 
   @override
   State<TextInputWidget> createState() => _TextInputWidgetState();
@@ -245,7 +249,9 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                     contentPadding: const EdgeInsets.all(8),
                     hintText: widget.optional ? 'optional'.tr : '',
                     hintStyle: const TextStyle(color: Colors.grey),
+                    helperText: widget.helperText,
                   ),
+                  keyboardType: widget.inputType,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                   onSubmitted: (value) {

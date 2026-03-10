@@ -83,7 +83,7 @@ abstract class Tracker with _$Tracker {
 @Freezed(unionKey: 'type')
 sealed class TrackerConfig with _$TrackerConfig {
   // Event (周期性事件/习惯)
-  @JsonSerializable(fieldRename: FieldRename.snake)
+  @JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
   const factory TrackerConfig.event({
     int? periodDays, // 每 X 天
     required String detailUnit, // duration / number / boolean

@@ -67,6 +67,7 @@ dependencies:
   cached_network_image: ^3.4.1
   cryptography: ^2.9.0
   cryptography_flutter: ^2.3.4
+  board_datetime_picker: ^2.8.5
 
 dev_dependencies:
   test: ^1.26.3

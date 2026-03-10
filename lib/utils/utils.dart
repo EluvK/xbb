@@ -100,6 +100,11 @@ void flushBar(
       icon = Icons.error_outline;
       break;
   }
+  if (Get.context == null) {
+    // 当前context可能为null，尤其是在main函数中调用时，因此需要确保在有有效context的情况下调用flushBar
+    print('FlushBar attempted to show without a valid context. Title: $title, Message: $message');
+    return;
+  }
   Flushbar(
     title: title,
     message: message,

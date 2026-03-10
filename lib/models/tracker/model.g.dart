@@ -29,7 +29,7 @@ EventTrackerConfig _$EventTrackerConfigFromJson(Map<String, dynamic> json) => Ev
 );
 
 Map<String, dynamic> _$EventTrackerConfigToJson(EventTrackerConfig instance) => <String, dynamic>{
-  'period_days': instance.periodDays,
+  'period_days': ?instance.periodDays,
   'detail_unit': instance.detailUnit,
   'type': instance.$type,
 };
@@ -180,14 +180,18 @@ class TrackerController extends GetxController {
   TrackerController(this.client) : _syncEngine = _TrackerSyncEngine(client);
 
   final RxList<TrackerDataItem> _items = <TrackerDataItem>[].obs;
-
+  final RxMap<String, List<Permission>> _aclCache = <String, List<Permission>>{}.obs;
   final Map<String, _TrackerDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentTrackerId = Rx<String?>(null);
 
   @override
   Future<void> onInit() async {
     await rebuildLocal();
-
+    // preload ACLs for all items to make sure UI can get ACL info immediately
+    // this can be optimized by only load ACL when needed and cache it.
+    for (var item in _items) {
+      await getAclLocal(item.id);
+    }
     super.onInit();
     _initialized = true;
   }
@@ -335,6 +339,77 @@ class TrackerController extends GetxController {
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
     _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
+  }
+}
+
+extension TrackerRepositoryAcl on TrackerRepository {
+  static String get tableNameAcl => 'acl';
+  Future<List<Permission>> getAcls(String dataId) async {
+    final db = await LocalStoreTracker.getDb();
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableNameAcl,
+      where: 'data_id = ? AND data_collection = ?',
+      whereArgs: [dataId, 'tracker'],
+    );
+    if (maps.isEmpty) {
+      return [];
+    }
+    final permissionsJson = maps.first['permissions'] as String;
+    final List<dynamic> permissionsList = json.decode(permissionsJson) as List<dynamic>;
+    return permissionsList.map((e) => Permission.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> setAcls(String dataId, List<Permission> permissions) async {
+    final db = await LocalStoreTracker.getDb();
+    final permissionsJson = json.encode(permissions.map((e) => e.toJson()).toList());
+    await db.insert(tableNameAcl, {
+      'data_id': dataId,
+      'data_collection': 'tracker',
+      'permissions': permissionsJson,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+}
+
+extension TrackerControllerAcl on TrackerController {
+  Future<void> syncAcls() async {
+    try {
+      for (var item in _items) {
+        final serviceAcls = await client.getAcls('tracker', 'tracker', item.id);
+        await TrackerRepository().setAcls(item.id, serviceAcls);
+        _aclCache[item.id] = serviceAcls;
+      }
+    } catch (e) {
+      print("Error syncing ACLs: $e");
+    }
+  }
+
+  Future<List<Permission>> getAclLocal(String dataId) async {
+    final localAcls = await TrackerRepository().getAcls(dataId);
+    _aclCache[dataId] = localAcls;
+    return localAcls;
+  }
+
+  List<Permission> getAclCached(String dataId) => _aclCache[dataId] ?? [];
+  Future<List<Permission>> getAclRefresh(String dataId) async {
+    try {
+      final List<Permission> getAcls = await client.getAcls('tracker', 'tracker', dataId);
+      await TrackerRepository().setAcls(dataId, getAcls);
+      _aclCache[dataId] = getAcls;
+      return getAcls;
+    } catch (e) {
+      print("Error fetching ACLs from server: $e");
+      return await TrackerRepository().getAcls(dataId);
+    }
+  }
+
+  Future<void> setAcls(String dataId, List<Permission> permissions) async {
+    try {
+      await client.updateAcls('tracker', 'tracker', dataId, permissions);
+      await TrackerRepository().setAcls(dataId, permissions);
+      _aclCache[dataId] = permissions;
+    } catch (e) {
+      print("Error updating ACLs to server: $e");
+    }
   }
 }
 
