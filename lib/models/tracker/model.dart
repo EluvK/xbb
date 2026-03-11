@@ -85,7 +85,7 @@ sealed class TrackerConfig with _$TrackerConfig {
   // Event (周期性事件/习惯)
   @JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
   const factory TrackerConfig.event({
-    int? periodDays, // 每 X 天
+    required int periodDays, // 每 X 天, set to 0 for no cycle
   }) = EventTrackerConfig;
 
   // Milestone (阶段性目标)

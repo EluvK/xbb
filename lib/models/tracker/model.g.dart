@@ -23,10 +23,10 @@ Map<String, dynamic> _$TrackerToJson(_Tracker instance) => <String, dynamic>{
 };
 
 EventTrackerConfig _$EventTrackerConfigFromJson(Map<String, dynamic> json) =>
-    EventTrackerConfig(periodDays: (json['period_days'] as num?)?.toInt(), $type: json['type'] as String?);
+    EventTrackerConfig(periodDays: (json['period_days'] as num).toInt(), $type: json['type'] as String?);
 
 Map<String, dynamic> _$EventTrackerConfigToJson(EventTrackerConfig instance) => <String, dynamic>{
-  'period_days': ?instance.periodDays,
+  'period_days': instance.periodDays,
   'type': instance.$type,
 };
 

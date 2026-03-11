@@ -71,7 +71,7 @@ class _EditTrackerState extends State<EditTracker> {
       _type = t.type;
       t.config.map(
         event: (c) {
-          _periodDaysController.text = c.periodDays?.toString() ?? '';
+          _periodDaysController.text = c.periodDays.toString();
         },
         milestone: (c) {
           _milestoneGoalType = c.goalType;
@@ -105,9 +105,7 @@ class _EditTrackerState extends State<EditTracker> {
 
     TrackerConfig config;
     if (_type == 'event') {
-      config = TrackerConfig.event(
-        periodDays: _periodDaysController.text.isEmpty ? null : int.tryParse(_periodDaysController.text),
-      );
+      config = TrackerConfig.event(periodDays: int.tryParse(_periodDaysController.text) ?? 0);
     } else if (_type == 'milestone') {
       final String targetValue;
       if (_milestoneGoalType == 'time') {
@@ -120,7 +118,7 @@ class _EditTrackerState extends State<EditTracker> {
       config = TrackerConfig.milestone(goalType: _milestoneGoalType, targetValue: targetValue);
     } else {
       config = TrackerConfig.anniversary(
-        baseDate: _baseDate ?? DateTime.now(),
+        baseDate: (_baseDate ?? DateTime.now()).toUtc(),
         isLunar: _isLunar,
         remindType: _remindType,
       );
@@ -155,8 +153,9 @@ class _EditTrackerState extends State<EditTracker> {
             title: const _LocalTitle('Period Days', Icons.repeat, Colors.blueGrey),
             initialValue: _periodDaysController.text,
             onFinished: (v) => _periodDaysController.text = v,
-            optional: true,
-            helperText: 'Leave empty for no period',
+            optional: false,
+            helperText: '0 for no cycle',
+            inputType: const TextInputType.numberWithOptions(decimal: true),
           ),
           // const SizedBox(height: 12),
           // const Divider(),

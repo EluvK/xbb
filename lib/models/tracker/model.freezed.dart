@@ -463,7 +463,7 @@ return anniversary(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int? periodDays)?  event,TResult Function( String goalType,  String targetValue)?  milestone,TResult Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int periodDays)?  event,TResult Function( String goalType,  String targetValue)?  milestone,TResult Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig() when event != null:
 return event(_that.periodDays);case MilestoneTrackerConfig() when milestone != null:
@@ -486,7 +486,7 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int? periodDays)  event,required TResult Function( String goalType,  String targetValue)  milestone,required TResult Function( DateTime baseDate,  bool isLunar,  String remindType)  anniversary,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int periodDays)  event,required TResult Function( String goalType,  String targetValue)  milestone,required TResult Function( DateTime baseDate,  bool isLunar,  String remindType)  anniversary,}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig():
 return event(_that.periodDays);case MilestoneTrackerConfig():
@@ -505,7 +505,7 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int? periodDays)?  event,TResult? Function( String goalType,  String targetValue)?  milestone,TResult? Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int periodDays)?  event,TResult? Function( String goalType,  String targetValue)?  milestone,TResult? Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig() when event != null:
 return event(_that.periodDays);case MilestoneTrackerConfig() when milestone != null:
@@ -522,10 +522,10 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
 class EventTrackerConfig with DiagnosticableTreeMixin implements TrackerConfig {
-  const EventTrackerConfig({this.periodDays, final  String? $type}): $type = $type ?? 'event';
+  const EventTrackerConfig({required this.periodDays, final  String? $type}): $type = $type ?? 'event';
   factory EventTrackerConfig.fromJson(Map<String, dynamic> json) => _$EventTrackerConfigFromJson(json);
 
- final  int? periodDays;
+ final  int periodDays;
 
 @JsonKey(name: 'type')
 final String $type;
@@ -570,7 +570,7 @@ abstract mixin class $EventTrackerConfigCopyWith<$Res> implements $TrackerConfig
   factory $EventTrackerConfigCopyWith(EventTrackerConfig value, $Res Function(EventTrackerConfig) _then) = _$EventTrackerConfigCopyWithImpl;
 @useResult
 $Res call({
- int? periodDays
+ int periodDays
 });
 
 
@@ -587,10 +587,10 @@ class _$EventTrackerConfigCopyWithImpl<$Res>
 
 /// Create a copy of TrackerConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? periodDays = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? periodDays = null,}) {
   return _then(EventTrackerConfig(
-periodDays: freezed == periodDays ? _self.periodDays : periodDays // ignore: cast_nullable_to_non_nullable
-as int?,
+periodDays: null == periodDays ? _self.periodDays : periodDays // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
