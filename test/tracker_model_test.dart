@@ -9,7 +9,7 @@ void main() {
         "description": "保持身体健康",
         "category": "健康",
         "type": "event",
-        "config": {"type": "event", "period_days": 1, "detail_unit": "duration"},
+        "config": {"type": "event", "period_days": 1},
       };
 
       final tracker = Tracker.fromJson(json);
@@ -19,7 +19,7 @@ void main() {
       // 验证具体字段
       final config = tracker.config as EventTrackerConfig;
       expect(config.periodDays, 1);
-      expect(config.detailUnit, "duration");
+      // expect(config.detailUnit, "duration");
     });
 
     test('场景二：反序列化 [目标/Milestone] Tracker', () {

@@ -463,10 +463,10 @@ return anniversary(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int? periodDays,  String detailUnit)?  event,TResult Function( String goalType,  String targetValue)?  milestone,TResult Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int? periodDays)?  event,TResult Function( String goalType,  String targetValue)?  milestone,TResult Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig() when event != null:
-return event(_that.periodDays,_that.detailUnit);case MilestoneTrackerConfig() when milestone != null:
+return event(_that.periodDays);case MilestoneTrackerConfig() when milestone != null:
 return milestone(_that.goalType,_that.targetValue);case AnniversaryTrackerConfig() when anniversary != null:
 return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
   return orElse();
@@ -486,10 +486,10 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int? periodDays,  String detailUnit)  event,required TResult Function( String goalType,  String targetValue)  milestone,required TResult Function( DateTime baseDate,  bool isLunar,  String remindType)  anniversary,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int? periodDays)  event,required TResult Function( String goalType,  String targetValue)  milestone,required TResult Function( DateTime baseDate,  bool isLunar,  String remindType)  anniversary,}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig():
-return event(_that.periodDays,_that.detailUnit);case MilestoneTrackerConfig():
+return event(_that.periodDays);case MilestoneTrackerConfig():
 return milestone(_that.goalType,_that.targetValue);case AnniversaryTrackerConfig():
 return anniversary(_that.baseDate,_that.isLunar,_that.remindType);}
 }
@@ -505,10 +505,10 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int? periodDays,  String detailUnit)?  event,TResult? Function( String goalType,  String targetValue)?  milestone,TResult? Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int? periodDays)?  event,TResult? Function( String goalType,  String targetValue)?  milestone,TResult? Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig() when event != null:
-return event(_that.periodDays,_that.detailUnit);case MilestoneTrackerConfig() when milestone != null:
+return event(_that.periodDays);case MilestoneTrackerConfig() when milestone != null:
 return milestone(_that.goalType,_that.targetValue);case AnniversaryTrackerConfig() when anniversary != null:
 return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
   return null;
@@ -522,12 +522,10 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
 class EventTrackerConfig with DiagnosticableTreeMixin implements TrackerConfig {
-  const EventTrackerConfig({this.periodDays, required this.detailUnit, final  String? $type}): $type = $type ?? 'event';
+  const EventTrackerConfig({this.periodDays, final  String? $type}): $type = $type ?? 'event';
   factory EventTrackerConfig.fromJson(Map<String, dynamic> json) => _$EventTrackerConfigFromJson(json);
 
  final  int? periodDays;
-// 每 X 天
- final  String detailUnit;
 
 @JsonKey(name: 'type')
 final String $type;
@@ -547,21 +545,21 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'TrackerConfig.event'))
-    ..add(DiagnosticsProperty('periodDays', periodDays))..add(DiagnosticsProperty('detailUnit', detailUnit));
+    ..add(DiagnosticsProperty('periodDays', periodDays));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EventTrackerConfig&&(identical(other.periodDays, periodDays) || other.periodDays == periodDays)&&(identical(other.detailUnit, detailUnit) || other.detailUnit == detailUnit));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EventTrackerConfig&&(identical(other.periodDays, periodDays) || other.periodDays == periodDays));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,periodDays,detailUnit);
+int get hashCode => Object.hash(runtimeType,periodDays);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'TrackerConfig.event(periodDays: $periodDays, detailUnit: $detailUnit)';
+  return 'TrackerConfig.event(periodDays: $periodDays)';
 }
 
 
@@ -572,7 +570,7 @@ abstract mixin class $EventTrackerConfigCopyWith<$Res> implements $TrackerConfig
   factory $EventTrackerConfigCopyWith(EventTrackerConfig value, $Res Function(EventTrackerConfig) _then) = _$EventTrackerConfigCopyWithImpl;
 @useResult
 $Res call({
- int? periodDays, String detailUnit
+ int? periodDays
 });
 
 
@@ -589,11 +587,10 @@ class _$EventTrackerConfigCopyWithImpl<$Res>
 
 /// Create a copy of TrackerConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? periodDays = freezed,Object? detailUnit = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? periodDays = freezed,}) {
   return _then(EventTrackerConfig(
 periodDays: freezed == periodDays ? _self.periodDays : periodDays // ignore: cast_nullable_to_non_nullable
-as int?,detailUnit: null == detailUnit ? _self.detailUnit : detailUnit // ignore: cast_nullable_to_non_nullable
-as String,
+as int?,
   ));
 }
 

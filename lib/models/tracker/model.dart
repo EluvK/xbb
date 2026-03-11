@@ -86,7 +86,6 @@ sealed class TrackerConfig with _$TrackerConfig {
   @JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
   const factory TrackerConfig.event({
     int? periodDays, // 每 X 天
-    required String detailUnit, // duration / number / boolean
   }) = EventTrackerConfig;
 
   // Milestone (阶段性目标)

@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/tracker/model.dart';
 
@@ -27,6 +28,7 @@ class TrackerDB {
         onCreate: (Database db, int version) async {
           await db.execute(LocalStoreTracker.onCreateTableTrackerSQL);
           await db.execute(LocalStoreTrackerRecord.onCreateTableTrackerRecordSQL);
+          await db.execute(onCreateTableAcl);
         },
       ),
     );
