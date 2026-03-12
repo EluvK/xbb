@@ -260,7 +260,10 @@ class _InlineColorPickerButtonState extends State<InlineColorPickerButton> {
               },
             )
           : IconButton(
-              icon: const Icon(Icons.color_lens_rounded),
+              icon: Icon(
+                Icons.color_lens_rounded,
+                color: widget.value.toColor() == Colors.transparent ? null : widget.value.toColor(),
+              ),
               onPressed: () => setState(() => expanded = !expanded),
             ),
     );

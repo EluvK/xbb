@@ -25,7 +25,9 @@ Future<void> reInitNotesSync(SyncStoreClient client) async {
   if (settingController.notesLastOpenedRepoId != null) {
     repoController.onSelectRepo(settingController.notesLastOpenedRepoId!);
   }
-  onReadySyncAll();
+  if (settingController.notesEnabled) {
+    onReadySyncAll();
+  }
 }
 
 Future<void> onReadySyncAll() async {

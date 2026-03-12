@@ -18,11 +18,15 @@ part 'model.freezed.dart';
 Future<void> reInitTrackerSync(SyncStoreClient client) async {
   await reInit<TrackerController>(() => TrackerController(client), (c) => c.ensureInitialization());
   await reInit<TrackerRecordController>(() => TrackerRecordController(client), (c) => c.ensureInitialization());
-  // onReadySyncTracker();
+  final SettingController settingController = Get.find<SettingController>();
+  if (settingController.trackerEnabled) {
+    onReadySyncTracker();
+  }
 }
 
 Future<void> onReadySyncTracker() async {
   final trackerController = Get.find<TrackerController>();
+  final recordController = Get.find<TrackerRecordController>();
   final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
   try {
     final result = await ssClient.checkHealth();
@@ -37,13 +41,15 @@ Future<void> onReadySyncTracker() async {
   try {
     await runSyncTaskWithStatus(
       [
-        // () => trackerController.syncAll(batchSize: 100),
-        // () => trackerController.syncAll(batchSize: 100),
+        () => trackerController.syncAll(batchSize: 100),
+        () => recordController.syncAll(batchSize: 100),
+        () => recordController.rebuildLocal(),
         () => trackerController.rebuildLocal(),
       ],
       from: 0.0,
       to: 100.0,
     );
+    successSimpleFlushBar("Tracker 同步完成");
   } catch (e) {
     print('Error during initial sync: $e');
     flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");

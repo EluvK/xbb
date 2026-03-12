@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart';
+import 'package:xbb/controller/utils.dart';
 
 class CommonProfile extends StatefulWidget {
   const CommonProfile({super.key});
@@ -143,6 +144,18 @@ class _FriendProfilesState extends State<FriendProfiles> {
               },
               icon: const Icon(Icons.refresh_rounded),
               tooltip: 'refresh'.tr,
+            ),
+            debugOnlyWidget(
+              IconButton(
+                onPressed: () async {
+                  // todo get a simple input dialog to input friend user id, and return the input
+                  String friendUserId = 'test_user_123'; // replace with actual input
+                  await userManagerController.addFriend(friendUserId);
+                  setState(() {});
+                },
+                icon: const Icon(Icons.add_rounded),
+                tooltip: 'add_mock_friend'.tr,
+              ),
             ),
           ],
         ),

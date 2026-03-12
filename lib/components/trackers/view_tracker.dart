@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/trackers/tracker_card.dart';
+import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/tracker/model.dart';
 
 class ViewTracker extends StatelessWidget {
@@ -35,13 +36,14 @@ class TrackerMatrix extends StatefulWidget {
 class _TrackerMatrixState extends State<TrackerMatrix> {
   final TrackerController trackerController = Get.find<TrackerController>();
   final TrackerRecordController recordController = Get.find<TrackerRecordController>();
+  final SettingController settingController = Get.find<SettingController>();
   @override
   Widget build(BuildContext context) {
-    // todo add more filter
     return Obx(() {
+      List<DataItemFilter> filters = [ColorTagFilter.fromColorTag(settingController.colorTag)];
       RxList<TrackerDataItem> trackers = trackerController.registerFilterSubscription(
         filterKey: 'tracker-matrix',
-        filters: [],
+        filters: filters,
       );
       final Map<String, List<TrackerDataItem>> groupedTrackers = {};
       for (var t in trackers) {

@@ -171,7 +171,7 @@ class RepoPermissionSchema implements PermissionSchema {
       case AccessLevel.read_append1:
       case AccessLevel.read_append3:
       case AccessLevel.update:
-        return [false, false, false];
+        return [false, false, false, false];
     }
   }
 

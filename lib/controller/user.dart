@@ -88,6 +88,16 @@ class UserManagerController extends GetxController {
     return userProfiles.firstWhereOrNull((p) => p.userId == userId);
   }
 
+  Future<void> addFriend(String friendUserId) async {
+    try {
+      await syncStoreControl.syncStoreClient.addFriend(friendUserId);
+      await fetchAndUpdateUserProfiles();
+    } catch (e) {
+      print('Error adding friend: $e');
+      // handle error
+    }
+  }
+
   Future<void> fetchAndUpdateUserProfiles() async {
     try {
       UserProfile self = await syncStoreControl.syncStoreClient.getProfile(settingController.userId);

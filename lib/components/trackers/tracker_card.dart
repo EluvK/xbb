@@ -2,21 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/models/tracker/model.dart';
+import 'package:xbb/utils/list_tile_card.dart';
 
-class TrackerCard extends StatelessWidget {
+class TrackerCard extends StatefulWidget {
   const TrackerCard({super.key, required this.item, required this.records});
   final RxList<TrackerRecordDataItem> records;
   final TrackerDataItem item;
 
+  @override
+  State<TrackerCard> createState() => _TrackerCardState();
+}
+
+class _TrackerCardState extends State<TrackerCard> {
   Widget _buildEventWidget(BuildContext context, TrackerConfig config) {
     return Obx(() {
       return config.map(
         event: (c) {
           DateTime now = DateTime.now();
           DateTime? last;
-          if (records.isNotEmpty) {
-            records.sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
-            last = records.first.body.timestamp.toLocal();
+          if (widget.records.isNotEmpty) {
+            widget.records.sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
+            last = widget.records.first.body.timestamp.toLocal();
           }
           final daysSince = last == null ? 9999 : now.difference(last).inDays;
           final label = last == null ? 'Never done' : '$daysSince days ago';
@@ -58,19 +64,19 @@ class TrackerCard extends StatelessWidget {
           final target = double.tryParse(c.targetValue) ?? 0.0;
           double progress = 0.0;
           if (goalType == 'boolean') {
-            if (records.isNotEmpty) {
-              final trueCount = records.where((r) => r.body.value == 'true').length;
-              progress = records.isEmpty ? 0.0 : (trueCount / records.length);
+            if (widget.records.isNotEmpty) {
+              final trueCount = widget.records.where((r) => r.body.value == 'true').length;
+              progress = widget.records.isEmpty ? 0.0 : (trueCount / widget.records.length);
             }
           } else if (goalType == 'number') {
             double sum = 0.0;
-            for (var r in records) {
+            for (var r in widget.records) {
               sum += double.tryParse(r.body.value ?? '') ?? 0.0;
             }
             if (target > 0) progress = (sum / target).clamp(0.0, 1.0);
           } else if (goalType == 'time') {
             Duration total = Duration.zero;
-            for (var r in records) {
+            for (var r in widget.records) {
               final minutes = int.tryParse(r.body.value ?? '') ?? 0;
               total += Duration(minutes: minutes);
             }
@@ -147,7 +153,9 @@ class TrackerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = item.body;
+    var showItem = this.widget.item;
+    final TrackerController trackerController = Get.find<TrackerController>();
+    final t = widget.item.body;
     final typeColor = (() {
       switch (t.type) {
         case 'event':
@@ -173,9 +181,12 @@ class TrackerCard extends StatelessWidget {
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      surfaceTintColor: showItem.colorTag.toColor() == Colors.transparent
+          ? null
+          : showItem.colorTag.toColor()?.withAlpha(102),
       elevation: 2,
       child: InkWell(
-        onTap: () => Get.toNamed('/tracker/view-tracker', arguments: [item]),
+        onTap: () => Get.toNamed('/tracker/view-tracker', arguments: [widget.item]),
         onLongPress: () => {
           // pop up delete confirmation
           Get.defaultDialog(
@@ -185,8 +196,11 @@ class TrackerCard extends StatelessWidget {
             textConfirm: 'Delete',
             confirmTextColor: Colors.white,
             onConfirm: () {
-              Get.find<TrackerController>().deleteData(item.id);
-              Get.back();
+              Get.find<TrackerController>().deleteData(widget.item.id);
+              Navigator.pop(context);
+              while (Get.routing.current == '/tracker/view-tracker') {
+                Navigator.pop(context);
+              }
             },
           ),
         },
@@ -195,10 +209,13 @@ class TrackerCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
           child: Row(
             children: [
+              // if (showItem.colorTag != ColorTag.none)
+              //   Icon(Icons.brightness_1_rounded, color: showItem.colorTag.toColor(), size: 16),
               Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // todo add sync status indicator here if needed
-                  if (item.syncStatus == SyncStatus.syncing)
+                  if (widget.item.syncStatus == SyncStatus.syncing)
                     const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                   Container(
                     width: 56,
@@ -208,11 +225,19 @@ class TrackerCard extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () {
-                      Get.toNamed('/tracker/edit-tracker', arguments: [item]);
+                      Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
                     },
                     icon: const Icon(Icons.edit),
                   ),
-                  // todo color tag button?
+                  InlineColorPickerButton(
+                    value: widget.item.colorTag,
+                    onSelected: (color) {
+                      trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
+                      setState(() {
+                        showItem.colorTag = color;
+                      });
+                    },
+                  ),
                   // delete button use double click.
                   // IconButton(
                   //   onPressed: () {
@@ -253,7 +278,6 @@ class TrackerCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Column(children: [                ],),
             ],
           ),
         ),

@@ -14,14 +14,24 @@ class ViewTrackerBrief extends StatelessWidget {
       child: Column(
         // mainAxisSize: MainAxisSize.min,
         children: [
-          debugOnlyWidget(
-            IconButton(
-              onPressed: () {
-                final trackerController = Get.find<TrackerController>();
-                trackerController.clearLocal();
-              },
-              icon: const Icon(Icons.warning_amber),
-            ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () async {
+                  await onReadySyncTracker();
+                },
+                icon: const Icon(Icons.refresh),
+              ),
+              debugOnlyWidget(
+                IconButton(
+                  onPressed: () {
+                    final trackerController = Get.find<TrackerController>();
+                    trackerController.clearLocal();
+                  },
+                  icon: const Icon(Icons.warning_amber),
+                ),
+              ),
+            ],
           ),
           const Expanded(child: _ViewTrackerBriefByCategory()),
         ],
