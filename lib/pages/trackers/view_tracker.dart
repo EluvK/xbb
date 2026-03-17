@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:board_datetime_picker/board_datetime_picker.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/components/trackers/tracker_card.dart';
 import 'package:xbb/models/tracker/model.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import 'package:xbb/utils/text_input.dart';
+import 'package:xbb/utils/time_picker.dart';
 import 'package:xbb/utils/utils.dart';
 import 'package:xbb/utils/view_widget.dart';
 
@@ -43,6 +46,8 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
 
   final TextEditingController _valueController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  DateTime _recordTimestamp = DateTime.now().toUtc();
+  bool _anniversaryPreview = false;
   bool _showAdd = false;
 
   @override
@@ -86,7 +91,15 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
           const SizedBox(height: 6),
           // "记一笔" button and in-page form
           ElevatedButton.icon(
-            onPressed: () => setState(() => _showAdd = !_showAdd),
+            onPressed: () {
+              setState(() {
+                _showAdd = !_showAdd;
+                if (_showAdd) {
+                  _recordTimestamp = DateTime.now().toUtc();
+                  _anniversaryPreview = false;
+                }
+              });
+            },
             label: Text(_showAdd ? '取消' : '记一笔'),
             icon: const Icon(Icons.draw_rounded),
           ),
@@ -114,56 +127,221 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
 
   Widget _newRecordInputWidget() {
     final tracker = widget.trackerItem;
+    final cfg = tracker.body.config;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // value input depends on config
-          tracker.body.config.map(
+          cfg.map(
             event: (c) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TimePickerWidget(
+                    label: '发生时间',
+                    icon: Icons.schedule,
+                    color: Colors.indigo,
+                    pickerType: DateTimePickerType.datetime,
+                    initialValue: _recordTimestamp.toLocal(),
+                    onChange: (v) {
+                      _recordTimestamp = v;
+                    },
+                  ),
+                ],
+              );
+            },
+            milestone: (c) {
+              if (c.goalType == 'boolean') {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text('当前版本暂不支持 milestone(boolean) 记录录入', style: Theme.of(context).textTheme.bodySmall),
+                );
+              }
+              if (c.goalType == 'time') {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ActionChip(
+                          label: const Text('15 分钟'),
+                          onPressed: () {
+                            _valueController.text = '15';
+                            setState(() {});
+                          },
+                        ),
+                        ActionChip(
+                          label: const Text('30 分钟'),
+                          onPressed: () {
+                            setState(() {});
+                            _valueController.text = '30';
+                          },
+                        ),
+                        ActionChip(
+                          label: const Text('60 分钟'),
+                          onPressed: () {
+                            _valueController.text = '60';
+                            setState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    TextInputWidget(
+                      title: const _LocalTitle('时长(分钟)', Icons.timer_outlined, Colors.purple),
+                      initialValue: _valueController.text,
+                      onFinished: (v) => _valueController.text = v,
+                      inputType: const TextInputType.numberWithOptions(decimal: false),
+                    ),
+                  ],
+                );
+              }
               return TextInputWidget(
-                title: const _LocalTitle('Value', Icons.numbers, Colors.purple),
+                title: const _LocalTitle('数值贡献', Icons.numbers, Colors.purple),
                 initialValue: _valueController.text,
                 onFinished: (v) => _valueController.text = v,
                 inputType: const TextInputType.numberWithOptions(decimal: true),
               );
             },
-            milestone: (c) => TextInputWidget(
-              title: const _LocalTitle('Value', Icons.numbers, Colors.purple),
-              initialValue: _valueController.text,
-              onFinished: (v) => _valueController.text = v,
-              inputType: const TextInputType.numberWithOptions(decimal: true),
-            ),
-            anniversary: (c) => TextInputWidget(
-              title: const _LocalTitle('Note', Icons.note, Colors.blueGrey),
-              initialValue: _valueController.text,
-              onFinished: (v) => _valueController.text = v,
+            anniversary: (c) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TimePickerWidget(
+                  label: '记录时间',
+                  icon: Icons.schedule,
+                  color: Colors.indigo,
+                  pickerType: DateTimePickerType.datetime,
+                  initialValue: _recordTimestamp.toLocal(),
+                  onChange: (v) {
+                    _recordTimestamp = v;
+                  },
+                ),
+                const SizedBox(height: 6),
+                UserDefinedInputWidget(
+                  title: const _LocalTitle('纪念内容', Icons.edit, Colors.blue),
+                  widget: ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _anniversaryPreview = !_anniversaryPreview;
+                      });
+                    },
+                    icon: Icon(_anniversaryPreview ? Icons.edit_note : Icons.preview_outlined, size: 16),
+                    label: Text(_anniversaryPreview ? 'Write' : 'Preview'),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                if (!_anniversaryPreview)
+                  TextField(
+                    controller: _contentController,
+                    minLines: 4,
+                    maxLines: 8,
+                    textInputAction: TextInputAction.newline,
+                    decoration: InputDecoration(
+                      hintText: '支持 Markdown，记录当下发生了什么、你的感受或想法...',
+                      alignLabelWithHint: true,
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(minHeight: 120),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    ),
+                    child: _contentController.text.trim().isEmpty
+                        ? Text('暂无内容可预览', style: Theme.of(context).textTheme.bodySmall)
+                        : SimpleMarkdownRenderer(data: _contentController.text),
+                  ),
+              ],
             ),
           ),
-          const SizedBox(height: 6),
-          TextInputWidget(
-            title: const _LocalTitle('Note', Icons.description, Colors.grey),
-            initialValue: _contentController.text,
-            onFinished: (v) => _contentController.text = v,
-          ),
+          if (cfg is! AnniversaryTrackerConfig) ...[
+            const SizedBox(height: 6),
+            TextInputWidget(
+              title: const _LocalTitle('备注', Icons.description, Colors.grey),
+              initialValue: _contentController.text,
+              onFinished: (v) => _contentController.text = v,
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [
               ElevatedButton(
                 onPressed: () {
                   final now = DateTime.now().toUtc();
-                  String? val = _valueController.text.trim();
                   final cfg2 = tracker.body.config;
-                  if (cfg2 is AnniversaryTrackerConfig) val = null;
-                  final rec = TrackerRecord(
-                    trackerId: tracker.id,
-                    timestamp: now,
-                    value: val,
-                    content: _contentController.text.trim(),
-                  );
+                  TrackerRecord rec;
+
+                  if (cfg2 is AnniversaryTrackerConfig) {
+                    final content = _contentController.text.trim();
+                    if (content.isEmpty) {
+                      Get.snackbar('输入错误', '纪念内容不能为空');
+                      return;
+                    }
+                    rec = TrackerRecord.forAnniversary(
+                      trackerId: tracker.id,
+                      timestamp: _recordTimestamp,
+                      content: content,
+                    );
+                  } else if (cfg2 is EventTrackerConfig) {
+                    rec = TrackerRecord.forEvent(
+                      trackerId: tracker.id,
+                      timestamp: _recordTimestamp,
+                      content: _contentController.text.trim(),
+                    );
+                  } else if (cfg2 is MilestoneTrackerConfig) {
+                    if (cfg2.goalType == 'boolean') {
+                      Get.snackbar('提示', '当前版本暂不支持该类型记录录入');
+                      return;
+                    } else if (cfg2.goalType == 'time') {
+                      final input = _valueController.text.trim();
+                      final minutes = int.tryParse(input);
+                      if (minutes == null || minutes <= 0) {
+                        Get.snackbar('输入错误', '时长必须是大于 0 的整数分钟');
+                        return;
+                      }
+                      rec = TrackerRecord.forMilestoneTime(
+                        trackerId: tracker.id,
+                        timestamp: now,
+                        minutes: minutes,
+                        content: _contentController.text.trim(),
+                      );
+                    } else {
+                      final input = _valueController.text.trim();
+                      final parsed = double.tryParse(input);
+                      if (parsed == null) {
+                        Get.snackbar('输入错误', '请输入有效数值');
+                        return;
+                      }
+                      rec = TrackerRecord.forMilestoneNumber(
+                        trackerId: tracker.id,
+                        timestamp: now,
+                        number: input,
+                        content: _contentController.text.trim(),
+                      );
+                    }
+                  } else {
+                    rec = TrackerRecord(trackerId: tracker.id, timestamp: now, content: _contentController.text.trim());
+                  }
+
                   recordController.addData(rec);
                   setState(() {
                     _showAdd = false;
+                    _recordTimestamp = DateTime.now().toUtc();
+                    _anniversaryPreview = false;
                     _valueController.clear();
                     _contentController.clear();
                   });
@@ -172,7 +350,18 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                 child: const Text('Add'),
               ),
               const SizedBox(width: 12),
-              OutlinedButton(onPressed: () => setState(() => _showAdd = false), child: const Text('Cancel')),
+              OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _showAdd = false;
+                    _recordTimestamp = DateTime.now().toUtc();
+                    _anniversaryPreview = false;
+                    _valueController.clear();
+                    _contentController.clear();
+                  });
+                },
+                child: const Text('Cancel'),
+              ),
             ],
           ),
         ],

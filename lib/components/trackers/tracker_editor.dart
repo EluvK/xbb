@@ -235,7 +235,8 @@ class _TrackerEditorState extends State<TrackerEditor> {
               items: const [
                 DropdownMenuItem(value: 'time', child: Text('Time')),
                 DropdownMenuItem(value: 'number', child: Text('Number')),
-                DropdownMenuItem(value: 'boolean', child: Text('Boolean')),
+                // TODO: Temporarily hide boolean milestone creation until product semantics are finalized.
+                // DropdownMenuItem(value: 'boolean', child: Text('Boolean')),
               ],
               onChanged: (v) => setState(() => _milestoneGoalType = v ?? 'time'),
             ),
@@ -262,10 +263,15 @@ class _TrackerEditorState extends State<TrackerEditor> {
               inputType: const TextInputType.numberWithOptions(decimal: true),
             )
           else
-            BoolSelectorInputWidget(
+            // BoolSelectorInputWidget(
+            //     title: const _LocalTitle('Target', Icons.check_box, Colors.green),
+            //     initialValue: _milestoneTargetController.text == 'true',
+            //     onChanged: (v) => setState(() => _milestoneTargetController.text = v.toString()),
+            //   ),
+            UserDefinedInputWidget(
               title: const _LocalTitle('Target', Icons.check_box, Colors.green),
-              initialValue: _milestoneTargetController.text == 'true',
-              onChanged: (v) => setState(() => _milestoneTargetController.text = v.toString()),
+              // TODO: Re-enable boolean milestone editor once the recording semantics are finalized.
+              widget: Text('Boolean target is temporarily hidden', style: Theme.of(context).textTheme.bodySmall),
             ),
         ],
       );

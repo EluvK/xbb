@@ -123,5 +123,44 @@ abstract class TrackerRecord with _$TrackerRecord {
     String? content, // 笔记/感悟
   }) = _TrackerRecord;
 
+  factory TrackerRecord.forEvent({required String trackerId, required DateTime timestamp, String? content}) {
+    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: null, content: content);
+  }
+
+  factory TrackerRecord.forMilestoneBoolean({
+    required String trackerId,
+    required DateTime timestamp,
+    required bool done,
+    String? content,
+  }) {
+    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: done ? 'true' : 'false', content: content);
+  }
+
+  factory TrackerRecord.forMilestoneNumber({
+    required String trackerId,
+    required DateTime timestamp,
+    required String number,
+    String? content,
+  }) {
+    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: number, content: content);
+  }
+
+  factory TrackerRecord.forMilestoneTime({
+    required String trackerId,
+    required DateTime timestamp,
+    required int minutes,
+    String? content,
+  }) {
+    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: minutes.toString(), content: content);
+  }
+
+  factory TrackerRecord.forAnniversary({
+    required String trackerId,
+    required DateTime timestamp,
+    required String content,
+  }) {
+    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: null, content: content);
+  }
+
   factory TrackerRecord.fromJson(Map<String, dynamic> json) => _$TrackerRecordFromJson(json);
 }

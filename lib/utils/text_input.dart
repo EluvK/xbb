@@ -205,6 +205,17 @@ class _TextInputWidgetState extends State<TextInputWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant TextInputWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue && _controller.text != widget.initialValue) {
+      _controller.value = TextEditingValue(
+        text: widget.initialValue,
+        selection: TextSelection.collapsed(offset: widget.initialValue.length),
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
