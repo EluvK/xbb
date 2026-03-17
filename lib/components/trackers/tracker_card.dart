@@ -425,20 +425,54 @@ class _TrackerCardState extends State<TrackerCard> {
         Positioned(
           top: 4,
           right: 4,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 96),
-              child: Text(
-                t.type,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: typeColor),
+          child: Row(
+            children: [
+              if (showItem.colorTag != ColorTag.none)
+                Icon(Icons.brightness_1_rounded, color: showItem.colorTag.toColor(), size: 14),
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: typeColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 96),
+                  child: Text(
+                    t.type,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: typeColor),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
+        // Positioned(
+        //   bottom: 12,
+        //   right: 4,
+        //   child: Row(
+        //     children: [
+        //       IconButton(
+        //         tooltip: 'edit'.tr,
+        //         onPressed: () {
+        //           Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
+        //         },
+        //         icon: const Icon(Icons.edit),
+        //       ),
+        //       InlineColorPickerButton(
+        //         value: widget.item.colorTag,
+        //         onSelected: (color) {
+        //           trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
+        //           setState(() {
+        //             showItem.colorTag = color;
+        //           });
+        //         },
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }
