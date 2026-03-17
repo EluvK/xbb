@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
@@ -16,6 +18,31 @@ class TrackerCard extends StatefulWidget {
 
 class _TrackerCardState extends State<TrackerCard> {
   bool _showActions = false;
+  Timer? _actionsAutoHideTimer;
+
+  void _toggleActions() {
+    setState(() {
+      _showActions = !_showActions;
+    });
+
+    if (_showActions) {
+      _actionsAutoHideTimer?.cancel();
+      _actionsAutoHideTimer = Timer(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        setState(() {
+          _showActions = false;
+        });
+      });
+    } else {
+      _actionsAutoHideTimer?.cancel();
+    }
+  }
+
+  @override
+  void dispose() {
+    _actionsAutoHideTimer?.cancel();
+    super.dispose();
+  }
 
   Widget _buildEventWidget(BuildContext context, TrackerConfig config) {
     return Obx(() {
@@ -24,17 +51,20 @@ class _TrackerCardState extends State<TrackerCard> {
           DateTime now = DateTime.now();
           DateTime? last;
           if (widget.records.isNotEmpty) {
-            final sortedRecords = widget.records.toList()
-              ..sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
+            final sortedRecords = widget.records.toList()..sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
             last = sortedRecords.first.body.timestamp.toLocal();
           }
           final daysSince = last == null ? 9999 : now.difference(last).inDays;
-          final label = last == null ? 'Never done' : '$daysSince days ago';
+          final label = last == null
+              ? 'tracker_never_done'.tr
+              : 'tracker_days_ago'.trParams({'days': daysSince.toString()});
           final period = c.periodDays;
           if (period <= 0) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [Text(label, style: Theme.of(context).textTheme.bodySmall)],
+              children: [
+                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+              ],
             );
           }
           // is a countdown if period > 0, otherwise count up
@@ -48,8 +78,13 @@ class _TrackerCardState extends State<TrackerCard> {
                 color: barColor,
                 backgroundColor: barColor.withValues(alpha: 0.14),
               ),
-              const SizedBox(height: 6),
-              Text('$label • Period: $period days', style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 4),
+              Text(
+                '$label • ${'tracker_period_days'.trParams({'days': period.toString()})}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           );
         },
@@ -97,8 +132,13 @@ class _TrackerCardState extends State<TrackerCard> {
                 color: barColor,
                 backgroundColor: barColor.withValues(alpha: 0.18),
               ),
-              const SizedBox(height: 6),
-              Text('$displayPercent% • Target: ${c.targetValue}', style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 4),
+              Text(
+                '$displayPercent% • ${'tracker_target_value'.trParams({'value': c.targetValue})}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           );
         },
@@ -120,7 +160,11 @@ class _TrackerCardState extends State<TrackerCard> {
           final last = DateTime(next.year - 1, base.month, base.day);
           final daysUntil = next.difference(now).inDays;
           final daysSince = now.difference(last).inDays;
-          final info = daysUntil == 0 ? 'Today' : (daysUntil > 0 ? 'In $daysUntil days' : 'Passed ${-daysUntil} days');
+          final info = daysUntil == 0
+              ? 'tracker_today'.tr
+              : (daysUntil > 0
+                    ? 'tracker_in_days'.trParams({'days': daysUntil.toString()})
+                    : 'tracker_passed_days'.trParams({'days': (-daysUntil).toString()}));
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -128,11 +172,23 @@ class _TrackerCardState extends State<TrackerCard> {
                 children: [
                   Icon(Icons.cake, color: color, size: 16),
                   const SizedBox(width: 6),
-                  Text(info, style: Theme.of(context).textTheme.bodySmall),
+                  Expanded(
+                    child: Text(
+                      info,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text('Since base: $daysSince days', style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 4),
+              Text(
+                'tracker_since_base_days'.trParams({'days': daysSince.toString()}),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           );
         } else if (c.remindType == 'per_100_days') {
@@ -142,14 +198,47 @@ class _TrackerCardState extends State<TrackerCard> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Passed $total days', style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 6),
-              Text('Next at $next days (in $until days)', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                'tracker_passed_days'.trParams({'days': total.toString()}),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'tracker_next_at_days'.trParams({'next': next.toString(), 'until': until.toString()}),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           );
         } else {
           final days = now.difference(base).inDays;
-          return Text('T ${days >= 0 ? '+$days' : days.toString()}', style: Theme.of(context).textTheme.bodySmall);
+          final tLabel = days >= 0
+              ? 'tracker_passed_days'.trParams({'days': days.toString()})
+              : 'tracker_in_days'.trParams({'days': (-days).toString()});
+          final baseDateLabel =
+              '${base.year}-${base.month.toString().padLeft(2, '0')}-${base.day.toString().padLeft(2, '0')}';
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, color: color, size: 16),
+                  const SizedBox(width: 6),
+                  Text(tLabel, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'tracker_base_date_value'.trParams({'date': baseDateLabel}),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          );
         }
       },
     );
@@ -157,7 +246,7 @@ class _TrackerCardState extends State<TrackerCard> {
 
   @override
   Widget build(BuildContext context) {
-    var showItem = this.widget.item;
+    var showItem = widget.item;
     final TrackerController trackerController = Get.find<TrackerController>();
     final t = widget.item.body;
     final typeColor = (() {
@@ -183,7 +272,7 @@ class _TrackerCardState extends State<TrackerCard> {
       }
     })();
 
-    return Card(
+    var card = Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       // surfaceTintColor: showItem.colorTag.toColor() == Colors.transparent
       //     ? null
@@ -194,10 +283,10 @@ class _TrackerCardState extends State<TrackerCard> {
         onLongPress: () => {
           // pop up delete confirmation
           Get.defaultDialog(
-            title: 'Delete Tracker',
-            middleText: 'Are you sure you want to delete this tracker?',
-            textCancel: 'Cancel',
-            textConfirm: 'Delete',
+            title: 'tracker_delete_title'.tr,
+            middleText: 'tracker_delete_confirm'.tr,
+            textCancel: 'cancel'.tr,
+            textConfirm: 'delete'.tr,
             confirmTextColor: Colors.white,
             onConfirm: () {
               Get.find<TrackerController>().deleteData(widget.item.id);
@@ -222,11 +311,7 @@ class _TrackerCardState extends State<TrackerCard> {
                   width: 60,
                   child: Center(
                     child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _showActions = !_showActions;
-                        });
-                      },
+                      onTap: _toggleActions,
                       borderRadius: BorderRadius.circular(28),
                       child: Stack(
                         clipBehavior: Clip.none,
@@ -250,88 +335,81 @@ class _TrackerCardState extends State<TrackerCard> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: SizedBox(
-                    height: 108,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: _showActions
-                          ? Container(
-                              key: const ValueKey('actions'),
-                              alignment: Alignment.centerRight,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  IconButton(
-                                    tooltip: 'Edit',
-                                    onPressed: () {
-                                      Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
-                                    },
-                                    icon: const Icon(Icons.edit),
-                                  ),
-                                  InlineColorPickerButton(
-                                    value: widget.item.colorTag,
-                                    onSelected: (color) {
-                                      trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
-                                      setState(() {
-                                        showItem.colorTag = color;
-                                      });
-                                    },
-                                  ),
-                                  DoubleClickButton(
-                                    buttonBuilder: (onPressed) => IconButton(
-                                      tooltip: 'delete'.tr,
-                                      onPressed: onPressed,
-                                      icon: const Icon(Icons.delete),
-                                    ),
-                                    onDoubleClick: () {
-                                      trackerController.deleteData(widget.item.id);
-                                      while (Get.routing.current == '/tracker/view-tracker') {
-                                        Navigator.pop(context);
-                                      }
-                                    },
-                                    firstClickHint: 'delete_tracker'.tr,
-                                    upperPosition: true,
-                                  ),
-                                ],
-                              ),
-                            )
-                          : Column(
-                              key: const ValueKey('content'),
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    child: _showActions
+                        ? Container(
+                            key: const ValueKey('actions'),
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Text(
-                                  t.name,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                IconButton(
+                                  tooltip: 'edit'.tr,
+                                  onPressed: () {
+                                    Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
+                                  },
+                                  icon: const Icon(Icons.edit),
                                 ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Flexible(child: Text(t.category, style: Theme.of(context).textTheme.bodySmall)),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: typeColor.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        t.type,
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: typeColor),
-                                      ),
-                                    ),
-                                  ],
+                                InlineColorPickerButton(
+                                  value: widget.item.colorTag,
+                                  onSelected: (color) {
+                                    trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
+                                    setState(() {
+                                      showItem.colorTag = color;
+                                    });
+                                  },
                                 ),
-                                const SizedBox(height: 8),
-                                if (t.type == 'milestone')
-                                  _buildMilestoneWidget(context, t.config)
-                                else if (t.type == 'anniversary')
-                                  _buildAnniversaryWidget(context, t.config, typeColor)
-                                else
-                                  _buildEventWidget(context, t.config),
+                                DoubleClickButton(
+                                  buttonBuilder: (onPressed) => IconButton(
+                                    tooltip: 'delete'.tr,
+                                    onPressed: onPressed,
+                                    icon: const Icon(Icons.delete),
+                                  ),
+                                  onDoubleClick: () {
+                                    trackerController.deleteData(widget.item.id);
+                                    while (Get.routing.current == '/tracker/view-tracker') {
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                  firstClickHint: 'delete_tracker'.tr,
+                                  upperPosition: true,
+                                ),
                               ],
                             ),
-                    ),
+                          )
+                        : Column(
+                            key: const ValueKey('content'),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                t.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  if (t.description.isNotEmpty)
+                                    Text(
+                                      t.description,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (t.type == 'milestone')
+                                _buildMilestoneWidget(context, t.config)
+                              else if (t.type == 'anniversary')
+                                _buildAnniversaryWidget(context, t.config, typeColor)
+                              else
+                                _buildEventWidget(context, t.config),
+                            ],
+                          ),
                   ),
                 ),
               ],
@@ -339,6 +417,29 @@ class _TrackerCardState extends State<TrackerCard> {
           ),
         ),
       ),
+    );
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        card,
+        Positioned(
+          top: 4,
+          right: 4,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 96),
+              child: Text(
+                t.type,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: typeColor),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

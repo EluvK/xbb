@@ -325,6 +325,260 @@ class _TranslationHelper {
       "en_US": "(Optional)",
       "zh_CN": "(可选)",
     },
+
+    // --- Tracker: UI Texts ---
+    "tracker_panic": {
+      "en_US": "Tracker Error",
+      "zh_CN": "追踪器异常",
+    },
+    "tracker_no_selection": {
+      "en_US": "No tracker selected, should pass tracker here.",
+      "zh_CN": "未选择追踪器，应该传入 tracker 参数。",
+    },
+    "tracker_category": {
+      "en_US": "Category",
+      "zh_CN": "分类",
+    },
+    "tracker_description": {
+      "en_US": "Description",
+      "zh_CN": "描述",
+    },
+    "tracker_type": {
+      "en_US": "Type",
+      "zh_CN": "类型",
+    },
+    "tracker_type_event": {
+      "en_US": "Event",
+      "zh_CN": "事件",
+    },
+    "tracker_type_milestone": {
+      "en_US": "Milestone",
+      "zh_CN": "里程碑",
+    },
+    "tracker_type_anniversary": {
+      "en_US": "Anniversary",
+      "zh_CN": "纪念日",
+    },
+    "tracker_add_record": {
+      "en_US": "Add Record",
+      "zh_CN": "记一笔",
+    },
+    "tracker_add": {
+      "en_US": "Add",
+      "zh_CN": "添加",
+    },
+    "tracker_no_records": {
+      "en_US": "No records yet",
+      "zh_CN": "暂无记录",
+    },
+    "tracker_note": {
+      "en_US": "Note",
+      "zh_CN": "备注",
+    },
+    "tracker_event_time": {
+      "en_US": "Occurred At",
+      "zh_CN": "发生时间",
+    },
+    "tracker_record_time": {
+      "en_US": "Record Time",
+      "zh_CN": "记录时间",
+    },
+    "tracker_milestone_boolean_disabled": {
+      "en_US": "Milestone(boolean) input is temporarily disabled in this version.",
+      "zh_CN": "当前版本暂不支持 milestone(boolean) 记录录入",
+    },
+    "tracker_minutes_quick": {
+      "en_US": "@minutes min",
+      "zh_CN": "@minutes 分钟",
+    },
+    "tracker_duration_minutes": {
+      "en_US": "Duration (minutes)",
+      "zh_CN": "时长(分钟)",
+    },
+    "tracker_numeric_contribution": {
+      "en_US": "Numeric Contribution",
+      "zh_CN": "数值贡献",
+    },
+    "tracker_anniversary_content": {
+      "en_US": "Anniversary Content",
+      "zh_CN": "纪念内容",
+    },
+    "tracker_write": {
+      "en_US": "Write",
+      "zh_CN": "写作",
+    },
+    "tracker_preview": {
+      "en_US": "Preview",
+      "zh_CN": "预览",
+    },
+    "tracker_anniversary_markdown_hint": {
+      "en_US": "Markdown supported. Write what happened and your feelings...",
+      "zh_CN": "支持 Markdown，记录当下发生了什么、你的感受或想法...",
+    },
+    "tracker_no_preview_content": {
+      "en_US": "No content to preview",
+      "zh_CN": "暂无内容可预览",
+    },
+    "tracker_input_error_title": {
+      "en_US": "Input Error",
+      "zh_CN": "输入错误",
+    },
+    "tracker_tip_title": {
+      "en_US": "Notice",
+      "zh_CN": "提示",
+    },
+    "tracker_anniversary_content_required": {
+      "en_US": "Anniversary content cannot be empty",
+      "zh_CN": "纪念内容不能为空",
+    },
+    "tracker_duration_minutes_error": {
+      "en_US": "Duration must be a positive integer in minutes",
+      "zh_CN": "时长必须是大于 0 的整数分钟",
+    },
+    "tracker_numeric_error": {
+      "en_US": "Please enter a valid number",
+      "zh_CN": "请输入有效数值",
+    },
+    "tracker_never_done": {
+      "en_US": "Never done",
+      "zh_CN": "从未记录",
+    },
+    "tracker_days_ago": {
+      "en_US": "@days days ago",
+      "zh_CN": "@days 天前",
+    },
+    "tracker_period_days": {
+      "en_US": "Period: @days days",
+      "zh_CN": "周期: @days 天",
+    },
+    "tracker_target_value": {
+      "en_US": "Target: @value",
+      "zh_CN": "目标: @value",
+    },
+    "tracker_today": {
+      "en_US": "Today",
+      "zh_CN": "今天",
+    },
+    "tracker_in_days": {
+      "en_US": "In @days days",
+      "zh_CN": "@days 天后",
+    },
+    "tracker_passed_days": {
+      "en_US": "Passed @days days",
+      "zh_CN": "已过 @days 天",
+    },
+    "tracker_since_base_days": {
+      "en_US": "Since base: @days days",
+      "zh_CN": "距预设日: @days 天",
+    },
+    "tracker_next_at_days": {
+      "en_US": "Next at @next days (in @until days)",
+      "zh_CN": "下一个节点: @next 天 (还有 @until 天)",
+    },
+    "tracker_base_date_value": {
+      "en_US": "Base: @date",
+      "zh_CN": "预设日: @date",
+    },
+    "tracker_delete_title": {
+      "en_US": "Delete Tracker",
+      "zh_CN": "删除追踪器",
+    },
+    "tracker_delete_confirm": {
+      "en_US": "Are you sure you want to delete this tracker?",
+      "zh_CN": "确定要删除这个追踪器吗？",
+    },
+    "tracker_error_with_message": {
+      "en_US": "Error: @error",
+      "zh_CN": "错误: @error",
+    },
+    "tracker_acl_after_creation": {
+      "en_US": "ACL can be set after creation",
+      "zh_CN": "创建后可设置 ACL",
+    },
+    "tracker_validation_error": {
+      "en_US": "Validation Error",
+      "zh_CN": "校验错误",
+    },
+    "tracker_name_required": {
+      "en_US": "Name cannot be empty",
+      "zh_CN": "名称不能为空",
+    },
+    "tracker_period_days_title": {
+      "en_US": "Period Days",
+      "zh_CN": "周期天数",
+    },
+    "tracker_period_days_helper": {
+      "en_US": "0 for no cycle",
+      "zh_CN": "0 表示无周期",
+    },
+    "tracker_goal_type": {
+      "en_US": "Goal Type",
+      "zh_CN": "目标类型",
+    },
+    "tracker_goal_time": {
+      "en_US": "Time",
+      "zh_CN": "时间",
+    },
+    "tracker_goal_number": {
+      "en_US": "Number",
+      "zh_CN": "数值",
+    },
+    "tracker_duration_hours": {
+      "en_US": "Duration (hours)",
+      "zh_CN": "时长(小时)",
+    },
+    "tracker_target_value_title": {
+      "en_US": "Target Value",
+      "zh_CN": "目标值",
+    },
+    "tracker_target": {
+      "en_US": "Target",
+      "zh_CN": "目标",
+    },
+    "tracker_boolean_target_hidden": {
+      "en_US": "Boolean target is temporarily hidden",
+      "zh_CN": "布尔目标暂时隐藏",
+    },
+    "tracker_base_date": {
+      "en_US": "Base Date",
+      "zh_CN": "预设日期",
+    },
+    "tracker_remind_type": {
+      "en_US": "Remind Type",
+      "zh_CN": "提醒类型",
+    },
+    "tracker_remind_per_year": {
+      "en_US": "Per Year",
+      "zh_CN": "每年",
+    },
+    "tracker_remind_per_100_days": {
+      "en_US": "Per 100 Days",
+      "zh_CN": "每 100 天",
+    },
+    "tracker_remind_t_minus": {
+      "en_US": "T Minus",
+      "zh_CN": "T 计时",
+    },
+    "tracker_access_control": {
+      "en_US": "Access Control",
+      "zh_CN": "访问控制",
+    },
+    "tracker_your_permissions": {
+      "en_US": "Your Permissions",
+      "zh_CN": "你的权限",
+    },
+    "tracker_perm_view": {
+      "en_US": "View Tracker",
+      "zh_CN": "查看追踪器",
+    },
+    "tracker_perm_edit": {
+      "en_US": "Edit Tracker",
+      "zh_CN": "编辑追踪器",
+    },
+    "tracker_perm_full_access": {
+      "en_US": "Full Access",
+      "zh_CN": "全部权限",
+    },
 //   }; // below is old. keep for a while.
 // }
 // class _TranslationHelper {

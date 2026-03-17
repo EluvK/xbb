@@ -20,8 +20,8 @@ class ViewTrackerDetailPage extends StatelessWidget {
     final TrackerDataItem? tracker = args?[0];
     if (tracker == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('panic')),
-        body: const Text("No tracker selected, should pass tracker here."),
+        appBar: AppBar(title: Text('tracker_panic'.tr)),
+        body: Text('tracker_no_selection'.tr),
       );
     }
     return Scaffold(
@@ -81,9 +81,9 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
           const SizedBox(height: 6),
           const Divider(),
           const SizedBox(height: 6),
-          TextViewWidget(title: const _LocalTitle('Category', Icons.category, Colors.blue), value: t.category),
+          TextViewWidget(title: _LocalTitle('tracker_category'.tr, Icons.category, Colors.blue), value: t.category),
           TextViewWidget(
-            title: const _LocalTitle('Description', Icons.description, Colors.orange),
+            title: _LocalTitle('tracker_description'.tr, Icons.description, Colors.orange),
             value: t.description,
           ),
           const SizedBox(height: 6),
@@ -100,7 +100,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                 }
               });
             },
-            label: Text(_showAdd ? '取消' : '记一笔'),
+            label: Text(_showAdd ? 'cancel'.tr : 'tracker_add_record'.tr),
             icon: const Icon(Icons.draw_rounded),
           ),
           AnimatedCrossFade(
@@ -114,7 +114,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
           Expanded(
             child: Obx(() {
               final list = recordsRx;
-              if (list.isEmpty) return const Center(child: Text('No records yet'));
+              if (list.isEmpty) return Center(child: Text('tracker_no_records'.tr));
               // render timeline grouped by date
               final items = list.map((e) => e.body).toList();
               return _RecordsTimeline(records: items);
@@ -139,7 +139,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TimePickerWidget(
-                    label: '发生时间',
+                    label: 'tracker_event_time'.tr,
                     icon: Icons.schedule,
                     color: Colors.indigo,
                     pickerType: DateTimePickerType.datetime,
@@ -160,7 +160,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                     color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text('当前版本暂不支持 milestone(boolean) 记录录入', style: Theme.of(context).textTheme.bodySmall),
+                  child: Text('tracker_milestone_boolean_disabled'.tr, style: Theme.of(context).textTheme.bodySmall),
                 );
               }
               if (c.goalType == 'time') {
@@ -171,21 +171,21 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                       spacing: 8,
                       children: [
                         ActionChip(
-                          label: const Text('15 分钟'),
+                          label: Text('tracker_minutes_quick'.trParams({'minutes': '15'})),
                           onPressed: () {
                             _valueController.text = '15';
                             setState(() {});
                           },
                         ),
                         ActionChip(
-                          label: const Text('30 分钟'),
+                          label: Text('tracker_minutes_quick'.trParams({'minutes': '30'})),
                           onPressed: () {
                             setState(() {});
                             _valueController.text = '30';
                           },
                         ),
                         ActionChip(
-                          label: const Text('60 分钟'),
+                          label: Text('tracker_minutes_quick'.trParams({'minutes': '60'})),
                           onPressed: () {
                             _valueController.text = '60';
                             setState(() {});
@@ -195,7 +195,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                     ),
                     const SizedBox(height: 6),
                     TextInputWidget(
-                      title: const _LocalTitle('时长(分钟)', Icons.timer_outlined, Colors.purple),
+                      title: _LocalTitle('tracker_duration_minutes'.tr, Icons.timer_outlined, Colors.purple),
                       initialValue: _valueController.text,
                       onFinished: (v) => _valueController.text = v,
                       inputType: const TextInputType.numberWithOptions(decimal: false),
@@ -204,7 +204,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                 );
               }
               return TextInputWidget(
-                title: const _LocalTitle('数值贡献', Icons.numbers, Colors.purple),
+                title: _LocalTitle('tracker_numeric_contribution'.tr, Icons.numbers, Colors.purple),
                 initialValue: _valueController.text,
                 onFinished: (v) => _valueController.text = v,
                 inputType: const TextInputType.numberWithOptions(decimal: true),
@@ -214,7 +214,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TimePickerWidget(
-                  label: '记录时间',
+                  label: 'tracker_record_time'.tr,
                   icon: Icons.schedule,
                   color: Colors.indigo,
                   pickerType: DateTimePickerType.datetime,
@@ -225,7 +225,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                 ),
                 const SizedBox(height: 6),
                 UserDefinedInputWidget(
-                  title: const _LocalTitle('纪念内容', Icons.edit, Colors.blue),
+                  title: _LocalTitle('tracker_anniversary_content'.tr, Icons.edit, Colors.blue),
                   widget: ElevatedButton.icon(
                     onPressed: () {
                       setState(() {
@@ -233,7 +233,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                       });
                     },
                     icon: Icon(_anniversaryPreview ? Icons.edit_note : Icons.preview_outlined, size: 16),
-                    label: Text(_anniversaryPreview ? 'Write' : 'Preview'),
+                    label: Text(_anniversaryPreview ? 'tracker_write'.tr : 'tracker_preview'.tr),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -244,7 +244,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                     maxLines: 8,
                     textInputAction: TextInputAction.newline,
                     decoration: InputDecoration(
-                      hintText: '支持 Markdown，记录当下发生了什么、你的感受或想法...',
+                      hintText: 'tracker_anniversary_markdown_hint'.tr,
                       alignLabelWithHint: true,
                       filled: true,
                       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
@@ -262,7 +262,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                       border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     ),
                     child: _contentController.text.trim().isEmpty
-                        ? Text('暂无内容可预览', style: Theme.of(context).textTheme.bodySmall)
+                        ? Text('tracker_no_preview_content'.tr, style: Theme.of(context).textTheme.bodySmall)
                         : SimpleMarkdownRenderer(data: _contentController.text),
                   ),
               ],
@@ -271,7 +271,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
           if (cfg is! AnniversaryTrackerConfig) ...[
             const SizedBox(height: 6),
             TextInputWidget(
-              title: const _LocalTitle('备注', Icons.description, Colors.grey),
+              title: _LocalTitle('tracker_note'.tr, Icons.description, Colors.grey),
               initialValue: _contentController.text,
               onFinished: (v) => _contentController.text = v,
             ),
@@ -288,7 +288,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                   if (cfg2 is AnniversaryTrackerConfig) {
                     final content = _contentController.text.trim();
                     if (content.isEmpty) {
-                      Get.snackbar('输入错误', '纪念内容不能为空');
+                      Get.snackbar('tracker_input_error_title'.tr, 'tracker_anniversary_content_required'.tr);
                       return;
                     }
                     rec = TrackerRecord.forAnniversary(
@@ -304,13 +304,13 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                     );
                   } else if (cfg2 is MilestoneTrackerConfig) {
                     if (cfg2.goalType == 'boolean') {
-                      Get.snackbar('提示', '当前版本暂不支持该类型记录录入');
+                      Get.snackbar('tracker_tip_title'.tr, 'tracker_milestone_boolean_disabled'.tr);
                       return;
                     } else if (cfg2.goalType == 'time') {
                       final input = _valueController.text.trim();
                       final minutes = int.tryParse(input);
                       if (minutes == null || minutes <= 0) {
-                        Get.snackbar('输入错误', '时长必须是大于 0 的整数分钟');
+                        Get.snackbar('tracker_input_error_title'.tr, 'tracker_duration_minutes_error'.tr);
                         return;
                       }
                       rec = TrackerRecord.forMilestoneTime(
@@ -323,7 +323,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                       final input = _valueController.text.trim();
                       final parsed = double.tryParse(input);
                       if (parsed == null) {
-                        Get.snackbar('输入错误', '请输入有效数值');
+                        Get.snackbar('tracker_input_error_title'.tr, 'tracker_numeric_error'.tr);
                         return;
                       }
                       rec = TrackerRecord.forMilestoneNumber(
@@ -347,7 +347,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                   });
                   trackerController.rebuildLocal();
                 },
-                child: const Text('Add'),
+                child: Text('tracker_add'.tr),
               ),
               const SizedBox(width: 12),
               OutlinedButton(
@@ -360,7 +360,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                     _contentController.clear();
                   });
                 },
-                child: const Text('Cancel'),
+                child: Text('cancel'.tr),
               ),
             ],
           ),

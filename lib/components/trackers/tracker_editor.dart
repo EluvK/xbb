@@ -106,7 +106,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const CircularProgressIndicator();
             } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
+              return Text('tracker_error_with_message'.trParams({'error': snapshot.error.toString()}));
             } else {
               final initialPermissions = snapshot.data as List<Permission>;
               final canEdit =
@@ -122,7 +122,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
                   _editTracker(canEdit),
                   const Divider(),
                   if (creatingNewTracker)
-                    Center(child: Text('ACL can be set after creation', style: Theme.of(context).textTheme.bodyMedium))
+                    Center(child: Text('tracker_acl_after_creation'.tr, style: Theme.of(context).textTheme.bodyMedium))
                   else
                     _editAcl(initialPermissions),
                 ],
@@ -160,7 +160,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
     print('Saving tracker with config: $config');
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      flushBar(FlushLevel.WARNING, 'Validation Error', 'Name cannot be empty');
+      flushBar(FlushLevel.WARNING, 'tracker_validation_error'.tr, 'tracker_name_required'.tr);
       return;
     }
     final tracker = Tracker(
@@ -184,11 +184,11 @@ class _TrackerEditorState extends State<TrackerEditor> {
       return Column(
         children: [
           TextInputWidget(
-            title: const _LocalTitle('Period Days', Icons.repeat, Colors.blueGrey),
+            title: _LocalTitle('tracker_period_days_title'.tr, Icons.repeat, Colors.blueGrey),
             initialValue: _periodDaysController.text,
             onFinished: (v) => _periodDaysController.text = v,
             optional: false,
-            helperText: '0 for no cycle',
+            helperText: 'tracker_period_days_helper'.tr,
             inputType: const TextInputType.numberWithOptions(decimal: true),
           ),
           // const SizedBox(height: 12),
@@ -229,12 +229,12 @@ class _TrackerEditorState extends State<TrackerEditor> {
       return Column(
         children: [
           UserDefinedInputWidget(
-            title: const _LocalTitle('Goal Type', Icons.flag, Colors.purple),
+            title: _LocalTitle('tracker_goal_type'.tr, Icons.flag, Colors.purple),
             widget: DropdownButton<String>(
               value: _milestoneGoalType,
-              items: const [
-                DropdownMenuItem(value: 'time', child: Text('Time')),
-                DropdownMenuItem(value: 'number', child: Text('Number')),
+              items: [
+                DropdownMenuItem(value: 'time', child: Text('tracker_goal_time'.tr)),
+                DropdownMenuItem(value: 'number', child: Text('tracker_goal_number'.tr)),
                 // TODO: Temporarily hide boolean milestone creation until product semantics are finalized.
                 // DropdownMenuItem(value: 'boolean', child: Text('Boolean')),
               ],
@@ -244,7 +244,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
           const SizedBox(height: 8),
           if (_milestoneGoalType == 'time')
             TextInputWidget(
-              title: const _LocalTitle('Duration (hours)', Icons.timer, Colors.purple),
+              title: _LocalTitle('tracker_duration_hours'.tr, Icons.timer, Colors.purple),
               initialValue: (_milestoneTargetDuration.inMinutes / 60).toString(),
               onFinished: (v) {
                 final hours = double.tryParse(v);
@@ -257,7 +257,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
             )
           else if (_milestoneGoalType == 'number')
             TextInputWidget(
-              title: const _LocalTitle('Target Value', Icons.numbers, Colors.purple),
+              title: _LocalTitle('tracker_target_value_title'.tr, Icons.numbers, Colors.purple),
               initialValue: _milestoneTargetController.text,
               onFinished: (v) => _milestoneTargetController.text = v,
               inputType: const TextInputType.numberWithOptions(decimal: true),
@@ -269,9 +269,9 @@ class _TrackerEditorState extends State<TrackerEditor> {
             //     onChanged: (v) => setState(() => _milestoneTargetController.text = v.toString()),
             //   ),
             UserDefinedInputWidget(
-              title: const _LocalTitle('Target', Icons.check_box, Colors.green),
+              title: _LocalTitle('tracker_target'.tr, Icons.check_box, Colors.green),
               // TODO: Re-enable boolean milestone editor once the recording semantics are finalized.
-              widget: Text('Boolean target is temporarily hidden', style: Theme.of(context).textTheme.bodySmall),
+              widget: Text('tracker_boolean_target_hidden'.tr, style: Theme.of(context).textTheme.bodySmall),
             ),
         ],
       );
@@ -280,7 +280,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TimePickerWidget(
-            label: 'Base Date',
+            label: 'tracker_base_date'.tr,
             icon: Icons.calendar_today,
             color: Colors.blue,
             pickerType: DateTimePickerType.date,
@@ -297,13 +297,13 @@ class _TrackerEditorState extends State<TrackerEditor> {
           //   ),
           // ),
           UserDefinedInputWidget(
-            title: const _LocalTitle('Remind Type', Icons.alarm, Colors.blue),
+            title: _LocalTitle('tracker_remind_type'.tr, Icons.alarm, Colors.blue),
             widget: DropdownButton<String>(
               value: _remindType,
-              items: const [
-                DropdownMenuItem(value: 'per_year', child: Text('per_year')),
-                DropdownMenuItem(value: 'per_100_days', child: Text('per_100_days')),
-                DropdownMenuItem(value: 't_minus', child: Text('t_minus')),
+              items: [
+                DropdownMenuItem(value: 'per_year', child: Text('tracker_remind_per_year'.tr)),
+                DropdownMenuItem(value: 'per_100_days', child: Text('tracker_remind_per_100_days'.tr)),
+                DropdownMenuItem(value: 't_minus', child: Text('tracker_remind_t_minus'.tr)),
               ],
               onChanged: (v) => setState(() => _remindType = v ?? 'per_year'),
             ),
@@ -320,8 +320,11 @@ class _TrackerEditorState extends State<TrackerEditor> {
         children: [
           TextViewWidget(title: InputTitleEnum.title, value: item.body.name),
           TextViewWidget(title: InputTitleEnum.description, value: item.body.description),
-          TextViewWidget(title: const _LocalTitle('Category', Icons.label, Colors.teal), value: item.body.category),
-          TextViewWidget(title: const _LocalTitle('Type', Icons.category, Colors.orange), value: item.body.type),
+          TextViewWidget(
+            title: _LocalTitle('tracker_category'.tr, Icons.label, Colors.teal),
+            value: item.body.category,
+          ),
+          TextViewWidget(title: _LocalTitle('tracker_type'.tr, Icons.category, Colors.orange), value: item.body.type),
         ],
       );
     }
@@ -349,7 +352,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
                   ),
                   const Divider(),
                   TextInputWidget(
-                    title: const _LocalTitle('Category', Icons.label, Colors.teal),
+                    title: _LocalTitle('tracker_category'.tr, Icons.label, Colors.teal),
                     initialValue: _categoryController.text,
                     onFinished: (v) => _categoryController.text = v,
                     optional: true,
@@ -360,13 +363,13 @@ class _TrackerEditorState extends State<TrackerEditor> {
             const SizedBox(height: 12),
             _SectionCard(
               child: UserDefinedInputWidget(
-                title: const _LocalTitle('Type', Icons.category, Colors.orange),
+                title: _LocalTitle('tracker_type'.tr, Icons.category, Colors.orange),
                 widget: DropdownButton<String>(
                   value: _type,
-                  items: const [
-                    DropdownMenuItem(value: 'event', child: Text('Event')),
-                    DropdownMenuItem(value: 'milestone', child: Text('Milestone')),
-                    DropdownMenuItem(value: 'anniversary', child: Text('Anniversary')),
+                  items: [
+                    DropdownMenuItem(value: 'event', child: Text('tracker_type_event'.tr)),
+                    DropdownMenuItem(value: 'milestone', child: Text('tracker_type_milestone'.tr)),
+                    DropdownMenuItem(value: 'anniversary', child: Text('tracker_type_anniversary'.tr)),
                   ],
                   onChanged: (v) => setState(() => _type = v ?? 'event'),
                 ),
@@ -375,7 +378,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
             const SizedBox(height: 12),
             _SectionCard(child: _buildConfigSection()),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _save, child: const Text('Save')),
+            ElevatedButton(onPressed: _save, child: Text('save'.tr)),
           ],
         ),
       ),
@@ -387,8 +390,8 @@ class _TrackerEditorState extends State<TrackerEditor> {
       mainAxisSize: MainAxisSize.min,
       children: [
         isSelfTracker
-            ? Text('Access Control', style: Theme.of(context).textTheme.titleMedium)
-            : Text('Your Permissions', style: Theme.of(context).textTheme.titleMedium),
+            ? Text('tracker_access_control'.tr, style: Theme.of(context).textTheme.titleMedium)
+            : Text('tracker_your_permissions'.tr, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         isSelfTracker
             ? AclEditor(
@@ -410,9 +413,9 @@ class _TrackerEditorState extends State<TrackerEditor> {
 class TrackerPermissionSchema implements PermissionSchema {
   @override
   List<(String, String)> get labels => [
-    ('view', 'View Tracker'),
-    ('edit', 'Edit Tracker'),
-    ('full_access', 'Full Access'),
+    ('view', 'tracker_perm_view'.tr),
+    ('edit', 'tracker_perm_edit'.tr),
+    ('full_access', 'tracker_perm_full_access'.tr),
   ];
 
   @override
