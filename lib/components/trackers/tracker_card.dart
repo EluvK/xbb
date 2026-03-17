@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/models/tracker/model.dart';
+import 'package:xbb/utils/double_click.dart';
 import 'package:xbb/utils/list_tile_card.dart';
 
 class TrackerCard extends StatefulWidget {
@@ -14,6 +15,8 @@ class TrackerCard extends StatefulWidget {
 }
 
 class _TrackerCardState extends State<TrackerCard> {
+  bool _showActions = false;
+
   Widget _buildEventWidget(BuildContext context, TrackerConfig config) {
     return Obx(() {
       return config.map(
@@ -21,8 +24,9 @@ class _TrackerCardState extends State<TrackerCard> {
           DateTime now = DateTime.now();
           DateTime? last;
           if (widget.records.isNotEmpty) {
-            widget.records.sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
-            last = widget.records.first.body.timestamp.toLocal();
+            final sortedRecords = widget.records.toList()
+              ..sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
+            last = sortedRecords.first.body.timestamp.toLocal();
           }
           final daysSince = last == null ? 9999 : now.difference(last).inDays;
           final label = last == null ? 'Never done' : '$daysSince days ago';
@@ -181,9 +185,9 @@ class _TrackerCardState extends State<TrackerCard> {
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      surfaceTintColor: showItem.colorTag.toColor() == Colors.transparent
-          ? null
-          : showItem.colorTag.toColor()?.withAlpha(102),
+      // surfaceTintColor: showItem.colorTag.toColor() == Colors.transparent
+      //     ? null
+      //     : showItem.colorTag.toColor()?.withAlpha(132),
       elevation: 2,
       child: InkWell(
         onTap: () => Get.toNamed('/tracker/view-tracker', arguments: [widget.item]),
@@ -207,78 +211,131 @@ class _TrackerCardState extends State<TrackerCard> {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
-          child: Row(
-            children: [
-              // if (showItem.colorTag != ColorTag.none)
-              //   Icon(Icons.brightness_1_rounded, color: showItem.colorTag.toColor(), size: 16),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // todo add sync status indicator here if needed
-                  if (widget.item.syncStatus == SyncStatus.syncing)
-                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.12), shape: BoxShape.circle),
-                    child: Icon(typeIcon, color: typeColor, size: 28),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
-                    },
-                    icon: const Icon(Icons.edit),
-                  ),
-                  InlineColorPickerButton(
-                    value: widget.item.colorTag,
-                    onSelected: (color) {
-                      trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
-                      setState(() {
-                        showItem.colorTag = color;
-                      });
-                    },
-                  ),
-                  // delete button use double click.
-                  // IconButton(
-                  //   onPressed: () {
-                  //     Get.find<TrackerController>().deleteData(item.id);
-                  //   },
-                  //   icon: const Icon(Icons.delete),
-                  // ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(t.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Flexible(child: Text(t.category, style: Theme.of(context).textTheme.bodySmall)),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: typeColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 96),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // if (showItem.colorTag != ColorTag.none)
+                //   Icon(Icons.brightness_1_rounded, color: showItem.colorTag.toColor(), size: 16),
+                SizedBox(
+                  width: 60,
+                  child: Center(
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _showActions = !_showActions;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(28),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.12), shape: BoxShape.circle),
+                            child: Icon(typeIcon, color: typeColor, size: 28),
                           ),
-                          child: Text(t.type, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: typeColor)),
-                        ),
-                      ],
+                          if (widget.item.syncStatus == SyncStatus.syncing)
+                            const Positioned(
+                              right: -4,
+                              top: -4,
+                              child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                            ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    if (t.type == 'milestone')
-                      _buildMilestoneWidget(context, t.config)
-                    else if (t.type == 'anniversary')
-                      _buildAnniversaryWidget(context, t.config, typeColor)
-                    else
-                      _buildEventWidget(context, t.config),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 108,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: _showActions
+                          ? Container(
+                              key: const ValueKey('actions'),
+                              alignment: Alignment.centerRight,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Edit',
+                                    onPressed: () {
+                                      Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
+                                    },
+                                    icon: const Icon(Icons.edit),
+                                  ),
+                                  InlineColorPickerButton(
+                                    value: widget.item.colorTag,
+                                    onSelected: (color) {
+                                      trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
+                                      setState(() {
+                                        showItem.colorTag = color;
+                                      });
+                                    },
+                                  ),
+                                  DoubleClickButton(
+                                    buttonBuilder: (onPressed) => IconButton(
+                                      tooltip: 'delete'.tr,
+                                      onPressed: onPressed,
+                                      icon: const Icon(Icons.delete),
+                                    ),
+                                    onDoubleClick: () {
+                                      trackerController.deleteData(widget.item.id);
+                                      while (Get.routing.current == '/tracker/view-tracker') {
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                    firstClickHint: 'delete_tracker'.tr,
+                                    upperPosition: true,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              key: const ValueKey('content'),
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  t.name,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Flexible(child: Text(t.category, style: Theme.of(context).textTheme.bodySmall)),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: typeColor.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        t.type,
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: typeColor),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                if (t.type == 'milestone')
+                                  _buildMilestoneWidget(context, t.config)
+                                else if (t.type == 'anniversary')
+                                  _buildAnniversaryWidget(context, t.config, typeColor)
+                                else
+                                  _buildEventWidget(context, t.config),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

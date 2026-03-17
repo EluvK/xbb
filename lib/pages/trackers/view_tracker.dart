@@ -5,6 +5,7 @@ import 'package:xbb/components/trackers/tracker_card.dart';
 import 'package:xbb/models/tracker/model.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import 'package:xbb/utils/text_input.dart';
+import 'package:xbb/utils/utils.dart';
 import 'package:xbb/utils/view_widget.dart';
 
 class ViewTrackerDetailPage extends StatelessWidget {
@@ -72,14 +73,17 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TrackerCard(item: widget.trackerItem, records: recordsRx),
+          const SizedBox(height: 6),
+          const Divider(),
+          const SizedBox(height: 6),
           TextViewWidget(title: const _LocalTitle('Category', Icons.category, Colors.blue), value: t.category),
           TextViewWidget(
             title: const _LocalTitle('Description', Icons.description, Colors.orange),
             value: t.description,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           const Divider(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           // "记一笔" button and in-page form
           ElevatedButton.icon(
             onPressed: () => setState(() => _showAdd = !_showAdd),
@@ -93,7 +97,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
             duration: const Duration(milliseconds: 200),
           ),
           const Divider(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Expanded(
             child: Obx(() {
               final list = recordsRx;
@@ -197,50 +201,110 @@ class _LocalTitle implements TitleInterface {
 class _RecordsTimeline extends StatelessWidget {
   const _RecordsTimeline({required this.records});
   final List<TrackerRecord> records;
+
+  String _twoDigits(int value) => value.toString().padLeft(2, '0');
+
+  String _formatDate(DateTime dt) => '${dt.year}-${_twoDigits(dt.month)}-${_twoDigits(dt.day)}';
+
+  String _formatTime(DateTime dt) => '${_twoDigits(dt.hour)}:${_twoDigits(dt.minute)}';
+
   @override
   Widget build(BuildContext context) {
     final List<TrackerRecord> sortedRecords = List.from(records)..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    print("[Timeline] Sorted ${sortedRecords.length} records for display");
-    return ListView.builder(
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 12),
       itemCount: sortedRecords.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 2),
       itemBuilder: (ctx, gi) {
         final record = sortedRecords[gi];
-        final dateLabel =
-            '${record.timestamp.year}-${record.timestamp.month.toString().padLeft(2, '0')}-${record.timestamp.day.toString().padLeft(2, '0')}';
+        final localTime = record.timestamp.toLocal();
+        final dateLabel = _formatDate(localTime);
+        final timeLabel = _formatTime(localTime);
+        final relativeLabel = readableDateStr(localTime);
         final isFirst = gi == 0;
         final isLast = gi == sortedRecords.length - 1;
         return TimelineTile(
           alignment: TimelineAlign.start,
+          lineXY: 0.08,
           isFirst: isFirst,
           isLast: isLast,
+          beforeLineStyle: LineStyle(color: colorScheme.outlineVariant.withValues(alpha: 0.45), thickness: 2),
+          afterLineStyle: LineStyle(color: colorScheme.outlineVariant.withValues(alpha: 0.45), thickness: 2),
           indicatorStyle: IndicatorStyle(
-            width: 12,
-            height: 12,
-            color: Theme.of(context).colorScheme.primary,
+            width: 20,
+            height: 20,
+            color: Colors.transparent,
             indicator: Container(
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colorScheme.primary.withValues(alpha: 0.12),
+                border: Border.all(color: colorScheme.primary, width: 1.4),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
+                ),
+              ),
             ),
           ),
           endChild: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6.0),
+            padding: const EdgeInsets.only(left: 10, right: 4, top: 4, bottom: 8),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(8),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.45)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(dateLabel, style: Theme.of(context).textTheme.titleSmall),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          dateLabel,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          relativeLabel,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    timeLabel,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
                   const SizedBox(height: 6),
                   if (record.content != null && record.content!.isNotEmpty)
                     Text(record.content!, style: Theme.of(context).textTheme.bodyMedium),
                   if (record.value != null) ...[
                     const SizedBox(height: 6),
-                    Text(
-                      record.value!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.tertiaryContainer.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        record.value!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ],
                 ],

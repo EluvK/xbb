@@ -54,7 +54,6 @@ class _TrackerMatrixState extends State<TrackerMatrix> {
       final sortedGroupedTrackers = {for (var k in sortedKeys) k: groupedTrackers[k]!};
       return LayoutBuilder(
         builder: (context, constraints) {
-          const double fixedHeight = 156.0;
           const double cardMaxWidth = 580.0;
           const double gridSpacing = 12.0;
           const double horizontalPadding = 24.0;
@@ -70,6 +69,7 @@ class _TrackerMatrixState extends State<TrackerMatrix> {
 
           final double availableWidth = constraints.maxWidth - (sideMargin * 2);
           final double itemWidth = (availableWidth - (crossAxisCount - 1) * gridSpacing) / crossAxisCount;
+          final double fixedHeight = (itemWidth * 0.34).clamp(132.0, 164.0);
           final double dynamicAspectRatio = itemWidth / fixedHeight;
 
           return CustomScrollView(
