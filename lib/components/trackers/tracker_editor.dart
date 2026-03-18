@@ -46,6 +46,23 @@ class _TrackerEditorState extends State<TrackerEditor> {
   TrackerController get _trackerController => Get.find<TrackerController>();
   final UserManagerController userManagerController = Get.find<UserManagerController>();
 
+  String _formatHoursFromMinutes(int minutes) {
+    final hours = minutes / 60;
+    if (hours == hours.roundToDouble()) {
+      return hours.toStringAsFixed(0);
+    }
+    return hours
+        .toStringAsFixed(2)
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
+  }
+
+  int? _parseHoursToMinutes(String input) {
+    final hours = double.tryParse(input.trim());
+    if (hours == null || hours < 0) return null;
+    return (hours * 60).round();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,10 +79,14 @@ class _TrackerEditorState extends State<TrackerEditor> {
         },
         milestone: (c) {
           _milestoneGoalType = c.goalType;
-          _milestoneTargetController.text = c.targetValue;
           if (_milestoneGoalType == 'time') {
-            final secs = int.tryParse(c.targetValue);
-            if (secs != null) _milestoneTargetDuration = Duration(seconds: secs);
+            final minutes = int.tryParse(c.targetValue);
+            if (minutes != null) {
+              _milestoneTargetDuration = Duration(minutes: minutes);
+              _milestoneTargetController.text = _formatHoursFromMinutes(minutes);
+            }
+          } else {
+            _milestoneTargetController.text = c.targetValue;
           }
         },
         anniversary: (c) {
@@ -143,9 +164,8 @@ class _TrackerEditorState extends State<TrackerEditor> {
     } else if (_type == 'milestone') {
       final String targetValue;
       if (_milestoneGoalType == 'time') {
-        targetValue = _milestoneTargetController.text.isNotEmpty
-            ? _milestoneTargetController.text
-            : _milestoneTargetDuration.inSeconds.toString();
+        final minutes = _parseHoursToMinutes(_milestoneTargetController.text);
+        targetValue = (minutes ?? _milestoneTargetDuration.inMinutes).toString();
       } else {
         targetValue = _milestoneTargetController.text;
       }
@@ -245,12 +265,14 @@ class _TrackerEditorState extends State<TrackerEditor> {
           if (_milestoneGoalType == 'time')
             TextInputWidget(
               title: _LocalTitle('tracker_duration_hours'.tr, Icons.timer, Colors.purple),
-              initialValue: (_milestoneTargetDuration.inMinutes / 60).toString(),
+              initialValue: _milestoneTargetController.text.isNotEmpty
+                  ? _milestoneTargetController.text
+                  : _formatHoursFromMinutes(_milestoneTargetDuration.inMinutes),
               onFinished: (v) {
-                final hours = double.tryParse(v);
-                if (hours != null) {
-                  _milestoneTargetDuration = Duration(minutes: (hours * 60).toInt());
-                  _milestoneTargetController.text = v;
+                final minutes = _parseHoursToMinutes(v);
+                if (minutes != null) {
+                  _milestoneTargetDuration = Duration(minutes: minutes);
+                  _milestoneTargetController.text = v.trim();
                 }
               },
               inputType: const TextInputType.numberWithOptions(decimal: true),

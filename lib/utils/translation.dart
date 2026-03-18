@@ -335,6 +335,14 @@ class _TranslationHelper {
       "en_US": "No tracker selected, should pass tracker here.",
       "zh_CN": "未选择追踪器，应该传入 tracker 参数。",
     },
+    "tracker_page_title_edit": {
+      "en_US": "Edit Tracker",
+      "zh_CN": "编辑追踪器",
+    },
+    "tracker_page_title_add": {
+      "en_US": "Add Tracker",
+      "zh_CN": "新增追踪器",
+    },
     "tracker_category": {
       "en_US": "Category",
       "zh_CN": "分类",
@@ -386,6 +394,10 @@ class _TranslationHelper {
     "tracker_minutes_quick": {
       "en_US": "@minutes min",
       "zh_CN": "@minutes 分钟",
+    },
+    "tracker_hours_value": {
+      "en_US": "@hours h",
+      "zh_CN": "@hours 小时",
     },
     "tracker_duration_minutes": {
       "en_US": "Duration (minutes)",

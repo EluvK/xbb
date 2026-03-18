@@ -12,12 +12,12 @@ class EditTrackerPage extends StatelessWidget {
     final TrackerDataItem? tracker = args?[0];
     if (tracker == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Create Tracker')),
+        appBar: AppBar(title: Text('tracker_page_title_add'.tr)),
         body: const TrackerEditor(),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Tracker')),
+      appBar: AppBar(title: Text('tracker_page_title_edit'.tr)),
       body: TrackerEditor(trackerItem: tracker),
     );
   }

@@ -104,6 +104,7 @@ class _TrackerCardState extends State<TrackerCard> {
         milestone: (c) {
           final goalType = c.goalType;
           final target = double.tryParse(c.targetValue) ?? 0.0;
+          var displayTargetValue = c.targetValue;
           double progress = 0.0;
           if (goalType == 'boolean') {
             if (widget.records.isNotEmpty) {
@@ -122,8 +123,17 @@ class _TrackerCardState extends State<TrackerCard> {
               final minutes = int.tryParse(r.body.value ?? '') ?? 0;
               total += Duration(minutes: minutes);
             }
-            final targetDuration = Duration(minutes: target.toInt());
+            final targetMinutes = target.toInt();
+            final targetDuration = Duration(minutes: targetMinutes);
             if (targetDuration.inMinutes > 0) progress = (total.inMinutes / targetDuration.inMinutes).clamp(0.0, 1.0);
+            final hours = targetMinutes / 60;
+            final hourText = hours == hours.roundToDouble()
+                ? hours.toStringAsFixed(0)
+                : hours
+                      .toStringAsFixed(2)
+                      .replaceFirst(RegExp(r'0+$'), '')
+                      .replaceFirst(RegExp(r'\.$'), '');
+            displayTargetValue = 'tracker_hours_value'.trParams({'hours': hourText});
           }
           final displayPercent = (progress * 100).toStringAsFixed(0);
           final barColor = Color.lerp(Colors.red, Colors.green, progress)!;
@@ -137,7 +147,7 @@ class _TrackerCardState extends State<TrackerCard> {
               ),
               const SizedBox(height: 4),
               Text(
-                '$displayPercent% • ${'tracker_target_value'.trParams({'value': c.targetValue})}',
+                '$displayPercent% • ${'tracker_target_value'.trParams({'value': displayTargetValue})}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
