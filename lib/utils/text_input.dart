@@ -190,16 +190,46 @@ class TextInputWidget extends StatefulWidget {
 class _TextInputWidgetState extends State<TextInputWidget> {
   late FocusNode _focusNode;
   late TextEditingController _controller;
+  String? _lastCommittedValue;
+
+  void _ensureVisibleAfterFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_focusNode.hasFocus) return;
+      final scrollable = Scrollable.maybeOf(context);
+      if (scrollable == null) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.25,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  void _commitInput({bool showSavedTip = false}) {
+    final value = _controller.text;
+    if (_lastCommittedValue == value) {
+      return;
+    }
+    _lastCommittedValue = value;
+    widget.onFinished(value);
+    if (showSavedTip) {
+      successSimpleFlushBar('input_saved'.tr);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
     _focusNode = FocusNode();
+    _lastCommittedValue = widget.initialValue;
 
     _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        widget.onFinished(_controller.text);
+      if (_focusNode.hasFocus) {
+        _ensureVisibleAfterFocus();
+      } else {
+        _commitInput();
       }
     });
   }
@@ -255,6 +285,16 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                   autofocus: widget.autoFocus,
                   focusNode: _focusNode,
                   controller: _controller,
+                  scrollPadding: EdgeInsets.only(
+                    left: 20,
+                    top: 20,
+                    right: 20,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 100,
+                  ),
+                  onTapOutside: (_) {
+                    _focusNode.unfocus();
+                    _commitInput();
+                  },
                   decoration: InputDecoration(
                     isDense: true,
                     contentPadding: const EdgeInsets.all(8),
@@ -267,8 +307,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                   textAlign: TextAlign.center,
                   onSubmitted: (value) {
                     print(value);
-                    successSimpleFlushBar('input_saved'.tr);
-                    widget.onFinished(value);
+                    _commitInput(showSavedTip: true);
                   },
                 ),
               ),

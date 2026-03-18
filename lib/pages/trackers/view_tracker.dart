@@ -175,6 +175,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
   @override
   Widget build(BuildContext context) {
     final t = widget.trackerItem.body;
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
     final cachedAcl = trackerController.getAclCached(widget.trackerItem.id);
     final bool canEdit = oncePermissionCheck(
       TrackerFeatureRequires.update,
@@ -182,68 +183,69 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
       cachedAcl,
       widget.trackerItem.owner,
     );
+    final contentHeader = <Widget>[
+      TrackerCard(item: widget.trackerItem, records: recordsRx),
+      const SizedBox(height: 6),
+      const Divider(),
+      const SizedBox(height: 6),
+      TextViewWidget(title: _LocalTitle('tracker_category'.tr, Icons.category, Colors.blue), value: t.category),
+      TextViewWidget(
+        title: _LocalTitle('tracker_description'.tr, Icons.description, Colors.orange),
+        value: t.description,
+      ),
+      const SizedBox(height: 6),
+      const Divider(),
+      const SizedBox(height: 6),
+      if (canEdit)
+        ElevatedButton.icon(
+          onPressed: () {
+            setState(() {
+              _showAdd = !_showAdd;
+              if (_showAdd) {
+                _editingRecord = null;
+                _recordTimestamp = DateTime.now().toUtc();
+                _anniversaryPreview = false;
+                _milestoneBooleanValue = false;
+                _valueController.clear();
+                _contentController.clear();
+              }
+            });
+          },
+          label: Text(_showAdd ? 'cancel'.tr : (_isEditingRecord ? 'tracker_edit_record'.tr : 'tracker_add_record'.tr)),
+          icon: const Icon(Icons.draw_rounded),
+        ),
+      if (_showAdd && _isEditingRecord)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            'tracker_edit_record'.tr,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+      AnimatedCrossFade(
+        firstChild: const SizedBox.shrink(),
+        secondChild: _newRecordInputWidget(),
+        crossFadeState: _showAdd ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 200),
+      ),
+      const Divider(),
+      const SizedBox(height: 6),
+    ];
+
+    final recordsWidget = Obx(() {
+      final list = recordsRx;
+      if (list.isEmpty) return Center(child: Text('tracker_no_records'.tr));
+      // render timeline grouped by date
+      final items = list.map((e) => e).toList();
+      return _RecordsTimeline(records: items, canEdit: canEdit, onEditRecord: _startInlineEditRecord);
+    });
+
     return Padding(
       padding: const EdgeInsets.all(12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TrackerCard(item: widget.trackerItem, records: recordsRx),
-          const SizedBox(height: 6),
-          const Divider(),
-          const SizedBox(height: 6),
-          TextViewWidget(title: _LocalTitle('tracker_category'.tr, Icons.category, Colors.blue), value: t.category),
-          TextViewWidget(
-            title: _LocalTitle('tracker_description'.tr, Icons.description, Colors.orange),
-            value: t.description,
-          ),
-          const SizedBox(height: 6),
-          const Divider(),
-          const SizedBox(height: 6),
-          // "记一笔" button and in-page form
-          if (canEdit)
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _showAdd = !_showAdd;
-                  if (_showAdd) {
-                    _editingRecord = null;
-                    _recordTimestamp = DateTime.now().toUtc();
-                    _anniversaryPreview = false;
-                    _milestoneBooleanValue = false;
-                    _valueController.clear();
-                    _contentController.clear();
-                  }
-                });
-              },
-              label: Text(_showAdd ? 'cancel'.tr : (_isEditingRecord ? 'tracker_edit_record'.tr : 'tracker_add_record'.tr)),
-              icon: const Icon(Icons.draw_rounded),
-            ),
-          if (_showAdd && _isEditingRecord)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                'tracker_edit_record'.tr,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: _newRecordInputWidget(),
-            crossFadeState: _showAdd ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
-          ),
-          const Divider(),
-          const SizedBox(height: 6),
-          Expanded(
-            child: Obx(() {
-              final list = recordsRx;
-              if (list.isEmpty) return Center(child: Text('tracker_no_records'.tr));
-              // render timeline grouped by date
-              final items = list.map((e) => e).toList();
-              return _RecordsTimeline(records: items, canEdit: canEdit, onEditRecord: _startInlineEditRecord);
-            }),
-          ),
-        ],
+      child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: EdgeInsets.only(bottom: keyboardInset + 12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [...contentHeader, recordsWidget]),
       ),
     );
   }
@@ -536,6 +538,8 @@ class _RecordsTimeline extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final UserManagerController userManager = Get.find<UserManagerController>();
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 12),
       itemCount: sortedRecords.length,
       separatorBuilder: (_, __) => const SizedBox(height: 2),
