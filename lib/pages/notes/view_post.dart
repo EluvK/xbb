@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/components/common/permission.dart';
 import 'package:xbb/components/notes/post_viewer.dart';
-import 'package:xbb/controller/user.dart';
 import 'package:xbb/controller/utils.dart';
 import 'package:xbb/models/notes/model.dart';
 

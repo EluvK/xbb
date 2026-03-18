@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/user.dart';
+import 'package:xbb/models/permission.dart' show FeaturePermission;
 
 /// Noted: this wrapper should not be used for too many tree/list items.
 /// In that case, consider using `oncePermissionCheck` for a one-time check instead of wrapping each item.

@@ -9,11 +9,22 @@ import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/models/permission.dart' show FeaturePermission;
 import 'package:xbb/models/tracker/db.dart';
 import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
+
+enum TrackerFeatureRequires implements FeaturePermission {
+  update(ACLMask.updateOnly),
+  fullAccess(ACLMask.fullAccess);
+
+  @override
+  final int requiredAclMask;
+
+  const TrackerFeatureRequires(this.requiredAclMask);
+}
 
 Future<void> reInitTrackerSync(SyncStoreClient client) async {
   await reInit<TrackerController>(() => TrackerController(client), (c) => c.ensureInitialization());

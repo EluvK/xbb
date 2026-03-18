@@ -413,9 +413,9 @@ class _TrackerEditorState extends State<TrackerEditor> {
 class TrackerPermissionSchema implements PermissionSchema {
   @override
   List<(String, String)> get labels => [
-    ('view', 'tracker_perm_view'.tr),
-    ('edit', 'tracker_perm_edit'.tr),
-    ('full_access', 'tracker_perm_full_access'.tr),
+    ('tracker_perm_view'.tr, 'view'),
+    ('tracker_perm_edit'.tr, 'edit'),
+    ('tracker_perm_full_access'.tr, 'full_access'),
   ];
 
   @override

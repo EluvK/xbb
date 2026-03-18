@@ -186,7 +186,7 @@ class TrackerController extends GetxController {
     // preload ACLs for all items to make sure UI can get ACL info immediately
     // this can be optimized by only load ACL when needed and cache it.
     for (var item in _items) {
-      await getAclLocal(item.id);
+      await _getAclLocal(item.id);
     }
     super.onInit();
     _initialized = true;
@@ -379,7 +379,7 @@ extension TrackerControllerAcl on TrackerController {
     }
   }
 
-  Future<List<Permission>> getAclLocal(String dataId) async {
+  Future<List<Permission>> _getAclLocal(String dataId) async {
     final localAcls = await TrackerRepository().getAcls(dataId);
     _aclCache[dataId] = localAcls;
     return localAcls;

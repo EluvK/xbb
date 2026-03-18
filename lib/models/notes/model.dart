@@ -10,10 +10,28 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/models/notes/db.dart';
+import 'package:xbb/models/permission.dart';
 import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
+
+enum NotesFeatureRequires implements FeaturePermission {
+  updateRepo(ACLMask.updateOnly),
+  updatePost(ACLMask.updateOnly),
+  deleteRepo(ACLMask.deleteOnly),
+  deletePost(ACLMask.deleteOnly),
+  newComment(ACLMask.append2Below),
+  replyComment(ACLMask.append2Below),
+  editComment(ACLMask.updateOnly),
+  deleteComment(ACLMask.deleteOnly),
+  fullAccess(ACLMask.fullAccess);
+
+  @override
+  final int requiredAclMask;
+
+  const NotesFeatureRequires(this.requiredAclMask);
+}
 
 Future<void> reInitNotesSync(SyncStoreClient client) async {
   await reInit<RepoController>(() => RepoController(client), (c) => c.ensureInitialization());

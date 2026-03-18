@@ -359,13 +359,13 @@ class _TranslationHelper {
       "en_US": "Anniversary",
       "zh_CN": "纪念日",
     },
+    "tracker_edit_record": {
+      "en_US": "Edit Record",
+      "zh_CN": "编辑记录",
+    },
     "tracker_add_record": {
       "en_US": "Add Record",
-      "zh_CN": "记一笔",
-    },
-    "tracker_add": {
-      "en_US": "Add",
-      "zh_CN": "添加",
+      "zh_CN": "新增记录",
     },
     "tracker_no_records": {
       "en_US": "No records yet",
@@ -375,13 +375,9 @@ class _TranslationHelper {
       "en_US": "Note",
       "zh_CN": "备注",
     },
-    "tracker_event_time": {
-      "en_US": "Occurred At",
-      "zh_CN": "发生时间",
-    },
     "tracker_record_time": {
-      "en_US": "Record Time",
-      "zh_CN": "记录时间",
+      "en_US": "Record Happened At",
+      "zh_CN": "记录发生时间",
     },
     "tracker_milestone_boolean_disabled": {
       "en_US": "Milestone(boolean) input is temporarily disabled in this version.",

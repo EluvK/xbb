@@ -2,14 +2,91 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:board_datetime_picker/board_datetime_picker.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/common/permission.dart';
 import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/components/trackers/tracker_card.dart';
+import 'package:xbb/components/utils.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/tracker/model.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import 'package:xbb/utils/text_input.dart';
 import 'package:xbb/utils/time_picker.dart';
 import 'package:xbb/utils/utils.dart';
 import 'package:xbb/utils/view_widget.dart';
+
+TrackerRecord? _buildTrackerRecordFromInput({
+  required TrackerConfig config,
+  required String trackerId,
+  required DateTime timestamp,
+  required String rawValue,
+  required String rawContent,
+  required bool milestoneBooleanValue,
+  required bool allowMilestoneBoolean,
+}) {
+  final content = rawContent.trim();
+  final value = rawValue.trim();
+
+  if (config is AnniversaryTrackerConfig) {
+    if (content.isEmpty) {
+      Get.snackbar('tracker_input_error_title'.tr, 'tracker_anniversary_content_required'.tr);
+      return null;
+    }
+    return TrackerRecord.forAnniversary(trackerId: trackerId, timestamp: timestamp, content: content);
+  }
+
+  if (config is EventTrackerConfig) {
+    return TrackerRecord.forEvent(
+      trackerId: trackerId,
+      timestamp: timestamp,
+      content: content.isEmpty ? null : content,
+    );
+  }
+
+  if (config is MilestoneTrackerConfig) {
+    if (config.goalType == 'boolean') {
+      if (!allowMilestoneBoolean) {
+        Get.snackbar('tracker_tip_title'.tr, 'tracker_milestone_boolean_disabled'.tr);
+        return null;
+      }
+      return TrackerRecord.forMilestoneBoolean(
+        trackerId: trackerId,
+        timestamp: timestamp,
+        done: milestoneBooleanValue,
+        content: content.isEmpty ? null : content,
+      );
+    }
+    if (config.goalType == 'time') {
+      final minutes = int.tryParse(value);
+      if (minutes == null || minutes <= 0) {
+        Get.snackbar('tracker_input_error_title'.tr, 'tracker_duration_minutes_error'.tr);
+        return null;
+      }
+      return TrackerRecord.forMilestoneTime(
+        trackerId: trackerId,
+        timestamp: timestamp,
+        minutes: minutes,
+        content: content.isEmpty ? null : content,
+      );
+    }
+    if (double.tryParse(value) == null) {
+      Get.snackbar('tracker_input_error_title'.tr, 'tracker_numeric_error'.tr);
+      return null;
+    }
+    return TrackerRecord.forMilestoneNumber(
+      trackerId: trackerId,
+      timestamp: timestamp,
+      number: value,
+      content: content.isEmpty ? null : content,
+    );
+  }
+
+  return TrackerRecord(
+    trackerId: trackerId,
+    timestamp: timestamp,
+    value: value.isEmpty ? null : value,
+    content: content.isEmpty ? null : content,
+  );
+}
 
 class ViewTrackerDetailPage extends StatelessWidget {
   const ViewTrackerDetailPage({super.key});
@@ -48,7 +125,33 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
   final TextEditingController _contentController = TextEditingController();
   DateTime _recordTimestamp = DateTime.now().toUtc();
   bool _anniversaryPreview = false;
+  bool _milestoneBooleanValue = false;
   bool _showAdd = false;
+  TrackerRecordDataItem? _editingRecord;
+
+  bool get _isEditingRecord => _editingRecord != null;
+
+  void _resetRecordInputState() {
+    _showAdd = false;
+    _editingRecord = null;
+    _recordTimestamp = DateTime.now().toUtc();
+    _anniversaryPreview = false;
+    _milestoneBooleanValue = false;
+    _valueController.clear();
+    _contentController.clear();
+  }
+
+  void _startInlineEditRecord(TrackerRecordDataItem item) {
+    setState(() {
+      _showAdd = true;
+      _editingRecord = item;
+      _recordTimestamp = item.body.timestamp.toUtc();
+      _anniversaryPreview = false;
+      _valueController.text = item.body.value ?? '';
+      _contentController.text = item.body.content ?? '';
+      _milestoneBooleanValue = (item.body.value ?? '').toLowerCase() == 'true';
+    });
+  }
 
   @override
   void initState() {
@@ -72,6 +175,13 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
   @override
   Widget build(BuildContext context) {
     final t = widget.trackerItem.body;
+    final cachedAcl = trackerController.getAclCached(widget.trackerItem.id);
+    final bool canEdit = oncePermissionCheck(
+      TrackerFeatureRequires.update,
+      widget.trackerItem.owner,
+      cachedAcl,
+      widget.trackerItem.owner,
+    );
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Column(
@@ -90,19 +200,32 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
           const Divider(),
           const SizedBox(height: 6),
           // "记一笔" button and in-page form
-          ElevatedButton.icon(
-            onPressed: () {
-              setState(() {
-                _showAdd = !_showAdd;
-                if (_showAdd) {
-                  _recordTimestamp = DateTime.now().toUtc();
-                  _anniversaryPreview = false;
-                }
-              });
-            },
-            label: Text(_showAdd ? 'cancel'.tr : 'tracker_add_record'.tr),
-            icon: const Icon(Icons.draw_rounded),
-          ),
+          if (canEdit)
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _showAdd = !_showAdd;
+                  if (_showAdd) {
+                    _editingRecord = null;
+                    _recordTimestamp = DateTime.now().toUtc();
+                    _anniversaryPreview = false;
+                    _milestoneBooleanValue = false;
+                    _valueController.clear();
+                    _contentController.clear();
+                  }
+                });
+              },
+              label: Text(_showAdd ? 'cancel'.tr : (_isEditingRecord ? 'tracker_edit_record'.tr : 'tracker_add_record'.tr)),
+              icon: const Icon(Icons.draw_rounded),
+            ),
+          if (_showAdd && _isEditingRecord)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'tracker_edit_record'.tr,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
             secondChild: _newRecordInputWidget(),
@@ -116,8 +239,8 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
               final list = recordsRx;
               if (list.isEmpty) return Center(child: Text('tracker_no_records'.tr));
               // render timeline grouped by date
-              final items = list.map((e) => e.body).toList();
-              return _RecordsTimeline(records: items);
+              final items = list.map((e) => e).toList();
+              return _RecordsTimeline(records: items, canEdit: canEdit, onEditRecord: _startInlineEditRecord);
             }),
           ),
         ],
@@ -139,7 +262,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TimePickerWidget(
-                    label: 'tracker_event_time'.tr,
+                    label: 'tracker_record_time'.tr,
                     icon: Icons.schedule,
                     color: Colors.indigo,
                     pickerType: DateTimePickerType.datetime,
@@ -152,21 +275,69 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
               );
             },
             milestone: (c) {
-              if (c.goalType == 'boolean') {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(10),
+              final timePicker = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TimePickerWidget(
+                    label: 'tracker_record_time'.tr,
+                    icon: Icons.schedule,
+                    color: Colors.indigo,
+                    pickerType: DateTimePickerType.datetime,
+                    initialValue: _recordTimestamp.toLocal(),
+                    onChange: (v) {
+                      _recordTimestamp = v;
+                    },
                   ),
-                  child: Text('tracker_milestone_boolean_disabled'.tr, style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: 6),
+                ],
+              );
+
+              if (c.goalType == 'boolean') {
+                if (!_isEditingRecord) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      timePicker,
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'tracker_milestone_boolean_disabled'.tr,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    timePicker,
+                    Row(
+                      children: [
+                        Expanded(child: Text('tracker_target_value'.trParams({'value': c.targetValue}))),
+                        Switch(
+                          value: _milestoneBooleanValue,
+                          onChanged: (v) {
+                            setState(() {
+                              _milestoneBooleanValue = v;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 );
               }
               if (c.goalType == 'time') {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    timePicker,
                     Wrap(
                       spacing: 8,
                       children: [
@@ -203,11 +374,17 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                   ],
                 );
               }
-              return TextInputWidget(
-                title: _LocalTitle('tracker_numeric_contribution'.tr, Icons.numbers, Colors.purple),
-                initialValue: _valueController.text,
-                onFinished: (v) => _valueController.text = v,
-                inputType: const TextInputType.numberWithOptions(decimal: true),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  timePicker,
+                  TextInputWidget(
+                    title: _LocalTitle('tracker_numeric_contribution'.tr, Icons.numbers, Colors.purple),
+                    initialValue: _valueController.text,
+                    onFinished: (v) => _valueController.text = v,
+                    inputType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ],
               );
             },
             anniversary: (c) => Column(
@@ -281,83 +458,36 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
             children: [
               ElevatedButton(
                 onPressed: () {
-                  final now = DateTime.now().toUtc();
                   final cfg2 = tracker.body.config;
-                  TrackerRecord rec;
+                  final effectiveTimestamp = _recordTimestamp;
+                  final rec = _buildTrackerRecordFromInput(
+                    config: cfg2,
+                    trackerId: tracker.id,
+                    timestamp: effectiveTimestamp,
+                    rawValue: _valueController.text,
+                    rawContent: _contentController.text,
+                    milestoneBooleanValue: _milestoneBooleanValue,
+                    allowMilestoneBoolean: _isEditingRecord,
+                  );
+                  if (rec == null) return;
 
-                  if (cfg2 is AnniversaryTrackerConfig) {
-                    final content = _contentController.text.trim();
-                    if (content.isEmpty) {
-                      Get.snackbar('tracker_input_error_title'.tr, 'tracker_anniversary_content_required'.tr);
-                      return;
-                    }
-                    rec = TrackerRecord.forAnniversary(
-                      trackerId: tracker.id,
-                      timestamp: _recordTimestamp,
-                      content: content,
-                    );
-                  } else if (cfg2 is EventTrackerConfig) {
-                    rec = TrackerRecord.forEvent(
-                      trackerId: tracker.id,
-                      timestamp: _recordTimestamp,
-                      content: _contentController.text.trim(),
-                    );
-                  } else if (cfg2 is MilestoneTrackerConfig) {
-                    if (cfg2.goalType == 'boolean') {
-                      Get.snackbar('tracker_tip_title'.tr, 'tracker_milestone_boolean_disabled'.tr);
-                      return;
-                    } else if (cfg2.goalType == 'time') {
-                      final input = _valueController.text.trim();
-                      final minutes = int.tryParse(input);
-                      if (minutes == null || minutes <= 0) {
-                        Get.snackbar('tracker_input_error_title'.tr, 'tracker_duration_minutes_error'.tr);
-                        return;
-                      }
-                      rec = TrackerRecord.forMilestoneTime(
-                        trackerId: tracker.id,
-                        timestamp: now,
-                        minutes: minutes,
-                        content: _contentController.text.trim(),
-                      );
-                    } else {
-                      final input = _valueController.text.trim();
-                      final parsed = double.tryParse(input);
-                      if (parsed == null) {
-                        Get.snackbar('tracker_input_error_title'.tr, 'tracker_numeric_error'.tr);
-                        return;
-                      }
-                      rec = TrackerRecord.forMilestoneNumber(
-                        trackerId: tracker.id,
-                        timestamp: now,
-                        number: input,
-                        content: _contentController.text.trim(),
-                      );
-                    }
+                  if (_isEditingRecord) {
+                    recordController.updateData(_editingRecord!.id, rec);
                   } else {
-                    rec = TrackerRecord(trackerId: tracker.id, timestamp: now, content: _contentController.text.trim());
+                    recordController.addData(rec);
                   }
-
-                  recordController.addData(rec);
                   setState(() {
-                    _showAdd = false;
-                    _recordTimestamp = DateTime.now().toUtc();
-                    _anniversaryPreview = false;
-                    _valueController.clear();
-                    _contentController.clear();
+                    _resetRecordInputState();
                   });
                   trackerController.rebuildLocal();
                 },
-                child: Text('tracker_add'.tr),
+                child: Text(_isEditingRecord ? 'tracker_edit_record'.tr : 'tracker_add_record'.tr),
               ),
               const SizedBox(width: 12),
               OutlinedButton(
                 onPressed: () {
                   setState(() {
-                    _showAdd = false;
-                    _recordTimestamp = DateTime.now().toUtc();
-                    _anniversaryPreview = false;
-                    _valueController.clear();
-                    _contentController.clear();
+                    _resetRecordInputState();
                   });
                 },
                 child: Text('cancel'.tr),
@@ -388,8 +518,10 @@ class _LocalTitle implements TitleInterface {
 }
 
 class _RecordsTimeline extends StatelessWidget {
-  const _RecordsTimeline({required this.records});
-  final List<TrackerRecord> records;
+  const _RecordsTimeline({required this.records, required this.canEdit, required this.onEditRecord});
+  final List<TrackerRecordDataItem> records;
+  final bool canEdit;
+  final void Function(TrackerRecordDataItem item) onEditRecord;
 
   String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
@@ -399,20 +531,26 @@ class _RecordsTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<TrackerRecord> sortedRecords = List.from(records)..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final List<TrackerRecordDataItem> sortedRecords = List.from(records)
+      ..sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
     final colorScheme = Theme.of(context).colorScheme;
+    final UserManagerController userManager = Get.find<UserManagerController>();
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 12),
       itemCount: sortedRecords.length,
       separatorBuilder: (_, __) => const SizedBox(height: 2),
       itemBuilder: (ctx, gi) {
-        final record = sortedRecords[gi];
+        final recordItem = sortedRecords[gi];
+        final record = recordItem.body;
         final localTime = record.timestamp.toLocal();
         final dateLabel = _formatDate(localTime);
         final timeLabel = _formatTime(localTime);
         final relativeLabel = readableDateStr(localTime);
         final isFirst = gi == 0;
         final isLast = gi == sortedRecords.length - 1;
+        final userProfile = userManager.selfProfile.value?.userId == recordItem.owner
+            ? userManager.selfProfile.value
+            : userManager.getUserProfile(recordItem.owner);
         return TimelineTile(
           alignment: TimelineAlign.start,
           lineXY: 0.08,
@@ -453,12 +591,19 @@ class _RecordsTimeline extends StatelessWidget {
                 children: [
                   Row(
                     children: [
+                      buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: false),
                       Expanded(
                         child: Text(
                           dateLabel,
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
+                      if (canEdit)
+                        IconButton(
+                          tooltip: 'edit'.tr,
+                          onPressed: () => onEditRecord(recordItem),
+                          icon: const Icon(Icons.edit),
+                        ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(

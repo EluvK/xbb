@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/common/permission.dart';
+import 'package:xbb/components/utils.dart';
+import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/tracker/model.dart';
 import 'package:xbb/utils/double_click.dart';
 import 'package:xbb/utils/list_tile_card.dart';
@@ -155,11 +158,11 @@ class _TrackerCardState extends State<TrackerCard> {
         final base = c.baseDate.toLocal();
         final now = DateTime.now();
         if (c.remindType == 'per_year') {
-          DateTime next = DateTime(now.year, base.month, base.day);
-          if (!next.isAfter(now)) next = DateTime(now.year + 1, base.month, base.day);
-          final last = DateTime(next.year - 1, base.month, base.day);
-          final daysUntil = next.difference(now).inDays;
-          final daysSince = now.difference(last).inDays;
+          final today = DateTime(now.year, now.month, now.day);
+          DateTime next = DateTime(today.year, base.month, base.day);
+          if (next.isBefore(today)) next = DateTime(today.year + 1, base.month, base.day);
+          final daysUntil = next.difference(today).inDays;
+          final daysSinceBase = today.difference(DateTime(base.year, base.month, base.day)).inDays;
           final info = daysUntil == 0
               ? 'tracker_today'.tr
               : (daysUntil > 0
@@ -184,7 +187,7 @@ class _TrackerCardState extends State<TrackerCard> {
               ),
               const SizedBox(height: 4),
               Text(
-                'tracker_since_base_days'.trParams({'days': daysSince.toString()}),
+                'tracker_since_base_days'.trParams({'days': daysSinceBase.toString()}),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
@@ -249,6 +252,7 @@ class _TrackerCardState extends State<TrackerCard> {
     var showItem = widget.item;
     final TrackerController trackerController = Get.find<TrackerController>();
     final t = widget.item.body;
+    final cachedAcl = trackerController.getAclCached(widget.item.id);
     final typeColor = (() {
       switch (t.type) {
         case 'event':
@@ -418,15 +422,36 @@ class _TrackerCardState extends State<TrackerCard> {
         ),
       ),
     );
+    final UserManagerController userCtrl = Get.find<UserManagerController>();
+    final selfId = userCtrl.settingController.userId;
+    final ownedId = widget.item.owner;
+    final userProfile = userCtrl.getUserProfile(ownedId);
+    bool sharedToOthers = cachedAcl.any((p) => p.user != selfId);
+    bool sharedFromOthers = selfId != ownedId;
+    bool canEdit = oncePermissionCheck(TrackerFeatureRequires.update, ownedId, cachedAcl, null);
     return Stack(
       clipBehavior: Clip.none,
       children: [
         card,
-        Positioned(
+       Positioned(
           top: 4,
           right: 4,
           child: Row(
             children: [
+              // Text(
+              //   'acl: ${cachedAcl.length}, canEdit: ${canEdit ? 'yes'.tr : 'no'.tr}',
+              //   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              // ),
+              if (sharedToOthers)
+                const Icon(Icons.switch_access_shortcut_outlined, size: 16, color: Colors.orangeAccent),
+              const SizedBox(width: 4),
+              if (userProfile != null) buildUserAvatar(context, userProfile.avatarUrl, size: 12, selected: false),
+              if (sharedFromOthers)
+                const RotatedBox(
+                  quarterTurns: 2,
+                  child: Icon(Icons.switch_access_shortcut_outlined, size: 16, color: Colors.blueAccent),
+                ),
+              const SizedBox(width: 4),
               if (showItem.colorTag != ColorTag.none)
                 Icon(Icons.brightness_1_rounded, color: showItem.colorTag.toColor(), size: 14),
               const SizedBox(width: 4),
@@ -449,30 +474,31 @@ class _TrackerCardState extends State<TrackerCard> {
             ],
           ),
         ),
-        // Positioned(
-        //   bottom: 12,
-        //   right: 4,
-        //   child: Row(
-        //     children: [
-        //       IconButton(
-        //         tooltip: 'edit'.tr,
-        //         onPressed: () {
-        //           Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
-        //         },
-        //         icon: const Icon(Icons.edit),
-        //       ),
-        //       InlineColorPickerButton(
-        //         value: widget.item.colorTag,
-        //         onSelected: (color) {
-        //           trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
-        //           setState(() {
-        //             showItem.colorTag = color;
-        //           });
-        //         },
-        //       ),
-        //     ],
-        //   ),
-        // ),
+        Positioned(
+          bottom: 12,
+          right: 4,
+          child: Row(
+            children: [
+              if (canEdit)
+                IconButton(
+                  tooltip: 'edit'.tr,
+                  onPressed: () {
+                    Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
+                  },
+                  icon: const Icon(Icons.edit),
+                ),
+              InlineColorPickerButton(
+                value: widget.item.colorTag,
+                onSelected: (color) {
+                  trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
+                  setState(() {
+                    showItem.colorTag = color;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

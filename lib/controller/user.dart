@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/models/permission.dart' show FeaturePermission;
 
 class User {
   String id;
@@ -150,24 +151,3 @@ class UserManagerController extends GetxController {
   }
 }
 
-abstract class FeaturePermission {
-  int get requiredAclMask;
-}
-
-// todo maybe move somewhere else?
-enum NotesFeatureRequires implements FeaturePermission {
-  updateRepo(ACLMask.updateOnly),
-  updatePost(ACLMask.updateOnly),
-  deleteRepo(ACLMask.deleteOnly),
-  deletePost(ACLMask.deleteOnly),
-  newComment(ACLMask.append2Below),
-  replyComment(ACLMask.append2Below),
-  editComment(ACLMask.updateOnly),
-  deleteComment(ACLMask.deleteOnly),
-  fullAccess(ACLMask.fullAccess);
-
-  @override
-  final int requiredAclMask;
-
-  const NotesFeatureRequires(this.requiredAclMask);
-}
