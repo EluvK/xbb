@@ -129,10 +129,7 @@ class _TrackerCardState extends State<TrackerCard> {
             final hours = targetMinutes / 60;
             final hourText = hours == hours.roundToDouble()
                 ? hours.toStringAsFixed(0)
-                : hours
-                      .toStringAsFixed(2)
-                      .replaceFirst(RegExp(r'0+$'), '')
-                      .replaceFirst(RegExp(r'\.$'), '');
+                : hours.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
             displayTargetValue = 'tracker_hours_value'.trParams({'hours': hourText});
           }
           final displayPercent = (progress * 100).toStringAsFixed(0);
@@ -443,7 +440,7 @@ class _TrackerCardState extends State<TrackerCard> {
       clipBehavior: Clip.none,
       children: [
         card,
-       Positioned(
+        Positioned(
           top: 4,
           right: 4,
           child: Row(
@@ -485,7 +482,7 @@ class _TrackerCardState extends State<TrackerCard> {
           ),
         ),
         Positioned(
-          bottom: 12,
+          bottom: 4,
           right: 4,
           child: Row(
             children: [

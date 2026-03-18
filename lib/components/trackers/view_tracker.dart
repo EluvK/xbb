@@ -54,23 +54,18 @@ class _TrackerMatrixState extends State<TrackerMatrix> {
       final sortedGroupedTrackers = {for (var k in sortedKeys) k: groupedTrackers[k]!};
       return LayoutBuilder(
         builder: (context, constraints) {
-          const double cardMaxWidth = 580.0;
-          const double gridSpacing = 12.0;
-          const double horizontalPadding = 24.0;
+          const double cardMaxWidth = 640.0;
+          const double cardMinWidth = 340.0;
+          const double cardSpacing = 12.0;
+          const double pagePadding = 12.0;
 
-          int crossAxisCount = (constraints.maxWidth / (cardMaxWidth + gridSpacing)).floor();
-          crossAxisCount = crossAxisCount < 1 ? 1 : crossAxisCount;
+          final double contentMaxWidth = (constraints.maxWidth - pagePadding * 2).clamp(0.0, double.infinity);
+          int columns = ((contentMaxWidth + cardSpacing) / (cardMinWidth + cardSpacing)).floor();
+          if (columns < 1) columns = 1;
 
-          double contentWidth = (crossAxisCount * cardMaxWidth) + ((crossAxisCount - 1) * gridSpacing);
-          double sideMargin = 12.0;
-          if (constraints.maxWidth > contentWidth + horizontalPadding) {
-            sideMargin = (constraints.maxWidth - contentWidth) / 2;
-          }
-
-          final double availableWidth = constraints.maxWidth - (sideMargin * 2);
-          final double itemWidth = (availableWidth - (crossAxisCount - 1) * gridSpacing) / crossAxisCount;
-          final double fixedHeight = (itemWidth * 0.34).clamp(132.0, 164.0);
-          final double dynamicAspectRatio = itemWidth / fixedHeight;
+          final double widthByColumns = (contentMaxWidth - (columns - 1) * cardSpacing) / columns;
+          final double cardWidth = widthByColumns.clamp(0.0, cardMaxWidth);
+          final double usedContentWidth = (cardWidth * columns) + ((columns - 1) * cardSpacing);
 
           return CustomScrollView(
             slivers: sortedGroupedTrackers.entries.map((entry) {
@@ -80,34 +75,46 @@ class _TrackerMatrixState extends State<TrackerMatrix> {
               return SliverMainAxisGroup(
                 slivers: [
                   SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: sideMargin, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(horizontal: pagePadding, vertical: 8.0),
                     sliver: SliverToBoxAdapter(
-                      child: Text(
-                        category,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: usedContentWidth,
+                          child: Text(
+                            category,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                   SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: sideMargin),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        mainAxisSpacing: gridSpacing,
-                        crossAxisSpacing: gridSpacing,
-                        childAspectRatio: dynamicAspectRatio,
+                    padding: const EdgeInsets.symmetric(horizontal: pagePadding),
+                    sliver: SliverToBoxAdapter(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: usedContentWidth,
+                          child: Wrap(
+                            spacing: cardSpacing,
+                            runSpacing: cardSpacing,
+                            children: items.map((item) {
+                              final records = recordController.registerFilterSubscription(
+                                filterKey: 'tracker-records-${item.id}',
+                                filters: [ParentIdFilter(item.id)],
+                              );
+                              return SizedBox(
+                                width: cardWidth,
+                                child: TrackerCard(item: item, records: records),
+                              );
+                            }).toList(),
+                          ),
+                        ),
                       ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = items[index];
-                        final records = Get.find<TrackerRecordController>().registerFilterSubscription(
-                          filterKey: 'tracker-records-${item.id}',
-                          filters: [ParentIdFilter(item.id)],
-                        );
-                        return TrackerCard(item: item, records: records);
-                      }, childCount: items.length),
                     ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),

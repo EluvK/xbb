@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/utils/double_click.dart';
@@ -241,31 +243,87 @@ class InlineColorPickerButton extends StatefulWidget {
 
 class _InlineColorPickerButtonState extends State<InlineColorPickerButton> {
   bool expanded = false;
+  Timer? _autoCollapseTimer;
+
+  void _cancelAutoCollapseTimer() {
+    _autoCollapseTimer?.cancel();
+    _autoCollapseTimer = null;
+  }
+
+  void _startAutoCollapseTimer() {
+    _cancelAutoCollapseTimer();
+    _autoCollapseTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && expanded) {
+        setState(() => expanded = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _cancelAutoCollapseTimer();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
-      child: expanded
-          ? ColorPickerButtons(
-              selectedTag: widget.value,
-              onSelected: (tag) {
-                widget.onSelected(tag);
-                // should wait for inner animation to finish
-                Future.delayed(const Duration(milliseconds: 200), () {
-                  if (mounted) {
-                    setState(() => expanded = false);
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOutCubic,
+      alignment: Alignment.centerLeft,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 280),
+        reverseDuration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: SizeTransition(sizeFactor: curved, axis: Axis.horizontal, axisAlignment: -1.0, child: child),
+          );
+        },
+        layoutBuilder: (currentChild, previousChildren) {
+          return Stack(
+            alignment: Alignment.centerLeft,
+            children: [...previousChildren, if (currentChild != null) currentChild],
+          );
+        },
+        child: expanded
+            ? ColorPickerButtons(
+                key: const ValueKey('picker-expanded'),
+                selectedTag: widget.value,
+                onSelected: (tag) {
+                  _cancelAutoCollapseTimer();
+                  widget.onSelected(tag);
+                  // should wait for inner animation to finish
+                  Future.delayed(const Duration(milliseconds: 200), () {
+                    if (mounted) {
+                      setState(() => expanded = false);
+                    }
+                  });
+                },
+              )
+            : IconButton(
+                key: const ValueKey('picker-collapsed'),
+                icon: Icon(
+                  Icons.color_lens_rounded,
+                  color: widget.value.toColor() == Colors.transparent ? null : widget.value.toColor(),
+                ),
+                onPressed: () => setState(() {
+                  expanded = !expanded;
+                  if (expanded) {
+                    _startAutoCollapseTimer();
+                  } else {
+                    _cancelAutoCollapseTimer();
                   }
-                });
-              },
-            )
-          : IconButton(
-              icon: Icon(
-                Icons.color_lens_rounded,
-                color: widget.value.toColor() == Colors.transparent ? null : widget.value.toColor(),
+                }),
               ),
-              onPressed: () => setState(() => expanded = !expanded),
-            ),
+      ),
     );
   }
 }
