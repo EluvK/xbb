@@ -15,7 +15,7 @@ class ViewPostPage extends StatelessWidget {
     final RepoController repoController = Get.find<RepoController>();
     return Scaffold(
       appBar: AppBar(
-        title: Text('view_post'.trParams({"postName": post.body.title})),
+        title: Text('post_page_title_view'.trParams({"postName": post.body.title})),
         actions: [
           debugOnlyWidget(
             IconButton(

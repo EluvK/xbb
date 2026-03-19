@@ -234,21 +234,41 @@ class _TranslationHelper {
     },
 
     // --- Pages: Route Titles (页面标题/动态参数) ---
-    "new_post": {
+    "home_bar_title_note": {
+      "en_US": "Notes",
+      "zh_CN": "笔记",
+    },
+    "home_bar_title_tracker": {
+      "en_US": "Tracker",
+      "zh_CN": "追踪",
+    },
+    "home_bar_title_setting": {
+      "en_US": "Settings",
+      "zh_CN": "设置",
+    },
+    "post_page_title_new": {
       "en_US": "New Post",
       "zh_CN": "新建帖子",
     },
-    "edit_post": {
+    "post_page_title_edit": {
       "en_US": "Edit Post: @postName",
       "zh_CN": "编辑帖子: @postName",
     },
-    "view_post": {
+    "post_page_title_view": {
       "en_US": "View Post: @postName",
       "zh_CN": "查看帖子: @postName",
     },
-    "edit_repo": {
+    "repo_page_title_edit": {
       "en_US": "Edit Repo: @repoName",
       "zh_CN": "编辑仓库: @repoName",
+    },
+    "tracker_page_title_edit": {
+      "en_US": "Edit Tracker",
+      "zh_CN": "编辑追踪器",
+    },
+    "tracker_page_title_add": {
+      "en_US": "Add Tracker",
+      "zh_CN": "新增追踪器",
     },
 
     // --- Utils: Feedback & Sync (提示与同步结果) ---
@@ -334,14 +354,6 @@ class _TranslationHelper {
     "tracker_no_selection": {
       "en_US": "No tracker selected, should pass tracker here.",
       "zh_CN": "未选择追踪器，应该传入 tracker 参数。",
-    },
-    "tracker_page_title_edit": {
-      "en_US": "Edit Tracker",
-      "zh_CN": "编辑追踪器",
-    },
-    "tracker_page_title_add": {
-      "en_US": "Add Tracker",
-      "zh_CN": "新增追踪器",
     },
     "tracker_category": {
       "en_US": "Category",

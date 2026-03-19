@@ -27,10 +27,10 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   HomeTabIndex _lastSelectedTab = HomeTabIndex.notes;
 
   final Map<HomeTabIndex, Tab> _allTabs = {
-    HomeTabIndex.notes: Tab(text: 'Notes', icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
-    HomeTabIndex.tracker: Tab(text: 'Tracker', icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon))),
+    HomeTabIndex.notes: Tab(text: 'home_bar_title_note'.tr, icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
+    HomeTabIndex.tracker: Tab(text: 'home_bar_title_tracker'.tr, icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon))),
     HomeTabIndex.todo2: const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
-    HomeTabIndex.settings: Tab(text: 'Settings', icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
+    HomeTabIndex.settings: Tab(text: 'home_bar_title_setting'.tr, icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
   };
 
   List<HomeTabIndex> get _activeIndices {
@@ -101,6 +101,17 @@ class _HomePage extends GetResponsiveView {
           ),
           appBar: AppBar(title: _AppBar(index: currentTab), titleSpacing: 0.0),
           body: _RightMain(index: currentTab),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: tabController.index,
+            onDestinationSelected: (index) {
+              if (index != tabController.index) {
+                tabController.animateTo(index);
+              }
+            },
+            destinations: tabs
+                .map((tab) => NavigationDestination(icon: tab.icon ?? const Icon(Icons.circle), label: tab.text ?? ''))
+                .toList(),
+          ),
         );
       },
     );
@@ -250,10 +261,13 @@ class _AppBar extends StatelessWidget {
           ],
         );
       case HomeTabIndex.tracker:
-        return const Text('Tracker');
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [Text('home_bar_title_tracker'.tr), const _GlobalColorController()],
+        );
       case HomeTabIndex.todo2:
       case HomeTabIndex.settings:
-        return const Text('Settings');
+        return Text('home_bar_title_setting'.tr);
     }
   }
 }

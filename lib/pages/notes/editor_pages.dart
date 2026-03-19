@@ -34,7 +34,7 @@ class EditPostPage extends StatelessWidget {
       return withPopAlert(
         context,
         Scaffold(
-          appBar: AppBar(title: Text('new_post'.tr)),
+          appBar: AppBar(title: Text('post_page_title_new'.tr)),
           body: const PostEditor(postItem: null),
         ),
       );
@@ -42,7 +42,7 @@ class EditPostPage extends StatelessWidget {
     return withPopAlert(
       context,
       Scaffold(
-        appBar: AppBar(title: Text('edit_post'.trParams({'postName': post.body.title}))),
+        appBar: AppBar(title: Text('post_page_title_edit'.trParams({'postName': post.body.title}))),
         body: PostEditor(postItem: post),
       ),
     );
@@ -60,7 +60,7 @@ class EditRepoPage extends StatelessWidget {
     // withPopAlert(
     // context,
     Scaffold(
-      appBar: AppBar(title: Text('edit_repo'.trParams({'repoName': repo.body.name}))),
+      appBar: AppBar(title: Text('repo_page_title_edit'.trParams({'repoName': repo.body.name}))),
       body: RepoEditor(repoItem: repo),
       // ),
     );
