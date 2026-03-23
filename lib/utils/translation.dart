@@ -168,6 +168,10 @@ class _TranslationHelper {
       "en_US": "Quick Login",
       "zh_CN": "快速登录",
     },
+    "quick_login_hint": {
+      "en_US": "Click the avatar to login with saved credentials.",
+      "zh_CN": "点击头像使用保存的凭据登录",
+    },
     "non_quick_login_hint": {
       "en_US": "No quick login info yet.",
       "zh_CN": "暂无快速登录信息",

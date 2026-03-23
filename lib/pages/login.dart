@@ -284,7 +284,7 @@ class _LoginBodyState extends State<LoginBody> {
     if (quickLogins.isEmpty) {
       return Text('non_quick_login_hint'.tr);
     }
-    return Wrap(
+    var loginMatrix = Wrap(
       spacing: 8,
       runSpacing: 8,
       children: quickLogins.entries.map((entry) {
@@ -337,6 +337,13 @@ class _LoginBodyState extends State<LoginBody> {
           ],
         );
       }).toList(),
+    );
+    return Column(
+      children: [
+        Text('quick_login_hint'.tr, style: const TextStyle(fontSize: 12)),
+        const SizedBox(height: 10),
+        loginMatrix,
+      ],
     );
   }
 }
