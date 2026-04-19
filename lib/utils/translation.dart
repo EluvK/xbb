@@ -309,6 +309,14 @@ class _TranslationHelper {
       "en_US": "Enable Tunnel",
       "zh_CN": "启用隧道",
     },
+    "ping_latency_test": {
+      "en_US": "Test Latency",
+      "zh_CN": "测试延迟",
+    },
+    "ping_latency_testing": {
+      "en_US": "Testing...",
+      "zh_CN": "测试中...",
+    },
     "app_theme_mode": {
       "en_US": "Theme Mode",
       "zh_CN": "主题模式",

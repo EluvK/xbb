@@ -53,14 +53,10 @@ Future<void> onReadySyncAll() async {
   final postController = Get.find<PostController>();
   final commentController = Get.find<CommentController>();
   final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
-  try {
-    final result = await ssClient.checkHealth();
-    if (!result) {
-      print('SyncStore health check failed, skipping initial sync.');
-      flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
-      return;
-    }
-  } catch (e) {
+  final latency = await ssClient.pingLatencyMs();
+  if (latency < 0) {
+    print('SyncStore health check failed, skipping initial sync.');
+    flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
     return;
   }
   try {

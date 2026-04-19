@@ -66,12 +66,12 @@ class SyncStoreControl extends GetxController {
     }
   }
 
-  Future<bool> checkHealth() async {
+  Future<int> pingLatencyMs() async {
     try {
-      return client.value!.checkHealth();
-    } on ApiException catch (e) {
-      print('Error during health check: ${e.message}');
-      rethrow;
+      return client.value!.pingLatencyMs();
+    } catch (e) {
+      print('Error during ping test: $e');
+      return -1;
     }
   }
 

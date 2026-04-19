@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/utils.dart';
@@ -15,6 +16,8 @@ class CommonSettings extends StatefulWidget {
 
 class _CommonSettingsState extends State<CommonSettings> {
   final settingController = Get.find<SettingController>();
+  bool _isPinging = false;
+  int? _pingLatencyMs;
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +36,30 @@ class _CommonSettingsState extends State<CommonSettings> {
               child(languageButton()),
               child(fontScaleButton()),
               const Divider(),
-              Text('syncstore_setting'.tr),
+              Wrap(
+                spacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text('syncstore_setting'.tr),
+                  PingLatencyInline(
+                    isLoading: _isPinging,
+                    latencyMs: _pingLatencyMs,
+                    onRefresh: _isPinging ? null : testPingLatency,
+                  ),
+                ],
+              ),
               child(
                 TextInputWidget(
                   title: SyncStoreInputMetaEnum.address,
                   initialValue: settingController.syncStoreUrl,
-                  onFinished: (value) {
+                  onFinished: (value) async {
                     settingController.updateSyncStoreSetting(baseUrl: value);
+                    await reInitSyncStoreController();
+                    if (!mounted) {
+                      return;
+                    }
                     setState(() {
-                      reInitSyncStoreController();
+                      _pingLatencyMs = null;
                     });
                   },
                 ),
@@ -50,11 +68,15 @@ class _CommonSettingsState extends State<CommonSettings> {
                 BoolSelectorInputWidget(
                   title: SyncStoreInputMetaEnum.enableTunnel,
                   initialValue: settingController.syncStoreHpkeEnabled,
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     print('value: $value');
                     settingController.updateSyncStoreSetting(enableHpke: value);
+                    await reInitSyncStoreController();
+                    if (!mounted) {
+                      return;
+                    }
                     setState(() {
-                      reInitSyncStoreController();
+                      _pingLatencyMs = null;
                     });
                   },
                 ),
@@ -157,6 +179,23 @@ class _CommonSettingsState extends State<CommonSettings> {
       label: "${((settingController.fontScale - 1) * 100).toStringAsFixed(0)}%",
     );
     return UserDefinedInputWidget(title: AppSettingMetaEnum.fontScale, widget: btn);
+  }
+
+  Future<void> testPingLatency() async {
+    if (_isPinging) {
+      return;
+    }
+    setState(() {
+      _isPinging = true;
+    });
+    final latency = await Get.find<SyncStoreControl>().pingLatencyMs();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _pingLatencyMs = latency >= 0 ? latency : null;
+      _isPinging = false;
+    });
   }
 
   // ---

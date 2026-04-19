@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
@@ -53,6 +54,8 @@ class _LoginBodyState extends State<LoginBody> {
   Timer? _serviceCheckTimer;
   bool _isChecking = false;
   bool _isLoggingIn = false;
+  bool _isPinging = false;
+  int? _pingLatencyMs;
 
   @override
   Widget build(BuildContext context) {
@@ -78,9 +81,9 @@ class _LoginBodyState extends State<LoginBody> {
           title: SyncStoreInputMetaEnum.address,
           initialValue: settingController.syncStoreUrl,
           onFinished: (value) async {
-            // print('onFinished: $value');
             settingController.updateSyncStoreSetting(baseUrl: value);
             await reInitSyncStoreController();
+            _pingLatencyMs = null;
             checkServiceAvailability();
             setState(() {});
           },
@@ -92,6 +95,7 @@ class _LoginBodyState extends State<LoginBody> {
             print('value: $value');
             settingController.updateSyncStoreSetting(enableHpke: value);
             await reInitSyncStoreController();
+            _pingLatencyMs = null;
             setState(() {});
           },
         ),
@@ -105,8 +109,6 @@ class _LoginBodyState extends State<LoginBody> {
     focus.addListener(() {
       if (!focus.hasFocus && nameController.text.isNotEmpty) {
         if (settingController.userName == nameController.text) return;
-        // settingController.userName = nameController.text;
-        // todo check name?
         setState(() {});
       }
     });
@@ -126,18 +128,33 @@ class _LoginBodyState extends State<LoginBody> {
     setState(() {
       serviceAvailability = ServiceAvailability.checking;
     });
-    try {
-      final result = await ssClient.checkHealth();
-      setState(() {
-        serviceAvailability = result ? ServiceAvailability.available : ServiceAvailability.notAvailable;
-      });
-    } catch (e) {
-      setState(() {
-        serviceAvailability = ServiceAvailability.notAvailable;
-      });
-    } finally {
-      _isChecking = false;
+    final latency = await ssClient.pingLatencyMs();
+    if (!mounted) {
+      return;
     }
+    setState(() {
+      _pingLatencyMs = latency >= 0 ? latency : null;
+      serviceAvailability = latency >= 0 ? ServiceAvailability.available : ServiceAvailability.notAvailable;
+      _isChecking = false;
+    });
+  }
+
+  Future<void> testPingLatency() async {
+    if (_isPinging) {
+      return;
+    }
+    setState(() {
+      _isPinging = true;
+    });
+    final latency = await ssClient.pingLatencyMs();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _pingLatencyMs = latency >= 0 ? latency : null;
+      serviceAvailability = latency >= 0 ? ServiceAvailability.available : ServiceAvailability.notAvailable;
+      _isPinging = false;
+    });
   }
 
   Widget _buildStatusIndicator() {
@@ -173,6 +190,12 @@ class _LoginBodyState extends State<LoginBody> {
           const SizedBox(width: 8),
           const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2)),
         ],
+        const SizedBox(width: 8),
+        PingLatencyInline(
+          isLoading: _isPinging,
+          latencyMs: _pingLatencyMs,
+          onRefresh: _isPinging ? null : testPingLatency,
+        ),
       ],
     );
   }
@@ -266,7 +289,6 @@ class _LoginBodyState extends State<LoginBody> {
                     visualDensity: VisualDensity.compact,
                     value: _saveForQuickLogin,
                     onChanged: null,
-                    // (value) => setState(() => _saveForQuickLogin = value ?? false),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -288,9 +310,7 @@ class _LoginBodyState extends State<LoginBody> {
       spacing: 8,
       runSpacing: 8,
       children: quickLogins.entries.map((entry) {
-        // final userId = entry.key;
         final UserInfo info = entry.value;
-        // final password = entry.value;
         return Column(
           children: [
             Stack(
@@ -322,7 +342,6 @@ class _LoginBodyState extends State<LoginBody> {
                       constraints: const BoxConstraints(),
                       onPressed: onPressed,
                       icon: const Icon(Icons.close, size: 24, color: Colors.red),
-                      // tooltip: 'delete'.tr,
                     ),
                     onDoubleClick: () {
                       settingController.updateQuickLoginInfo(userId: info.id, userInfo: null);
