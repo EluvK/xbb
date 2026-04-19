@@ -56,50 +56,37 @@ class _LoginBodyState extends State<LoginBody> {
   bool _isLoggingIn = false;
   bool _isPinging = false;
   int? _pingLatencyMs;
+  bool _showManualLogin = false;
+  String? _quickLoginUserId;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // add a title, and maybe server status here.
-        Text('login_page_title'.tr, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        _buildStatusIndicator(),
-        _nameEditor(),
-        const SizedBox(height: 10),
-        _passwordEditor(),
-        const SizedBox(height: 20),
-        _loginButton(),
-        const Divider(),
-        Text('quick_login_title'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        _buildQuickLoginList(),
-        const SizedBox(height: 10),
-        const Divider(),
-        Text('syncstore_setting'.tr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        TextInputWidget(
-          title: SyncStoreInputMetaEnum.address,
-          initialValue: settingController.syncStoreUrl,
-          onFinished: (value) async {
-            settingController.updateSyncStoreSetting(baseUrl: value);
-            await reInitSyncStoreController();
-            _pingLatencyMs = null;
-            checkServiceAvailability();
-            setState(() {});
-          },
-        ),
-        BoolSelectorInputWidget(
-          title: SyncStoreInputMetaEnum.enableTunnel,
-          initialValue: settingController.syncStoreHpkeEnabled,
-          onChanged: (value) async {
-            print('value: $value');
-            settingController.updateSyncStoreSetting(enableHpke: value);
-            await reInitSyncStoreController();
-            _pingLatencyMs = null;
-            setState(() {});
-          },
-        ),
-      ],
+    final hasQuickLogins = settingController.quickLogins.value.quickLoginMap.isNotEmpty;
+
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('login_page_title'.tr, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          _buildStatusIndicator(),
+          const SizedBox(height: 20),
+          if (hasQuickLogins) ...[
+            _buildQuickLoginList(),
+            const SizedBox(height: 12),
+            _buildManualLoginToggle(),
+            AnimatedCrossFade(
+              firstChild: const SizedBox(width: double.infinity),
+              secondChild: _buildManualLoginForm(),
+              crossFadeState: _showManualLogin ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 200),
+            ),
+          ] else ...[
+            _buildManualLoginForm(),
+          ],
+          const SizedBox(height: 8),
+          _buildServerSettings(),
+        ],
+      ),
     );
   }
 
@@ -155,6 +142,85 @@ class _LoginBodyState extends State<LoginBody> {
       serviceAvailability = latency >= 0 ? ServiceAvailability.available : ServiceAvailability.notAvailable;
       _isPinging = false;
     });
+  }
+
+  Widget _buildManualLoginToggle() {
+    return InkWell(
+      onTap: () => setState(() => _showManualLogin = !_showManualLogin),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _showManualLogin ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'login_with_different_account'.tr,
+              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildManualLoginForm() {
+    return Column(
+      children: [
+        _nameEditor(),
+        const SizedBox(height: 10),
+        _passwordEditor(),
+        const SizedBox(height: 20),
+        _loginButton(),
+      ],
+    );
+  }
+
+  Widget _buildServerSettings() {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.settings, size: 16),
+            const SizedBox(width: 6),
+            Text('syncstore_setting'.tr, style: const TextStyle(fontSize: 14)),
+          ],
+        ),
+        tilePadding: EdgeInsets.zero,
+        children: [
+          TextInputWidget(
+            title: SyncStoreInputMetaEnum.address,
+            initialValue: settingController.syncStoreUrl,
+            onFinished: (value) async {
+              settingController.updateSyncStoreSetting(baseUrl: value);
+              await reInitSyncStoreController();
+              _pingLatencyMs = null;
+              checkServiceAvailability();
+              setState(() {});
+            },
+          ),
+          BoolSelectorInputWidget(
+            title: SyncStoreInputMetaEnum.enableTunnel,
+            initialValue: settingController.syncStoreHpkeEnabled,
+            onChanged: (value) async {
+              print('value: $value');
+              settingController.updateSyncStoreSetting(enableHpke: value);
+              await reInitSyncStoreController();
+              _pingLatencyMs = null;
+              setState(() {});
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStatusIndicator() {
@@ -261,7 +327,10 @@ class _LoginBodyState extends State<LoginBody> {
       flushBar(FlushLevel.WARNING, 'login_failed'.tr, 'login_failed_message'.tr);
     } finally {
       if (mounted) {
-        setState(() => _isLoggingIn = false);
+        setState(() {
+          _isLoggingIn = false;
+          _quickLoginUserId = null;
+        });
       }
     }
   }
@@ -285,11 +354,7 @@ class _LoginBodyState extends State<LoginBody> {
                 SizedBox(
                   width: 24,
                   height: 24,
-                  child: Checkbox(
-                    visualDensity: VisualDensity.compact,
-                    value: _saveForQuickLogin,
-                    onChanged: null,
-                  ),
+                  child: Checkbox(visualDensity: VisualDensity.compact, value: _saveForQuickLogin, onChanged: null),
                 ),
                 const SizedBox(width: 8),
                 Text('save_for_quick_login_hint'.tr, style: const TextStyle(fontSize: 12)),
@@ -304,64 +369,81 @@ class _LoginBodyState extends State<LoginBody> {
   Widget _buildQuickLoginList() {
     final quickLogins = settingController.quickLogins.value.quickLoginMap;
     if (quickLogins.isEmpty) {
-      return Text('non_quick_login_hint'.tr);
+      return const SizedBox.shrink();
     }
-    var loginMatrix = Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: quickLogins.entries.map((entry) {
-        final UserInfo info = entry.value;
-        return Column(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                InkWell(
-                  customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  onTap: () {
-                    nameController.text = info.name;
-                    passwordController.text = info.password;
-                    _saveForQuickLogin = true;
-                    execLogin();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(4.0),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: buildUserAvatar(context, info.avatarUrl, size: 36, selected: false),
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: DoubleClickButton(
-                    buttonBuilder: (onPressed) => IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: onPressed,
-                      icon: const Icon(Icons.close, size: 24, color: Colors.red),
-                    ),
-                    onDoubleClick: () {
-                      settingController.updateQuickLoginInfo(userId: info.id, userInfo: null);
-                    },
-                    firstClickHint: 'delete_quick_login_message'.trParams({'userName': info.name}),
-                    upperPosition: true,
-                  ),
-                ),
-              ],
-            ),
-            Text(info.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ],
-        );
-      }).toList(),
-    );
     return Column(
       children: [
-        Text('quick_login_hint'.tr, style: const TextStyle(fontSize: 12)),
-        const SizedBox(height: 10),
-        loginMatrix,
+        Text('quick_login_hint'.tr, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 20,
+          runSpacing: 14,
+          children: quickLogins.entries.map((entry) {
+            final UserInfo info = entry.value;
+            return Column(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    InkWell(
+                      customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      onTap: _isLoggingIn
+                          ? null
+                          : () {
+                              nameController.text = info.name;
+                              passwordController.text = info.password;
+                              _saveForQuickLogin = true;
+                              setState(() => _quickLoginUserId = info.id);
+                              execLogin();
+                            },
+                      child: Container(
+                        padding: const EdgeInsets.all(6.0),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _quickLoginUserId == info.id
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Opacity(
+                              opacity: _quickLoginUserId == info.id ? 0.35 : 1.0,
+                              child: buildUserAvatar(context, info.avatarUrl, size: 48, selected: false),
+                            ),
+                            if (_quickLoginUserId == info.id)
+                              const SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 3)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: DoubleClickButton(
+                        buttonBuilder: (onPressed) => IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: onPressed,
+                          icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                        ),
+                        onDoubleClick: () {
+                          settingController.updateQuickLoginInfo(userId: info.id, userInfo: null);
+                        },
+                        firstClickHint: 'delete_quick_login_message'.trParams({'userName': info.name}),
+                        upperPosition: true,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(info.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              ],
+            );
+          }).toList(),
+        ),
       ],
     );
   }

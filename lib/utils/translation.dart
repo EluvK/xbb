@@ -184,6 +184,10 @@ class _TranslationHelper {
       "en_US": "Delete quick login info for @userName?",
       "zh_CN": "删除 `@userName` 的快速登录信息吗？",
     },
+    "login_with_different_account": {
+      "en_US": "Use another account",
+      "zh_CN": "使用其他账号登录",
+    },
     "service_status_ok": {
       "en_US": "Service Available",
       "zh_CN": "服务在线",
