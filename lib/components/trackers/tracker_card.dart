@@ -47,7 +47,7 @@ class _TrackerCardState extends State<TrackerCard> {
     super.dispose();
   }
 
-  Widget _buildEventWidget(BuildContext context, TrackerConfig config) {
+  Widget _buildEventWidget(BuildContext context, TrackerConfig config, {double reserveRight = 0}) {
     return Obx(() {
       return config.map(
         event: (c) {
@@ -66,7 +66,15 @@ class _TrackerCardState extends State<TrackerCard> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                Padding(
+                  padding: EdgeInsets.only(right: reserveRight),
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               ],
             );
           }
@@ -82,11 +90,14 @@ class _TrackerCardState extends State<TrackerCard> {
                 backgroundColor: barColor.withValues(alpha: 0.14),
               ),
               const SizedBox(height: 4),
-              Text(
-                '$label • ${'tracker_period_days'.trParams({'days': period.toString()})}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+              Padding(
+                padding: EdgeInsets.only(right: reserveRight),
+                child: Text(
+                  '$label • ${'tracker_period_days'.trParams({'days': period.toString()})}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ],
           );
@@ -97,7 +108,7 @@ class _TrackerCardState extends State<TrackerCard> {
     });
   }
 
-  Widget _buildMilestoneWidget(BuildContext context, TrackerConfig config) {
+  Widget _buildMilestoneWidget(BuildContext context, TrackerConfig config, {double reserveRight = 0}) {
     return Obx(() {
       return config.map(
         event: (c) => const SizedBox.shrink(),
@@ -182,11 +193,14 @@ class _TrackerCardState extends State<TrackerCard> {
                 backgroundColor: barColor.withValues(alpha: 0.18),
               ),
               const SizedBox(height: 4),
-              Text(
-                '$displayPercent% • ${'tracker_current_target_value'.trParams({'current': displayCurrentValue, 'target': displayTargetValue})}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+              Padding(
+                padding: EdgeInsets.only(right: reserveRight),
+                child: Text(
+                  '$displayPercent% • ${'tracker_current_target_value'.trParams({'current': displayCurrentValue, 'target': displayTargetValue})}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ],
           );
@@ -196,7 +210,7 @@ class _TrackerCardState extends State<TrackerCard> {
     });
   }
 
-  Widget _buildAnniversaryWidget(BuildContext context, TrackerConfig config, Color color) {
+  Widget _buildAnniversaryWidget(BuildContext context, TrackerConfig config, Color color, {double reserveRight = 0}) {
     return config.map(
       event: (c) => const SizedBox.shrink(),
       milestone: (c) => const SizedBox.shrink(),
@@ -232,11 +246,14 @@ class _TrackerCardState extends State<TrackerCard> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
-                'tracker_since_base_days'.trParams({'days': daysSinceBase.toString()}),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+              Padding(
+                padding: EdgeInsets.only(right: reserveRight),
+                child: Text(
+                  'tracker_since_base_days'.trParams({'days': daysSinceBase.toString()}),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ],
           );
@@ -247,18 +264,24 @@ class _TrackerCardState extends State<TrackerCard> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'tracker_passed_days'.trParams({'days': total.toString()}),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+              Padding(
+                padding: EdgeInsets.only(right: reserveRight),
+                child: Text(
+                  'tracker_passed_days'.trParams({'days': total.toString()}),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
               const SizedBox(height: 4),
-              Text(
-                'tracker_next_at_days'.trParams({'next': next.toString(), 'until': until.toString()}),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+              Padding(
+                padding: EdgeInsets.only(right: reserveRight),
+                child: Text(
+                  'tracker_next_at_days'.trParams({'next': next.toString(), 'until': until.toString()}),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ],
           );
@@ -280,11 +303,14 @@ class _TrackerCardState extends State<TrackerCard> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
-                'tracker_base_date_value'.trParams({'date': baseDateLabel}),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+              Padding(
+                padding: EdgeInsets.only(right: reserveRight),
+                child: Text(
+                  'tracker_base_date_value'.trParams({'date': baseDateLabel}),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ],
           );
@@ -321,13 +347,24 @@ class _TrackerCardState extends State<TrackerCard> {
           return Icons.repeat;
       }
     })();
+    final theme = Theme.of(context);
+    final neutralBg = theme.colorScheme.surfaceContainerLow;
+    final neutralBorder = theme.colorScheme.outlineVariant.withValues(alpha: 0.35);
+    final typeTintBg = typeColor.withValues(alpha: 0.1);
+    final typeTintEdge = typeColor.withValues(alpha: 0.28);
+    final UserManagerController userCtrl = Get.find<UserManagerController>();
+    final selfId = userCtrl.settingController.userId;
+    final ownedId = widget.item.owner;
+    final userProfile = userCtrl.getUserProfile(ownedId);
+    bool sharedToOthers = cachedAcl.any((p) => p.user != selfId);
+    bool sharedFromOthers = selfId != ownedId;
+    bool canEdit = oncePermissionCheck(TrackerFeatureRequires.update, ownedId, cachedAcl, null);
 
     var card = Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      // surfaceTintColor: showItem.colorTag.toColor() == Colors.transparent
-      //     ? null
-      //     : showItem.colorTag.toColor()?.withAlpha(132),
-      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Get.toNamed('/tracker/view-tracker', arguments: [widget.item]),
         onLongPress: () => {
@@ -347,203 +384,288 @@ class _TrackerCardState extends State<TrackerCard> {
             },
           ),
         },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 96),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // if (showItem.colorTag != ColorTag.none)
-                //   Icon(Icons.brightness_1_rounded, color: showItem.colorTag.toColor(), size: 16),
-                SizedBox(
-                  width: 60,
-                  child: Center(
-                    child: InkWell(
-                      onTap: _toggleActions,
-                      borderRadius: BorderRadius.circular(28),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(color: typeColor.withValues(alpha: 0.12), shape: BoxShape.circle),
-                            child: Icon(typeIcon, color: typeColor, size: 28),
-                          ),
-                          if (widget.item.syncStatus == SyncStatus.syncing)
-                            const Positioned(
-                              right: -4,
-                              top: -4,
-                              child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: neutralBg,
+            border: Border.all(color: neutralBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 96),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      color: typeColor.withValues(alpha: 0.42),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 60,
+                    child: Center(
+                      child: InkWell(
+                        onTap: _toggleActions,
+                        borderRadius: BorderRadius.circular(18),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              width: 54,
+                              height: 54,
+                              decoration: BoxDecoration(
+                                color: typeTintBg,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: typeTintEdge),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: typeColor.withValues(alpha: 0.18),
+                                    blurRadius: 12,
+                                    spreadRadius: -4,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(typeIcon, color: typeColor, size: 28),
                             ),
-                        ],
+                            if (widget.item.syncStatus == SyncStatus.syncing)
+                              const Positioned(
+                                right: -5,
+                                top: -5,
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    child: _showActions
-                        ? Container(
-                            key: const ValueKey('actions'),
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                IconButton(
-                                  tooltip: 'edit'.tr,
-                                  onPressed: () {
-                                    Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
-                                  },
-                                  icon: const Icon(Icons.edit),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: canEdit ? 24 : 0),
+                        child: _showActions
+                            ? Container(
+                                key: const ValueKey('actions'),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                InlineColorPickerButton(
-                                  value: widget.item.colorTag,
-                                  onSelected: (color) {
-                                    trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
-                                    setState(() {
-                                      showItem.colorTag = color;
-                                    });
-                                  },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'edit'.tr,
+                                      onPressed: () {
+                                        Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
+                                      },
+                                      icon: const Icon(Icons.edit),
+                                    ),
+                                    InlineColorPickerButton(
+                                      value: widget.item.colorTag,
+                                      onSelected: (color) {
+                                        trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
+                                        setState(() {
+                                          showItem.colorTag = color;
+                                        });
+                                      },
+                                    ),
+                                    DoubleClickButton(
+                                      buttonBuilder: (onPressed) => IconButton(
+                                        tooltip: 'delete'.tr,
+                                        onPressed: onPressed,
+                                        icon: const Icon(Icons.delete),
+                                      ),
+                                      onDoubleClick: () {
+                                        trackerController.deleteData(widget.item.id);
+                                        while (Get.routing.current == '/tracker/view-tracker') {
+                                          Navigator.pop(context);
+                                        }
+                                      },
+                                      firstClickHint: 'delete_tracker'.tr,
+                                      upperPosition: true,
+                                    ),
+                                  ],
                                 ),
-                                DoubleClickButton(
-                                  buttonBuilder: (onPressed) => IconButton(
-                                    tooltip: 'delete'.tr,
-                                    onPressed: onPressed,
-                                    icon: const Icon(Icons.delete),
-                                  ),
-                                  onDoubleClick: () {
-                                    trackerController.deleteData(widget.item.id);
-                                    while (Get.routing.current == '/tracker/view-tracker') {
-                                      Navigator.pop(context);
-                                    }
-                                  },
-                                  firstClickHint: 'delete_tracker'.tr,
-                                  upperPosition: true,
-                                ),
-                              ],
-                            ),
-                          )
-                        : Column(
-                            key: const ValueKey('content'),
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                t.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
+                              )
+                            : Column(
+                                key: const ValueKey('content'),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  if (t.description.isNotEmpty)
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          t.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: typeTintBg,
+                                          borderRadius: BorderRadius.circular(999),
+                                          border: Border.all(color: typeTintEdge),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (sharedFromOthers) ...[
+                                              const RotatedBox(
+                                                quarterTurns: 2,
+                                                child: Icon(
+                                                  Icons.switch_access_shortcut_outlined,
+                                                  size: 12,
+                                                  color: Colors.blueAccent,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 3),
+                                            ],
+                                            if (sharedToOthers) ...[
+                                              const Icon(
+                                                Icons.switch_access_shortcut_outlined,
+                                                size: 12,
+                                                color: Colors.orangeAccent,
+                                              ),
+                                              const SizedBox(width: 3),
+                                            ],
+                                            Text(
+                                              t.type,
+                                              style: theme.textTheme.labelSmall?.copyWith(
+                                                color: typeColor,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (t.description.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
                                     Text(
                                       t.description,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.bodySmall,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
                                     ),
+                                  ],
+                                  const SizedBox(height: 10),
+                                  if (t.type == 'milestone')
+                                    _buildMilestoneWidget(context, t.config, reserveRight: canEdit ? 72 : 0)
+                                  else if (t.type == 'anniversary')
+                                    _buildAnniversaryWidget(
+                                      context,
+                                      t.config,
+                                      typeColor,
+                                      reserveRight: canEdit ? 72 : 0,
+                                    )
+                                  else
+                                    _buildEventWidget(context, t.config, reserveRight: canEdit ? 72 : 0),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              if (t.type == 'milestone')
-                                _buildMilestoneWidget(context, t.config)
-                              else if (t.type == 'anniversary')
-                                _buildAnniversaryWidget(context, t.config, typeColor)
-                              else
-                                _buildEventWidget(context, t.config),
-                            ],
-                          ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
-    final UserManagerController userCtrl = Get.find<UserManagerController>();
-    final selfId = userCtrl.settingController.userId;
-    final ownedId = widget.item.owner;
-    final userProfile = userCtrl.getUserProfile(ownedId);
-    bool sharedToOthers = cachedAcl.any((p) => p.user != selfId);
-    bool sharedFromOthers = selfId != ownedId;
-    bool canEdit = oncePermissionCheck(TrackerFeatureRequires.update, ownedId, cachedAcl, null);
+    final hasTopMeta = userProfile != null || showItem.colorTag != ColorTag.none;
     return Stack(
       clipBehavior: Clip.none,
       children: [
         card,
         Positioned(
-          top: 4,
-          right: 4,
-          child: Row(
-            children: [
-              // Text(
-              //   'acl: ${cachedAcl.length}, canEdit: ${canEdit ? 'yes'.tr : 'no'.tr}',
-              //   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              // ),
-              if (sharedToOthers)
-                const Icon(Icons.switch_access_shortcut_outlined, size: 16, color: Colors.orangeAccent),
-              const SizedBox(width: 4),
-              if (userProfile != null) buildUserAvatar(context, userProfile.avatarUrl, size: 12, selected: false),
-              if (sharedFromOthers)
-                const RotatedBox(
-                  quarterTurns: 2,
-                  child: Icon(Icons.switch_access_shortcut_outlined, size: 16, color: Colors.blueAccent),
-                ),
-              const SizedBox(width: 4),
-              if (showItem.colorTag != ColorTag.none)
-                Icon(Icons.brightness_1_rounded, color: showItem.colorTag.toColor(), size: 14),
-              const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: typeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 96),
-                  child: Text(
-                    t.type,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: typeColor),
+          top: 6,
+          right: 8,
+          child: hasTopMeta
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.84),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.38)),
                   ),
-                ),
-              ),
-            ],
-          ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (userProfile != null) ...[
+                        buildUserAvatar(context, userProfile.avatarUrl, size: 13, selected: false),
+                        const SizedBox(width: 4),
+                      ],
+                      if (userProfile != null && showItem.colorTag != ColorTag.none) const SizedBox(width: 4),
+                      if (showItem.colorTag != ColorTag.none)
+                        Icon(Icons.circle, color: showItem.colorTag.toColor(), size: 9),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
         Positioned(
           bottom: 4,
-          right: 4,
-          child: Row(
-            children: [
-              if (canEdit)
-                IconButton(
-                  tooltip: 'edit'.tr,
-                  onPressed: () {
-                    Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
-                  },
-                  icon: const Icon(Icons.edit),
-                ),
-              InlineColorPickerButton(
-                value: widget.item.colorTag,
-                onSelected: (color) {
-                  trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
-                  setState(() {
-                    showItem.colorTag = color;
-                  });
-                },
-              ),
-            ],
-          ),
+          right: 8,
+          child: canEdit
+              ? Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _toggleActions,
+                    borderRadius: BorderRadius.circular(999),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.86),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.42)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedRotation(
+                            duration: const Duration(milliseconds: 180),
+                            turns: _showActions ? 0.125 : 0,
+                            child: Icon(
+                              _showActions ? Icons.close_rounded : Icons.tune_rounded,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(_showActions ? 'cancel'.tr : 'edit'.tr, style: Theme.of(context).textTheme.labelSmall),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );
