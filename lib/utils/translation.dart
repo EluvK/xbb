@@ -435,6 +435,26 @@ class _TranslationHelper {
       "en_US": "Numeric Contribution",
       "zh_CN": "数值贡献",
     },
+    "tracker_current_value": {
+      "en_US": "Current Value",
+      "zh_CN": "当前值",
+    },
+    "tracker_current_duration_minutes": {
+      "en_US": "Current Duration (minutes)",
+      "zh_CN": "当前时长(分钟)",
+    },
+    "tracker_progress_mode": {
+      "en_US": "Progress Mode",
+      "zh_CN": "进度模式",
+    },
+    "tracker_progress_mode_accumulate": {
+      "en_US": "Accumulate",
+      "zh_CN": "累计",
+    },
+    "tracker_progress_mode_latest": {
+      "en_US": "Latest Value",
+      "zh_CN": "最新值",
+    },
     "tracker_anniversary_content": {
       "en_US": "Anniversary Content",
       "zh_CN": "纪念内容",
@@ -490,6 +510,10 @@ class _TranslationHelper {
     "tracker_target_value": {
       "en_US": "Target: @value",
       "zh_CN": "目标: @value",
+    },
+    "tracker_current_target_value": {
+      "en_US": "Current: @current / Target: @target",
+      "zh_CN": "当前: @current / 目标: @target",
     },
     "tracker_today": {
       "en_US": "Today",

@@ -106,6 +106,7 @@ sealed class TrackerConfig with _$TrackerConfig {
   const factory TrackerConfig.milestone({
     required String goalType, // 'time' / 'number' / 'boolean'
     required String targetValue, // 统一存为 String，例如 "3600", "50.0", "true"
+    @Default('accumulate') String progressMode, // 'accumulate' / 'latest'
   }) = MilestoneTrackerConfig;
 
   // Anniversary (时间节点)

@@ -104,28 +104,67 @@ class _TrackerCardState extends State<TrackerCard> {
         milestone: (c) {
           final goalType = c.goalType;
           final target = double.tryParse(c.targetValue) ?? 0.0;
+          final progressMode = c.progressMode;
+          final sortedRecords = widget.records.toList()..sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
+          final latestValue = sortedRecords.isNotEmpty ? sortedRecords.first.body.value : null;
           var displayTargetValue = c.targetValue;
+          var displayCurrentValue = '0';
           double progress = 0.0;
           if (goalType == 'boolean') {
-            if (widget.records.isNotEmpty) {
+            if (progressMode == 'latest') {
+              final latestDone = latestValue == 'true';
+              progress = latestDone ? 1.0 : 0.0;
+              displayCurrentValue = latestDone ? '1' : '0';
+            } else if (widget.records.isNotEmpty) {
               final trueCount = widget.records.where((r) => r.body.value == 'true').length;
               progress = widget.records.isEmpty ? 0.0 : (trueCount / widget.records.length);
+              displayCurrentValue = '$trueCount/${widget.records.length}';
             }
           } else if (goalType == 'number') {
-            double sum = 0.0;
-            for (var r in widget.records) {
-              sum += double.tryParse(r.body.value ?? '') ?? 0.0;
+            if (progressMode == 'latest') {
+              final latest = double.tryParse(latestValue ?? '') ?? 0.0;
+              if (target > 0) progress = (latest / target).clamp(0.0, 1.0);
+              displayCurrentValue = latest
+                  .toStringAsFixed(2)
+                  .replaceFirst(RegExp(r'0+$'), '')
+                  .replaceFirst(RegExp(r'\.$'), '');
+            } else {
+              double sum = 0.0;
+              for (var r in widget.records) {
+                sum += double.tryParse(r.body.value ?? '') ?? 0.0;
+              }
+              if (target > 0) progress = (sum / target).clamp(0.0, 1.0);
+              displayCurrentValue = sum
+                  .toStringAsFixed(2)
+                  .replaceFirst(RegExp(r'0+$'), '')
+                  .replaceFirst(RegExp(r'\.$'), '');
             }
-            if (target > 0) progress = (sum / target).clamp(0.0, 1.0);
           } else if (goalType == 'time') {
-            Duration total = Duration.zero;
-            for (var r in widget.records) {
-              final minutes = int.tryParse(r.body.value ?? '') ?? 0;
-              total += Duration(minutes: minutes);
-            }
             final targetMinutes = target.toInt();
             final targetDuration = Duration(minutes: targetMinutes);
-            if (targetDuration.inMinutes > 0) progress = (total.inMinutes / targetDuration.inMinutes).clamp(0.0, 1.0);
+            if (progressMode == 'latest') {
+              final latestMinutes = int.tryParse(latestValue ?? '') ?? 0;
+              if (targetDuration.inMinutes > 0) {
+                progress = (latestMinutes / targetDuration.inMinutes).clamp(0.0, 1.0);
+              }
+              final currentHours = latestMinutes / 60;
+              final currentHourText = currentHours == currentHours.roundToDouble()
+                  ? currentHours.toStringAsFixed(0)
+                  : currentHours.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+              displayCurrentValue = 'tracker_hours_value'.trParams({'hours': currentHourText});
+            } else {
+              Duration total = Duration.zero;
+              for (var r in widget.records) {
+                final minutes = int.tryParse(r.body.value ?? '') ?? 0;
+                total += Duration(minutes: minutes);
+              }
+              if (targetDuration.inMinutes > 0) progress = (total.inMinutes / targetDuration.inMinutes).clamp(0.0, 1.0);
+              final currentHours = total.inMinutes / 60;
+              final currentHourText = currentHours == currentHours.roundToDouble()
+                  ? currentHours.toStringAsFixed(0)
+                  : currentHours.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+              displayCurrentValue = 'tracker_hours_value'.trParams({'hours': currentHourText});
+            }
             final hours = targetMinutes / 60;
             final hourText = hours == hours.roundToDouble()
                 ? hours.toStringAsFixed(0)
@@ -144,7 +183,7 @@ class _TrackerCardState extends State<TrackerCard> {
               ),
               const SizedBox(height: 4),
               Text(
-                '$displayPercent% • ${'tracker_target_value'.trParams({'value': displayTargetValue})}',
+                '$displayPercent% • ${'tracker_current_target_value'.trParams({'current': displayCurrentValue, 'target': displayTargetValue})}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,

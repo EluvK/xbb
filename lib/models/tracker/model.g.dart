@@ -33,12 +33,14 @@ Map<String, dynamic> _$EventTrackerConfigToJson(EventTrackerConfig instance) => 
 MilestoneTrackerConfig _$MilestoneTrackerConfigFromJson(Map<String, dynamic> json) => MilestoneTrackerConfig(
   goalType: json['goal_type'] as String,
   targetValue: json['target_value'] as String,
+  progressMode: json['progress_mode'] as String? ?? 'accumulate',
   $type: json['type'] as String?,
 );
 
 Map<String, dynamic> _$MilestoneTrackerConfigToJson(MilestoneTrackerConfig instance) => <String, dynamic>{
   'goal_type': instance.goalType,
   'target_value': instance.targetValue,
+  'progress_mode': instance.progressMode,
   'type': instance.$type,
 };
 

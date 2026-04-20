@@ -336,6 +336,9 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                 );
               }
               if (c.goalType == 'time') {
+                final valueTitle = c.progressMode == 'latest'
+                    ? 'tracker_current_duration_minutes'.tr
+                    : 'tracker_duration_minutes'.tr;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -368,7 +371,7 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                     ),
                     const SizedBox(height: 6),
                     TextInputWidget(
-                      title: _LocalTitle('tracker_duration_minutes'.tr, Icons.timer_outlined, Colors.purple),
+                      title: _LocalTitle(valueTitle, Icons.timer_outlined, Colors.purple),
                       initialValue: _valueController.text,
                       onFinished: (v) => _valueController.text = v,
                       inputType: const TextInputType.numberWithOptions(decimal: false),
@@ -376,12 +379,15 @@ class _ViewTrackerDetailState extends State<ViewTrackerDetail> {
                   ],
                 );
               }
+              final valueTitle = c.progressMode == 'latest'
+                  ? 'tracker_current_value'.tr
+                  : 'tracker_numeric_contribution'.tr;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   timePicker,
                   TextInputWidget(
-                    title: _LocalTitle('tracker_numeric_contribution'.tr, Icons.numbers, Colors.purple),
+                    title: _LocalTitle(valueTitle, Icons.numbers, Colors.purple),
                     initialValue: _valueController.text,
                     onFinished: (v) => _valueController.text = v,
                     inputType: const TextInputType.numberWithOptions(decimal: true),

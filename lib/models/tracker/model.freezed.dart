@@ -463,11 +463,11 @@ return anniversary(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int periodDays)?  event,TResult Function( String goalType,  String targetValue)?  milestone,TResult Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int periodDays)?  event,TResult Function( String goalType,  String targetValue,  String progressMode)?  milestone,TResult Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig() when event != null:
 return event(_that.periodDays);case MilestoneTrackerConfig() when milestone != null:
-return milestone(_that.goalType,_that.targetValue);case AnniversaryTrackerConfig() when anniversary != null:
+return milestone(_that.goalType,_that.targetValue,_that.progressMode);case AnniversaryTrackerConfig() when anniversary != null:
 return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
   return orElse();
 
@@ -486,11 +486,11 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int periodDays)  event,required TResult Function( String goalType,  String targetValue)  milestone,required TResult Function( DateTime baseDate,  bool isLunar,  String remindType)  anniversary,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int periodDays)  event,required TResult Function( String goalType,  String targetValue,  String progressMode)  milestone,required TResult Function( DateTime baseDate,  bool isLunar,  String remindType)  anniversary,}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig():
 return event(_that.periodDays);case MilestoneTrackerConfig():
-return milestone(_that.goalType,_that.targetValue);case AnniversaryTrackerConfig():
+return milestone(_that.goalType,_that.targetValue,_that.progressMode);case AnniversaryTrackerConfig():
 return anniversary(_that.baseDate,_that.isLunar,_that.remindType);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -505,11 +505,11 @@ return anniversary(_that.baseDate,_that.isLunar,_that.remindType);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int periodDays)?  event,TResult? Function( String goalType,  String targetValue)?  milestone,TResult? Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int periodDays)?  event,TResult? Function( String goalType,  String targetValue,  String progressMode)?  milestone,TResult? Function( DateTime baseDate,  bool isLunar,  String remindType)?  anniversary,}) {final _that = this;
 switch (_that) {
 case EventTrackerConfig() when event != null:
 return event(_that.periodDays);case MilestoneTrackerConfig() when milestone != null:
-return milestone(_that.goalType,_that.targetValue);case AnniversaryTrackerConfig() when anniversary != null:
+return milestone(_that.goalType,_that.targetValue,_that.progressMode);case AnniversaryTrackerConfig() when anniversary != null:
 return anniversary(_that.baseDate,_that.isLunar,_that.remindType);case _:
   return null;
 
@@ -601,12 +601,14 @@ as int,
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class MilestoneTrackerConfig with DiagnosticableTreeMixin implements TrackerConfig {
-  const MilestoneTrackerConfig({required this.goalType, required this.targetValue, final  String? $type}): $type = $type ?? 'milestone';
+  const MilestoneTrackerConfig({required this.goalType, required this.targetValue, this.progressMode = 'accumulate', final  String? $type}): $type = $type ?? 'milestone';
   factory MilestoneTrackerConfig.fromJson(Map<String, dynamic> json) => _$MilestoneTrackerConfigFromJson(json);
 
  final  String goalType;
 // 'time' / 'number' / 'boolean'
  final  String targetValue;
+// 统一存为 String，例如 "3600", "50.0", "true"
+@JsonKey() final  String progressMode;
 
 @JsonKey(name: 'type')
 final String $type;
@@ -626,21 +628,21 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'TrackerConfig.milestone'))
-    ..add(DiagnosticsProperty('goalType', goalType))..add(DiagnosticsProperty('targetValue', targetValue));
+    ..add(DiagnosticsProperty('goalType', goalType))..add(DiagnosticsProperty('targetValue', targetValue))..add(DiagnosticsProperty('progressMode', progressMode));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MilestoneTrackerConfig&&(identical(other.goalType, goalType) || other.goalType == goalType)&&(identical(other.targetValue, targetValue) || other.targetValue == targetValue));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MilestoneTrackerConfig&&(identical(other.goalType, goalType) || other.goalType == goalType)&&(identical(other.targetValue, targetValue) || other.targetValue == targetValue)&&(identical(other.progressMode, progressMode) || other.progressMode == progressMode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,goalType,targetValue);
+int get hashCode => Object.hash(runtimeType,goalType,targetValue,progressMode);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'TrackerConfig.milestone(goalType: $goalType, targetValue: $targetValue)';
+  return 'TrackerConfig.milestone(goalType: $goalType, targetValue: $targetValue, progressMode: $progressMode)';
 }
 
 
@@ -651,7 +653,7 @@ abstract mixin class $MilestoneTrackerConfigCopyWith<$Res> implements $TrackerCo
   factory $MilestoneTrackerConfigCopyWith(MilestoneTrackerConfig value, $Res Function(MilestoneTrackerConfig) _then) = _$MilestoneTrackerConfigCopyWithImpl;
 @useResult
 $Res call({
- String goalType, String targetValue
+ String goalType, String targetValue, String progressMode
 });
 
 
@@ -668,10 +670,11 @@ class _$MilestoneTrackerConfigCopyWithImpl<$Res>
 
 /// Create a copy of TrackerConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? goalType = null,Object? targetValue = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? goalType = null,Object? targetValue = null,Object? progressMode = null,}) {
   return _then(MilestoneTrackerConfig(
 goalType: null == goalType ? _self.goalType : goalType // ignore: cast_nullable_to_non_nullable
 as String,targetValue: null == targetValue ? _self.targetValue : targetValue // ignore: cast_nullable_to_non_nullable
+as String,progressMode: null == progressMode ? _self.progressMode : progressMode // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

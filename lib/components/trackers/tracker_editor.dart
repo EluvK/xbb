@@ -35,6 +35,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
 
   // milestone
   String _milestoneGoalType = 'time';
+  String _milestoneProgressMode = 'accumulate';
   final TextEditingController _milestoneTargetController = TextEditingController();
   Duration _milestoneTargetDuration = const Duration(hours: 1);
 
@@ -51,10 +52,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
     if (hours == hours.roundToDouble()) {
       return hours.toStringAsFixed(0);
     }
-    return hours
-        .toStringAsFixed(2)
-        .replaceFirst(RegExp(r'0+$'), '')
-        .replaceFirst(RegExp(r'\.$'), '');
+    return hours.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
   }
 
   int? _parseHoursToMinutes(String input) {
@@ -79,6 +77,7 @@ class _TrackerEditorState extends State<TrackerEditor> {
         },
         milestone: (c) {
           _milestoneGoalType = c.goalType;
+          _milestoneProgressMode = c.progressMode;
           if (_milestoneGoalType == 'time') {
             final minutes = int.tryParse(c.targetValue);
             if (minutes != null) {
@@ -169,7 +168,11 @@ class _TrackerEditorState extends State<TrackerEditor> {
       } else {
         targetValue = _milestoneTargetController.text;
       }
-      config = TrackerConfig.milestone(goalType: _milestoneGoalType, targetValue: targetValue);
+      config = TrackerConfig.milestone(
+        goalType: _milestoneGoalType,
+        targetValue: targetValue,
+        progressMode: _milestoneProgressMode,
+      );
     } else {
       config = TrackerConfig.anniversary(
         baseDate: (_baseDate ?? DateTime.now()).toUtc(),
@@ -259,6 +262,18 @@ class _TrackerEditorState extends State<TrackerEditor> {
                 // DropdownMenuItem(value: 'boolean', child: Text('Boolean')),
               ],
               onChanged: (v) => setState(() => _milestoneGoalType = v ?? 'time'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          UserDefinedInputWidget(
+            title: _LocalTitle('tracker_progress_mode'.tr, Icons.refresh, Colors.deepPurple),
+            widget: DropdownButton<String>(
+              value: _milestoneProgressMode,
+              items: [
+                DropdownMenuItem(value: 'accumulate', child: Text('tracker_progress_mode_accumulate'.tr)),
+                DropdownMenuItem(value: 'latest', child: Text('tracker_progress_mode_latest'.tr)),
+              ],
+              onChanged: (v) => setState(() => _milestoneProgressMode = v ?? 'accumulate'),
             ),
           ),
           const SizedBox(height: 8),
