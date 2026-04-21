@@ -4,10 +4,11 @@ class Translation extends Translations {
   @override
   Map<String, Map<String, String>> get keys => _keys;
 
-  static final Map<String, Map<String, String>> _keys =
-      _TranslationHelper.loadTranslations();
+  static final Map<String, Map<String, String>> _keys = _TranslationHelper.loadTranslations();
 }
+
 class _TranslationHelper {
+  // dart format off
   static final Map<String, dynamic> _translations = {
     // --- Components: ACL & Members (权限管理) ---
     "no_members_with_permissions": {
@@ -105,6 +106,10 @@ class _TranslationHelper {
     "cancel": {
       "en_US": "Cancel",
       "zh_CN": "取消",
+    },
+    "confirm": {
+      "en_US": "Confirm",
+      "zh_CN": "确认",
     },
     "save": {
       "en_US": "Save",
@@ -242,6 +247,126 @@ class _TranslationHelper {
     },
 
     // --- Pages: Route Titles (页面标题/动态参数) ---
+    "home_bar_title_task": {
+      "en_US": "Tasks",
+      "zh_CN": "任务",
+    },
+    "task_section_history": {
+      "en_US": "History",
+      "zh_CN": "历史记录",
+    },
+    "task_section_workspace": {
+      "en_US": "Workspace",
+      "zh_CN": "工作区",
+    },
+    "task_action_archive_workspace": {
+      "en_US": "Archive Workspace",
+      "zh_CN": "归档工作区",
+    },
+    "task_action_add": {
+      "en_US": "Task",
+      "zh_CN": "任务",
+    },
+    "task_action_load_more_history": {
+      "en_US": "Load More",
+      "zh_CN": "加载更多",
+    },
+    "task_action_history_loaded_all": {
+      "en_US": "All Loaded",
+      "zh_CN": "已全部加载",
+    },
+    "task_toggle_details": {
+      "en_US": "Details",
+      "zh_CN": "详情",
+    },
+    "task_action_show_details": {
+      "en_US": "Show Details",
+      "zh_CN": "展示详情",
+    },
+    "task_action_hide_details": {
+      "en_US": "Hide Details",
+      "zh_CN": "隐藏详情",
+    },
+    "task_collapse_archived": {
+      "en_US": "Collapse",
+      "zh_CN": "收起",
+    },
+    "task_expand_archived": {
+      "en_US": "Expand",
+      "zh_CN": "展开",
+    },
+    "task_empty_history_segment": {
+      "en_US": "No tasks in this history segment.",
+      "zh_CN": "该历史段无任务。",
+    },
+    "task_empty_workspace_hint": {
+      "en_US": "No tasks in workspace. Tap Task below to create one.",
+      "zh_CN": "当前工作区没有任务，点击下方任务按钮新增。",
+    },
+    "task_tap_to_edit_hint": {
+      "en_US": "Tap to edit task",
+      "zh_CN": "点击编辑任务内容",
+    },
+    "task_no_archivable_items": {
+      "en_US": "No items to archive in workspace",
+      "zh_CN": "当前没有可归档任务",
+    },
+    "task_saving": {
+      "en_US": "Saving...",
+      "zh_CN": "保存中...",
+    },
+    "task_time_unknown": {
+      "en_US": "Unknown time",
+      "zh_CN": "未知时间",
+    },
+    "task_time_empty": {
+      "en_US": "-",
+      "zh_CN": "-",
+    },
+    "task_detail_index": {
+      "en_US": "Index",
+      "zh_CN": "序号",
+    },
+    "task_detail_id": {
+      "en_US": "ID",
+      "zh_CN": "ID",
+    },
+    "task_detail_done_at": {
+      "en_US": "Done At",
+      "zh_CN": "完成时间",
+    },
+    "task_detail_updated_at": {
+      "en_US": "Updated At",
+      "zh_CN": "更新时间",
+    },
+    "task_confirm_archive_title": {
+      "en_US": "Archive Workspace",
+      "zh_CN": "归档工作区",
+    },
+    "task_confirm_archive_content": {
+      "en_US": "Archive current workspace? This will create a new workspace.",
+      "zh_CN": "确认归档当前工作区吗？归档后会自动创建新的工作区。",
+    },
+    "task_confirm_delete_title": {
+      "en_US": "Delete Task",
+      "zh_CN": "删除任务",
+    },
+    "task_confirm_delete_content": {
+      "en_US": "Are you sure you want to delete this task?",
+      "zh_CN": "确认删除这条任务吗？",
+    },
+    "task_delete_history": {
+      "en_US": "Delete history segment",
+      "zh_CN": "删除历史记录",
+    },
+    "task_confirm_delete_history_title": {
+      "en_US": "Delete History Segment",
+      "zh_CN": "删除历史记录",
+    },
+    "task_confirm_delete_history_content": {
+      "en_US": "Delete this history segment? This action cannot be undone.",
+      "zh_CN": "确认删除这段历史记录吗？该操作不可撤销。",
+    },
     "home_bar_title_note": {
       "en_US": "Notes",
       "zh_CN": "笔记",
@@ -756,13 +881,13 @@ class _TranslationHelper {
       "zh_CN": "",
     }
   };
+  // dart format on
 
   static Map<String, Map<String, String>> loadTranslations() {
     return convertTranslation(_translations);
   }
 
-  static Map<String, Map<String, String>> convertTranslation(
-      Map<String, dynamic> translations) {
+  static Map<String, Map<String, String>> convertTranslation(Map<String, dynamic> translations) {
     final Map<String, Map<String, String>> keys = {};
 
     translations.forEach((key, value) {
@@ -770,7 +895,7 @@ class _TranslationHelper {
         keys.putIfAbsent(lang, () => {})[key] = translation;
       });
     });
-    print(keys);
+    // print(keys);
     return keys;
   }
 }

@@ -10,6 +10,7 @@ import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart' show reInitUserManagerController;
 import 'package:xbb/models/notes/model.dart' show reInitNotesSync;
+import 'package:xbb/models/task/model.dart' show reInitTaskSync;
 import 'package:xbb/models/tracker/model.dart' show reInitTrackerSync;
 
 /// ALERT: any page that call this should make sure use the new created controller.
@@ -25,6 +26,7 @@ Future<void> reInitSyncStoreController() async {
   await reInitUserManagerController();
   await reInitNotesSync(Get.find<SyncStoreControl>().syncStoreClient);
   await reInitTrackerSync(Get.find<SyncStoreControl>().syncStoreClient);
+  await reInitTaskSync(Get.find<SyncStoreControl>().syncStoreClient);
 }
 
 class SyncStoreControl extends GetxController {

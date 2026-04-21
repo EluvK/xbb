@@ -13,6 +13,7 @@ import 'package:xbb/pages/login.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
 import 'package:xbb/pages/notes/view_post.dart';
 import 'package:xbb/pages/profile.dart';
+import 'package:xbb/pages/task/task_page.dart';
 import 'package:xbb/pages/trackers/edit_tracker.dart';
 import 'package:xbb/pages/trackers/view_tracker.dart';
 import 'package:xbb/utils/translation.dart';
@@ -82,6 +83,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
         GetPage(name: '/tracker/edit-tracker', page: () => const EditTrackerPage()),
         GetPage(name: '/tracker/view-tracker', page: () => const ViewTrackerDetailPage()),
+        GetPage(name: '/task', page: () => const TaskPage()),
       ],
       debugShowCheckedModeBanner: true,
       themeMode: themeMode,

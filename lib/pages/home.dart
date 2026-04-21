@@ -6,13 +6,15 @@ import 'package:xbb/components/common/profile.dart';
 import 'package:xbb/components/common/settings.dart';
 import 'package:xbb/components/notes/view_posts.dart';
 import 'package:xbb/components/notes/view_repos.dart';
+import 'package:xbb/components/task/view_task_overview.dart';
+import 'package:xbb/components/task/view_tasks.dart';
 import 'package:xbb/components/trackers/view_brief.dart';
 import 'package:xbb/components/trackers/view_tracker.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/list_tile_card.dart' show ColorPickerButtons;
 import 'package:xbb/utils/text_input.dart';
 
-enum HomeTabIndex { notes, tracker, todo2, settings }
+enum HomeTabIndex { notes, tracker, task, settings }
 
 class HomePageWrapper extends StatefulWidget {
   const HomePageWrapper({super.key});
@@ -29,15 +31,15 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   final Map<HomeTabIndex, Tab> _allTabs = {
     HomeTabIndex.notes: Tab(text: 'home_bar_title_note'.tr, icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
     HomeTabIndex.tracker: Tab(text: 'home_bar_title_tracker'.tr, icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon))),
-    HomeTabIndex.todo2: const Tab(text: 'Todo', icon: Icon(Icons.check_box_rounded)),
+    HomeTabIndex.task: Tab(text: 'home_bar_title_task'.tr, icon: const Icon(Icons.check_box_rounded)),
     HomeTabIndex.settings: Tab(text: 'home_bar_title_setting'.tr, icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
   };
 
   List<HomeTabIndex> get _activeIndices {
     List<HomeTabIndex> indices = [];
+    if (settingController.taskEnabled) indices.add(HomeTabIndex.task);
     if (settingController.notesEnabled) indices.add(HomeTabIndex.notes);
     if (settingController.trackerEnabled) indices.add(HomeTabIndex.tracker);
-    // indices.add(HomeTabIndex.todo);
     indices.add(HomeTabIndex.settings);
     return indices;
   }
@@ -218,8 +220,8 @@ class _LeftButton extends StatelessWidget {
         return const ViewRepos();
       case HomeTabIndex.tracker:
         return const ViewTrackerBrief();
-      case HomeTabIndex.todo2:
-        return const Placeholder();
+      case HomeTabIndex.task:
+        return const ViewTaskOverview();
       case HomeTabIndex.settings:
         return const CommonProfile();
     }
@@ -237,8 +239,8 @@ class _RightMain extends StatelessWidget {
         return const ViewPosts();
       case HomeTabIndex.tracker:
         return const ViewTracker();
-      case HomeTabIndex.todo2:
-        return const Placeholder();
+      case HomeTabIndex.task:
+        return const ViewTasks();
       case HomeTabIndex.settings:
         return const CommonSettings();
     }
@@ -265,7 +267,8 @@ class _AppBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [Text('home_bar_title_tracker'.tr), const _GlobalColorController()],
         );
-      case HomeTabIndex.todo2:
+      case HomeTabIndex.task:
+        return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('home_bar_title_task'.tr)]);
       case HomeTabIndex.settings:
         return Text('home_bar_title_setting'.tr);
     }

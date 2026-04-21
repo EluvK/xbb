@@ -154,6 +154,7 @@ class SettingController extends GetxController {
   final appFeaturesManagement = AppFeaturesManagement.defaults().obs;
   bool get notesEnabled => appFeaturesManagement.value.notesEnabled;
   bool get trackerEnabled => appFeaturesManagement.value.trackerEnabled;
+  bool get taskEnabled => true; // task is a core feature, so it's always enabled
   void updateAppFeaturesManagement({bool? enableNotes, bool? enableTracker}) {
     appFeaturesManagement.update((feature) {
       feature?.update(enableNotes: enableNotes, enableTracker: enableTracker);
