@@ -79,6 +79,7 @@ abstract class TaskItem with _$TaskItem {
     required bool done,
     DateTime? doneAt,
     required DateTime lastModifiedAt,
+    @Default(0) int sortOrder,
   }) = _TaskItem;
 
   factory TaskItem.fromJson(Map<String, dynamic> json) => _$TaskItemFromJson(json);
@@ -91,7 +92,15 @@ List<TaskItem> decodeTaskItems(String tasksPayload) {
     final dynamic decoded = jsonDecode(tasksPayload);
     if (decoded is! List) return <TaskItem>[];
 
-    return decoded.map((item) => TaskItem.fromJson(Map<String, dynamic>.from(item as Map))).toList(growable: false);
+    final items = <TaskItem>[];
+    for (var i = 0; i < decoded.length; i++) {
+      final rawMap = Map<String, dynamic>.from(decoded[i] as Map);
+      final hasSortOrder = rawMap.containsKey('sort_order') || rawMap.containsKey('sortOrder');
+      final parsed = TaskItem.fromJson(rawMap);
+      // Legacy payloads may not have sort_order; keep current array order as stable fallback.
+      items.add(hasSortOrder ? parsed : parsed.copyWith(sortOrder: i));
+    }
+    return items;
   } catch (_) {
     return <TaskItem>[];
   }
@@ -104,16 +113,8 @@ String encodeTaskItems(List<TaskItem> tasks) {
 List<TaskItem> sortTaskItems(List<TaskItem> tasks) {
   final copied = List<TaskItem>.of(tasks);
   copied.sort((a, b) {
-    if (a.done != b.done) {
-      return a.done ? -1 : 1;
-    }
-
-    if (!a.done) {
-      return a.lastModifiedAt.compareTo(b.lastModifiedAt);
-    }
-
-    final doneAtCompare = a.doneAt!.compareTo(b.doneAt!);
-    if (doneAtCompare != 0) return doneAtCompare;
+    final orderCompare = a.sortOrder.compareTo(b.sortOrder);
+    if (orderCompare != 0) return orderCompare;
     return a.lastModifiedAt.compareTo(b.lastModifiedAt);
   });
   return copied;

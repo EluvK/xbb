@@ -296,7 +296,7 @@ as DateTime?,
 /// @nodoc
 mixin _$TaskItem implements DiagnosticableTreeMixin {
 
- String get id; String get content; bool get done; DateTime? get doneAt; DateTime get lastModifiedAt;
+ String get id; String get content; bool get done; DateTime? get doneAt; DateTime get lastModifiedAt; int get sortOrder;
 /// Create a copy of TaskItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -310,21 +310,21 @@ $TaskItemCopyWith<TaskItem> get copyWith => _$TaskItemCopyWithImpl<TaskItem>(thi
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'TaskItem'))
-    ..add(DiagnosticsProperty('id', id))..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('done', done))..add(DiagnosticsProperty('doneAt', doneAt))..add(DiagnosticsProperty('lastModifiedAt', lastModifiedAt));
+    ..add(DiagnosticsProperty('id', id))..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('done', done))..add(DiagnosticsProperty('doneAt', doneAt))..add(DiagnosticsProperty('lastModifiedAt', lastModifiedAt))..add(DiagnosticsProperty('sortOrder', sortOrder));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TaskItem&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&(identical(other.done, done) || other.done == done)&&(identical(other.doneAt, doneAt) || other.doneAt == doneAt)&&(identical(other.lastModifiedAt, lastModifiedAt) || other.lastModifiedAt == lastModifiedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TaskItem&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&(identical(other.done, done) || other.done == done)&&(identical(other.doneAt, doneAt) || other.doneAt == doneAt)&&(identical(other.lastModifiedAt, lastModifiedAt) || other.lastModifiedAt == lastModifiedAt)&&(identical(other.sortOrder, sortOrder) || other.sortOrder == sortOrder));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,content,done,doneAt,lastModifiedAt);
+int get hashCode => Object.hash(runtimeType,id,content,done,doneAt,lastModifiedAt,sortOrder);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'TaskItem(id: $id, content: $content, done: $done, doneAt: $doneAt, lastModifiedAt: $lastModifiedAt)';
+  return 'TaskItem(id: $id, content: $content, done: $done, doneAt: $doneAt, lastModifiedAt: $lastModifiedAt, sortOrder: $sortOrder)';
 }
 
 
@@ -335,7 +335,7 @@ abstract mixin class $TaskItemCopyWith<$Res>  {
   factory $TaskItemCopyWith(TaskItem value, $Res Function(TaskItem) _then) = _$TaskItemCopyWithImpl;
 @useResult
 $Res call({
- String id, String content, bool done, DateTime? doneAt, DateTime lastModifiedAt
+ String id, String content, bool done, DateTime? doneAt, DateTime lastModifiedAt, int sortOrder
 });
 
 
@@ -352,14 +352,15 @@ class _$TaskItemCopyWithImpl<$Res>
 
 /// Create a copy of TaskItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? content = null,Object? done = null,Object? doneAt = freezed,Object? lastModifiedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? content = null,Object? done = null,Object? doneAt = freezed,Object? lastModifiedAt = null,Object? sortOrder = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,done: null == done ? _self.done : done // ignore: cast_nullable_to_non_nullable
 as bool,doneAt: freezed == doneAt ? _self.doneAt : doneAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,lastModifiedAt: null == lastModifiedAt ? _self.lastModifiedAt : lastModifiedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,sortOrder: null == sortOrder ? _self.sortOrder : sortOrder // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -444,10 +445,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String content,  bool done,  DateTime? doneAt,  DateTime lastModifiedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String content,  bool done,  DateTime? doneAt,  DateTime lastModifiedAt,  int sortOrder)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TaskItem() when $default != null:
-return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifiedAt);case _:
+return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifiedAt,_that.sortOrder);case _:
   return orElse();
 
 }
@@ -465,10 +466,10 @@ return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifie
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String content,  bool done,  DateTime? doneAt,  DateTime lastModifiedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String content,  bool done,  DateTime? doneAt,  DateTime lastModifiedAt,  int sortOrder)  $default,) {final _that = this;
 switch (_that) {
 case _TaskItem():
-return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifiedAt);case _:
+return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifiedAt,_that.sortOrder);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -485,10 +486,10 @@ return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifie
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String content,  bool done,  DateTime? doneAt,  DateTime lastModifiedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String content,  bool done,  DateTime? doneAt,  DateTime lastModifiedAt,  int sortOrder)?  $default,) {final _that = this;
 switch (_that) {
 case _TaskItem() when $default != null:
-return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifiedAt);case _:
+return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifiedAt,_that.sortOrder);case _:
   return null;
 
 }
@@ -500,7 +501,7 @@ return $default(_that.id,_that.content,_that.done,_that.doneAt,_that.lastModifie
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _TaskItem with DiagnosticableTreeMixin implements TaskItem {
-  const _TaskItem({required this.id, required this.content, required this.done, this.doneAt, required this.lastModifiedAt});
+  const _TaskItem({required this.id, required this.content, required this.done, this.doneAt, required this.lastModifiedAt, this.sortOrder = 0});
   factory _TaskItem.fromJson(Map<String, dynamic> json) => _$TaskItemFromJson(json);
 
 @override final  String id;
@@ -508,6 +509,7 @@ class _TaskItem with DiagnosticableTreeMixin implements TaskItem {
 @override final  bool done;
 @override final  DateTime? doneAt;
 @override final  DateTime lastModifiedAt;
+@override@JsonKey() final  int sortOrder;
 
 /// Create a copy of TaskItem
 /// with the given fields replaced by the non-null parameter values.
@@ -523,21 +525,21 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'TaskItem'))
-    ..add(DiagnosticsProperty('id', id))..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('done', done))..add(DiagnosticsProperty('doneAt', doneAt))..add(DiagnosticsProperty('lastModifiedAt', lastModifiedAt));
+    ..add(DiagnosticsProperty('id', id))..add(DiagnosticsProperty('content', content))..add(DiagnosticsProperty('done', done))..add(DiagnosticsProperty('doneAt', doneAt))..add(DiagnosticsProperty('lastModifiedAt', lastModifiedAt))..add(DiagnosticsProperty('sortOrder', sortOrder));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TaskItem&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&(identical(other.done, done) || other.done == done)&&(identical(other.doneAt, doneAt) || other.doneAt == doneAt)&&(identical(other.lastModifiedAt, lastModifiedAt) || other.lastModifiedAt == lastModifiedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TaskItem&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&(identical(other.done, done) || other.done == done)&&(identical(other.doneAt, doneAt) || other.doneAt == doneAt)&&(identical(other.lastModifiedAt, lastModifiedAt) || other.lastModifiedAt == lastModifiedAt)&&(identical(other.sortOrder, sortOrder) || other.sortOrder == sortOrder));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,content,done,doneAt,lastModifiedAt);
+int get hashCode => Object.hash(runtimeType,id,content,done,doneAt,lastModifiedAt,sortOrder);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'TaskItem(id: $id, content: $content, done: $done, doneAt: $doneAt, lastModifiedAt: $lastModifiedAt)';
+  return 'TaskItem(id: $id, content: $content, done: $done, doneAt: $doneAt, lastModifiedAt: $lastModifiedAt, sortOrder: $sortOrder)';
 }
 
 
@@ -548,7 +550,7 @@ abstract mixin class _$TaskItemCopyWith<$Res> implements $TaskItemCopyWith<$Res>
   factory _$TaskItemCopyWith(_TaskItem value, $Res Function(_TaskItem) _then) = __$TaskItemCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String content, bool done, DateTime? doneAt, DateTime lastModifiedAt
+ String id, String content, bool done, DateTime? doneAt, DateTime lastModifiedAt, int sortOrder
 });
 
 
@@ -565,14 +567,15 @@ class __$TaskItemCopyWithImpl<$Res>
 
 /// Create a copy of TaskItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? content = null,Object? done = null,Object? doneAt = freezed,Object? lastModifiedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? content = null,Object? done = null,Object? doneAt = freezed,Object? lastModifiedAt = null,Object? sortOrder = null,}) {
   return _then(_TaskItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,done: null == done ? _self.done : done // ignore: cast_nullable_to_non_nullable
 as bool,doneAt: freezed == doneAt ? _self.doneAt : doneAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,lastModifiedAt: null == lastModifiedAt ? _self.lastModifiedAt : lastModifiedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,sortOrder: null == sortOrder ? _self.sortOrder : sortOrder // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

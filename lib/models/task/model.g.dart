@@ -24,6 +24,7 @@ _TaskItem _$TaskItemFromJson(Map<String, dynamic> json) => _TaskItem(
   done: json['done'] as bool,
   doneAt: json['done_at'] == null ? null : DateTime.parse(json['done_at'] as String),
   lastModifiedAt: DateTime.parse(json['last_modified_at'] as String),
+  sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$TaskItemToJson(_TaskItem instance) => <String, dynamic>{
@@ -32,6 +33,7 @@ Map<String, dynamic> _$TaskItemToJson(_TaskItem instance) => <String, dynamic>{
   'done': instance.done,
   'done_at': instance.doneAt?.toIso8601String(),
   'last_modified_at': instance.lastModifiedAt.toIso8601String(),
+  'sort_order': instance.sortOrder,
 };
 
 // **************************************************************************

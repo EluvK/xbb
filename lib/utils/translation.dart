@@ -323,6 +323,14 @@ class _TranslationHelper {
       "en_US": "-",
       "zh_CN": "-",
     },
+    "task_status_todo": {
+      "en_US": "Todo",
+      "zh_CN": "未完成",
+    },
+    "task_status_done": {
+      "en_US": "Done",
+      "zh_CN": "已完成",
+    },
     "task_detail_index": {
       "en_US": "Index",
       "zh_CN": "序号",

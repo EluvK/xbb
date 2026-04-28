@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart' show SyncStatus;
 import 'package:uuid/uuid.dart';
@@ -115,6 +116,10 @@ class _ViewTasksState extends State<ViewTasks> {
   }
 
   bool get _hasActiveTasks => _activeTasks.isNotEmpty;
+
+  List<TaskItem> _normalizeSortOrder(List<TaskItem> tasks) {
+    return [for (var i = 0; i < tasks.length; i++) tasks[i].copyWith(sortOrder: i)];
+  }
 
   Future<void> _reloadFromController({required bool ensureActive}) async {
     final controller = _checkListController;
@@ -296,14 +301,39 @@ class _ViewTasksState extends State<ViewTasks> {
     _schedulePersistActiveTasks(tasks);
   }
 
+  Future<void> _reorderActiveTasks(int oldIndex, int newIndex) async {
+    final tasks = List<TaskItem>.of(_activeTasks);
+    if (oldIndex < 0 || oldIndex >= tasks.length) return;
+
+    var targetIndex = newIndex;
+    if (targetIndex > oldIndex) {
+      targetIndex -= 1;
+    }
+    if (targetIndex < 0 || targetIndex >= tasks.length) return;
+
+    final moved = tasks.removeAt(oldIndex);
+    tasks.insert(targetIndex, moved);
+    final reordered = _normalizeSortOrder(tasks);
+
+    if (mounted) {
+      setState(() {
+        _activeCheckList = _activeCheckList.copyWith(tasks: encodeTaskItems(reordered));
+      });
+    }
+    _schedulePersistActiveTasks(reordered, delay: const Duration(milliseconds: 300));
+  }
+
   Future<void> _addTask() async {
     final active = await _resolveActiveCheckList(createIfMissing: true);
     if (active == null) return;
 
-    final tasks = List<TaskItem>.of(decodeTaskItems(active.body.tasks));
+    final tasks = List<TaskItem>.of(_activeTasks);
     final now = DateTime.now();
     final newId = _uuid.v4();
-    final created = TaskItem(id: newId, content: '', done: false, lastModifiedAt: now);
+    final nextSortOrder = tasks.isEmpty
+        ? 0
+        : tasks.map((task) => task.sortOrder).reduce((left, right) => left > right ? left : right) + 1;
+    final created = TaskItem(id: newId, content: '', done: false, lastModifiedAt: now, sortOrder: nextSortOrder);
     tasks.add(created);
     _draftTaskIds.add(newId);
     if (mounted) {
@@ -526,20 +556,37 @@ class _ViewTasksState extends State<ViewTasks> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           child: Text('task_empty_workspace_hint'.tr),
                         ),
-                      ..._activeTasks.asMap().entries.map((entry) {
-                        return _ActiveTaskRow(
-                          item: entry.value,
-                          showDetails: _showDetails,
-                          isEditing: _editingTaskId == entry.value.id,
-                          editController: _editController,
-                          editFocusNode: _editFocusNode,
-                          onTapEdit: () => _beginEdit(entry.value),
-                          onToggleDone: (nextDone) => _toggleTaskDone(entry.key, nextDone),
-                          onDelete: () => _confirmAndDeleteTask(entry.key),
-                          onChanged: _applyEditingText,
-                          onSubmit: _finishEdit,
-                        );
-                      }),
+                      if (_activeTasks.isNotEmpty)
+                        ReorderableListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          buildDefaultDragHandles: false,
+                          itemCount: _activeTasks.length,
+                          onReorder: _reorderActiveTasks,
+                          itemBuilder: (context, index) {
+                            final task = _activeTasks[index];
+                            return _ActiveTaskRow(
+                              key: ValueKey('active-task-${task.id}'),
+                              item: task,
+                              showDetails: _showDetails,
+                              isEditing: _editingTaskId == task.id,
+                              editController: _editController,
+                              editFocusNode: _editFocusNode,
+                              onTapEdit: () => _beginEdit(task),
+                              onToggleDone: (nextDone) => _toggleTaskDone(index, nextDone),
+                              onDelete: () => _confirmAndDeleteTask(index),
+                              onChanged: _applyEditingText,
+                              onSubmit: _finishEdit,
+                              dragHandle: ReorderableDelayedDragStartListener(
+                                index: index,
+                                child: Icon(
+                                  Icons.drag_indicator,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -708,6 +755,7 @@ class _TaskRow extends StatelessWidget {
 
 class _ActiveTaskRow extends StatelessWidget {
   const _ActiveTaskRow({
+    super.key,
     required this.item,
     required this.showDetails,
     required this.isEditing,
@@ -718,6 +766,7 @@ class _ActiveTaskRow extends StatelessWidget {
     required this.onDelete,
     required this.onChanged,
     required this.onSubmit,
+    required this.dragHandle,
   });
 
   final TaskItem item;
@@ -730,56 +779,166 @@ class _ActiveTaskRow extends StatelessWidget {
   final VoidCallback onDelete;
   final ValueChanged<String> onChanged;
   final Future<void> Function() onSubmit;
+  final Widget dragHandle;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    final isCompactLayout = isMobile();
+    final isDesktopPlatform = !GetPlatform.isMobile;
+    final statusLabel = item.done ? 'task_status_done'.tr : 'task_status_todo'.tr;
+    final statusBackground = item.done
+        ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.55)
+        : Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.55);
+    final rowDecoration = BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerLowest.withValues(alpha: 0.14),
+      border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.24)),
+      borderRadius: BorderRadius.circular(10),
+    );
+
+    final editor = Focus(
+      onKeyEvent: (node, event) {
+        if (!isDesktopPlatform || event is! KeyDownEvent) {
+          return KeyEventResult.ignored;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.enter && HardwareKeyboard.instance.isShiftPressed) {
+          onSubmit();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: TextField(
+        controller: editController,
+        focusNode: editFocusNode,
+        onChanged: onChanged,
+        onTapOutside: (_) => onSubmit(),
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
+        minLines: 1,
+        maxLines: null,
+        decoration: const InputDecoration(
+          isDense: true,
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        ),
+      ),
+    );
+
+    final content = isEditing
+        ? editor
+        : InkWell(
+            onTap: onTapEdit,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Text(
+                item.content.isEmpty ? 'task_tap_to_edit_hint'.tr : item.content,
+                style: TextStyle(
+                  decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none,
+                  color: item.content.isEmpty ? Theme.of(context).hintColor : null,
+                ),
+              ),
+            ),
+          );
+
+    final fullWidthContent = SizedBox(
+      width: double.infinity,
+      child: content,
+    );
+
+    if (isCompactLayout) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+        decoration: rowDecoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusBackground,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(statusLabel, style: Theme.of(context).textTheme.labelSmall),
+                ),
+                const Spacer(),
+                _TaskActionControls(
+                  done: item.done,
+                  onToggleDone: onToggleDone,
+                  dragHandle: dragHandle,
+                  onDelete: onDelete,
+                ),
+              ],
+            ),
+            fullWidthContent,
+            if (showDetails)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: _TaskDetailBlock(item: item),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: rowDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Checkbox(value: item.done, onChanged: (value) => onToggleDone(value ?? false)),
-              Expanded(
-                child: isEditing
-                    ? TextField(
-                        controller: editController,
-                        focusNode: editFocusNode,
-                        onChanged: onChanged,
-                        onTapOutside: (_) => onSubmit(),
-                        onSubmitted: (_) => onSubmit(),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        ),
-                      )
-                    : InkWell(
-                        onTap: onTapEdit,
-                        borderRadius: BorderRadius.circular(6),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                          child: Text(
-                            item.content.isEmpty ? 'task_tap_to_edit_hint'.tr : item.content,
-                            style: TextStyle(
-                              decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none,
-                              color: item.content.isEmpty ? Theme.of(context).hintColor : null,
-                            ),
-                          ),
-                        ),
-                      ),
+              Expanded(child: content),
+              const SizedBox(width: 8),
+              _TaskActionControls(
+                done: item.done,
+                onToggleDone: onToggleDone,
+                dragHandle: dragHandle,
+                onDelete: onDelete,
               ),
-              IconButton(tooltip: 'delete'.tr, onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
             ],
           ),
           if (showDetails)
             Padding(
-              padding: const EdgeInsets.only(left: 52),
+              padding: const EdgeInsets.only(top: 2),
               child: _TaskDetailBlock(item: item),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _TaskActionControls extends StatelessWidget {
+  const _TaskActionControls({
+    required this.done,
+    required this.onToggleDone,
+    required this.dragHandle,
+    required this.onDelete,
+  });
+
+  final bool done;
+  final ValueChanged<bool> onToggleDone;
+  final Widget dragHandle;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Checkbox(value: done, onChanged: (value) => onToggleDone(value ?? false)),
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: dragHandle,
+        ),
+        IconButton(tooltip: 'delete'.tr, onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
+      ],
     );
   }
 }
