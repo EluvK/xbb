@@ -104,7 +104,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               ),
               const Divider(),
-              Text('app_version'.trParams({'version': VERSION})),
+              Text('app_version'.trParams({'version': DISPLAY_VERSION})),
               child(versionInfo(context)),
             ],
           ),

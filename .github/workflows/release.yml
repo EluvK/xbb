@@ -61,7 +61,13 @@ jobs:
           $version_str=$(gc .\pubspec.yaml | select-string '(?<=^version: ).*' -AllMatches | Select-Object -Expand Matches | %{$_.Value})
           $version=$version_str.Split("+")[0]
           $build_number=$version_str.Split("+")[1]
-          flutter build windows --release --dart-define="APP_VERSION=$version" --dart-define="APP_BUILD_NUMBER=$build_number"
+          if ( "${{ github.ref_type }}".Equals("tag") ) {
+            $channel = "stable"
+          } else {
+            $channel = "nightly"
+          }
+          $build_date = Get-Date -Format "yyyyMMdd"
+          flutter build windows --release --dart-define="APP_VERSION=$version" --dart-define="APP_BUILD_NUMBER=$build_number" --dart-define="APP_CHANNEL=$channel" --dart-define="APP_BUILD_DATE=$build_date"
 
       - name: Build Inno Installer
         run: |
@@ -150,7 +156,13 @@ jobs:
           version_str=$(cat pubspec.yaml | grep 'version: ' | sed 's/version: //')
           version_number=$(echo $version_str | cut -d'+' -f1)
           build_number=$(echo $version_str | cut -d'+' -f2)
-          flutter build apk --release --split-per-abi --dart-define="APP_VERSION=$version_number" --dart-define="APP_BUILD_NUMBER=$build_number"
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            channel="stable"
+          else
+            channel="nightly"
+          fi
+          build_date=$(date +%Y%m%d)
+          flutter build apk --release --split-per-abi --dart-define="APP_VERSION=$version_number" --dart-define="APP_BUILD_NUMBER=$build_number" --dart-define="APP_CHANNEL=$channel" --dart-define="APP_BUILD_DATE=$build_date"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

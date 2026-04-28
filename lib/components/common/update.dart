@@ -51,7 +51,7 @@ class _UpdateSheetState extends State<UpdateSheet> {
                         Text('check_update'.tr, style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 4),
                         Text(
-                          '当前版本: $VERSION · 最新: ${widget.latestVersion}',
+                          '当前版本: $DISPLAY_VERSION · 最新: ${widget.latestVersion}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

@@ -14,6 +14,22 @@ const String VERSION = String.fromEnvironment('APP_VERSION', defaultValue: debug
 const String APP_BUILD_NUMBER = String.fromEnvironment('APP_BUILD_NUMBER', defaultValue: '0');
 
 // ignore: constant_identifier_names
+const String APP_CHANNEL = String.fromEnvironment('APP_CHANNEL', defaultValue: 'debug');
+
+// ignore: constant_identifier_names
+const String APP_BUILD_DATE = String.fromEnvironment('APP_BUILD_DATE', defaultValue: '');
+
+/// Full display version: `0.2.2` for stable, `0.2.2-nightly-20250428` for nightly, `DEBUG` in debug.
+// ignore: non_constant_identifier_names
+final String DISPLAY_VERSION = () {
+  if (VERSION == debugVersionLiteral) return VERSION;
+  if (APP_CHANNEL == 'nightly' && APP_BUILD_DATE.isNotEmpty) {
+    return '$VERSION-nightly-$APP_BUILD_DATE';
+  }
+  return VERSION;
+}();
+
+// ignore: constant_identifier_names
 const String REPO_URL = 'https://github.com/eluvk/xbb/releases';
 Future<void> openUrl(String url) async {
   if (!await launchUrl(Uri.parse(url))) {
