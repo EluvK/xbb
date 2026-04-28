@@ -714,48 +714,16 @@ class _ArchivedSegmentCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if (tasks.isEmpty) Text('task_empty_history_segment'.tr),
-            ...tasks.map((item) => _TaskRow(item: item, showDetails: showDetails, onToggleDone: null)),
+            ...tasks.map(
+              (item) => _ActiveTaskRow(
+                key: ValueKey('archived-task-${item.id}'),
+                item: item,
+                showDetails: showDetails,
+                readOnly: true,
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _TaskRow extends StatelessWidget {
-  const _TaskRow({required this.item, required this.showDetails, required this.onToggleDone});
-
-  final TaskItem item;
-  final bool showDetails;
-  final ValueChanged<bool>? onToggleDone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Checkbox(
-                value: item.done,
-                onChanged: onToggleDone == null ? null : (value) => onToggleDone!(value ?? false),
-              ),
-              Expanded(
-                child: Text(
-                  item.content,
-                  style: TextStyle(decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none),
-                ),
-              ),
-            ],
-          ),
-          if (showDetails)
-            Padding(
-              padding: const EdgeInsets.only(left: 52),
-              child: _TaskDetailBlock(item: item),
-            ),
-        ],
       ),
     );
   }
@@ -766,28 +734,30 @@ class _ActiveTaskRow extends StatelessWidget {
     super.key,
     required this.item,
     required this.showDetails,
-    required this.isEditing,
-    required this.editController,
-    required this.editFocusNode,
-    required this.onTapEdit,
-    required this.onToggleDone,
-    required this.onDelete,
-    required this.onChanged,
-    required this.onSubmit,
-    required this.dragHandle,
+    this.readOnly = false,
+    this.isEditing = false,
+    this.editController,
+    this.editFocusNode,
+    this.onTapEdit,
+    this.onToggleDone,
+    this.onDelete,
+    this.onChanged,
+    this.onSubmit,
+    this.dragHandle,
   });
 
   final TaskItem item;
   final bool showDetails;
+  final bool readOnly;
   final bool isEditing;
-  final TextEditingController editController;
-  final FocusNode editFocusNode;
-  final VoidCallback onTapEdit;
-  final ValueChanged<bool> onToggleDone;
-  final VoidCallback onDelete;
-  final ValueChanged<String> onChanged;
-  final Future<void> Function() onSubmit;
-  final Widget dragHandle;
+  final TextEditingController? editController;
+  final FocusNode? editFocusNode;
+  final VoidCallback? onTapEdit;
+  final ValueChanged<bool>? onToggleDone;
+  final VoidCallback? onDelete;
+  final ValueChanged<String>? onChanged;
+  final Future<void> Function()? onSubmit;
+  final Widget? dragHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -809,7 +779,7 @@ class _ActiveTaskRow extends StatelessWidget {
           return KeyEventResult.ignored;
         }
         if (event.logicalKey == LogicalKeyboardKey.enter && HardwareKeyboard.instance.isShiftPressed) {
-          onSubmit();
+          onSubmit?.call();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -818,7 +788,7 @@ class _ActiveTaskRow extends StatelessWidget {
         controller: editController,
         focusNode: editFocusNode,
         onChanged: onChanged,
-        onTapOutside: (_) => onSubmit(),
+        onTapOutside: (_) => onSubmit?.call(),
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
         minLines: 1,
@@ -831,23 +801,38 @@ class _ActiveTaskRow extends StatelessWidget {
       ),
     );
 
-    final content = isEditing
+    final canEdit = !readOnly && isEditing && editController != null && editFocusNode != null;
+
+    final content = canEdit
         ? editor
-        : InkWell(
-            onTap: onTapEdit,
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Text(
-                item.content.isEmpty ? 'task_tap_to_edit_hint'.tr : item.content,
-                style: TextStyle(
-                  decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none,
-                  color: item.content.isEmpty ? Theme.of(context).hintColor : null,
-                ),
-              ),
-            ),
-          );
+        : (readOnly
+              ? Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  child: Text(
+                    item.content,
+                    style: TextStyle(decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none),
+                  ),
+                )
+              : InkWell(
+                  onTap: onTapEdit,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    child: Text(
+                      item.content.isEmpty ? 'task_tap_to_edit_hint'.tr : item.content,
+                      style: TextStyle(
+                        decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none,
+                        color: item.content.isEmpty ? Theme.of(context).hintColor : null,
+                      ),
+                    ),
+                  ),
+                ));
+
+    final actionControls = readOnly
+        ? Checkbox(value: item.done, onChanged: null)
+        : _TaskActionControls(done: item.done, onToggleDone: onToggleDone, dragHandle: dragHandle, onDelete: onDelete);
 
     final fullWidthContent = SizedBox(
       width: double.infinity,
@@ -873,12 +858,7 @@ class _ActiveTaskRow extends StatelessWidget {
                   child: Text(statusLabel, style: Theme.of(context).textTheme.labelSmall),
                 ),
                 const Spacer(),
-                _TaskActionControls(
-                  done: item.done,
-                  onToggleDone: onToggleDone,
-                  dragHandle: dragHandle,
-                  onDelete: onDelete,
-                ),
+                actionControls,
               ],
             ),
             fullWidthContent,
@@ -903,12 +883,7 @@ class _ActiveTaskRow extends StatelessWidget {
             children: [
               Expanded(child: content),
               const SizedBox(width: 8),
-              _TaskActionControls(
-                done: item.done,
-                onToggleDone: onToggleDone,
-                dragHandle: dragHandle,
-                onDelete: onDelete,
-              ),
+              actionControls,
             ],
           ),
           if (showDetails)
@@ -923,29 +898,26 @@ class _ActiveTaskRow extends StatelessWidget {
 }
 
 class _TaskActionControls extends StatelessWidget {
-  const _TaskActionControls({
-    required this.done,
-    required this.onToggleDone,
-    required this.dragHandle,
-    required this.onDelete,
-  });
+  const _TaskActionControls({required this.done, required this.onToggleDone, required this.dragHandle, required this.onDelete});
 
   final bool done;
-  final ValueChanged<bool> onToggleDone;
-  final Widget dragHandle;
-  final VoidCallback onDelete;
+  final ValueChanged<bool>? onToggleDone;
+  final Widget? dragHandle;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Checkbox(value: done, onChanged: (value) => onToggleDone(value ?? false)),
-        Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: dragHandle,
-        ),
-        IconButton(tooltip: 'delete'.tr, onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
+        Checkbox(value: done, onChanged: onToggleDone == null ? null : (value) => onToggleDone!(value ?? false)),
+        if (dragHandle != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: dragHandle!,
+          ),
+        if (onDelete != null)
+          IconButton(tooltip: 'delete'.tr, onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
       ],
     );
   }
