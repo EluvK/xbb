@@ -4,13 +4,13 @@ import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/utils.dart';
 
-class UpdateDialog extends StatefulWidget {
+class UpdateSheet extends StatefulWidget {
   final String latestVersion;
   final String? releaseNotes;
   final bool hasNewVersion;
   final void Function(bool, bool) onUpdate;
 
-  const UpdateDialog({
+  const UpdateSheet({
     super.key,
     required this.latestVersion,
     this.releaseNotes,
@@ -19,107 +19,149 @@ class UpdateDialog extends StatefulWidget {
   });
 
   @override
-  State<UpdateDialog> createState() => _UpdateDialogState();
+  State<UpdateSheet> createState() => _UpdateSheetState();
 }
 
-class _UpdateDialogState extends State<UpdateDialog> {
+class _UpdateSheetState extends State<UpdateSheet> {
   bool throughProxy = true;
 
   @override
   Widget build(BuildContext context) {
     final SettingController settingController = Get.find<SettingController>();
-    print('debug: hasNewVersion: ${widget.hasNewVersion}');
-    return AlertDialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      title: Row(
-        children: [
-          const Icon(Icons.system_update, color: Colors.blue),
-          Text('check_update'.tr),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('当前版本: $VERSION'),
-            const SizedBox(height: 16),
-            Text('最新版本: ${widget.latestVersion}'),
-            const Text('更新内容:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (widget.releaseNotes != null)
-              SimpleMarkdownRenderer(data: widget.releaseNotes!)
-            else
-              const Text('暂无更新内容详情'),
-            const SizedBox(height: 16),
-            Obx(() {
-              if (settingController.downloadProgress.value > 0) {
-                return Column(
-                  children: [
-                    LinearProgressIndicator(value: settingController.downloadProgress.value),
-                    const SizedBox(height: 8),
-                    Text(
-                      '下载进度: ${(settingController.downloadProgress.value * 100).toStringAsFixed(1)}%',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Get.back(), child: const Text('以后再说')),
-        TextButton(
-          onPressed: () {
-            setState(() {
-              throughProxy = !throughProxy;
-            });
-          },
-          child: Row(
+    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IgnorePointer(
-                child: Checkbox(value: throughProxy, onChanged: (value) {}),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(Icons.system_update, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('check_update'.tr, style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          '当前版本: $VERSION · 最新: ${widget.latestVersion}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close), tooltip: '关闭'),
+                ],
               ),
-              Text('download_manually'.tr),
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (widget.releaseNotes != null)
+                        SimpleMarkdownRenderer(data: widget.releaseNotes!)
+                      else
+                        const Text('暂无更新内容详情'),
+                      const SizedBox(height: 12),
+                      Obx(() {
+                        if (settingController.downloadProgress.value > 0) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LinearProgressIndicator(value: settingController.downloadProgress.value),
+                              const SizedBox(height: 8),
+                              Text(
+                                '下载进度: ${(settingController.downloadProgress.value * 100).toStringAsFixed(1)}%',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+
+              const Divider(height: 16),
+
+              SwitchListTile(
+                value: throughProxy,
+                title: Text('download_manually'.tr),
+                subtitle: Text(
+                  throughProxy ? '开启：将复制下载链接，可在浏览器中粘贴下载' : '关闭：将在应用内通过服务器自动下载安装',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                onChanged: (v) => setState(() => throughProxy = v),
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: widget.hasNewVersion
+                      ? () {
+                          widget.onUpdate(false, throughProxy);
+                          Get.back();
+                        }
+                      : null,
+                  child: Text('do_update'.tr),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    widget.onUpdate(true, throughProxy);
+                    Get.back();
+                  },
+                  child: Text('${'do_update'.tr} (nightly)'),
+                ),
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(onPressed: () => Get.back(), child: const Text('以后再说')),
+              ),
             ],
           ),
         ),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            ElevatedButton(
-              onPressed: widget.hasNewVersion ? () => widget.onUpdate(false, throughProxy) : null,
-              child: Text('do_update'.tr),
-            ),
-            ElevatedButton(
-              onPressed: () => widget.onUpdate(true, throughProxy),
-              child: Text('${'do_update'.tr} (nightly)'),
-            ),
-          ],
-        ),
-      ],
+      ),
     );
   }
 }
 
+// Show update as a bottom sheet (replaces the old wrapper)
 void showUpdateDialog({
   required String latestVersion,
   String? releaseNotes,
   bool hasNewVersion = false,
   required void Function(bool, bool) onUpdate,
 }) {
-  Get.dialog(
-    UpdateDialog(
+  Get.bottomSheet(
+    UpdateSheet(
       latestVersion: latestVersion,
       releaseNotes: releaseNotes,
       hasNewVersion: hasNewVersion,
       onUpdate: onUpdate,
     ),
-    barrierDismissible: false,
+    isScrollControlled: true,
+    backgroundColor: Get.theme.dialogBackgroundColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
   );
 }
