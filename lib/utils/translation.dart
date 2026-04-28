@@ -331,6 +331,34 @@ class _TranslationHelper {
       "en_US": "Done",
       "zh_CN": "已完成",
     },
+    "task_overview_title": {
+      "en_US": "Task Overview",
+      "zh_CN": "任务概览",
+    },
+    "task_overview_subtitle": {
+      "en_US": "Current active workspace status",
+      "zh_CN": "当前活跃工作区状态",
+    },
+    "task_overview_done_ratio": {
+      "en_US": "Completion: @percent",
+      "zh_CN": "完成率：@percent",
+    },
+    "task_overview_total": {
+      "en_US": "Total",
+      "zh_CN": "总任务",
+    },
+    "task_overview_done": {
+      "en_US": "Done",
+      "zh_CN": "已完成",
+    },
+    "task_overview_todo": {
+      "en_US": "Todo",
+      "zh_CN": "未完成",
+    },
+    "task_overview_empty": {
+      "en_US": "No tasks in current workspace",
+      "zh_CN": "当前工作区暂无任务",
+    },
     "task_detail_index": {
       "en_US": "Index",
       "zh_CN": "序号",
