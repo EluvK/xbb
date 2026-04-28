@@ -26,7 +26,8 @@ class _ViewTasksState extends State<ViewTasks> {
   bool _isPersisting = false;
   int _archivedLoadCount = 0;
   bool _hasMoreArchived = false;
-  static const int _archivedPageSize = 1;
+  static const int _archivedPageSizeDesktop = 1;
+  static const int _archivedPageSizeMobile = 0;
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _editController = TextEditingController();
@@ -154,8 +155,9 @@ class _ViewTasksState extends State<ViewTasks> {
   }
 
   void _refreshArchivedWindow() {
-    final defaultLoaded = _allArchived.isNotEmpty ? _archivedPageSize : 0;
-    final loadedCount = (defaultLoaded + (_archivedLoadCount * _archivedPageSize)).clamp(0, _allArchived.length);
+    final pageSize = isMobile() ? _archivedPageSizeMobile : _archivedPageSizeDesktop;
+    final defaultLoaded = _allArchived.isNotEmpty ? pageSize : 0;
+    final loadedCount = (defaultLoaded + (_archivedLoadCount * _archivedPageSizeDesktop)).clamp(0, _allArchived.length);
     final startIndex = (_allArchived.length - loadedCount).clamp(0, _allArchived.length);
     _archivedSegments
       ..clear()
@@ -458,6 +460,7 @@ class _ViewTasksState extends State<ViewTasks> {
     if (!_hasMoreArchived) return;
     // Local-only pagination window: this does not fetch from network.
     setState(() {
+      _collapseArchived = false;
       _archivedLoadCount += 1;
       _refreshArchivedWindow();
     });
@@ -475,6 +478,7 @@ class _ViewTasksState extends State<ViewTasks> {
           b.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
         ),
       );
+    final showHistoryEntryLabel = isMobile() && archivedSorted.isEmpty && _allArchived.isNotEmpty;
 
     return Column(
       children: [
@@ -484,7 +488,7 @@ class _ViewTasksState extends State<ViewTasks> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(12),
             children: [
-              if (archivedSorted.isNotEmpty)
+              if (_allArchived.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(left: 2, bottom: 8),
                   child: Row(
@@ -497,7 +501,11 @@ class _ViewTasksState extends State<ViewTasks> {
                         onPressed: _hasMoreArchived ? _loadMoreArchived : null,
                         icon: const Icon(Icons.unfold_more, size: 16),
                         label: Text(
-                          _hasMoreArchived ? 'task_action_load_more_history'.tr : 'task_action_history_loaded_all'.tr,
+                          _hasMoreArchived
+                              ? (showHistoryEntryLabel
+                                    ? 'task_action_show_history'.tr
+                                    : 'task_action_load_more_history'.tr)
+                              : 'task_action_history_loaded_all'.tr,
                         ),
                       ),
                     ],
@@ -518,7 +526,7 @@ class _ViewTasksState extends State<ViewTasks> {
               //   ),
               const SizedBox(height: 8),
               _TaskSectionDivider(
-                showArchivedToggle: archivedSorted.isNotEmpty,
+                showArchivedToggle: _allArchived.isNotEmpty,
                 collapsed: _collapseArchived,
                 onToggleArchived: () {
                   setState(() {

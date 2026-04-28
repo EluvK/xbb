@@ -268,8 +268,12 @@ class _TranslationHelper {
       "zh_CN": "任务",
     },
     "task_action_load_more_history": {
-      "en_US": "Load More",
-      "zh_CN": "加载更多",
+      "en_US": "Load more history",
+      "zh_CN": "加载更多历史",
+    },
+    "task_action_show_history": {
+      "en_US": "Show history",
+      "zh_CN": "显示历史",
     },
     "task_action_history_loaded_all": {
       "en_US": "All Loaded",
