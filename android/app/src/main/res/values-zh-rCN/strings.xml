@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_widget_title">任务</string>
+    <string name="task_widget_description">显示当前活跃工作区的未完成任务。</string>
+    <string name="task_widget_subtitle_ready">%1$d 条未完成 · 共 %2$d 条</string>
+    <string name="task_widget_subtitle_empty">当前活跃工作区</string>
+    <string name="task_widget_subtitle_requires_login">登录后即可加载任务</string>
+    <string name="task_widget_state_empty">当前活跃工作区暂无未完成任务</string>
+    <string name="task_widget_state_requires_login">请先在应用内登录</string>
+    <string name="task_widget_empty_loading">点击打开应用查看任务</string>
+</resources>

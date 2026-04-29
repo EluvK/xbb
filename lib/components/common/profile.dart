@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/controller/utils.dart';
 
@@ -80,7 +81,11 @@ class _SelfProfileState extends State<_SelfProfile> {
   Widget _selfAvatar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Obx(() {
-      Widget selfAvatar = buildUserAvatar(context, userManagerController.selfProfile.value?.avatarUrl, size: 36.0);
+      Widget selfAvatar = buildUserAvatar(
+        context,
+        userManagerController.selfProfile.value?.avatarUrl,
+        size: 36.0,
+      );
       return InkWell(
         onTap: () {
           Get.toNamed('/profile');
@@ -97,10 +102,17 @@ class _SelfProfileState extends State<_SelfProfile> {
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: colorScheme.primaryContainer, width: 2),
+                  border: Border.all(
+                    color: colorScheme.primaryContainer,
+                    width: 2,
+                  ),
                 ),
                 padding: const EdgeInsets.all(4),
-                child: Icon(Icons.edit_rounded, size: 14, color: colorScheme.onPrimary),
+                child: Icon(
+                  Icons.edit_rounded,
+                  size: 14,
+                  color: colorScheme.onPrimary,
+                ),
               ),
             ),
           ],
@@ -112,6 +124,7 @@ class _SelfProfileState extends State<_SelfProfile> {
   Widget _switchUserButton() {
     return ElevatedButton.icon(
       onPressed: () {
+        TaskWidgetBridge.scheduleLoggedOutState();
         Get.toNamed('/login');
       },
       label: Text('change_user'.tr),
@@ -149,7 +162,8 @@ class _FriendProfilesState extends State<FriendProfiles> {
               IconButton(
                 onPressed: () async {
                   // todo get a simple input dialog to input friend user id, and return the input
-                  String friendUserId = 'test_user_123'; // replace with actual input
+                  String friendUserId =
+                      'test_user_123'; // replace with actual input
                   await userManagerController.addFriend(friendUserId);
                   setState(() {});
                 },
@@ -164,7 +178,12 @@ class _FriendProfilesState extends State<FriendProfiles> {
             children: userManagerController.userProfiles
                 .map(
                   (profile) => ListTile(
-                    leading: buildUserAvatar(context, profile.avatarUrl, size: 20.0, selected: false),
+                    leading: buildUserAvatar(
+                      context,
+                      profile.avatarUrl,
+                      size: 20.0,
+                      selected: false,
+                    ),
                     // trailing: profile.userId == userManagerController.selfProfile.userId
                     //     ? const Icon(Icons.person_rounded, size: 20.0)
                     //     : null,

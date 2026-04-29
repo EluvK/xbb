@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_widget_title">Tasks</string>
+    <string name="task_widget_description">Show unfinished tasks from the active workspace.</string>
+    <string name="task_widget_subtitle_ready">%1$d unfinished · %2$d total</string>
+    <string name="task_widget_subtitle_empty">Active workspace</string>
+    <string name="task_widget_subtitle_requires_login">Sign in to load tasks</string>
+    <string name="task_widget_state_empty">No unfinished tasks in the active workspace</string>
+    <string name="task_widget_state_requires_login">Please sign in in the app</string>
+    <string name="task_widget_empty_loading">Open the app to view tasks</string>
+</resources>

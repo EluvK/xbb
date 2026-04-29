@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/task_widget_item_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/task_widget_list_item_background"
+    android:minHeight="56dp"
+    android:padding="10dp">
+
+    <TextView
+        android:id="@+id/task_widget_item_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="4"
+        android:textColor="@android:color/black"
+        android:textSize="13sp" />
+</FrameLayout>
