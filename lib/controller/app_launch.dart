@@ -38,17 +38,13 @@ class AppLaunchController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> _consumeLaunchTab() async {
-    final String? launchTab = await _channel.invokeMethod<String>(
-      'consumeLaunchTab',
-    );
+    final String? launchTab = await _channel.invokeMethod<String>('consumeLaunchTab');
     if (launchTab == null || launchTab.isEmpty) return;
 
     pendingHomeTab.value = launchTab;
 
     final settingController = Get.find<SettingController>();
-    final loggedIn =
-        settingController.userId.isNotEmpty &&
-        settingController.userName.isNotEmpty;
+    final loggedIn = settingController.userId.isNotEmpty && settingController.userName.isNotEmpty;
     if (loggedIn && Get.currentRoute.isNotEmpty && Get.currentRoute != '/') {
       Get.offAllNamed('/');
     }

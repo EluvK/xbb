@@ -23,10 +23,7 @@ class ToggleTabIntent extends Intent {
 }
 
 class RichEditor extends StatefulWidget {
-  const RichEditor({
-    super.key,
-    required this.textEditingController,
-  });
+  const RichEditor({super.key, required this.textEditingController});
   final TextEditingController textEditingController;
 
   @override
@@ -78,20 +75,13 @@ class _RichEditorState extends State<RichEditor> {
   Shortcuts shortcuts(Widget child) {
     return Shortcuts(
       shortcuts: <ShortcutActivator, Intent>{
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
-            const ToggleBoldIntent(),
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI):
-            const ToggleItalicIntent(),
-        const SingleActivator(LogicalKeyboardKey.enter):
-            const ToggleEnterIntent(),
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB): const ToggleBoldIntent(),
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI): const ToggleItalicIntent(),
+        const SingleActivator(LogicalKeyboardKey.enter): const ToggleEnterIntent(),
         const SingleActivator(LogicalKeyboardKey.tab): const ToggleTabIntent(),
-        LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.tab):
-            const ToggleTabIntent(isShift: true),
+        LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.tab): const ToggleTabIntent(isShift: true),
       },
-      child: Actions(
-        actions: _actionMap,
-        child: child,
-      ),
+      child: Actions(actions: _actionMap, child: child),
     );
   }
 
@@ -102,36 +92,20 @@ class _RichEditorState extends State<RichEditor> {
       children: [
         Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.format_bold),
-              onPressed: _toggleBold,
-              tooltip: 'Ctrl+B',
-            ),
-            IconButton(
-              icon: const Icon(Icons.format_italic),
-              onPressed: _toggleItalic,
-              tooltip: 'Ctrl+I',
-            ),
-            IconButton(
-              icon: const Icon(Icons.format_list_bulleted),
-              onPressed: _toggleList,
-              tooltip: 'List',
-            ),
+            IconButton(icon: const Icon(Icons.format_bold), onPressed: _toggleBold, tooltip: 'Ctrl+B'),
+            IconButton(icon: const Icon(Icons.format_italic), onPressed: _toggleItalic, tooltip: 'Ctrl+I'),
+            IconButton(icon: const Icon(Icons.format_list_bulleted), onPressed: _toggleList, tooltip: 'List'),
             IconButton(
               icon: const Icon(Icons.format_list_numbered),
               onPressed: _toggleOrderedList,
               tooltip: 'Order List',
             ),
-            IconButton(
-              icon: const Icon(Icons.check_box),
-              onPressed: _toggleCheckBox,
-              tooltip: 'Check Box',
-            ),
+            IconButton(icon: const Icon(Icons.check_box), onPressed: _toggleCheckBox, tooltip: 'Check Box'),
             IconButton(
               icon: const Icon(Icons.horizontal_rule),
               onPressed: _toggleHorizontalRule,
               tooltip: 'Horizontal Rule',
-            )
+            ),
           ],
         ),
         Expanded(
@@ -164,38 +138,31 @@ class _RichEditorState extends State<RichEditor> {
       const suffix = '**';
 
       // 检查光标前后是否有加粗标记
-      final hasBoldBefore = cursorPosition >= prefix.length &&
-          text.substring(cursorPosition - prefix.length, cursorPosition) ==
-              prefix;
-      final hasBoldAfter = cursorPosition + suffix.length <= text.length &&
-          text.substring(cursorPosition, cursorPosition + suffix.length) ==
-              suffix;
+      final hasBoldBefore =
+          cursorPosition >= prefix.length && text.substring(cursorPosition - prefix.length, cursorPosition) == prefix;
+      final hasBoldAfter =
+          cursorPosition + suffix.length <= text.length &&
+          text.substring(cursorPosition, cursorPosition + suffix.length) == suffix;
 
       if (hasBoldBefore && hasBoldAfter) {
         // 如果光标前后都有加粗标记，移除它们
-        final newText = text.replaceRange(
-            cursorPosition - prefix.length, cursorPosition + suffix.length, '');
+        final newText = text.replaceRange(cursorPosition - prefix.length, cursorPosition + suffix.length, '');
         textEditingController.value = TextEditingValue(
           text: newText,
-          selection:
-              TextSelection.collapsed(offset: cursorPosition - prefix.length),
+          selection: TextSelection.collapsed(offset: cursorPosition - prefix.length),
         );
       } else {
         // 否则，插入加粗标记
-        final newText =
-            text.replaceRange(cursorPosition, cursorPosition, '$prefix$suffix');
+        final newText = text.replaceRange(cursorPosition, cursorPosition, '$prefix$suffix');
         textEditingController.value = TextEditingValue(
           text: newText,
-          selection: TextSelection.collapsed(
-              offset: cursorPosition + prefix.length), // 光标放在标记中间
+          selection: TextSelection.collapsed(offset: cursorPosition + prefix.length), // 光标放在标记中间
         );
       }
     } else {
       final selectedText = text.substring(selection.start, selection.end);
-      final isBold =
-          selectedText.startsWith('**') && selectedText.endsWith('**');
-      final isItalic =
-          selectedText.startsWith('*') && selectedText.endsWith('*');
+      final isBold = selectedText.startsWith('**') && selectedText.endsWith('**');
+      final isItalic = selectedText.startsWith('*') && selectedText.endsWith('*');
       String newText;
 
       if (isBold) {
@@ -208,10 +175,7 @@ class _RichEditorState extends State<RichEditor> {
 
       textEditingController.value = TextEditingValue(
         text: text.replaceRange(selection.start, selection.end, newText),
-        selection: TextSelection(
-          baseOffset: selection.start,
-          extentOffset: selection.start + newText.length,
-        ),
+        selection: TextSelection(baseOffset: selection.start, extentOffset: selection.start + newText.length),
       );
     }
     focusNode.requestFocus();
@@ -228,38 +192,31 @@ class _RichEditorState extends State<RichEditor> {
       const suffix = '*';
 
       // 检查光标前后是否有斜体标记
-      final hasItalicBefore = cursorPosition >= prefix.length &&
-          text.substring(cursorPosition - prefix.length, cursorPosition) ==
-              prefix;
-      final hasItalicAfter = cursorPosition + suffix.length <= text.length &&
-          text.substring(cursorPosition, cursorPosition + suffix.length) ==
-              suffix;
+      final hasItalicBefore =
+          cursorPosition >= prefix.length && text.substring(cursorPosition - prefix.length, cursorPosition) == prefix;
+      final hasItalicAfter =
+          cursorPosition + suffix.length <= text.length &&
+          text.substring(cursorPosition, cursorPosition + suffix.length) == suffix;
 
       if (hasItalicBefore && hasItalicAfter) {
         // 如果光标前后都有斜体标记，移除它们
-        final newText = text.replaceRange(
-            cursorPosition - prefix.length, cursorPosition + suffix.length, '');
+        final newText = text.replaceRange(cursorPosition - prefix.length, cursorPosition + suffix.length, '');
         textEditingController.value = TextEditingValue(
           text: newText,
-          selection:
-              TextSelection.collapsed(offset: cursorPosition - prefix.length),
+          selection: TextSelection.collapsed(offset: cursorPosition - prefix.length),
         );
       } else {
         // 否则，插入斜体标记
-        final newText =
-            text.replaceRange(cursorPosition, cursorPosition, '$prefix$suffix');
+        final newText = text.replaceRange(cursorPosition, cursorPosition, '$prefix$suffix');
         textEditingController.value = TextEditingValue(
           text: newText,
-          selection: TextSelection.collapsed(
-              offset: cursorPosition + prefix.length), // 光标放在标记中间
+          selection: TextSelection.collapsed(offset: cursorPosition + prefix.length), // 光标放在标记中间
         );
       }
     } else {
       final selectedText = text.substring(selection.start, selection.end);
-      final isBold =
-          selectedText.startsWith('**') && selectedText.endsWith('**');
-      final isItalic =
-          selectedText.startsWith('*') && selectedText.endsWith('*');
+      final isBold = selectedText.startsWith('**') && selectedText.endsWith('**');
+      final isItalic = selectedText.startsWith('*') && selectedText.endsWith('*');
       String newText;
 
       if (isItalic) {
@@ -272,10 +229,7 @@ class _RichEditorState extends State<RichEditor> {
 
       textEditingController.value = TextEditingValue(
         text: text.replaceRange(selection.start, selection.end, newText),
-        selection: TextSelection(
-          baseOffset: selection.start,
-          extentOffset: selection.start + newText.length,
-        ),
+        selection: TextSelection(baseOffset: selection.start, extentOffset: selection.start + newText.length),
       );
     }
     focusNode.requestFocus();
@@ -288,9 +242,7 @@ class _RichEditorState extends State<RichEditor> {
     if (selection.isCollapsed) {
       // 没有选中文本，只在当前行添加/移除列表标记
       final cursorPosition = selection.baseOffset;
-      final lineStart = cursorPosition == 0
-          ? 0
-          : text.lastIndexOf('\n', cursorPosition - 1) + 1;
+      final lineStart = cursorPosition == 0 ? 0 : text.lastIndexOf('\n', cursorPosition - 1) + 1;
       final lineEnd = text.indexOf('\n', cursorPosition);
       final lineEndSafe = lineEnd == -1 ? text.length : lineEnd; // 处理没有换行符的情况
       final lineText = text.substring(lineStart, lineEndSafe);
@@ -317,31 +269,29 @@ class _RichEditorState extends State<RichEditor> {
       final end = selection.end;
 
       // 找到选中区域的起始行和结束行
-      final startLineStart =
-          start == 0 ? 0 : text.lastIndexOf('\n', start - 1) + 1;
+      final startLineStart = start == 0 ? 0 : text.lastIndexOf('\n', start - 1) + 1;
       final endLineEnd = text.indexOf('\n', end);
-      final endLineEndSafe =
-          endLineEnd == -1 ? text.length : endLineEnd; // 处理没有换行符的情况
+      final endLineEndSafe = endLineEnd == -1 ? text.length : endLineEnd; // 处理没有换行符的情况
       final selectedText = text.substring(startLineStart, endLineEndSafe);
 
       // 按行分割选中的文本
       final lines = selectedText.split('\n');
-      final modifiedLines = lines.map((line) {
-        if (line.startsWith('- ')) {
-          // 如果已经有列表标记，移除它
-          return line.substring(2);
-        } else {
-          // 如果没有列表标记，添加它
-          return '- $line';
-        }
-      }).join('\n');
+      final modifiedLines = lines
+          .map((line) {
+            if (line.startsWith('- ')) {
+              // 如果已经有列表标记，移除它
+              return line.substring(2);
+            } else {
+              // 如果没有列表标记，添加它
+              return '- $line';
+            }
+          })
+          .join('\n');
 
       // 更新文本和选中区域
       textEditingController.value = textEditingController.value.copyWith(
         text: text.replaceRange(startLineStart, endLineEndSafe, modifiedLines),
-        selection: TextSelection(
-            baseOffset: startLineStart,
-            extentOffset: startLineStart + modifiedLines.length),
+        selection: TextSelection(baseOffset: startLineStart, extentOffset: startLineStart + modifiedLines.length),
       );
     }
     focusNode.requestFocus();
@@ -354,9 +304,7 @@ class _RichEditorState extends State<RichEditor> {
     if (selection.isCollapsed) {
       // 没有选中文本，只在当前行添加/移除有序列表标记
       final cursorPosition = selection.baseOffset;
-      final lineStart = cursorPosition == 0
-          ? 0
-          : text.lastIndexOf('\n', cursorPosition - 1) + 1;
+      final lineStart = cursorPosition == 0 ? 0 : text.lastIndexOf('\n', cursorPosition - 1) + 1;
       final lineEnd = text.indexOf('\n', cursorPosition);
       final lineEndSafe = lineEnd == -1 ? text.length : lineEnd; // 处理没有换行符的情况
       final lineText = text.substring(lineStart, lineEndSafe);
@@ -368,8 +316,7 @@ class _RichEditorState extends State<RichEditor> {
         final newText = lineText.replaceFirst(orderedListRegex, '');
         textEditingController.value = textEditingController.value.copyWith(
           text: text.replaceRange(lineStart, lineEndSafe, newText),
-          selection: TextSelection.collapsed(
-              offset: cursorPosition - lineText.indexOf(' ')),
+          selection: TextSelection.collapsed(offset: cursorPosition - lineText.indexOf(' ')),
         );
       } else {
         // 如果没有有序列表标记，添加它
@@ -377,17 +324,13 @@ class _RichEditorState extends State<RichEditor> {
         int currentNumber = 1;
         int previousLineEnd = lineStart - 1;
         while (previousLineEnd >= 0) {
-          final previousLineStart = previousLineEnd == 0
-              ? 0
-              : text.lastIndexOf('\n', previousLineEnd - 1) + 1;
-          final previousLineText =
-              text.substring(previousLineStart, previousLineEnd);
+          final previousLineStart = previousLineEnd == 0 ? 0 : text.lastIndexOf('\n', previousLineEnd - 1) + 1;
+          final previousLineText = text.substring(previousLineStart, previousLineEnd);
           if (orderedListRegex.hasMatch(previousLineText)) {
             // 找到前面最近的有序列表行，提取编号并加1
             final match = orderedListRegex.firstMatch(previousLineText);
             if (match != null) {
-              currentNumber =
-                  int.parse(match.group(0)!.replaceFirst('.', '')) + 1;
+              currentNumber = int.parse(match.group(0)!.replaceFirst('.', '')) + 1;
             }
             break;
           } else if (previousLineText.trim().isNotEmpty) {
@@ -400,8 +343,7 @@ class _RichEditorState extends State<RichEditor> {
         final newText = '$currentNumber. $lineText';
         textEditingController.value = textEditingController.value.copyWith(
           text: text.replaceRange(lineStart, lineEndSafe, newText),
-          selection: TextSelection.collapsed(
-              offset: cursorPosition + newText.length - lineText.length),
+          selection: TextSelection.collapsed(offset: cursorPosition + newText.length - lineText.length),
         );
       }
     } else {
@@ -410,11 +352,9 @@ class _RichEditorState extends State<RichEditor> {
       final end = selection.end;
 
       // 找到选中区域的起始行和结束行
-      final startLineStart =
-          start == 0 ? 0 : text.lastIndexOf('\n', start - 1) + 1;
+      final startLineStart = start == 0 ? 0 : text.lastIndexOf('\n', start - 1) + 1;
       final endLineEnd = text.indexOf('\n', end);
-      final endLineEndSafe =
-          endLineEnd == -1 ? text.length : endLineEnd; // 处理没有换行符的情况
+      final endLineEndSafe = endLineEnd == -1 ? text.length : endLineEnd; // 处理没有换行符的情况
       final selectedText = text.substring(startLineStart, endLineEndSafe);
 
       // 按行分割选中的文本
@@ -424,18 +364,14 @@ class _RichEditorState extends State<RichEditor> {
       // 找到前面最近的有序列表行，确定起始编号
       int previousLineEnd = startLineStart - 1;
       while (previousLineEnd >= 0) {
-        final previousLineStart = previousLineEnd == 0
-            ? 0
-            : text.lastIndexOf('\n', previousLineEnd - 1) + 1;
-        final previousLineText =
-            text.substring(previousLineStart, previousLineEnd);
+        final previousLineStart = previousLineEnd == 0 ? 0 : text.lastIndexOf('\n', previousLineEnd - 1) + 1;
+        final previousLineText = text.substring(previousLineStart, previousLineEnd);
         final orderedListRegex = RegExp(r'^\d+\. ');
         if (orderedListRegex.hasMatch(previousLineText)) {
           // 找到前面最近的有序列表行，提取编号并加1
           final match = orderedListRegex.firstMatch(previousLineText);
           if (match != null) {
-            currentNumber =
-                int.parse(match.group(0)!.replaceFirst('.', '')) + 1;
+            currentNumber = int.parse(match.group(0)!.replaceFirst('.', '')) + 1;
           }
           break;
         } else if (previousLineText.trim().isNotEmpty) {
@@ -445,23 +381,23 @@ class _RichEditorState extends State<RichEditor> {
         previousLineEnd = previousLineStart - 1;
       }
 
-      final modifiedLines = lines.map((line) {
-        final orderedListRegex = RegExp(r'^\d+\. ');
-        if (orderedListRegex.hasMatch(line)) {
-          // 如果已经有有序列表标记，移除它
-          return line.replaceFirst(orderedListRegex, '');
-        } else {
-          // 如果没有有序列表标记，添加它
-          return '${currentNumber++}. $line';
-        }
-      }).join('\n');
+      final modifiedLines = lines
+          .map((line) {
+            final orderedListRegex = RegExp(r'^\d+\. ');
+            if (orderedListRegex.hasMatch(line)) {
+              // 如果已经有有序列表标记，移除它
+              return line.replaceFirst(orderedListRegex, '');
+            } else {
+              // 如果没有有序列表标记，添加它
+              return '${currentNumber++}. $line';
+            }
+          })
+          .join('\n');
 
       // 更新文本和选中区域
       textEditingController.value = textEditingController.value.copyWith(
         text: text.replaceRange(startLineStart, endLineEndSafe, modifiedLines),
-        selection: TextSelection(
-            baseOffset: startLineStart,
-            extentOffset: startLineStart + modifiedLines.length),
+        selection: TextSelection(baseOffset: startLineStart, extentOffset: startLineStart + modifiedLines.length),
       );
     }
     focusNode.requestFocus();
@@ -474,9 +410,7 @@ class _RichEditorState extends State<RichEditor> {
     if (selection.isCollapsed) {
       // 没有选中文本，只在当前行添加/移除复选框标记
       final cursorPosition = selection.baseOffset;
-      final lineStart = cursorPosition == 0
-          ? 0
-          : text.lastIndexOf('\n', cursorPosition - 1) + 1;
+      final lineStart = cursorPosition == 0 ? 0 : text.lastIndexOf('\n', cursorPosition - 1) + 1;
       final lineEnd = text.indexOf('\n', cursorPosition);
       final lineEndSafe = lineEnd == -1 ? text.length : lineEnd; // 处理没有换行符的情况
       final lineText = text.substring(lineStart, lineEndSafe);
@@ -510,34 +444,32 @@ class _RichEditorState extends State<RichEditor> {
       final end = selection.end;
 
       // 找到选中区域的起始行和结束行
-      final startLineStart =
-          start == 0 ? 0 : text.lastIndexOf('\n', start - 1) + 1;
+      final startLineStart = start == 0 ? 0 : text.lastIndexOf('\n', start - 1) + 1;
       final endLineEnd = text.indexOf('\n', end);
-      final endLineEndSafe =
-          endLineEnd == -1 ? text.length : endLineEnd; // 处理没有换行符的情况
+      final endLineEndSafe = endLineEnd == -1 ? text.length : endLineEnd; // 处理没有换行符的情况
       final selectedText = text.substring(startLineStart, endLineEndSafe);
 
       // 按行分割选中的文本
       final lines = selectedText.split('\n');
-      final modifiedLines = lines.map((line) {
-        if (line.startsWith('- [ ] ')) {
-          // 如果复选框未选中，切换为选中状态
-          return line.replaceFirst('- [ ] ', '- [x] ');
-        } else if (line.startsWith('- [x] ')) {
-          // 如果复选框已经选中，移除复选框标记
-          return line.replaceFirst('- [x] ', '');
-        } else {
-          // 如果没有复选框标记，添加未选中状态的复选框
-          return '- [ ] $line';
-        }
-      }).join('\n');
+      final modifiedLines = lines
+          .map((line) {
+            if (line.startsWith('- [ ] ')) {
+              // 如果复选框未选中，切换为选中状态
+              return line.replaceFirst('- [ ] ', '- [x] ');
+            } else if (line.startsWith('- [x] ')) {
+              // 如果复选框已经选中，移除复选框标记
+              return line.replaceFirst('- [x] ', '');
+            } else {
+              // 如果没有复选框标记，添加未选中状态的复选框
+              return '- [ ] $line';
+            }
+          })
+          .join('\n');
 
       // 更新文本和选中区域
       textEditingController.value = textEditingController.value.copyWith(
         text: text.replaceRange(startLineStart, endLineEndSafe, modifiedLines),
-        selection: TextSelection(
-            baseOffset: startLineStart,
-            extentOffset: startLineStart + modifiedLines.length),
+        selection: TextSelection(baseOffset: startLineStart, extentOffset: startLineStart + modifiedLines.length),
       );
     }
     focusNode.requestFocus();
@@ -576,9 +508,7 @@ class _RichEditorState extends State<RichEditor> {
       final cursorPosition = selection.baseOffset;
 
       // 找到当前行的起始和结束位置
-      final lineStart = cursorPosition == 0
-          ? 0
-          : text.lastIndexOf('\n', cursorPosition - 1) + 1;
+      final lineStart = cursorPosition == 0 ? 0 : text.lastIndexOf('\n', cursorPosition - 1) + 1;
       final lineEnd = text.indexOf('\n', cursorPosition);
       final lineEndSafe = lineEnd == -1 ? text.length : lineEnd; // 处理没有换行符的情况
       final lineText = text.substring(lineStart, lineEndSafe);
@@ -600,10 +530,8 @@ class _RichEditorState extends State<RichEditor> {
           // 如果当前行是复选框
           final match = checkboxRegex.firstMatch(lineText);
           if (match != null) {
-            final checkboxPrefix =
-                match.group(0)!; // 获取复选框标记（如 "- [ ] " 或 "- [x] "）
-            final contentAfterPrefix =
-                lineText.substring(checkboxPrefix.length).trim();
+            final checkboxPrefix = match.group(0)!; // 获取复选框标记（如 "- [ ] " 或 "- [x] "）
+            final contentAfterPrefix = lineText.substring(checkboxPrefix.length).trim();
 
             if (contentAfterPrefix.isEmpty) {
               // 如果当前行是只有标记的空复选框，去掉复选框标记
@@ -614,23 +542,19 @@ class _RichEditorState extends State<RichEditor> {
               );
             } else {
               // 如果当前行是复选框，新行自动加上复选框标记
-              final newText =
-                  text.replaceRange(cursorPosition, cursorPosition, '\n- [ ] ');
+              final newText = text.replaceRange(cursorPosition, cursorPosition, '\n- [ ] ');
               textEditingController.value = TextEditingValue(
                 text: newText,
-                selection: TextSelection.collapsed(
-                    offset: cursorPosition + 7), // 光标放在新行的复选框标记后
+                selection: TextSelection.collapsed(offset: cursorPosition + 7), // 光标放在新行的复选框标记后
               );
             }
           }
         } else {
           // 如果当前行是无序列表，新行自动加上列表标记
-          final newText =
-              text.replaceRange(cursorPosition, cursorPosition, '\n- ');
+          final newText = text.replaceRange(cursorPosition, cursorPosition, '\n- ');
           textEditingController.value = TextEditingValue(
             text: newText,
-            selection: TextSelection.collapsed(
-                offset: cursorPosition + 3), // 光标放在新行的列表标记后
+            selection: TextSelection.collapsed(offset: cursorPosition + 3), // 光标放在新行的列表标记后
           );
         }
       } else if (orderedListRegex.hasMatch(lineText)) {
@@ -638,8 +562,7 @@ class _RichEditorState extends State<RichEditor> {
         final match = orderedListRegex.firstMatch(lineText);
         if (match != null) {
           final listPrefix = match.group(0)!; // 获取有序列表标记（如 "1. "）
-          final contentAfterPrefix =
-              lineText.substring(listPrefix.length).trim();
+          final contentAfterPrefix = lineText.substring(listPrefix.length).trim();
 
           if (contentAfterPrefix.isEmpty) {
             // 如果当前行是只有标记的空有序列表，去掉列表标记
@@ -654,18 +577,14 @@ class _RichEditorState extends State<RichEditor> {
             final newNumber = currentNumber + 1;
 
             // 插入新行并更新后续行的编号
-            final newText = text.replaceRange(
-                cursorPosition, cursorPosition, '\n$newNumber. ');
+            final newText = text.replaceRange(cursorPosition, cursorPosition, '\n$newNumber. ');
             textEditingController.value = TextEditingValue(
               text: newText,
-              selection: TextSelection.collapsed(
-                  offset:
-                      cursorPosition + '$newNumber. '.length + 1), // 光标放在新行的标记后
+              selection: TextSelection.collapsed(offset: cursorPosition + '$newNumber. '.length + 1), // 光标放在新行的标记后
             );
 
             // 更新后续行的编号
-            _updateOrderedListNumbers(
-                cursorPosition + '$newNumber. '.length + 1);
+            _updateOrderedListNumbers(cursorPosition + '$newNumber. '.length + 1);
           }
         }
       } else {
@@ -673,8 +592,7 @@ class _RichEditorState extends State<RichEditor> {
         final newText = text.replaceRange(cursorPosition, cursorPosition, '\n');
         textEditingController.value = TextEditingValue(
           text: newText,
-          selection:
-              TextSelection.collapsed(offset: cursorPosition + 1), // 光标放在新行
+          selection: TextSelection.collapsed(offset: cursorPosition + 1), // 光标放在新行
         );
       }
     } else {
@@ -682,14 +600,13 @@ class _RichEditorState extends State<RichEditor> {
       final newText = text.replaceRange(selection.start, selection.end, '\n');
       textEditingController.value = TextEditingValue(
         text: newText,
-        selection:
-            TextSelection.collapsed(offset: selection.start + 1), // 光标放在新行
+        selection: TextSelection.collapsed(offset: selection.start + 1), // 光标放在新行
       );
     }
     focusNode.requestFocus();
   }
 
-// 辅助函数：更新从指定位置开始的有序列表编号
+  // 辅助函数：更新从指定位置开始的有序列表编号
   void _updateOrderedListNumbers(int startPosition) {
     final text = textEditingController.text;
     final orderedListRegex = RegExp(r'^\d+\. ');
@@ -703,8 +620,7 @@ class _RichEditorState extends State<RichEditor> {
 
       if (orderedListRegex.hasMatch(lineText)) {
         // 如果当前行是有序列表，更新编号
-        final newText =
-            lineText.replaceFirst(orderedListRegex, '$currentNumber. ');
+        final newText = lineText.replaceFirst(orderedListRegex, '$currentNumber. ');
         textEditingController.value = textEditingController.value.copyWith(
           text: text.replaceRange(lineStart, lineEndSafe, newText),
         );
@@ -726,9 +642,7 @@ class _RichEditorState extends State<RichEditor> {
       final cursorPosition = selection.baseOffset;
 
       // 找到当前行的起始和结束位置
-      final lineStart = cursorPosition == 0
-          ? 0
-          : text.lastIndexOf('\n', cursorPosition - 1) + 1;
+      final lineStart = cursorPosition == 0 ? 0 : text.lastIndexOf('\n', cursorPosition - 1) + 1;
       final lineEnd = text.indexOf('\n', cursorPosition);
       final lineEndSafe = lineEnd == -1 ? text.length : lineEnd;
       final lineText = text.substring(lineStart, lineEndSafe);

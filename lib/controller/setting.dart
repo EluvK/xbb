@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:syncstore_client/syncstore_client.dart'
-    show ColorTag, UserProfile;
+import 'package:syncstore_client/syncstore_client.dart' show ColorTag, UserProfile;
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/utils.dart';
 
 bool initFirstTime() {
   var settingController = Get.find<SettingController>();
-  if (settingController.userId.isNotEmpty &&
-      settingController.userName.isNotEmpty) {
+  if (settingController.userId.isNotEmpty && settingController.userName.isNotEmpty) {
     print('already done first init before');
     return false;
   }
@@ -19,11 +17,7 @@ bool initFirstTime() {
 }
 
 // task: List<({double weight, Future<void> Function() action})> tasks,
-Future<void> runSyncTaskWithStatus(
-  List<dynamic> tasks, {
-  double from = 0.0,
-  double to = 100.0,
-}) async {
+Future<void> runSyncTaskWithStatus(List<dynamic> tasks, {double from = 0.0, double to = 100.0}) async {
   final normalizedTasks = tasks.map((t) {
     if (t is Future Function()) {
       return (weight: 1.0, action: t);
@@ -33,10 +27,7 @@ Future<void> runSyncTaskWithStatus(
     throw ArgumentError("任务格式不支持");
   }).toList();
 
-  double totalWeight = normalizedTasks.fold(
-    0,
-    (sum, item) => sum + item.weight,
-  );
+  double totalWeight = normalizedTasks.fold(0, (sum, item) => sum + item.weight);
   double currentCompletedWeight = 0;
   print('total weight: $totalWeight');
 
@@ -45,16 +36,11 @@ Future<void> runSyncTaskWithStatus(
   for (var task in normalizedTasks) {
     await task.action();
     currentCompletedWeight += task.weight;
-    int progress = ((currentCompletedWeight / totalWeight) * (to - from) + from)
-        .toInt();
-    settingController.updateUserInterfaceHistoryCache(
-      notesSyncProgress: progress,
-    );
+    int progress = ((currentCompletedWeight / totalWeight) * (to - from) + from).toInt();
+    settingController.updateUserInterfaceHistoryCache(notesSyncProgress: progress);
     print('当前同步进度: $progress%');
   }
-  settingController.updateUserInterfaceHistoryCache(
-    notesSyncProgress: to.toInt(),
-  );
+  settingController.updateUserInterfaceHistoryCache(notesSyncProgress: to.toInt());
 }
 
 class SettingController extends GetxController {
@@ -77,46 +63,32 @@ class SettingController extends GetxController {
     print('new setting controller onInit');
 
     // load app setting from storage
-    Map<String, dynamic>? app = box.read<Map<String, dynamic>?>(
-      STORAGE_SETTING_APP_SETTINGS_KEY,
-    );
+    Map<String, dynamic>? app = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_SETTINGS_KEY);
     if (app != null) {
       appSetting.value = AppSetting.fromJson(app);
     }
     // load app feature management from storage
-    Map<String, dynamic>? feature = box.read<Map<String, dynamic>?>(
-      STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY,
-    );
+    Map<String, dynamic>? feature = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY);
     if (feature != null) {
       appFeaturesManagement.value = AppFeaturesManagement.fromJson(feature);
     }
     // load user interface history cache from storage
-    Map<String, dynamic>? uiCache = box.read<Map<String, dynamic>?>(
-      STORAGE_SETTING_USER_INTERFACE_HISTORY_CACHE_KEY,
-    );
+    Map<String, dynamic>? uiCache = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INTERFACE_HISTORY_CACHE_KEY);
     if (uiCache != null) {
-      _userInterfaceHistoryCache.value = UserInterfaceHistoryCache.fromJson(
-        uiCache,
-      );
+      _userInterfaceHistoryCache.value = UserInterfaceHistoryCache.fromJson(uiCache);
     }
     // load user info from storage
-    Map<String, dynamic>? user = box.read<Map<String, dynamic>?>(
-      STORAGE_SETTING_USER_INFO_KEY,
-    );
+    Map<String, dynamic>? user = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INFO_KEY);
     if (user != null) {
       userInfo.value = UserInfo.fromJson(user);
     }
     // load quick login info from storage
-    Map<String, dynamic>? quickLogin = box.read<Map<String, dynamic>?>(
-      STORAGE_SETTING_QUICK_LOGIN_KEY,
-    );
+    Map<String, dynamic>? quickLogin = box.read<Map<String, dynamic>?>(STORAGE_SETTING_QUICK_LOGIN_KEY);
     if (quickLogin != null) {
       quickLogins.value = QuickLoginInfo.fromJson(quickLogin);
     }
     // load syncstore setting from storage
-    Map<String, dynamic>? syncstore = box.read<Map<String, dynamic>?>(
-      STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY,
-    );
+    Map<String, dynamic>? syncstore = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY);
     if (syncstore != null) {
       syncStoreSetting.value = SyncStoreSetting.fromJson(syncstore);
     }
@@ -147,10 +119,7 @@ class SettingController extends GetxController {
     syncStoreSetting.update((setting) {
       setting?.update(baseUrl: baseUrl, enableHpke: enableHpke);
     });
-    box.write(
-      STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY,
-      syncStoreSetting.value.toJson(),
-    );
+    box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, syncStoreSetting.value.toJson());
   }
 
   // app settings
@@ -160,8 +129,7 @@ class SettingController extends GetxController {
   Locale get locale => appSetting.value.locale;
   ColorTag get colorTag => appSetting.value.colorTag;
   bool get appCanUpdate => appSetting.value.canUpdate;
-  DateTime? get appLastCheckedUpdateTime =>
-      appSetting.value.lastUpdateCheckTime;
+  DateTime? get appLastCheckedUpdateTime => appSetting.value.lastUpdateCheckTime;
   void updateAppSetting({
     ThemeMode? themeMode,
     double? fontScale,
@@ -187,38 +155,23 @@ class SettingController extends GetxController {
   final appFeaturesManagement = AppFeaturesManagement.defaults().obs;
   bool get notesEnabled => appFeaturesManagement.value.notesEnabled;
   bool get trackerEnabled => appFeaturesManagement.value.trackerEnabled;
-  bool get taskEnabled =>
-      true; // task is a core feature, so it's always enabled
+  bool get taskEnabled => true; // task is a core feature, so it's always enabled
   void updateAppFeaturesManagement({bool? enableNotes, bool? enableTracker}) {
     appFeaturesManagement.update((feature) {
       feature?.update(enableNotes: enableNotes, enableTracker: enableTracker);
     });
-    box.write(
-      STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY,
-      appFeaturesManagement.value.toJson(),
-    );
+    box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, appFeaturesManagement.value.toJson());
   }
 
   // user interface history cache
   final _userInterfaceHistoryCache = UserInterfaceHistoryCache.defaults().obs;
-  String? get notesLastOpenedRepoId =>
-      _userInterfaceHistoryCache.value.notesLastOpenedRepoId;
-  int get notesSyncProgress =>
-      _userInterfaceHistoryCache.value.notesSyncProgress;
-  void updateUserInterfaceHistoryCache({
-    String? notesLastOpenedRepoId,
-    int? notesSyncProgress,
-  }) {
+  String? get notesLastOpenedRepoId => _userInterfaceHistoryCache.value.notesLastOpenedRepoId;
+  int get notesSyncProgress => _userInterfaceHistoryCache.value.notesSyncProgress;
+  void updateUserInterfaceHistoryCache({String? notesLastOpenedRepoId, int? notesSyncProgress}) {
     _userInterfaceHistoryCache.update((cache) {
-      cache?.update(
-        notesLastOpenedRepoId: notesLastOpenedRepoId,
-        notesSyncProgress: notesSyncProgress,
-      );
+      cache?.update(notesLastOpenedRepoId: notesLastOpenedRepoId, notesSyncProgress: notesSyncProgress);
     });
-    box.write(
-      STORAGE_SETTING_USER_INTERFACE_HISTORY_CACHE_KEY,
-      _userInterfaceHistoryCache.value.toJson(),
-    );
+    box.write(STORAGE_SETTING_USER_INTERFACE_HISTORY_CACHE_KEY, _userInterfaceHistoryCache.value.toJson());
   }
 
   // user info
@@ -226,17 +179,9 @@ class SettingController extends GetxController {
   String get userId => userInfo.value.id;
   String get userName => userInfo.value.name;
   String get userPassword => userInfo.value.password;
-  void updateUserInfo({
-    String? userId,
-    String? userName,
-    String? userPassword,
-  }) {
+  void updateUserInfo({String? userId, String? userName, String? userPassword}) {
     userInfo.update((info) {
-      info?.update(
-        userId: userId,
-        userName: userName,
-        userPassword: userPassword,
-      );
+      info?.update(userId: userId, userName: userName, userPassword: userPassword);
     });
     box.write(STORAGE_SETTING_USER_INFO_KEY, userInfo.value.toJson());
     TaskWidgetBridge.scheduleRefresh();
@@ -244,8 +189,7 @@ class SettingController extends GetxController {
 
   // quick login info
   final quickLogins = QuickLoginInfo.defaults().obs;
-  UserInfo? quickLoginUser(String userId) =>
-      quickLogins.value.quickLoginMap[userId];
+  UserInfo? quickLoginUser(String userId) => quickLogins.value.quickLoginMap[userId];
   void updateQuickLoginInfo({String? userId, UserInfo? userInfo}) {
     quickLogins.update((ql) {
       ql?.update(userId: userId, userInfo: userInfo);
@@ -275,10 +219,7 @@ class SyncStoreSetting {
   SyncStoreSetting({required this.baseUrl, required this.enableHpke});
 
   factory SyncStoreSetting.defaults() {
-    return SyncStoreSetting(
-      baseUrl: 'http://127.0.0.1:10101/api',
-      enableHpke: false,
-    );
+    return SyncStoreSetting(baseUrl: 'http://127.0.0.1:10101/api', enableHpke: false);
   }
 
   Map<String, dynamic> toJson() {
@@ -356,9 +297,7 @@ class AppSetting {
   factory AppSetting.fromJson(Map<String, dynamic> json) {
     ThemeMode themeMode;
     try {
-      themeMode = ThemeMode.values.firstWhere(
-        (e) => e.toString() == json['theme_mode'],
-      );
+      themeMode = ThemeMode.values.firstWhere((e) => e.toString() == json['theme_mode']);
     } catch (_) {
       themeMode = ThemeMode.system;
     }
@@ -371,9 +310,7 @@ class AppSetting {
     bool canUpdate = json['can_update'] ?? false;
     DateTime? lastCheckedUpdateTime;
     if (json['last_checked_update_time'] != null) {
-      lastCheckedUpdateTime = DateTime.tryParse(
-        json['last_checked_update_time'],
-      );
+      lastCheckedUpdateTime = DateTime.tryParse(json['last_checked_update_time']);
     }
     return AppSetting(
       themeMode: themeMode,
@@ -420,10 +357,7 @@ class AppFeaturesManagement {
 
   get notesEnabled => enableNotes;
   get trackerEnabled => enableTracker;
-  AppFeaturesManagement({
-    required this.enableNotes,
-    required this.enableTracker,
-  });
+  AppFeaturesManagement({required this.enableNotes, required this.enableTracker});
   factory AppFeaturesManagement.defaults() {
     return AppFeaturesManagement(enableNotes: true, enableTracker: false);
   }
@@ -450,21 +384,12 @@ class AppFeaturesManagement {
 class UserInterfaceHistoryCache {
   String? notesLastOpenedRepoId;
   int notesSyncProgress;
-  UserInterfaceHistoryCache({
-    this.notesLastOpenedRepoId,
-    required this.notesSyncProgress,
-  });
+  UserInterfaceHistoryCache({this.notesLastOpenedRepoId, required this.notesSyncProgress});
   factory UserInterfaceHistoryCache.defaults() {
-    return UserInterfaceHistoryCache(
-      notesLastOpenedRepoId: null,
-      notesSyncProgress: 100,
-    );
+    return UserInterfaceHistoryCache(notesLastOpenedRepoId: null, notesSyncProgress: 100);
   }
   Map<String, dynamic> toJson() {
-    return {
-      'notes_last_opened_repo_id': notesLastOpenedRepoId,
-      'notes_sync_progress': notesSyncProgress,
-    };
+    return {'notes_last_opened_repo_id': notesLastOpenedRepoId, 'notes_sync_progress': notesSyncProgress};
   }
 
   factory UserInterfaceHistoryCache.fromJson(Map<String, dynamic> json) {
@@ -494,20 +419,13 @@ class UserInfo {
   get password => _userPassword;
   get avatarUrl => _userAvatarUrl;
 
-  UserInfo({
-    required String userId,
-    required String userName,
-    required String userPassword,
-    String? userAvatarUrl,
-  }) : _userId = userId,
-       _userName = userName,
-       _userPassword = userPassword,
-       _userAvatarUrl = userAvatarUrl;
+  UserInfo({required String userId, required String userName, required String userPassword, String? userAvatarUrl})
+    : _userId = userId,
+      _userName = userName,
+      _userPassword = userPassword,
+      _userAvatarUrl = userAvatarUrl;
 
-  factory UserInfo.fromProfile(
-    UserProfile profile, {
-    required String password,
-  }) {
+  factory UserInfo.fromProfile(UserProfile profile, {required String password}) {
     return UserInfo(
       userId: profile.userId,
       userName: profile.name,
@@ -517,12 +435,7 @@ class UserInfo {
   }
 
   factory UserInfo.unknown() {
-    return UserInfo(
-      userId: 'unknown',
-      userName: '',
-      userPassword: '',
-      userAvatarUrl: null,
-    );
+    return UserInfo(userId: 'unknown', userName: '', userPassword: '', userAvatarUrl: null);
   }
 
   Map<String, dynamic> toJson() {
@@ -543,12 +456,7 @@ class UserInfo {
     );
   }
 
-  void update({
-    String? userId,
-    String? userName,
-    String? userPassword,
-    String? userAvatarUrl,
-  }) {
+  void update({String? userId, String? userName, String? userPassword, String? userAvatarUrl}) {
     if (userId != null) {
       _userId = userId;
     }
@@ -571,11 +479,7 @@ class QuickLoginInfo {
     return QuickLoginInfo(quickLoginMap: {});
   }
   Map<String, dynamic> toJson() {
-    return {
-      'quick_login_map': quickLoginMap.map(
-        (key, value) => MapEntry(key, value.toJson()),
-      ),
-    };
+    return {'quick_login_map': quickLoginMap.map((key, value) => MapEntry(key, value.toJson()))};
   }
 
   factory QuickLoginInfo.fromJson(Map<String, dynamic> json) {

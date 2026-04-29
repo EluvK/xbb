@@ -5,8 +5,7 @@ typedef TaskExecutor = Future<bool> Function(Map<String, dynamic> metadata);
 class AsyncTaskQueue {
   final Map<String, _TaskQueue> _queues = {};
 
-  Future<void> addTask(
-      String key, Map<String, dynamic> metadata, TaskExecutor executor) async {
+  Future<void> addTask(String key, Map<String, dynamic> metadata, TaskExecutor executor) async {
     _queues.putIfAbsent(key, () => _TaskQueue()).addTask(metadata, executor);
   }
 }

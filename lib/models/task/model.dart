@@ -17,10 +17,7 @@ part 'model.g.dart';
 part 'model.freezed.dart';
 
 Future<void> reInitTaskSync(SyncStoreClient client) async {
-  await reInit<CheckListController>(
-    () => CheckListController(client),
-    (c) => c.ensureInitialization(),
-  );
+  await reInit<CheckListController>(() => CheckListController(client), (c) => c.ensureInitialization());
   await TaskWidgetBridge.refreshFromLocalState();
   final SettingController settingController = Get.find<SettingController>();
   if (settingController.taskEnabled) {
@@ -41,10 +38,7 @@ Future<void> onReadySyncTask() async {
 
   try {
     await runSyncTaskWithStatus(
-      [
-        () => checkListController.syncAll(batchSize: 100),
-        () => checkListController.rebuildLocal(),
-      ],
+      [() => checkListController.syncAll(batchSize: 100), () => checkListController.rebuildLocal()],
       from: 0.0,
       to: 100.0,
     );
@@ -76,14 +70,9 @@ Future<void> reInit<T extends GetxController>(
 @freezed
 abstract class CheckList with _$CheckList {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory CheckList({
-    required String tasks,
-    required bool archived,
-    DateTime? archivedAt,
-  }) = _CheckList;
+  const factory CheckList({required String tasks, required bool archived, DateTime? archivedAt}) = _CheckList;
 
-  factory CheckList.fromJson(Map<String, dynamic> json) =>
-      _$CheckListFromJson(json);
+  factory CheckList.fromJson(Map<String, dynamic> json) => _$CheckListFromJson(json);
 }
 
 @freezed
@@ -98,8 +87,7 @@ abstract class TaskItem with _$TaskItem {
     @Default(0) int sortOrder,
   }) = _TaskItem;
 
-  factory TaskItem.fromJson(Map<String, dynamic> json) =>
-      _$TaskItemFromJson(json);
+  factory TaskItem.fromJson(Map<String, dynamic> json) => _$TaskItemFromJson(json);
 }
 
 List<TaskItem> decodeTaskItems(String tasksPayload) {
@@ -112,8 +100,7 @@ List<TaskItem> decodeTaskItems(String tasksPayload) {
     final items = <TaskItem>[];
     for (var i = 0; i < decoded.length; i++) {
       final rawMap = Map<String, dynamic>.from(decoded[i] as Map);
-      final hasSortOrder =
-          rawMap.containsKey('sort_order') || rawMap.containsKey('sortOrder');
+      final hasSortOrder = rawMap.containsKey('sort_order') || rawMap.containsKey('sortOrder');
       final parsed = TaskItem.fromJson(rawMap);
       // Legacy payloads may not have sort_order; keep current array order as stable fallback.
       items.add(hasSortOrder ? parsed : parsed.copyWith(sortOrder: i));

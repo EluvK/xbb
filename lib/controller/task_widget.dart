@@ -66,14 +66,10 @@ class TaskWidgetSnapshot {
 }
 
 class TaskWidgetBridge {
-  static const MethodChannel _channel = MethodChannel(
-    'com.eluvk.xbb/task_widget',
-  );
+  static const MethodChannel _channel = MethodChannel('com.eluvk.xbb/task_widget');
   static Timer? _refreshTimer;
 
-  static void scheduleRefresh({
-    Duration delay = const Duration(milliseconds: 150),
-  }) {
+  static void scheduleRefresh({Duration delay = const Duration(milliseconds: 150)}) {
     if (!_isSupportedPlatform) return;
     _refreshTimer?.cancel();
     _refreshTimer = Timer(delay, () {
@@ -95,9 +91,7 @@ class TaskWidgetBridge {
   }
 
   static Future<void> _publishSnapshot(TaskWidgetSnapshot snapshot) async {
-    await _channel.invokeMethod<void>('updateSnapshot', {
-      'snapshot': jsonEncode(snapshot.toJson()),
-    });
+    await _channel.invokeMethod<void>('updateSnapshot', {'snapshot': jsonEncode(snapshot.toJson())});
   }
 
   static Future<TaskWidgetSnapshot> _buildSnapshot() async {
@@ -107,9 +101,8 @@ class TaskWidgetBridge {
     }
 
     final items = await _loadCheckLists();
-    final activeCandidates =
-        items.where((item) => item.body.archived == false).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final activeCandidates = items.where((item) => item.body.archived == false).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     if (activeCandidates.isEmpty) {
       return TaskWidgetSnapshot.empty(totalCount: 0);
     }
@@ -128,14 +121,7 @@ class TaskWidgetBridge {
       totalCount: tasks.length,
       unfinishedCount: unfinished.length,
       generatedAt: DateTime.now().toUtc(),
-      items: unfinished
-          .map(
-            (task) => TaskWidgetSnapshotItem(
-              id: task.id,
-              content: task.content.trim(),
-            ),
-          )
-          .toList(),
+      items: unfinished.map((task) => TaskWidgetSnapshotItem(id: task.id, content: task.content.trim())).toList(),
     );
   }
 

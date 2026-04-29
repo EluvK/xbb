@@ -4,8 +4,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:get/get.dart';
-import 'package:syncstore_client/syncstore_client.dart'
-    show ApiError, ApiException;
+import 'package:syncstore_client/syncstore_client.dart' show ApiError, ApiException;
 import 'package:xbb/controller/app_launch.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
@@ -48,11 +47,7 @@ void main() async {
     }
     if (error is ApiException) {
       print('[API ERROR] ${error.error}: ${error.message}');
-      flushBar(
-        FlushLevel.WARNING,
-        "API 错误",
-        "${error.error}: ${error.message}",
-      );
+      flushBar(FlushLevel.WARNING, "API 错误", "${error.error}: ${error.message}");
       return true;
     }
     flushBar(FlushLevel.WARNING, "未知错误", "$error");
@@ -78,15 +73,10 @@ class MyApp extends StatelessWidget {
     double fontScale = settingController.fontScale;
     print('load fontScale: $fontScale');
     final mediaQueryData = MediaQuery.of(context);
-    final scale = mediaQueryData.textScaler.clamp(
-      minScaleFactor: fontScale,
-      maxScaleFactor: fontScale + 0.1,
-    );
+    final scale = mediaQueryData.textScaler.clamp(minScaleFactor: fontScale, maxScaleFactor: fontScale + 0.1);
 
     var app = GetMaterialApp(
-      scrollBehavior: const MaterialScrollBehavior().copyWith(
-        dragDevices: PointerDeviceKind.values.toSet(),
-      ),
+      scrollBehavior: const MaterialScrollBehavior().copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       initialRoute: initialRoute,
       translations: Translation(),
       locale: locale,
@@ -97,14 +87,8 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/notes/view-post', page: () => const ViewPostPage()),
         GetPage(name: '/notes/edit-post', page: () => const EditPostPage()),
         GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
-        GetPage(
-          name: '/tracker/edit-tracker',
-          page: () => const EditTrackerPage(),
-        ),
-        GetPage(
-          name: '/tracker/view-tracker',
-          page: () => const ViewTrackerDetailPage(),
-        ),
+        GetPage(name: '/tracker/edit-tracker', page: () => const EditTrackerPage()),
+        GetPage(name: '/tracker/view-tracker', page: () => const ViewTrackerDetailPage()),
         GetPage(name: '/task', page: () => const TaskPage()),
       ],
       debugShowCheckedModeBanner: true,

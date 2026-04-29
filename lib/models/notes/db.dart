@@ -24,7 +24,6 @@ class NotesDB {
       databaseFactory = databaseFactoryFfi;
     }
 
-
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, userId, 'notes.db');
 

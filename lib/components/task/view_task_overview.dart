@@ -125,10 +125,7 @@ class _ViewTaskOverviewState extends State<ViewTaskOverview> {
                   ],
                 ),
                 if (_totalCount == 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text('task_overview_empty'.tr),
-                  ),
+                  Padding(padding: const EdgeInsets.only(top: 12), child: Text('task_overview_empty'.tr)),
               ],
             ),
           ),

@@ -26,30 +26,17 @@ class HomePageWrapper extends StatefulWidget {
 
 class _HomePageWrapperState extends State<HomePageWrapper> {
   final SettingController settingController = Get.find<SettingController>();
-  final AppLaunchController appLaunchController =
-      Get.find<AppLaunchController>();
+  final AppLaunchController appLaunchController = Get.find<AppLaunchController>();
 
   HomeTabIndex _lastSelectedTab = HomeTabIndex.notes;
   Worker? _launchWorker;
   TabController? _tabController;
 
   final Map<HomeTabIndex, Tab> _allTabs = {
-    HomeTabIndex.notes: Tab(
-      text: 'home_bar_title_note'.tr,
-      icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon)),
-    ),
-    HomeTabIndex.tracker: Tab(
-      text: 'home_bar_title_tracker'.tr,
-      icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon)),
-    ),
-    HomeTabIndex.task: Tab(
-      text: 'home_bar_title_task'.tr,
-      icon: const Icon(Icons.check_box_rounded),
-    ),
-    HomeTabIndex.settings: Tab(
-      text: 'home_bar_title_setting'.tr,
-      icon: Icon((AppFeatureMetaEnum.settings.gIcon)),
-    ),
+    HomeTabIndex.notes: Tab(text: 'home_bar_title_note'.tr, icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
+    HomeTabIndex.tracker: Tab(text: 'home_bar_title_tracker'.tr, icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon))),
+    HomeTabIndex.task: Tab(text: 'home_bar_title_task'.tr, icon: const Icon(Icons.check_box_rounded)),
+    HomeTabIndex.settings: Tab(text: 'home_bar_title_setting'.tr, icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
   };
 
   List<HomeTabIndex> get _activeIndices {
@@ -64,9 +51,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   @override
   void initState() {
     super.initState();
-    final requestedTab = _tabFromLaunchId(
-      appLaunchController.takePendingHomeTab(),
-    );
+    final requestedTab = _tabFromLaunchId(appLaunchController.takePendingHomeTab());
     if (requestedTab != null) {
       _lastSelectedTab = requestedTab;
     }
@@ -80,9 +65,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
       if (mounted) {
         setState(() {});
       }
-      if (_tabController != null &&
-          targetIndex != -1 &&
-          _tabController!.index != targetIndex) {
+      if (_tabController != null && targetIndex != -1 && _tabController!.index != targetIndex) {
         _tabController!.animateTo(targetIndex);
       }
       appLaunchController.clearPendingHomeTab();
@@ -109,8 +92,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     final tabController = _tabController;
     if (tabController == null || tabController.indexIsChanging) return;
     final activeIndices = _activeIndices;
-    if (tabController.index < 0 ||
-        tabController.index >= activeIndices.length) {
+    if (tabController.index < 0 || tabController.index >= activeIndices.length) {
       return;
     }
     _lastSelectedTab = activeIndices[tabController.index];
@@ -137,11 +119,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
               _tabController = tabController;
               _tabController?.addListener(_handleTabChanged);
             }
-            return _HomePage(
-              tabController: tabController,
-              tabs: activeTabs,
-              activeIndices: activeIndices,
-            );
+            return _HomePage(tabController: tabController, tabs: activeTabs, activeIndices: activeIndices);
           },
         ),
       );
@@ -150,11 +128,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
 }
 
 class _HomePage extends GetResponsiveView {
-  _HomePage({
-    required this.tabController,
-    required this.tabs,
-    required this.activeIndices,
-  });
+  _HomePage({required this.tabController, required this.tabs, required this.activeIndices});
 
   final TabController tabController;
   final List<Tab> tabs;
@@ -191,12 +165,7 @@ class _HomePage extends GetResponsiveView {
               }
             },
             destinations: tabs
-                .map(
-                  (tab) => NavigationDestination(
-                    icon: tab.icon ?? const Icon(Icons.circle),
-                    label: tab.text ?? '',
-                  ),
-                )
+                .map((tab) => NavigationDestination(icon: tab.icon ?? const Icon(Icons.circle), label: tab.text ?? ''))
                 .toList(),
           ),
         );
@@ -219,9 +188,7 @@ class _HomePage extends GetResponsiveView {
                 child: Column(
                   children: [
                     Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                      ),
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
                       child: const _GlobalColorController(),
                     ),
                     TabBarController(tabs: tabs, tabController: tabController),
@@ -240,11 +207,7 @@ class _HomePage extends GetResponsiveView {
 }
 
 class TabBarController extends StatelessWidget {
-  const TabBarController({
-    super.key,
-    required this.tabs,
-    required this.tabController,
-  });
+  const TabBarController({super.key, required this.tabs, required this.tabController});
 
   final List<Tab> tabs;
   final TabController tabController;
@@ -356,16 +319,10 @@ class _AppBar extends StatelessWidget {
       case HomeTabIndex.tracker:
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('home_bar_title_tracker'.tr),
-            const _GlobalColorController(),
-          ],
+          children: [Text('home_bar_title_tracker'.tr), const _GlobalColorController()],
         );
       case HomeTabIndex.task:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text('home_bar_title_task'.tr)],
-        );
+        return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('home_bar_title_task'.tr)]);
       case HomeTabIndex.settings:
         return Text('home_bar_title_setting'.tr);
     }

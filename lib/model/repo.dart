@@ -115,19 +115,19 @@ class RepoRepository {
   Future<List<Repo>> listRepo(String user, RepoType repoType) async {
     final db = await DataBase().getDb();
     final List<Map<String, dynamic>> maps = await db.query(tableRepoName);
-    var result = List.generate(maps.length, (i) {
-      return Repo.fromMap(maps[i]);
-    }).where((repo) {
-      switch (repoType) {
-        case RepoType.all:
-          return (repo.owner == user || repo.id == "0") ||
-              (repo.sharedTo != null && repo.sharedTo! == user);
-        case RepoType.owned:
-          return repo.owner == user || repo.id == "0";
-        case RepoType.shared:
-          return repo.sharedTo != null && repo.sharedTo! == user;
-      }
-    }).toList();
+    var result =
+        List.generate(maps.length, (i) {
+          return Repo.fromMap(maps[i]);
+        }).where((repo) {
+          switch (repoType) {
+            case RepoType.all:
+              return (repo.owner == user || repo.id == "0") || (repo.sharedTo != null && repo.sharedTo! == user);
+            case RepoType.owned:
+              return repo.owner == user || repo.id == "0";
+            case RepoType.shared:
+              return repo.sharedTo != null && repo.sharedTo! == user;
+          }
+        }).toList();
     return result;
   }
 
@@ -151,21 +151,12 @@ class RepoRepository {
 
   Future<void> deleteRepo(String repoId) async {
     final db = await DataBase().getDb();
-    await db.delete(
-      tableRepoName,
-      where: '$tableRepoColumnId = ?',
-      whereArgs: [repoId],
-    );
+    await db.delete(tableRepoName, where: '$tableRepoColumnId = ?', whereArgs: [repoId]);
   }
 
   Future<void> updateRepo(Repo repo) async {
     final db = await DataBase().getDb();
-    await db.update(
-      tableRepoName,
-      repo.toMap(),
-      where: '$tableRepoColumnId = ?',
-      whereArgs: [repo.id],
-    );
+    await db.update(tableRepoName, repo.toMap(), where: '$tableRepoColumnId = ?', whereArgs: [repo.id]);
   }
 
   Future<void> upsertRepo(Repo repo) async {

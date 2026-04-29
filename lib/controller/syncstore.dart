@@ -80,10 +80,7 @@ class SyncStoreControl extends GetxController {
 
   Future<String> fetchVersionInfo(String appName) async {
     try {
-      final res = await client.value!.download(
-        '/fs/public/$appName/version',
-        isPublic: true,
-      );
+      final res = await client.value!.download('/fs/public/$appName/version', isPublic: true);
       return utf8.decode(res);
     } on ApiException catch (e) {
       print('Error during fetching version info: ${e.message}');
@@ -93,10 +90,7 @@ class SyncStoreControl extends GetxController {
 
   Future<String> fetchReleaseNotes(String appName) async {
     try {
-      final res = await client.value!.download(
-        '/fs/public/$appName/CHANGELOG',
-        isPublic: true,
-      );
+      final res = await client.value!.download('/fs/public/$appName/CHANGELOG', isPublic: true);
       return utf8.decode(res);
     } on ApiException catch (e) {
       print('Error during fetching release notes: ${e.message}');
@@ -128,16 +122,9 @@ class SyncStoreFileService extends FileService {
   SyncStoreFileService(this.syncStoreClient);
 
   @override
-  Future<FileServiceResponse> get(
-    String url, {
-    Map<String, String>? headers,
-  }) async {
+  Future<FileServiceResponse> get(String url, {Map<String, String>? headers}) async {
     final bytes = await syncStoreClient.download(url);
-    return _SyncStoreFileServiceResponse(
-      url: url,
-      bytes: bytes,
-      statusCode: 200,
-    );
+    return _SyncStoreFileServiceResponse(url: url, bytes: bytes, statusCode: 200);
   }
 }
 
@@ -146,11 +133,8 @@ class _SyncStoreFileServiceResponse extends FileServiceResponse {
   final Uint8List bytes;
   final int _statusCode;
 
-  _SyncStoreFileServiceResponse({
-    required this.url,
-    required this.bytes,
-    required int statusCode,
-  }) : _statusCode = statusCode;
+  _SyncStoreFileServiceResponse({required this.url, required this.bytes, required int statusCode})
+    : _statusCode = statusCode;
 
   @override
   Stream<List<int>> get content => Stream.value(bytes);
@@ -180,10 +164,7 @@ class GetStorageTokenStorage implements TokenStorage {
   @override
   Future<void> clear() {
     TaskWidgetBridge.scheduleLoggedOutState();
-    return Future.wait([
-      box.remove(TOKEN_ACCESS_KEY),
-      box.remove(TOKEN_REFRESH_KEY),
-    ]);
+    return Future.wait([box.remove(TOKEN_ACCESS_KEY), box.remove(TOKEN_REFRESH_KEY)]);
   }
 
   @override

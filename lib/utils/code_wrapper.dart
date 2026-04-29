@@ -36,20 +36,15 @@ class _PreWrapperState extends State<CodeWrapperWidget> {
               children: [
                 if (widget.language.isNotEmpty)
                   SelectionContainer.disabled(
-                      child: Container(
-                    margin: const EdgeInsets.only(right: 2),
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(width: 0.5)),
-                    child: Text(widget.language,
-                        style: const TextStyle(fontWeight: FontWeight.normal)),
-                  )),
-                InkWell(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: _switchWidget,
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 2),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(width: 0.5)),
+                      child: Text(widget.language, style: const TextStyle(fontWeight: FontWeight.normal)),
+                    ),
                   ),
+                InkWell(
+                  child: AnimatedSwitcher(duration: const Duration(milliseconds: 200), child: _switchWidget),
                   onTap: () async {
                     if (hasCopied) return;
                     await Clipboard.setData(ClipboardData(text: widget.text));
@@ -57,8 +52,7 @@ class _PreWrapperState extends State<CodeWrapperWidget> {
                     refresh();
                     Future.delayed(const Duration(seconds: 2), () {
                       hasCopied = false;
-                      _switchWidget =
-                          Icon(Icons.copy_rounded, key: UniqueKey());
+                      _switchWidget = Icon(Icons.copy_rounded, key: UniqueKey());
                       refresh();
                     });
                   },
@@ -66,7 +60,7 @@ class _PreWrapperState extends State<CodeWrapperWidget> {
               ],
             ),
           ),
-        )
+        ),
       ],
     );
   }

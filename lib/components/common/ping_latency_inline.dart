@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class PingLatencyInline extends StatelessWidget {
-  const PingLatencyInline({
-    super.key,
-    required this.isLoading,
-    required this.latencyMs,
-    required this.onRefresh,
-  });
+  const PingLatencyInline({super.key, required this.isLoading, required this.latencyMs, required this.onRefresh});
 
   final bool isLoading;
   final int? latencyMs;
@@ -32,10 +27,7 @@ class PingLatencyInline extends StatelessWidget {
               ? SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(color),
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(color)),
                 )
               : Icon(Icons.network_ping_rounded, size: 18, color: color),
         ),

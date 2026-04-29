@@ -29,9 +29,7 @@ class PostSummary {
       category: map[tablePostColumnCategory],
       updatedAt: DateTime.parse(map[tablePostColumnUpdatedAt]),
       comments: map['comments'] != null
-          ? List<Map<String, dynamic>>.from(map['comments'])
-              .map((e) => CommentSummary.fromMap(e))
-              .toList()
+          ? List<Map<String, dynamic>>.from(map['comments']).map((e) => CommentSummary.fromMap(e)).toList()
           : [],
     );
   }
@@ -93,7 +91,7 @@ class Post {
       tablePostColumnCreatedAt: createdAt.toUtc().toIso8601String(),
       tablePostColumnUpdatedAt: updatedAt.toUtc().toIso8601String(),
       tablePostColumnAuthor: author,
-      tablePostColumnRepoId: repoId
+      tablePostColumnRepoId: repoId,
     };
   }
 
@@ -192,14 +190,12 @@ class PostRepository {
 
   Future<void> deletePost(String postId) async {
     final db = await DataBase().getDb();
-    await db.delete(tablePostName,
-        where: '$tablePostColumnId = ?', whereArgs: [postId]);
+    await db.delete(tablePostName, where: '$tablePostColumnId = ?', whereArgs: [postId]);
   }
 
   Future<void> updatePost(Post post) async {
     final db = await DataBase().getDb();
-    await db.update(tablePostName, post.toMap(),
-        where: '$tablePostColumnId = ?', whereArgs: [post.id]);
+    await db.update(tablePostName, post.toMap(), where: '$tablePostColumnId = ?', whereArgs: [post.id]);
   }
 
   Future<void> upsertPost(Post post) async {

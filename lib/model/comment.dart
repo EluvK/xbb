@@ -6,12 +6,7 @@ class CommentSummary {
   final String postId;
   final DateTime updatedAt;
 
-  CommentSummary({
-    required this.id,
-    required this.repoId,
-    required this.postId,
-    required this.updatedAt,
-  });
+  CommentSummary({required this.id, required this.repoId, required this.postId, required this.updatedAt});
 
   factory CommentSummary.fromMap(Map<String, dynamic> map) {
     return CommentSummary(
@@ -110,29 +105,17 @@ class Comment {
 class CommentRepository {
   Future<void> addComment(Comment comment) async {
     final db = await DataBase().getDb();
-    await db.insert(
-      tableCommentName,
-      comment.toMap(),
-    );
+    await db.insert(tableCommentName, comment.toMap());
   }
 
   Future<void> updateComment(Comment comment) async {
     final db = await DataBase().getDb();
-    await db.update(
-      tableCommentName,
-      comment.toMap(),
-      where: '$tableCommentColumnId = ?',
-      whereArgs: [comment.id],
-    );
+    await db.update(tableCommentName, comment.toMap(), where: '$tableCommentColumnId = ?', whereArgs: [comment.id]);
   }
 
   Future<void> deleteComment(String id) async {
     final db = await DataBase().getDb();
-    await db.delete(
-      tableCommentName,
-      where: '$tableCommentColumnId = ?',
-      whereArgs: [id],
-    );
+    await db.delete(tableCommentName, where: '$tableCommentColumnId = ?', whereArgs: [id]);
   }
 
   Future<Comment?> getComment(String id) async {

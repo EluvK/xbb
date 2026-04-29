@@ -51,11 +51,7 @@ class _ViewTasksState extends State<ViewTasks> {
   @override
   void initState() {
     super.initState();
-    _activeCheckList = const CheckList(
-      tasks: '[]',
-      archived: false,
-      archivedAt: null,
-    );
+    _activeCheckList = const CheckList(tasks: '[]', archived: false, archivedAt: null);
     _initData();
   }
 
@@ -71,9 +67,7 @@ class _ViewTasksState extends State<ViewTasks> {
 
     _checkListController = Get.find<CheckListController>();
     await _checkListController!.ensureInitialization();
-    _allCheckListsRx = _checkListController!.registerFilterSubscription(
-      filterKey: _allTasksFilterKey,
-    );
+    _allCheckListsRx = _checkListController!.registerFilterSubscription(filterKey: _allTasksFilterKey);
     _checkListWorker = ever<List<CheckListDataItem>>(_allCheckListsRx!, (_) {
       _reloadFromController(ensureActive: false);
     });
@@ -126,9 +120,7 @@ class _ViewTasksState extends State<ViewTasks> {
   bool get _hasActiveTasks => _activeTasks.isNotEmpty;
 
   List<TaskItem> _normalizeSortOrder(List<TaskItem> tasks) {
-    return [
-      for (var i = 0; i < tasks.length; i++) tasks[i].copyWith(sortOrder: i),
-    ];
+    return [for (var i = 0; i < tasks.length; i++) tasks[i].copyWith(sortOrder: i)];
   }
 
   Future<void> _reloadFromController({required bool ensureActive}) async {
@@ -136,20 +128,16 @@ class _ViewTasksState extends State<ViewTasks> {
     if (controller == null) return;
 
     final allItems =
-        _allCheckListsRx?.toList(growable: false) ??
-        controller.getCheckListDetails(selector: (item) => item);
-    var activeCandidates =
-        allItems.where((item) => item.body.archived == false).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        _allCheckListsRx?.toList(growable: false) ?? controller.getCheckListDetails(selector: (item) => item);
+    var activeCandidates = allItems.where((item) => item.body.archived == false).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    final archivedCandidates =
-        allItems.where((item) => item.body.archived).toList()..sort(
-          (a, b) =>
-              (a.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-                  .compareTo(
-                    b.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
-                  ),
-        );
+    final archivedCandidates = allItems.where((item) => item.body.archived).toList()
+      ..sort(
+        (a, b) => (a.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+          b.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      );
 
     if (mounted) {
       setState(() {
@@ -158,14 +146,9 @@ class _ViewTasksState extends State<ViewTasks> {
         if (activeCandidates.isNotEmpty) {
           final activeItem = activeCandidates.first;
           _activeCheckList = activeItem.body;
-          _isSaving =
-              _isPersisting || activeItem.syncStatus == SyncStatus.syncing;
+          _isSaving = _isPersisting || activeItem.syncStatus == SyncStatus.syncing;
         } else {
-          _activeCheckList = const CheckList(
-            tasks: '[]',
-            archived: false,
-            archivedAt: null,
-          );
+          _activeCheckList = const CheckList(tasks: '[]', archived: false, archivedAt: null);
           _isSaving = _isPersisting;
         }
       });
@@ -173,19 +156,10 @@ class _ViewTasksState extends State<ViewTasks> {
   }
 
   void _refreshArchivedWindow() {
-    final pageSize = isMobile()
-        ? _archivedPageSizeMobile
-        : _archivedPageSizeDesktop;
+    final pageSize = isMobile() ? _archivedPageSizeMobile : _archivedPageSizeDesktop;
     final defaultLoaded = _allArchived.isNotEmpty ? pageSize : 0;
-    final loadedCount =
-        (defaultLoaded + (_archivedLoadCount * _archivedPageSizeDesktop)).clamp(
-          0,
-          _allArchived.length,
-        );
-    final startIndex = (_allArchived.length - loadedCount).clamp(
-      0,
-      _allArchived.length,
-    );
+    final loadedCount = (defaultLoaded + (_archivedLoadCount * _archivedPageSizeDesktop)).clamp(0, _allArchived.length);
+    final startIndex = (_allArchived.length - loadedCount).clamp(0, _allArchived.length);
     _archivedSegments
       ..clear()
       ..addAll(_allArchived.skip(startIndex));
@@ -213,10 +187,7 @@ class _ViewTasksState extends State<ViewTasks> {
       await _reloadFromController(ensureActive: true);
       final retryActive = await _resolveActiveCheckList(createIfMissing: false);
       if (retryActive == null) return;
-      controller.updateData(
-        retryActive.id,
-        retryActive.body.copyWith(tasks: encodeTaskItems(tasks)),
-      );
+      controller.updateData(retryActive.id, retryActive.body.copyWith(tasks: encodeTaskItems(tasks)));
       TaskWidgetBridge.scheduleRefresh();
     }
   }
@@ -248,10 +219,7 @@ class _ViewTasksState extends State<ViewTasks> {
     }
   }
 
-  void _schedulePersistActiveTasks(
-    List<TaskItem> tasks, {
-    Duration delay = const Duration(seconds: 1),
-  }) {
+  void _schedulePersistActiveTasks(List<TaskItem> tasks, {Duration delay = const Duration(seconds: 1)}) {
     _debounceQueuedTasks = tasks;
     _debounceSaveTimer?.cancel();
     _debounceSaveTimer = Timer(delay, () async {
@@ -263,17 +231,13 @@ class _ViewTasksState extends State<ViewTasks> {
   }
 
   void _beginEdit(TaskItem item) {
-    final snapshotOrder = sortTaskItems(
-      decodeTaskItems(_activeCheckList.tasks),
-    ).map((task) => task.id).toList();
+    final snapshotOrder = sortTaskItems(decodeTaskItems(_activeCheckList.tasks)).map((task) => task.id).toList();
     setState(() {
       _editingTaskId = item.id;
       _editingOrderIds = snapshotOrder;
       _editingInitialContent = item.content;
       _editController.text = item.content;
-      _editController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _editController.text.length),
-      );
+      _editController.selection = TextSelection.fromPosition(TextPosition(offset: _editController.text.length));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -292,9 +256,7 @@ class _ViewTasksState extends State<ViewTasks> {
 
     tasks[index] = tasks[index].copyWith(content: value);
     setState(() {
-      _activeCheckList = _activeCheckList.copyWith(
-        tasks: encodeTaskItems(tasks),
-      );
+      _activeCheckList = _activeCheckList.copyWith(tasks: encodeTaskItems(tasks));
     });
   }
 
@@ -313,9 +275,7 @@ class _ViewTasksState extends State<ViewTasks> {
         _draftTaskIds.remove(editingId);
         if (mounted) {
           setState(() {
-            _activeCheckList = _activeCheckList.copyWith(
-              tasks: encodeTaskItems(tasks),
-            );
+            _activeCheckList = _activeCheckList.copyWith(tasks: encodeTaskItems(tasks));
           });
         }
       } else if (nextContent != prevContent) {
@@ -337,16 +297,10 @@ class _ViewTasksState extends State<ViewTasks> {
     final tasks = List<TaskItem>.of(_activeTasks);
     final item = tasks[index];
     final now = DateTime.now();
-    tasks[index] = item.copyWith(
-      done: nextDone,
-      doneAt: nextDone ? now : null,
-      lastModifiedAt: now,
-    );
+    tasks[index] = item.copyWith(done: nextDone, doneAt: nextDone ? now : null, lastModifiedAt: now);
     if (mounted) {
       setState(() {
-        _activeCheckList = _activeCheckList.copyWith(
-          tasks: encodeTaskItems(tasks),
-        );
+        _activeCheckList = _activeCheckList.copyWith(tasks: encodeTaskItems(tasks));
       });
     }
     _schedulePersistActiveTasks(tasks);
@@ -368,15 +322,10 @@ class _ViewTasksState extends State<ViewTasks> {
 
     if (mounted) {
       setState(() {
-        _activeCheckList = _activeCheckList.copyWith(
-          tasks: encodeTaskItems(reordered),
-        );
+        _activeCheckList = _activeCheckList.copyWith(tasks: encodeTaskItems(reordered));
       });
     }
-    _schedulePersistActiveTasks(
-      reordered,
-      delay: const Duration(milliseconds: 300),
-    );
+    _schedulePersistActiveTasks(reordered, delay: const Duration(milliseconds: 300));
   }
 
   Future<void> _addTask() async {
@@ -388,24 +337,13 @@ class _ViewTasksState extends State<ViewTasks> {
     final newId = _uuid.v4();
     final nextSortOrder = tasks.isEmpty
         ? 0
-        : tasks
-                  .map((task) => task.sortOrder)
-                  .reduce((left, right) => left > right ? left : right) +
-              1;
-    final created = TaskItem(
-      id: newId,
-      content: '',
-      done: false,
-      lastModifiedAt: now,
-      sortOrder: nextSortOrder,
-    );
+        : tasks.map((task) => task.sortOrder).reduce((left, right) => left > right ? left : right) + 1;
+    final created = TaskItem(id: newId, content: '', done: false, lastModifiedAt: now, sortOrder: nextSortOrder);
     tasks.add(created);
     _draftTaskIds.add(newId);
     if (mounted) {
       setState(() {
-        _activeCheckList = _activeCheckList.copyWith(
-          tasks: encodeTaskItems(tasks),
-        );
+        _activeCheckList = _activeCheckList.copyWith(tasks: encodeTaskItems(tasks));
       });
     }
     _beginEdit(created);
@@ -416,9 +354,7 @@ class _ViewTasksState extends State<ViewTasks> {
     if (controller == null) return;
     if (!_hasActiveTasks) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('task_no_archivable_items'.tr)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('task_no_archivable_items'.tr)));
       return;
     }
 
@@ -428,13 +364,8 @@ class _ViewTasksState extends State<ViewTasks> {
 
     _debounceArchiveTimer?.cancel();
     _debounceArchiveTimer = Timer(const Duration(seconds: 1), () {
-      controller.updateData(
-        active.id,
-        active.body.copyWith(archived: true, archivedAt: archivedAt),
-      );
-      controller.addData(
-        const CheckList(tasks: '[]', archived: false, archivedAt: null),
-      );
+      controller.updateData(active.id, active.body.copyWith(archived: true, archivedAt: archivedAt));
+      controller.addData(const CheckList(tasks: '[]', archived: false, archivedAt: null));
       TaskWidgetBridge.scheduleRefresh();
       if (mounted) {
         setState(() {
@@ -444,10 +375,7 @@ class _ViewTasksState extends State<ViewTasks> {
     });
   }
 
-  Future<bool> _confirmAction({
-    required String titleKey,
-    required String contentKey,
-  }) async {
+  Future<bool> _confirmAction({required String titleKey, required String contentKey}) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -455,14 +383,8 @@ class _ViewTasksState extends State<ViewTasks> {
           title: Text(titleKey.tr),
           content: Text(contentKey.tr),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('cancel'.tr),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('confirm'.tr),
-            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('cancel'.tr)),
+            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text('confirm'.tr)),
           ],
         );
       },
@@ -499,17 +421,13 @@ class _ViewTasksState extends State<ViewTasks> {
     }
     if (mounted) {
       setState(() {
-        _activeCheckList = _activeCheckList.copyWith(
-          tasks: encodeTaskItems(tasks),
-        );
+        _activeCheckList = _activeCheckList.copyWith(tasks: encodeTaskItems(tasks));
       });
     }
     _schedulePersistActiveTasks(tasks);
   }
 
-  Future<void> _confirmAndDeleteArchivedSegment(
-    CheckListDataItem archivedItem,
-  ) async {
+  Future<void> _confirmAndDeleteArchivedSegment(CheckListDataItem archivedItem) async {
     final confirmed = await _confirmAction(
       titleKey: 'task_confirm_delete_history_title',
       contentKey: 'task_confirm_delete_history_content',
@@ -521,29 +439,19 @@ class _ViewTasksState extends State<ViewTasks> {
     controller.deleteData(archivedItem.id, deleteFromServer: true);
   }
 
-  Future<CheckListDataItem?> _resolveActiveCheckList({
-    required bool createIfMissing,
-  }) async {
+  Future<CheckListDataItem?> _resolveActiveCheckList({required bool createIfMissing}) async {
     final controller = _checkListController;
     if (controller == null) return null;
 
     var active =
-        controller
-            .getCheckListDetails(selector: (item) => item)
-            .where((item) => item.body.archived == false)
-            .toList()
+        controller.getCheckListDetails(selector: (item) => item).where((item) => item.body.archived == false).toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     if (active.isEmpty && createIfMissing) {
-      controller.addData(
-        const CheckList(tasks: '[]', archived: false, archivedAt: null),
-      );
+      controller.addData(const CheckList(tasks: '[]', archived: false, archivedAt: null));
       TaskWidgetBridge.scheduleRefresh();
       active =
-          controller
-              .getCheckListDetails(selector: (item) => item)
-              .where((item) => item.body.archived == false)
-              .toList()
+          controller.getCheckListDetails(selector: (item) => item).where((item) => item.body.archived == false).toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
 
@@ -571,13 +479,11 @@ class _ViewTasksState extends State<ViewTasks> {
 
     final archivedSorted = List<CheckListDataItem>.of(_archivedSegments)
       ..sort(
-        (a, b) => (a.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-            .compareTo(
-              b.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
-            ),
+        (a, b) => (a.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+          b.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+        ),
       );
-    final showHistoryEntryLabel =
-        isMobile() && archivedSorted.isEmpty && _allArchived.isNotEmpty;
+    final showHistoryEntryLabel = isMobile() && archivedSorted.isEmpty && _allArchived.isNotEmpty;
 
     return Column(
       children: [
@@ -592,16 +498,9 @@ class _ViewTasksState extends State<ViewTasks> {
                   padding: const EdgeInsets.only(left: 2, bottom: 8),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.history,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      Icon(Icons.history, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: 6),
-                      Text(
-                        'task_section_history'.tr,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
+                      Text('task_section_history'.tr, style: Theme.of(context).textTheme.titleSmall),
                       const Spacer(),
                       TextButton.icon(
                         onPressed: _hasMoreArchived ? _loadMoreArchived : null,
@@ -622,8 +521,7 @@ class _ViewTasksState extends State<ViewTasks> {
                   (segmentItem) => _ArchivedSegmentCard(
                     segment: segmentItem.body,
                     showDetails: _showDetails,
-                    onDelete: () =>
-                        _confirmAndDeleteArchivedSegment(segmentItem),
+                    onDelete: () => _confirmAndDeleteArchivedSegment(segmentItem),
                   ),
                 ),
               // if (_collapseArchived && archivedSorted.isNotEmpty)
@@ -645,25 +543,15 @@ class _ViewTasksState extends State<ViewTasks> {
                 padding: const EdgeInsets.only(left: 2, bottom: 8),
                 child: Row(
                   children: [
-                    Text(
-                      'task_section_workspace'.tr,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
+                    Text('task_section_workspace'.tr, style: Theme.of(context).textTheme.titleSmall),
                     if (_isSaving)
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: Row(
                           children: [
-                            const SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
+                            const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
                             const SizedBox(width: 6),
-                            Text(
-                              'task_saving'.tr,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
+                            Text('task_saving'.tr, style: Theme.of(context).textTheme.bodySmall),
                           ],
                         ),
                       ),
@@ -698,8 +586,7 @@ class _ViewTasksState extends State<ViewTasks> {
                               editController: _editController,
                               editFocusNode: _editFocusNode,
                               onTapEdit: () => _beginEdit(task),
-                              onToggleDone: (nextDone) =>
-                                  _toggleTaskDone(index, nextDone),
+                              onToggleDone: (nextDone) => _toggleTaskDone(index, nextDone),
                               onDelete: () => _confirmAndDeleteTask(index),
                               onChanged: _applyEditingText,
                               onSubmit: _finishEdit,
@@ -707,9 +594,7 @@ class _ViewTasksState extends State<ViewTasks> {
                                 index: index,
                                 child: Icon(
                                   Icons.drag_indicator,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             );
@@ -727,17 +612,13 @@ class _ViewTasksState extends State<ViewTasks> {
           child: Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              border: Border(
-                top: BorderSide(color: Theme.of(context).dividerColor),
-              ),
+              border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
                 FilledButton.tonalIcon(
-                  onPressed: _hasActiveTasks
-                      ? () => _confirmAndArchiveWorkspace()
-                      : null,
+                  onPressed: _hasActiveTasks ? () => _confirmAndArchiveWorkspace() : null,
                   icon: const Icon(Icons.archive_outlined),
                   label: Text('task_action_archive_workspace'.tr),
                 ),
@@ -748,11 +629,7 @@ class _ViewTasksState extends State<ViewTasks> {
                       _showDetails = !_showDetails;
                     });
                   },
-                  child: Text(
-                    _showDetails
-                        ? 'task_action_hide_details'.tr
-                        : 'task_action_show_details'.tr,
-                  ),
+                  child: Text(_showDetails ? 'task_action_hide_details'.tr : 'task_action_show_details'.tr),
                 ),
                 const Spacer(),
                 FilledButton.tonalIcon(
@@ -786,9 +663,7 @@ class _TaskSectionDivider extends StatelessWidget {
       return const Divider(height: 24);
     }
 
-    final label = collapsed
-        ? 'task_expand_archived'.tr
-        : 'task_collapse_archived'.tr;
+    final label = collapsed ? 'task_expand_archived'.tr : 'task_collapse_archived'.tr;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -813,11 +688,7 @@ class _TaskSectionDivider extends StatelessWidget {
 }
 
 class _ArchivedSegmentCard extends StatelessWidget {
-  const _ArchivedSegmentCard({
-    required this.segment,
-    required this.showDetails,
-    required this.onDelete,
-  });
+  const _ArchivedSegmentCard({required this.segment, required this.showDetails, required this.onDelete});
 
   final CheckList segment;
   final bool showDetails;
@@ -826,9 +697,7 @@ class _ArchivedSegmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tasks = sortTaskItems(decodeTaskItems(segment.tasks));
-    final archivedLabel = segment.archivedAt == null
-        ? 'task_time_unknown'.tr
-        : readableDateStr(segment.archivedAt!);
+    final archivedLabel = segment.archivedAt == null ? 'task_time_unknown'.tr : readableDateStr(segment.archivedAt!);
     return Card(
       color: Theme.of(context).colorScheme.surfaceContainerLowest,
       elevation: 0,
@@ -839,12 +708,7 @@ class _ArchivedSegmentCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    archivedLabel,
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ),
+                Expanded(child: Text(archivedLabel, style: Theme.of(context).textTheme.labelMedium)),
                 IconButton(
                   tooltip: 'task_delete_history'.tr,
                   onPressed: onDelete,
@@ -904,21 +768,13 @@ class _ActiveTaskRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCompactLayout = isMobile();
     final isDesktopPlatform = !GetPlatform.isMobile;
-    final statusLabel = item.done
-        ? 'task_status_done'.tr
-        : 'task_status_todo'.tr;
+    final statusLabel = item.done ? 'task_status_done'.tr : 'task_status_todo'.tr;
     final statusBackground = item.done
         ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.55)
-        : Theme.of(
-            context,
-          ).colorScheme.secondaryContainer.withValues(alpha: 0.55);
+        : Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.55);
     final rowDecoration = BoxDecoration(
-      color: Theme.of(
-        context,
-      ).colorScheme.surfaceContainerLowest.withValues(alpha: 0.14),
-      border: Border.all(
-        color: Theme.of(context).dividerColor.withValues(alpha: 0.24),
-      ),
+      color: Theme.of(context).colorScheme.surfaceContainerLowest.withValues(alpha: 0.14),
+      border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.24)),
       borderRadius: BorderRadius.circular(10),
     );
 
@@ -927,8 +783,7 @@ class _ActiveTaskRow extends StatelessWidget {
         if (!isDesktopPlatform || event is! KeyDownEvent) {
           return KeyEventResult.ignored;
         }
-        if (event.logicalKey == LogicalKeyboardKey.enter &&
-            HardwareKeyboard.instance.isShiftPressed) {
+        if (event.logicalKey == LogicalKeyboardKey.enter && HardwareKeyboard.instance.isShiftPressed) {
           onSubmit?.call();
           return KeyEventResult.handled;
         }
@@ -951,28 +806,17 @@ class _ActiveTaskRow extends StatelessWidget {
       ),
     );
 
-    final canEdit =
-        !readOnly &&
-        isEditing &&
-        editController != null &&
-        editFocusNode != null;
+    final canEdit = !readOnly && isEditing && editController != null && editFocusNode != null;
 
     final content = canEdit
         ? editor
         : (readOnly
               ? Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   child: Text(
                     item.content,
-                    style: TextStyle(
-                      decoration: item.done
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
+                    style: TextStyle(decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none),
                   ),
                 )
               : InkWell(
@@ -980,21 +824,12 @@ class _ActiveTaskRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Text(
-                      item.content.isEmpty
-                          ? 'task_tap_to_edit_hint'.tr
-                          : item.content,
+                      item.content.isEmpty ? 'task_tap_to_edit_hint'.tr : item.content,
                       style: TextStyle(
-                        decoration: item.done
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                        color: item.content.isEmpty
-                            ? Theme.of(context).hintColor
-                            : null,
+                        decoration: item.done ? TextDecoration.lineThrough : TextDecoration.none,
+                        color: item.content.isEmpty ? Theme.of(context).hintColor : null,
                       ),
                     ),
                   ),
@@ -1002,12 +837,7 @@ class _ActiveTaskRow extends StatelessWidget {
 
     final actionControls = readOnly
         ? Checkbox(value: item.done, onChanged: null)
-        : _TaskActionControls(
-            done: item.done,
-            onToggleDone: onToggleDone,
-            dragHandle: dragHandle,
-            onDelete: onDelete,
-          );
+        : _TaskActionControls(done: item.done, onToggleDone: onToggleDone, dragHandle: dragHandle, onDelete: onDelete);
 
     final fullWidthContent = SizedBox(width: double.infinity, child: content);
 
@@ -1022,18 +852,9 @@ class _ActiveTaskRow extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusBackground,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: statusBackground, borderRadius: BorderRadius.circular(999)),
+                  child: Text(statusLabel, style: Theme.of(context).textTheme.labelSmall),
                 ),
                 const Spacer(),
                 actionControls,
@@ -1093,20 +914,10 @@ class _TaskActionControls extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Checkbox(
-          value: done,
-          onChanged: onToggleDone == null
-              ? null
-              : (value) => onToggleDone!(value ?? false),
-        ),
-        if (dragHandle != null)
-          Padding(padding: const EdgeInsets.only(left: 4), child: dragHandle!),
+        Checkbox(value: done, onChanged: onToggleDone == null ? null : (value) => onToggleDone!(value ?? false)),
+        if (dragHandle != null) Padding(padding: const EdgeInsets.only(left: 4), child: dragHandle!),
         if (onDelete != null)
-          IconButton(
-            tooltip: 'delete'.tr,
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline),
-          ),
+          IconButton(tooltip: 'delete'.tr, onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
       ],
     );
   }
@@ -1129,22 +940,14 @@ class _TaskDetailBlock extends StatelessWidget {
       margin: const EdgeInsets.only(top: 2),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${'task_detail_done_at'.tr}: ${_formatDate(item.doneAt)}',
-            style: textStyle,
-          ),
-          Text(
-            '${'task_detail_updated_at'.tr}: ${_formatDate(item.lastModifiedAt)}',
-            style: textStyle,
-          ),
+          Text('${'task_detail_done_at'.tr}: ${_formatDate(item.doneAt)}', style: textStyle),
+          Text('${'task_detail_updated_at'.tr}: ${_formatDate(item.lastModifiedAt)}', style: textStyle),
         ],
       ),
     );

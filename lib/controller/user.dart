@@ -150,4 +150,3 @@ class UserManagerController extends GetxController {
     return granted;
   }
 }
-
