@@ -94,6 +94,12 @@ class TaskWidgetBridge {
     await _channel.invokeMethod<void>('updateSnapshot', {'snapshot': jsonEncode(snapshot.toJson())});
   }
 
+  /// 返回 true 表示系统支持并已弹出添加对话框，false 表示不支持（需引导用户手动添加）
+  static Future<bool> requestPinWidget() async {
+    if (!_isSupportedPlatform) return false;
+    return await _channel.invokeMethod<bool>('requestPinWidget') ?? false;
+  }
+
   static Future<TaskWidgetSnapshot> _buildSnapshot() async {
     final SettingController settingController = Get.find<SettingController>();
     if (settingController.userId.isEmpty) {

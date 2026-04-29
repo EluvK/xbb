@@ -4,6 +4,7 @@
     android:initialLayout="@layout/task_widget_medium"
     android:minWidth="146dp"
     android:minHeight="120dp"
+    android:previewImage="@mipmap/ic_launcher"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="3"
     android:targetCellHeight="2"

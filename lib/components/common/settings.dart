@@ -1,8 +1,12 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/utils.dart';
 import 'package:xbb/utils/text_input.dart';
 import 'package:xbb/utils/utils.dart';
@@ -18,6 +22,7 @@ class _CommonSettingsState extends State<CommonSettings> {
   final settingController = Get.find<SettingController>();
   bool _isPinging = false;
   int? _pingLatencyMs;
+  bool _isPinningWidget = false;
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +108,23 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
+              if (!kIsWeb && Platform.isAndroid)
+                child(
+                  UserDefinedInputWidget(
+                    title: AppFeatureMetaEnum.taskWidget,
+                    widget: ElevatedButton.icon(
+                      onPressed: _isPinningWidget ? null : _onAddTaskWidget,
+                      icon: _isPinningWidget
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.add_to_home_screen_rounded),
+                      label: Text('add_task_widget_to_home'.tr),
+                    ),
+                  ),
+                ),
               const Divider(),
               Text('app_version'.trParams({'version': DISPLAY_VERSION})),
               child(versionInfo(context)),
@@ -179,6 +201,28 @@ class _CommonSettingsState extends State<CommonSettings> {
       label: "${((settingController.fontScale - 1) * 100).toStringAsFixed(0)}%",
     );
     return UserDefinedInputWidget(title: AppSettingMetaEnum.fontScale, widget: btn);
+  }
+
+  Future<void> _onAddTaskWidget() async {
+    setState(() => _isPinningWidget = true);
+    final supported = await TaskWidgetBridge.requestPinWidget();
+    if (!mounted) return;
+    setState(() => _isPinningWidget = false);
+    if (!supported) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('add_task_widget_not_supported_title'.tr),
+          content: Text('add_task_widget_not_supported_message'.tr),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('confirm'.tr),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> testPingLatency() async {

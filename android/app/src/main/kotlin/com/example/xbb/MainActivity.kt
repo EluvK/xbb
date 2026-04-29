@@ -1,6 +1,9 @@
 package com.eluvk.xbb
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -30,6 +33,21 @@ class MainActivity : FlutterActivity() {
                     TaskWidgetStorage.saveSnapshot(this, snapshot)
                     TaskWidgetProvider.refreshAllWidgets(this)
                     result.success(null)
+                }
+
+                "requestPinWidget" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val appWidgetManager = AppWidgetManager.getInstance(this)
+                        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                            val provider = ComponentName(this, TaskWidgetProvider::class.java)
+                            appWidgetManager.requestPinAppWidget(provider, null, null)
+                            result.success(true)
+                        } else {
+                            result.success(false)
+                        }
+                    } else {
+                        result.success(false)
+                    }
                 }
 
                 else -> result.notImplemented()
