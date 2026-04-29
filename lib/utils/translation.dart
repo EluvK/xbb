@@ -61,6 +61,10 @@ class _TranslationHelper {
       "en_US": "Add to Home Screen",
       "zh_CN": "添加到桌面",
     },
+    "add_task_widget_requested": {
+      "en_US": "Please confirm in the system dialog to add the widget.",
+      "zh_CN": "请在弹出的系统对话框中确认添加插件",
+    },
     "task_widget_label": {
       "en_US": "Task Widget",
       "zh_CN": "任务桌面插件",

@@ -115,11 +115,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                     widget: ElevatedButton.icon(
                       onPressed: _isPinningWidget ? null : _onAddTaskWidget,
                       icon: _isPinningWidget
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.add_to_home_screen_rounded),
                       label: Text('add_task_widget_to_home'.tr),
                     ),
@@ -205,21 +201,31 @@ class _CommonSettingsState extends State<CommonSettings> {
 
   Future<void> _onAddTaskWidget() async {
     setState(() => _isPinningWidget = true);
-    final supported = await TaskWidgetBridge.requestPinWidget();
-    if (!mounted) return;
-    setState(() => _isPinningWidget = false);
-    if (!supported) {
+    try {
+      final supported = await TaskWidgetBridge.requestPinWidget();
+      if (!mounted) return;
+      setState(() => _isPinningWidget = false);
+      if (supported) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('add_task_widget_requested'.tr)));
+      } else {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('add_task_widget_not_supported_title'.tr),
+            content: Text('add_task_widget_not_supported_message'.tr),
+            actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('confirm'.tr))],
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isPinningWidget = false);
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text('add_task_widget_not_supported_title'.tr),
           content: Text('add_task_widget_not_supported_message'.tr),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('confirm'.tr),
-            ),
-          ],
+          actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('confirm'.tr))],
         ),
       );
     }
