@@ -202,33 +202,21 @@ class _CommonSettingsState extends State<CommonSettings> {
   Future<void> _onAddTaskWidget() async {
     setState(() => _isPinningWidget = true);
     try {
-      final supported = await TaskWidgetBridge.requestPinWidget();
-      if (!mounted) return;
-      setState(() => _isPinningWidget = false);
-      if (supported) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('add_task_widget_requested'.tr)));
-      } else {
-        await showDialog<void>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text('add_task_widget_not_supported_title'.tr),
-            content: Text('add_task_widget_not_supported_message'.tr),
-            actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('confirm'.tr))],
-          ),
-        );
-      }
+      await TaskWidgetBridge.requestPinWidget();
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _isPinningWidget = false);
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text('add_task_widget_not_supported_title'.tr),
-          content: Text('add_task_widget_not_supported_message'.tr),
-          actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('confirm'.tr))],
-        ),
-      );
+      // best-effort: ignore errors from the system API
+    } finally {
+      if (mounted) setState(() => _isPinningWidget = false);
     }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('add_task_widget_title'.tr),
+        content: Text('add_task_widget_guide_message'.tr),
+        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('confirm'.tr))],
+      ),
+    );
   }
 
   Future<void> testPingLatency() async {

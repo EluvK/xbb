@@ -61,21 +61,17 @@ class _TranslationHelper {
       "en_US": "Add to Home Screen",
       "zh_CN": "添加到桌面",
     },
-    "add_task_widget_requested": {
-      "en_US": "Please confirm in the system dialog to add the widget.",
-      "zh_CN": "请在弹出的系统对话框中确认添加插件",
+    "add_task_widget_title": {
+      "en_US": "Add Task Widget",
+      "zh_CN": "添加任务插件",
+    },
+    "add_task_widget_guide_message": {
+      "en_US": "If a system dialog appeared, confirm there to add the widget.\n\nIf nothing appeared: long-press the home screen → select \"Widgets\" → find and add the Task Widget.",
+      "zh_CN": "如果系统弹出了确认对话框，请在那里确认添加。\n\n如果没有弹窗，请手动操作：长按桌面空白处 → 选择「插件」→ 找到任务插件添加。",
     },
     "task_widget_label": {
       "en_US": "Task Widget",
       "zh_CN": "任务桌面插件",
-    },
-    "add_task_widget_not_supported_title": {
-      "en_US": "Not Supported",
-      "zh_CN": "不支持自动添加",
-    },
-    "add_task_widget_not_supported_message": {
-      "en_US": "Your launcher doesn't support pinning widgets directly. Please long-press the home screen, select \"Widgets\", and add the Task Widget manually.",
-      "zh_CN": "当前桌面不支持直接添加插件，请长按桌面空白处，选择「插件」，找到任务插件手动添加。",
     },
     "app_version": {
       "en_US": "App Version @version",
