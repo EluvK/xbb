@@ -155,10 +155,10 @@ class SettingController extends GetxController {
   final appFeaturesManagement = AppFeaturesManagement.defaults().obs;
   bool get notesEnabled => appFeaturesManagement.value.notesEnabled;
   bool get trackerEnabled => appFeaturesManagement.value.trackerEnabled;
-  bool get taskEnabled => true; // task is a core feature, so it's always enabled
-  void updateAppFeaturesManagement({bool? enableNotes, bool? enableTracker}) {
+  bool get taskEnabled => appFeaturesManagement.value.enableTask; // task is optional feature, default enabled
+  void updateAppFeaturesManagement({bool? enableNotes, bool? enableTracker, bool? enableTask}) {
     appFeaturesManagement.update((feature) {
-      feature?.update(enableNotes: enableNotes, enableTracker: enableTracker);
+      feature?.update(enableNotes: enableNotes, enableTracker: enableTracker, enableTask: enableTask);
     });
     box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, appFeaturesManagement.value.toJson());
   }
@@ -354,29 +354,35 @@ class AppSetting {
 class AppFeaturesManagement {
   bool enableNotes;
   bool enableTracker;
+  bool enableTask;
 
   get notesEnabled => enableNotes;
   get trackerEnabled => enableTracker;
-  AppFeaturesManagement({required this.enableNotes, required this.enableTracker});
+  get taskEnabled => enableTask;
+  AppFeaturesManagement({required this.enableNotes, required this.enableTracker, required this.enableTask});
   factory AppFeaturesManagement.defaults() {
-    return AppFeaturesManagement(enableNotes: true, enableTracker: false);
+    return AppFeaturesManagement(enableNotes: true, enableTracker: false, enableTask: true);
   }
   Map<String, dynamic> toJson() {
-    return {'enable_notes': enableNotes, 'enable_tracker': enableTracker};
+    return {'enable_notes': enableNotes, 'enable_tracker': enableTracker, 'enable_task': enableTask};
   }
 
   factory AppFeaturesManagement.fromJson(Map<String, dynamic> json) {
     return AppFeaturesManagement(
       enableNotes: json['enable_notes'] ?? true,
       enableTracker: json['enable_tracker'] ?? false,
+      enableTask: json['enable_task'] ?? true,
     );
   }
-  void update({bool? enableNotes, bool? enableTracker}) {
+  void update({bool? enableNotes, bool? enableTracker, bool? enableTask}) {
     if (enableNotes != null) {
       this.enableNotes = enableNotes;
     }
     if (enableTracker != null) {
       this.enableTracker = enableTracker;
+    }
+    if (enableTask != null) {
+      this.enableTask = enableTask;
     }
   }
 }

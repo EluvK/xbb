@@ -88,6 +88,7 @@ enum AppSettingMetaEnum implements TitleInterface {
 enum AppFeatureMetaEnum implements TitleInterface {
   enableNotes,
   enableTracker,
+  enableTask,
   taskWidget,
   settings;
 
@@ -98,6 +99,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Colors.green;
       case AppFeatureMetaEnum.enableTracker:
         return Colors.orange;
+      case AppFeatureMetaEnum.enableTask:
+        return Colors.teal;
       case AppFeatureMetaEnum.taskWidget:
         return Colors.blue;
       case AppFeatureMetaEnum.settings:
@@ -112,6 +115,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Icons.library_books_outlined;
       case AppFeatureMetaEnum.enableTracker:
         return Icons.track_changes;
+      case AppFeatureMetaEnum.enableTask:
+        return Icons.check_box_rounded;
       case AppFeatureMetaEnum.taskWidget:
         return Icons.add_to_home_screen_rounded;
       case AppFeatureMetaEnum.settings:
@@ -126,6 +131,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return 'app_enable_note_feature'.tr;
       case AppFeatureMetaEnum.enableTracker:
         return 'app_enable_tracker_feature'.tr;
+      case AppFeatureMetaEnum.enableTask:
+        return 'app_enable_task_feature'.tr;
       case AppFeatureMetaEnum.taskWidget:
         return 'task_widget_label'.tr;
       case AppFeatureMetaEnum.settings:

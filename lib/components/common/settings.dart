@@ -108,6 +108,16 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
+              child(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableTask,
+                  initialValue: settingController.taskEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableTask: value);
+                    setState(() {});
+                  },
+                ),
+              ),
               if (!kIsWeb && Platform.isAndroid)
                 child(
                   UserDefinedInputWidget(
