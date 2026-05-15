@@ -38,7 +38,22 @@ class AppLaunchController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> _consumeLaunchTab() async {
-    final String? launchTab = await _channel.invokeMethod<String>('consumeLaunchTab');
+    String? launchTab;
+    try {
+      launchTab = await _channel.invokeMethod<String>('consumeLaunchTab');
+    } on MissingPluginException catch (_) {
+      // Platform implementation not available (e.g. running on non-Android),
+      // treat as no launch tab and return early.
+      return;
+    } on PlatformException catch (e) {
+      // If platform call failed for any reason, log and return early.
+      print('[AppLaunch] consumeLaunchTab failed: $e');
+      return;
+    } catch (e) {
+      // Catch-all to prevent initialization from throwing.
+      print('[AppLaunch] consumeLaunchTab unexpected error: $e');
+      return;
+    }
     if (launchTab == null || launchTab.isEmpty) return;
 
     pendingHomeTab.value = launchTab;
