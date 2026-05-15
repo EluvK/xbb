@@ -319,34 +319,252 @@ class _TrackerCardState extends State<TrackerCard> {
     );
   }
 
+  Color _resolveTypeColor(String type) {
+    switch (type) {
+      case 'event':
+        return Colors.green;
+      case 'milestone':
+        return Colors.blueAccent;
+      case 'anniversary':
+        return Colors.pink;
+      default:
+        return Colors.teal;
+    }
+  }
+
+  IconData _resolveTypeIcon(String type) {
+    switch (type) {
+      case 'milestone':
+        return Icons.flag;
+      case 'anniversary':
+        return Icons.calendar_month_outlined;
+      default:
+        return Icons.repeat;
+    }
+  }
+
+  Widget _buildTypeBadge(
+    BuildContext context, {
+    required ThemeData theme,
+    required String type,
+    required Color typeColor,
+    required Color typeTintBg,
+    required Color typeTintEdge,
+    required bool sharedFromOthers,
+    required bool sharedToOthers,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: typeTintBg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: typeTintEdge),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (sharedFromOthers) ...[
+            const RotatedBox(
+              quarterTurns: 2,
+              child: Icon(Icons.switch_access_shortcut_outlined, size: 12, color: Colors.blueAccent),
+            ),
+            const SizedBox(width: 3),
+          ],
+          if (sharedToOthers) ...[
+            const Icon(Icons.switch_access_shortcut_outlined, size: 12, color: Colors.orangeAccent),
+            const SizedBox(width: 3),
+          ],
+          Text(type, style: theme.textTheme.labelSmall?.copyWith(color: typeColor, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopMetaBadge(BuildContext context, {required dynamic userProfile, required ColorTag colorTag}) {
+    if (userProfile == null && colorTag == ColorTag.none) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.74),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (userProfile != null) ...[
+            buildUserAvatar(context, userProfile.avatarUrl, size: 10, selected: false),
+            if (colorTag != ColorTag.none) const SizedBox(width: 3),
+          ],
+          if (colorTag != ColorTag.none) Icon(Icons.circle, color: colorTag.toColor(), size: 7),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackerContent(
+    BuildContext context, {
+    required ThemeData theme,
+    required TrackerDataItem item,
+    required Color typeColor,
+    required Color typeTintBg,
+    required Color typeTintEdge,
+    required bool canEdit,
+    required bool sharedFromOthers,
+    required bool sharedToOthers,
+    required dynamic userProfile,
+  }) {
+    final t = item.body;
+    return Column(
+      key: const ValueKey('content'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                t.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _buildTypeBadge(
+              context,
+              theme: theme,
+              type: t.type,
+              typeColor: typeColor,
+              typeTintBg: typeTintBg,
+              typeTintEdge: typeTintEdge,
+              sharedFromOthers: sharedFromOthers,
+              sharedToOthers: sharedToOthers,
+            ),
+            if (userProfile != null || item.colorTag != ColorTag.none) ...[
+              const SizedBox(width: 6),
+              _buildTopMetaBadge(context, userProfile: userProfile, colorTag: item.colorTag),
+            ],
+          ],
+        ),
+        if (t.description.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            t.description,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+        const SizedBox(height: 10),
+        if (t.type == 'milestone')
+          _buildMilestoneWidget(context, t.config, reserveRight: canEdit ? 72 : 0)
+        else if (t.type == 'anniversary')
+          _buildAnniversaryWidget(context, t.config, typeColor, reserveRight: canEdit ? 72 : 0)
+        else
+          _buildEventWidget(context, t.config, reserveRight: canEdit ? 72 : 0),
+      ],
+    );
+  }
+
+  Widget _buildActionsPanel(
+    BuildContext context, {
+    required ThemeData theme,
+    required TrackerController trackerController,
+    required TrackerDataItem showItem,
+  }) {
+    return Container(
+      key: const ValueKey('actions'),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          IconButton(
+            tooltip: 'edit'.tr,
+            onPressed: () {
+              Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
+            },
+            icon: const Icon(Icons.edit),
+          ),
+          InlineColorPickerButton(
+            value: showItem.colorTag,
+            onSelected: (color) {
+              trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
+              setState(() {
+                showItem.colorTag = color;
+              });
+            },
+          ),
+          DoubleClickButton(
+            buttonBuilder: (onPressed) => IconButton(
+              tooltip: 'delete'.tr,
+              onPressed: onPressed,
+              icon: const Icon(Icons.delete),
+            ),
+            onDoubleClick: () {
+              trackerController.deleteData(widget.item.id);
+              while (Get.routing.current == '/tracker/view-tracker') {
+                Navigator.pop(context);
+              }
+            },
+            firstClickHint: 'delete_tracker'.tr,
+            upperPosition: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomEditToggle(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _toggleActions,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withValues(alpha: 0.86),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.42)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedRotation(
+                duration: const Duration(milliseconds: 180),
+                turns: _showActions ? 0.125 : 0,
+                child: Icon(
+                  _showActions ? Icons.close_rounded : Icons.tune_rounded,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(_showActions ? 'cancel'.tr : 'edit'.tr, style: theme.textTheme.labelSmall),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var showItem = widget.item;
     final TrackerController trackerController = Get.find<TrackerController>();
     final t = widget.item.body;
     final cachedAcl = trackerController.getAclCached(widget.item.id);
-    final typeColor = (() {
-      switch (t.type) {
-        case 'event':
-          return Colors.green;
-        case 'milestone':
-          return Colors.blueAccent;
-        case 'anniversary':
-          return Colors.pink;
-        default:
-          return Colors.teal;
-      }
-    })();
-    final typeIcon = (() {
-      switch (t.type) {
-        case 'milestone':
-          return Icons.flag;
-        case 'anniversary':
-          return Icons.calendar_month_outlined;
-        default:
-          return Icons.repeat;
-      }
-    })();
+    final typeColor = _resolveTypeColor(t.type);
+    final typeIcon = _resolveTypeIcon(t.type);
     final theme = Theme.of(context);
     final neutralBg = theme.colorScheme.surfaceContainerLow;
     final neutralBorder = theme.colorScheme.outlineVariant.withValues(alpha: 0.35);
@@ -457,214 +675,49 @@ class _TrackerCardState extends State<TrackerCard> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: canEdit ? 24 : 0),
-                        child: _showActions
-                            ? Container(
-                                key: const ValueKey('actions'),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(14),
+                   Expanded(
+                     child: AnimatedSwitcher(
+                       duration: const Duration(milliseconds: 220),
+                       child: Padding(
+                         padding: EdgeInsets.only(bottom: canEdit ? 24 : 0),
+                         child: _showActions
+                              ? _buildActionsPanel(
+                                  context,
+                                  theme: theme,
+                                  trackerController: trackerController,
+                                  showItem: showItem,
+                                )
+                              : _buildTrackerContent(
+                                  context,
+                                  theme: theme,
+                                  item: widget.item,
+                                  typeColor: typeColor,
+                                  typeTintBg: typeTintBg,
+                                  typeTintEdge: typeTintEdge,
+                                  canEdit: canEdit,
+                                  sharedFromOthers: sharedFromOthers,
+                                  sharedToOthers: sharedToOthers,
+                                  userProfile: userProfile,
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    IconButton(
-                                      tooltip: 'edit'.tr,
-                                      onPressed: () {
-                                        Get.toNamed('/tracker/edit-tracker', arguments: [widget.item]);
-                                      },
-                                      icon: const Icon(Icons.edit),
-                                    ),
-                                    InlineColorPickerButton(
-                                      value: widget.item.colorTag,
-                                      onSelected: (color) {
-                                        trackerController.onUpdateLocalField(widget.item.id, colorTag: color);
-                                        setState(() {
-                                          showItem.colorTag = color;
-                                        });
-                                      },
-                                    ),
-                                    DoubleClickButton(
-                                      buttonBuilder: (onPressed) => IconButton(
-                                        tooltip: 'delete'.tr,
-                                        onPressed: onPressed,
-                                        icon: const Icon(Icons.delete),
-                                      ),
-                                      onDoubleClick: () {
-                                        trackerController.deleteData(widget.item.id);
-                                        while (Get.routing.current == '/tracker/view-tracker') {
-                                          Navigator.pop(context);
-                                        }
-                                      },
-                                      firstClickHint: 'delete_tracker'.tr,
-                                      upperPosition: true,
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : Column(
-                                key: const ValueKey('content'),
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          t.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: typeTintBg,
-                                          borderRadius: BorderRadius.circular(999),
-                                          border: Border.all(color: typeTintEdge),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (sharedFromOthers) ...[
-                                              const RotatedBox(
-                                                quarterTurns: 2,
-                                                child: Icon(
-                                                  Icons.switch_access_shortcut_outlined,
-                                                  size: 12,
-                                                  color: Colors.blueAccent,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 3),
-                                            ],
-                                            if (sharedToOthers) ...[
-                                              const Icon(
-                                                Icons.switch_access_shortcut_outlined,
-                                                size: 12,
-                                                color: Colors.orangeAccent,
-                                              ),
-                                              const SizedBox(width: 3),
-                                            ],
-                                            Text(
-                                              t.type,
-                                              style: theme.textTheme.labelSmall?.copyWith(
-                                                color: typeColor,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (t.description.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      t.description,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                  const SizedBox(height: 10),
-                                  if (t.type == 'milestone')
-                                    _buildMilestoneWidget(context, t.config, reserveRight: canEdit ? 72 : 0)
-                                  else if (t.type == 'anniversary')
-                                    _buildAnniversaryWidget(
-                                      context,
-                                      t.config,
-                                      typeColor,
-                                      reserveRight: canEdit ? 72 : 0,
-                                    )
-                                  else
-                                    _buildEventWidget(context, t.config, reserveRight: canEdit ? 72 : 0),
-                                ],
-                              ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
               ),
             ),
           ),
         ),
       ),
     );
-    final hasTopMeta = userProfile != null || showItem.colorTag != ColorTag.none;
     return Stack(
       clipBehavior: Clip.none,
       children: [
         card,
         Positioned(
-          top: 6,
-          right: 8,
-          child: hasTopMeta
-              ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.84),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.38)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (userProfile != null) ...[
-                        buildUserAvatar(context, userProfile.avatarUrl, size: 13, selected: false),
-                        const SizedBox(width: 4),
-                      ],
-                      if (userProfile != null && showItem.colorTag != ColorTag.none) const SizedBox(width: 4),
-                      if (showItem.colorTag != ColorTag.none)
-                        Icon(Icons.circle, color: showItem.colorTag.toColor(), size: 9),
-                    ],
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
-        Positioned(
           bottom: 4,
           right: 8,
           child: canEdit
-              ? Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _toggleActions,
-                    borderRadius: BorderRadius.circular(999),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.86),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.42)),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedRotation(
-                            duration: const Duration(milliseconds: 180),
-                            turns: _showActions ? 0.125 : 0,
-                            child: Icon(
-                              _showActions ? Icons.close_rounded : Icons.tune_rounded,
-                              size: 16,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(_showActions ? 'cancel'.tr : 'edit'.tr, style: Theme.of(context).textTheme.labelSmall),
-                        ],
-                      ),
-                    ),
-                  ),
-                )
+              ? _buildBottomEditToggle(context)
               : const SizedBox.shrink(),
         ),
       ],
