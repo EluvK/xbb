@@ -36,9 +36,10 @@ void main() {
       expect(tracker.config, isA<MilestoneTrackerConfig>());
 
       tracker.config.maybeWhen(
-        milestone: (goalType, targetValue) {
+        milestone: (goalType, targetValue, progressMode) {
           expect(goalType, "number");
           expect(targetValue, "50.0");
+          expect(progressMode, "accumulate");
         },
         orElse: () => fail("应该识别为 milestone 分支"),
       );
@@ -69,21 +70,21 @@ void main() {
 
     test('边界测试：处理 Config 中缺失的 Optional 字段', () {
       final json = {
-        "name": "不定期任务",
-        "description": "没有固定周期",
+        "name": "阅读挑战",
+        "description": "使用默认进度模式",
         "category": "杂项",
-        "type": "event",
+        "type": "milestone",
         "config": {
-          "type": "event",
-          "period_days": null, // 测试 Option<u32> 为空的情况
-          "detail_unit": "boolean",
+          "type": "milestone",
+          "goal_type": "number",
+          "target_value": "10",
         },
       };
 
       final tracker = Tracker.fromJson(json);
-      final config = tracker.config as EventTrackerConfig;
+      final config = tracker.config as MilestoneTrackerConfig;
 
-      expect(config.periodDays, isNull);
+      expect(config.progressMode, 'accumulate');
     });
   });
 
