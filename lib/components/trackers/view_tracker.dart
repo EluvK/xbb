@@ -95,64 +95,72 @@ class _TrackerMatrixState extends State<TrackerMatrix> {
           final double cardWidth = widthByColumns.clamp(0.0, cardMaxWidth);
           final double usedContentWidth = (cardWidth * columns) + ((columns - 1) * cardSpacing);
 
-          return CustomScrollView(
-            slivers: sortedGroupedTrackers.entries.map((entry) {
-              final category = entry.key.isEmpty ? 'uncategorized'.tr : entry.key;
-              final items = entry.value;
+          return RefreshIndicator(
+            onRefresh: _refreshTrackers,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: sortedGroupedTrackers.entries.map((entry) {
+                final category = entry.key.isEmpty ? 'uncategorized'.tr : entry.key;
+                final items = entry.value;
 
-              return SliverMainAxisGroup(
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: pagePadding, vertical: 8.0),
-                    sliver: SliverToBoxAdapter(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: SizedBox(
-                          width: usedContentWidth,
-                          child: Text(
-                            category,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
+                return SliverMainAxisGroup(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: pagePadding, vertical: 8.0),
+                      sliver: SliverToBoxAdapter(
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: SizedBox(
+                            width: usedContentWidth,
+                            child: Text(
+                              category,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryColor,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: pagePadding),
-                    sliver: SliverToBoxAdapter(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: SizedBox(
-                          width: usedContentWidth,
-                          child: Wrap(
-                            spacing: cardSpacing,
-                            runSpacing: cardSpacing,
-                            children: items
-                                .map(
-                                  (item) => _TrackerRecordCard(
-                                    key: ValueKey('tracker-record-card-${item.id}'),
-                                    item: item,
-                                    cardWidth: cardWidth,
-                                    recordController: recordController,
-                                  ),
-                                )
-                                .toList(),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: pagePadding),
+                      sliver: SliverToBoxAdapter(
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: SizedBox(
+                            width: usedContentWidth,
+                            child: Wrap(
+                              spacing: cardSpacing,
+                              runSpacing: cardSpacing,
+                              children: items
+                                  .map(
+                                    (item) => _TrackerRecordCard(
+                                      key: ValueKey('tracker-record-card-${item.id}'),
+                                      item: item,
+                                      cardWidth: cardWidth,
+                                      recordController: recordController,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
-              );
-            }).toList(),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  ],
+                );
+              }).toList(),
+            ),
           );
         },
       );
     });
+  }
+
+  Future<void> _refreshTrackers() async {
+    await onReadySyncTracker();
   }
 }
 
