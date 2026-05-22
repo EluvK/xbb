@@ -26,8 +26,9 @@ class PermissionBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final userCtrl = Get.find<UserManagerController>();
     return Obx(() {
-      final canShow = userCtrl.checkPermission(feature, ownerId, acls, resourceRootOwnerId: rootOwnerId);
-      return canShow ? child : const SizedBox.shrink();
+      return userCtrl.checkPermission(feature, ownerId, acls, resourceRootOwnerId: rootOwnerId)
+          ? child
+          : const SizedBox.shrink();
     });
   }
 }

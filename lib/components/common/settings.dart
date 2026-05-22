@@ -38,9 +38,9 @@ class _CommonSettingsState extends State<CommonSettings> {
           child: ListView(
             children: [
               Text('app_setting'.tr),
-              child(themeModeButton()),
-              child(languageButton()),
-              child(fontScaleButton()),
+              _withPadding(themeModeButton()),
+              _withPadding(languageButton()),
+              _withPadding(fontScaleButton()),
               const Divider(),
               Wrap(
                 spacing: 8,
@@ -54,7 +54,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                   ),
                 ],
               ),
-              child(
+              _withPadding(
                 TextInputWidget(
                   title: SyncStoreInputMetaEnum.address,
                   initialValue: settingController.syncStoreUrl,
@@ -64,12 +64,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                         : () async {
                             settingController.updateSyncStoreSetting(baseUrl: defaultSyncStoreUrl);
                             await reInitSyncStoreController();
-                            if (!mounted) {
-                              return;
-                            }
-                            setState(() {
-                              _pingLatencyMs = null;
-                            });
+                            _resetPingLatency();
                           },
                     icon: Tooltip(message: 'reset_default'.tr, child: const Icon(Icons.restore)),
                     label: const SizedBox.shrink(),
@@ -81,35 +76,24 @@ class _CommonSettingsState extends State<CommonSettings> {
                   onFinished: (value) async {
                     settingController.updateSyncStoreSetting(baseUrl: value);
                     await reInitSyncStoreController();
-                    if (!mounted) {
-                      return;
-                    }
-                    setState(() {
-                      _pingLatencyMs = null;
-                    });
+                    _resetPingLatency();
                   },
                 ),
               ),
-              child(
+              _withPadding(
                 BoolSelectorInputWidget(
                   title: SyncStoreInputMetaEnum.enableTunnel,
                   initialValue: settingController.syncStoreHpkeEnabled,
                   onChanged: (value) async {
-                    print('value: $value');
                     settingController.updateSyncStoreSetting(enableHpke: value);
                     await reInitSyncStoreController();
-                    if (!mounted) {
-                      return;
-                    }
-                    setState(() {
-                      _pingLatencyMs = null;
-                    });
+                    _resetPingLatency();
                   },
                 ),
               ),
               const Divider(),
               Text('app_feature_management'.tr),
-              child(
+              _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableNotes,
                   initialValue: settingController.notesEnabled,
@@ -119,7 +103,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
-              child(
+              _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableTracker,
                   initialValue: settingController.trackerEnabled,
@@ -129,7 +113,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
-              child(
+              _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableTask,
                   initialValue: settingController.taskEnabled,
@@ -140,7 +124,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               ),
               if (!kIsWeb && Platform.isAndroid)
-                child(
+                _withPadding(
                   UserDefinedInputWidget(
                     title: AppFeatureMetaEnum.taskWidget,
                     widget: ElevatedButton.icon(
@@ -154,7 +138,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               const Divider(),
               Text('app_version'.trParams({'version': DISPLAY_VERSION})),
-              child(versionInfo(context)),
+              _withPadding(versionInfo(context)),
             ],
           ),
         ),
@@ -162,12 +146,19 @@ class _CommonSettingsState extends State<CommonSettings> {
     );
   }
 
-  Widget child(Widget child) {
+  Widget _withPadding(Widget child) {
     return Padding(padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0), child: child);
   }
 
+  void _resetPingLatency() {
+    if (!mounted) return;
+    setState(() {
+      _pingLatencyMs = null;
+    });
+  }
+
   Widget themeModeButton() {
-    var btn = SegmentedButton(
+    final btn = SegmentedButton<ThemeMode>(
       segments: [
         ButtonSegment<ThemeMode>(
           value: ThemeMode.light,
@@ -197,7 +188,7 @@ class _CommonSettingsState extends State<CommonSettings> {
   }
 
   Widget languageButton() {
-    var btn = DropdownButton<Locale>(
+    final btn = DropdownButton<Locale>(
       value: settingController.locale,
       onChanged: (Locale? newValue) {
         settingController.updateAppSetting(locale: newValue!);
@@ -214,7 +205,7 @@ class _CommonSettingsState extends State<CommonSettings> {
   }
 
   Widget fontScaleButton() {
-    var btn = Slider(
+    final btn = Slider(
       value: settingController.fontScale,
       onChanged: (double value) {
         settingController.updateAppSetting(fontScale: value);

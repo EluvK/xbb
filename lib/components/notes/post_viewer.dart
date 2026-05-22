@@ -5,26 +5,19 @@ import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/utils/utils.dart';
 
-class PostViewer extends StatefulWidget {
+class PostViewer extends StatelessWidget {
   const PostViewer({super.key, required this.postItem});
   final PostDataItem postItem;
 
   @override
-  State<PostViewer> createState() => _PostViewerState();
-}
-
-class _PostViewerState extends State<PostViewer> {
-  final UserManagerController userManagerController = Get.find<UserManagerController>();
-  final RepoController repoController = Get.find<RepoController>();
-  final CommentController commentController = Get.find<CommentController>();
-
-  @override
   Widget build(BuildContext context) {
-    final Post post = widget.postItem.body;
-    final bool isSelfPost = userManagerController.selfProfile.value?.userId == widget.postItem.owner;
+    final userManagerController = Get.find<UserManagerController>();
+    final repoController = Get.find<RepoController>();
+    final Post post = postItem.body;
+    final bool isSelfPost = userManagerController.selfProfile.value?.userId == postItem.owner;
     final String displayTitleUser = isSelfPost
         ? 'Me'
-        : userManagerController.getUserProfile(widget.postItem.owner)?.name ?? widget.postItem.owner;
+        : userManagerController.getUserProfile(postItem.owner)?.name ?? postItem.owner;
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -33,7 +26,7 @@ class _PostViewerState extends State<PostViewer> {
         children: [
           // title:
           Text(
-            "${post.category} | ${detailedDateStr(widget.postItem.updatedAt)} | Author: $displayTitleUser | ${post.content.length} chars",
+            "${post.category} | ${detailedDateStr(postItem.updatedAt)} | Author: $displayTitleUser | ${post.content.length} chars",
             style: const TextStyle(fontSize: 13),
           ),
           const Divider(),
@@ -42,7 +35,7 @@ class _PostViewerState extends State<PostViewer> {
             child: ListView(
               children: [
                 MarkdownWithComments(
-                  postId: widget.postItem.id,
+                  postId: postItem.id,
                   data: post.content,
                   repoOwnedId: repoController.getRepo(post.repoId)!.owner,
                   permissions: repoController.getAclCached(post.repoId),

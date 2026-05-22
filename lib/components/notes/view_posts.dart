@@ -21,14 +21,12 @@ class ViewPosts extends StatelessWidget {
         onPressed: repoController.currentRepoId.value == null
             ? null
             : () {
-                print("click add post");
                 Get.toNamed('/notes/edit-post', arguments: [null]);
               },
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          print('refreshing posts');
           final repoId = repoController.currentRepoId.value;
           if (repoId != null) {
             await runSyncTaskWithStatus(
@@ -111,7 +109,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
   final settingController = Get.find<SettingController>();
   final userManagerController = Get.find<UserManagerController>();
 
-  late Rx<String?> currentRepoId = repoController.currentRepoId;
+  late final Rx<String?> currentRepoId = repoController.currentRepoId;
   final searchFilterTextController = TextEditingController();
 
   @override
@@ -163,11 +161,9 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
       child: TextField(
         controller: searchFilterTextController,
         onTapOutside: (event) {
-          print('onTapOutside');
           FocusManager.instance.primaryFocus?.unfocus();
         },
         onChanged: (value) {
-          print('onChanged $value');
           setState(() {});
         },
         decoration: InputDecoration(
@@ -291,7 +287,7 @@ class __ViewPostsState extends State<_ViewPosts> with ExpansibleListMixin {
 
 class PostContentFilter extends DataItemBodyEquatableFilter<Post> {
   final String contentRegexString;
-  PostContentFilter(this.contentRegexString) : _regex = RegExp(contentRegexString, caseSensitive: false);
+  PostContentFilter(this.contentRegexString) : _regex = RegExp(RegExp.escape(contentRegexString), caseSensitive: false);
   final RegExp _regex;
 
   @override

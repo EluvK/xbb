@@ -49,31 +49,7 @@ class _AclViewerState extends State<AclViewer> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      children: [
-        const Expanded(
-          flex: 2,
-          child: Padding(
-            padding: EdgeInsets.all(8),
-            child: Center(child: Text('成员')),
-          ),
-        ),
-        ...widget.schema.labels.map(
-          (l) => Expanded(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              runAlignment: WrapAlignment.center,
-              spacing: 4,
-              children: [
-                Text(l.$1),
-                Tooltip(message: l.$2, child: const Icon(Icons.info_outline, size: 12)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 48),
-      ],
-    );
+    return _AclHeader(labels: widget.schema.labels);
   }
 
   Widget _buildUserRow(int index) {
@@ -81,23 +57,15 @@ class _AclViewerState extends State<AclViewer> {
     final userProfile = userManagerController.selfProfile.value?.userId == permission.user
         ? userManagerController.selfProfile.value
         : userManagerController.userProfiles.firstWhereOrNull((p) => p.userId == permission.user);
+    final selections = widget.schema.decode(permission.accessLevel);
     return Row(
       children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: true),
-              const SizedBox(height: 4),
-              Text(userProfile?.name ?? 'unknown_user'.tr, style: const TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
+        _AclUserCell(userProfile: userProfile),
         ...List.generate(
           widget.schema.labels.length,
           (pIndex) => Expanded(
             child: Checkbox(
-              value: widget.schema.decode(permission.accessLevel)[pIndex],
+              value: selections[pIndex],
               onChanged: null, // Disabled for read-only
             ),
           ),
@@ -198,56 +166,23 @@ class _AclEditorState extends State<AclEditor> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      children: [
-        const Expanded(
-          flex: 2,
-          child: Padding(
-            padding: EdgeInsets.all(8),
-            child: Center(child: Text('成员')),
-          ),
-        ),
-        ...widget.schema.labels.map(
-          (l) => Expanded(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              runAlignment: WrapAlignment.center,
-              spacing: 4,
-              children: [
-                Text(l.$1),
-                Tooltip(message: l.$2, child: const Icon(Icons.info_outline, size: 12)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 48),
-      ],
-    );
+    return _AclHeader(labels: widget.schema.labels);
   }
 
   Widget _buildUserRow(int index) {
     final user = _authList[index];
     final userProfile = userManagerController.getUserProfile(user.user);
+    final selections = widget.schema.decode(user.accessLevel);
+    final disabledSelections = widget.schema.disableOverlappingSelections(user.accessLevel);
     return Row(
       children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: true),
-              const SizedBox(height: 4),
-              Text(userProfile?.name ?? 'unknown_user'.tr, style: const TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
+        _AclUserCell(userProfile: userProfile),
         ...List.generate(
           widget.schema.labels.length,
           (pIndex) => Expanded(
             child: Checkbox(
-              value: widget.schema.decode(user.accessLevel)[pIndex],
-              onChanged: widget.schema.disableOverlappingSelections(user.accessLevel).contains(pIndex)
-                  ? null
-                  : (_) => _onToggle(index, pIndex),
+              value: selections[pIndex],
+              onChanged: disabledSelections.contains(pIndex) ? null : (_) => _onToggle(index, pIndex),
             ),
           ),
         ),
@@ -289,6 +224,61 @@ class _AclEditorState extends State<AclEditor> {
           }).toList(),
         ),
       ],
+    );
+  }
+}
+
+class _AclHeader extends StatelessWidget {
+  const _AclHeader({required this.labels});
+
+  final List<(String, String)> labels;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(
+          flex: 2,
+          child: Padding(
+            padding: EdgeInsets.all(8),
+            child: Center(child: Text('成员')),
+          ),
+        ),
+        ...labels.map(
+          (label) => Expanded(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              runAlignment: WrapAlignment.center,
+              spacing: 4,
+              children: [
+                Text(label.$1),
+                Tooltip(message: label.$2, child: const Icon(Icons.info_outline, size: 12)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 48),
+      ],
+    );
+  }
+}
+
+class _AclUserCell extends StatelessWidget {
+  const _AclUserCell({required this.userProfile});
+
+  final UserProfile? userProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: 2,
+      child: Column(
+        children: [
+          buildUserAvatar(context, userProfile?.avatarUrl, size: 16, selected: true),
+          const SizedBox(height: 4),
+          Text(userProfile?.name ?? 'unknown_user'.tr, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
     );
   }
 }

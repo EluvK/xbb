@@ -23,7 +23,7 @@ class UpdateSheet extends StatefulWidget {
 }
 
 class _UpdateSheetState extends State<UpdateSheet> {
-  bool throughProxy = true;
+  bool _throughProxy = true;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +57,7 @@ class _UpdateSheetState extends State<UpdateSheet> {
                       ],
                     ),
                   ),
-                  IconButton(onPressed: () => Get.back(), icon: const Icon(Icons.close), tooltip: '关闭'),
+                  IconButton(onPressed: Get.back, icon: const Icon(Icons.close), tooltip: '关闭'),
                 ],
               ),
               const SizedBox(height: 8),
@@ -98,13 +98,13 @@ class _UpdateSheetState extends State<UpdateSheet> {
               const Divider(height: 16),
 
               SwitchListTile(
-                value: throughProxy,
+                value: _throughProxy,
                 title: Text('download_manually'.tr),
                 subtitle: Text(
-                  throughProxy ? '开启：将复制下载链接，可在浏览器中粘贴下载' : '关闭：将在应用内通过服务器自动下载安装',
+                  _throughProxy ? '开启：将复制下载链接，可在浏览器中粘贴下载' : '关闭：将在应用内通过服务器自动下载安装',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-                onChanged: (v) => setState(() => throughProxy = v),
+                onChanged: (v) => setState(() => _throughProxy = v),
                 contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: 8),
@@ -114,7 +114,7 @@ class _UpdateSheetState extends State<UpdateSheet> {
                 child: ElevatedButton(
                   onPressed: widget.hasNewVersion
                       ? () {
-                          widget.onUpdate(false, throughProxy);
+                          widget.onUpdate(false, _throughProxy);
                           Get.back();
                         }
                       : null,
@@ -127,7 +127,7 @@ class _UpdateSheetState extends State<UpdateSheet> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    widget.onUpdate(true, throughProxy);
+                    widget.onUpdate(true, _throughProxy);
                     Get.back();
                   },
                   child: Text('${'do_update'.tr} (nightly)'),
@@ -161,7 +161,7 @@ void showUpdateDialog({
       onUpdate: onUpdate,
     ),
     isScrollControlled: true,
-    backgroundColor: Get.theme.dialogBackgroundColor,
+    backgroundColor: Get.theme.dialogTheme.backgroundColor,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
   );
 }

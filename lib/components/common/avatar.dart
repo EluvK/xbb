@@ -8,21 +8,23 @@ class Avatar {
   const Avatar({required this.name, required this.url});
 
   factory Avatar.defaultAvatar() {
-    final SettingController settingController = Get.find<SettingController>();
-    final url = settingController.syncStoreUrl;
-    return Avatar(name: '${ASSETS_PREFIX}psyduck', url: '$url/fs/private/common/avatar/psyduck.png');
+    final baseUrl = _syncStoreBaseUrl();
+    return Avatar(name: '${assetsPrefix}psyduck', url: '$baseUrl/fs/private/common/avatar/psyduck.png');
   }
 }
 
-const String ASSETS_PREFIX = 'assets://';
+const String assetsPrefix = 'assets://';
+// Backward-compatible alias for existing imports/usages.
+const String ASSETS_PREFIX = assetsPrefix;
 
 Iterable<Avatar> predefinedAvatarList() {
-  final SettingController settingController = Get.find<SettingController>();
-  final url = settingController.syncStoreUrl;
+  final baseUrl = _syncStoreBaseUrl();
   return predefinedAvatarNamePathMap.entries.map((entry) {
-    return Avatar(name: entry.key, url: '$url${entry.value}');
+    return Avatar(name: entry.key, url: '$baseUrl${entry.value}');
   });
 }
+
+String _syncStoreBaseUrl() => Get.find<SettingController>().syncStoreUrl;
 
 const Map<String, String> predefinedAvatarNamePathMap = {
   'assets://cat': '/fs/private/common/avatar/cat.png',

@@ -75,22 +75,15 @@ class MarkdownWithComments extends StatelessWidget {
     final List<md.Node> nodes = document.parseLines(lines);
     final WidgetVisitor visitor = WidgetVisitor(config: config, generators: [latexGenerator], splitRegExp: regExp);
     final List<SpanNode> spans = visitor.visit(nodes);
-    // print("nodes length: ${nodes.length}, spans length: ${spans.length}");
     final supportTags = ['p', 'blockquote', 'pre', 'ul', 'ol'];
     spans.asMap().forEach((index, span) {
       final richText = Text.rich(span.build());
       final node = nodes[index];
       final bool canHaveComments = node is md.Element && supportTags.contains(node.tag);
       // (node.tag == 'p' || node.tag == 'blockquote' || node.tag == 'pre' || node.tag == "ul" || node.tag == "ol");
-      if (!canHaveComments) {
-        print("[skip] node tag: ${node is md.Element ? node.tag : 'Not Element'}, index: $index");
-      }
       final rawText = node.textContent;
 
       final hash = TextSimilarityHasher.computeSimHash(rawText);
-      print(
-        "[build] paragraph hash: $hash, index: $index, canHaveComments: $canHaveComments}, rawText: ${rawText.replaceAll('\n', ' ').substring(0, rawText.length > 10 ? 10 : rawText.length)}",
-      );
       paragraphList.add(_ParagraphData(index, hash, richText, rawText, canHaveComments));
     });
 
@@ -150,11 +143,7 @@ class _ParagraphWrapper extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
                 final comments = unmatchedEntry.$1;
-                final originalHash = unmatchedEntry.$2;
                 final distance = unmatchedEntry.$3;
-                print(
-                  "[render unmatched] paragraph id: $pid, originalHash: $originalHash, distance: $distance, comments length: ${comments.length}",
-                );
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(8),
@@ -458,14 +447,6 @@ class CommentUIController extends GetxController {
   final CommentController commentController = Get.find<CommentController>();
   RxList<CommentDataItem> registeredComments = <CommentDataItem>[].obs;
 
-  @override
-  void dispose() {
-    editController.dispose();
-    focusNode.dispose();
-    commentController.unregisterFilterSubscription('post_$postId');
-    super.dispose();
-  }
-
   late final bool canNewComment;
   late final bool canReplyComment;
   Map<String, bool> canDeleteComment = {};
@@ -478,8 +459,6 @@ class CommentUIController extends GetxController {
       filterKey: 'post_$postId',
       filters: [ParentIdFilter(postId)],
     );
-    print('debug: setInitialComments, comments length: ${registeredComments.length}');
-    print('debug: repoOwnedId: $repoOwnedId, permissions: ${permissions.map((p) => p.accessLevel).toList()}');
 
     // new comment with ownerId would skip permission check, so just put a dummy id here
     canNewComment = oncePermissionCheck(NotesFeatureRequires.newComment, '', permissions, repoOwnedId);
@@ -488,16 +467,11 @@ class CommentUIController extends GetxController {
       canDeleteComment[o] = oncePermissionCheck(NotesFeatureRequires.deleteComment, o, permissions, repoOwnedId);
       canEditComment[o] = oncePermissionCheck(NotesFeatureRequires.editComment, o, permissions, repoOwnedId);
     }
-    print(
-      'debug: canNewComment: $canNewComment, canDeleteComment: $canDeleteComment, canReplyComment: $canReplyComment, canEditComment: $canEditComment',
-    );
-
     var (map, unmatchedComments) = _updateComments(registeredComments);
     commentsMap = map;
     commentsUnmatched = unmatchedComments;
 
     debounce(registeredComments, (updatedComments) {
-      print("debug: CommentUIController detected comment changes, try sync all");
       var (newMap, unmatchedComments) = _updateComments(updatedComments);
 
       final allPossibleKeys = <String?>{...commentsMap.keys, ...newMap.keys};
@@ -505,7 +479,6 @@ class CommentUIController extends GetxController {
       for (var key in allPossibleKeys) {
         if (!_areCommentListsEqual(newMap[key] ?? [], commentsMap[key] ?? [])) {
           commentsMap[key] = newMap[key] ?? [];
-          print("精准刷新段落: ${key ?? 'post_end'}");
           update([key ?? 'post_end']);
         }
       }
@@ -527,7 +500,9 @@ class CommentUIController extends GetxController {
     }, time: const Duration(milliseconds: 100));
   }
 
-  _updateComments(List<CommentDataItem> allComments) {
+  (Map<String?, List<CommentDataItem>>, Map<String?, (List<CommentDataItem>, String, int)>) _updateComments(
+    List<CommentDataItem> allComments,
+  ) {
     var newMap = <String?, List<CommentDataItem>>{};
     var newUnmatched = <String?, (List<CommentDataItem>, String, int)>{};
 
@@ -571,8 +546,6 @@ class CommentUIController extends GetxController {
         newMap.putIfAbsent(null, () => []).add(c);
       }
     }
-    print("newMap keys: ${newMap.keys.toList()}");
-    print("newUnmatched keys: ${newUnmatched.keys.toList()}");
     return (newMap, newUnmatched);
   }
 
@@ -580,12 +553,12 @@ class CommentUIController extends GetxController {
     if (list1.length != list2.length) {
       return false;
     }
-    list1.sort((a, b) => a.id.compareTo(b.id));
-    list2.sort((a, b) => a.id.compareTo(b.id));
-    for (int i = 0; i < list1.length; i++) {
-      if (list1[i].id != list2[i].id ||
-          list1[i].updatedAt != list2[i].updatedAt ||
-          list1[i].body.content != list2[i].body.content) {
+    final left = List<CommentDataItem>.of(list1)..sort((a, b) => a.id.compareTo(b.id));
+    final right = List<CommentDataItem>.of(list2)..sort((a, b) => a.id.compareTo(b.id));
+    for (int i = 0; i < left.length; i++) {
+      if (left[i].id != right[i].id ||
+          left[i].updatedAt != right[i].updatedAt ||
+          left[i].body.content != right[i].body.content) {
         return false;
       }
     }
@@ -611,9 +584,6 @@ class CommentUIController extends GetxController {
       assert(commentId != null);
     }
 
-    print(
-      "[CommentUIController] setController mode: $mode, paragraphId: $paragraphId, commentId: $commentId, initialText: ${initialText != null ? initialText.substring(0, initialText.length > 10 ? 10 : initialText.length) : 'null'}",
-    );
     if (currentMode.value == CommentMode.addComment || currentMode.value == CommentMode.replyComment) {
       _userDraft = editController.text;
     }
@@ -638,9 +608,9 @@ class CommentUIController extends GetxController {
   void cancel() {
     final String oldActiveParagraphId = activeParagraphId.value ?? 'post_end';
     currentMode.value = CommentMode.none;
-    activeParagraphId.value = '';
-    activeCommentId.value = '';
-    activeCommentParentId.value = '';
+    activeParagraphId.value = null;
+    activeCommentId.value = null;
+    activeCommentParentId.value = null;
     update([oldActiveParagraphId]);
   }
 
@@ -648,6 +618,7 @@ class CommentUIController extends GetxController {
   void onClose() {
     editController.dispose();
     focusNode.dispose();
+    commentController.unregisterFilterSubscription('post_$postId');
     super.onClose();
   }
 
@@ -744,7 +715,6 @@ class SharedCommentInput extends StatelessWidget {
     switch (commentUIController.currentMode.value) {
       case CommentMode.addComment:
         assert(commentUIController.activeCommentParentId.value == null);
-        print("postid: $postId");
         parentId = null;
       case CommentMode.replyComment:
         parentId = commentUIController.activeCommentParentId.value;

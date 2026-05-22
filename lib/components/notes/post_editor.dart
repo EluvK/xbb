@@ -44,24 +44,29 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
   final postController = Get.find<PostController>();
 
   late Set<String> candidateCategory;
+  final titleTextEditingController = TextEditingController();
   TextEditingController categoryTextEditingController = TextEditingController();
   TextEditingController contentTextEditingController = TextEditingController();
 
   late Post editPost;
 
-  reloadCandidateCategory(String repoId) async {
+  void _reloadCandidateCategory(String repoId) {
     candidateCategory = postController
         .getPostDetails(selector: (post) => post.body.category, filters: [ParentIdFilter(repoId)])
         .toSet();
-    print('reload: ${candidateCategory.join(',')}');
   }
 
   @override
   void initState() {
     super.initState();
     editPost = widget.post;
+    titleTextEditingController.text = editPost.title;
     contentTextEditingController.text = editPost.content;
     categoryTextEditingController.text = editPost.category;
+    _reloadCandidateCategory(editPost.repoId);
+    titleTextEditingController.addListener(() {
+      editPost = editPost.copyWith(title: titleTextEditingController.text);
+    });
     contentTextEditingController.addListener(() {
       setState(() {
         editPost = editPost.copyWith(content: contentTextEditingController.text);
@@ -71,6 +76,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   @override
   void dispose() {
+    titleTextEditingController.dispose();
     contentTextEditingController.dispose();
     categoryTextEditingController.dispose();
     super.dispose();
@@ -78,7 +84,6 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
 
   @override
   Widget build(BuildContext context) {
-    reloadCandidateCategory(editPost.repoId);
     return Column(
       children: [
         Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), child: _titleWidget()),
@@ -97,11 +102,8 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         TextField(
           minLines: 1,
           maxLines: 3,
-          controller: TextEditingController(text: editPost.title),
-          decoration: InputDecoration(labelText: 'Title:', hoverColor: colorScheme.surface.withOpacity(0.2)),
-          onChanged: (value) {
-            editPost = editPost.copyWith(title: value);
-          },
+          controller: titleTextEditingController,
+          decoration: InputDecoration(labelText: 'Title:', hoverColor: colorScheme.surface.withValues(alpha: 0.2)),
         ),
       ],
     );
@@ -162,10 +164,9 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
               enabledBorder: OutlineInputBorder(borderSide: BorderSide.none),
               focusedBorder: OutlineInputBorder(borderSide: BorderSide.none),
             ),
-            onChanged: (value) async {
+            onChanged: (value) {
               editPost = editPost.copyWith(repoId: value!);
-              print('select repo:$value');
-              await reloadCandidateCategory(value);
+              _reloadCandidateCategory(value);
             },
             initialValue: editPost.repoId,
           ),
@@ -175,8 +176,7 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
         Flexible(
           child: Autocomplete(
             optionsViewOpenDirection: OptionsViewOpenDirection.up,
-            optionsBuilder: (TextEditingValue textEditingValue) async {
-              print("optionsBuilder, ${candidateCategory.join(',')}");
+            optionsBuilder: (TextEditingValue textEditingValue) {
               if (textEditingValue.text == '') {
                 return candidateCategory;
               }
@@ -227,7 +227,6 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
                 categoryTextEditingController.text = selection;
                 editPost = editPost.copyWith(category: selection);
               });
-              print('onSelected category ${editPost.category}');
             },
           ),
         ),

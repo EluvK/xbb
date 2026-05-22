@@ -116,41 +116,45 @@ class _TrackerEditorState extends State<TrackerEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final page = FutureBuilder<List<Permission>>(future: _initialPermissionsFuture, builder: _buildPermissionReadyView);
+
     return Center(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 800),
         padding: const EdgeInsets.all(16.0),
-        child: FutureBuilder<List<Permission>>(
-          future: _initialPermissionsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-            } else if (snapshot.hasError) {
-              return Text('tracker_error_with_message'.trParams({'error': snapshot.error.toString()}));
-            } else {
-              final initialPermissions = snapshot.data as List<Permission>;
-              final canEdit =
-                  isSelfTracker ||
-                  initialPermissions.any(
-                    (perm) =>
-                        perm.accessLevel == AccessLevel.write ||
-                        perm.accessLevel == AccessLevel.update ||
-                        perm.accessLevel == AccessLevel.fullAccess,
-                  );
-              return ListView(
-                children: [
-                  _editTracker(canEdit),
-                  const Divider(),
-                  if (creatingNewTracker)
-                    Center(child: Text('tracker_acl_after_creation'.tr, style: Theme.of(context).textTheme.bodyMedium))
-                  else
-                    _editAcl(initialPermissions),
-                ],
-              );
-            }
-          },
-        ),
+        child: page,
       ),
+    );
+  }
+
+  Widget _buildPermissionReadyView(BuildContext context, AsyncSnapshot<List<Permission>> snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (snapshot.hasError) {
+      return Text('tracker_error_with_message'.trParams({'error': snapshot.error.toString()}));
+    }
+
+    final initialPermissions = snapshot.data ?? const <Permission>[];
+    final canEdit =
+        isSelfTracker ||
+        initialPermissions.any(
+          (perm) =>
+              perm.accessLevel == AccessLevel.write ||
+              perm.accessLevel == AccessLevel.update ||
+              perm.accessLevel == AccessLevel.fullAccess,
+        );
+
+    return ListView(
+      children: [
+        _editTracker(canEdit),
+        const Divider(),
+        if (creatingNewTracker)
+          Center(child: Text('tracker_acl_after_creation'.tr, style: Theme.of(context).textTheme.bodyMedium))
+        else
+          _editAcl(initialPermissions),
+      ],
     );
   }
 
@@ -180,7 +184,6 @@ class _TrackerEditorState extends State<TrackerEditor> {
         remindType: _remindType,
       );
     }
-    print('Saving tracker with config: $config');
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       flushBar(FlushLevel.WARNING, 'tracker_validation_error'.tr, 'tracker_name_required'.tr);
@@ -457,22 +460,17 @@ class TrackerPermissionSchema implements PermissionSchema {
 
   @override
   List<bool> decode(AccessLevel accessLevel) {
-    switch (accessLevel) {
-      case AccessLevel.none:
-        return [false, false, false];
-      case AccessLevel.read:
-        return [true, false, false];
-      case AccessLevel.write:
-        return [true, true, false];
-      case AccessLevel.fullAccess:
-        return [true, true, true];
+    return switch (accessLevel) {
+      AccessLevel.none => [false, false, false],
+      AccessLevel.read => [true, false, false],
+      AccessLevel.write => [true, true, false],
+      AccessLevel.fullAccess => [true, true, true],
       // unimplemented;
-      case AccessLevel.read_append1:
-      case AccessLevel.read_append2:
-      case AccessLevel.read_append3:
-      case AccessLevel.update:
-        return [false, false, false];
-    }
+      AccessLevel.read_append1 ||
+      AccessLevel.read_append2 ||
+      AccessLevel.read_append3 ||
+      AccessLevel.update => [false, false, false],
+    };
   }
 
   @override
@@ -490,19 +488,16 @@ class TrackerPermissionSchema implements PermissionSchema {
 
   @override
   List<int> disableOverlappingSelections(AccessLevel accessLevel) {
-    switch (accessLevel) {
-      case AccessLevel.write:
-        return [0];
-      case AccessLevel.fullAccess:
-        return [0, 1];
-      case AccessLevel.none:
-      case AccessLevel.read_append1:
-      case AccessLevel.read_append2:
-      case AccessLevel.read_append3:
-      case AccessLevel.update:
-      case AccessLevel.read:
-        return [];
-    }
+    return switch (accessLevel) {
+      AccessLevel.write => [0],
+      AccessLevel.fullAccess => [0, 1],
+      AccessLevel.none ||
+      AccessLevel.read_append1 ||
+      AccessLevel.read_append2 ||
+      AccessLevel.read_append3 ||
+      AccessLevel.update ||
+      AccessLevel.read => [],
+    };
   }
 }
 

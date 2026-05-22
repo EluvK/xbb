@@ -62,21 +62,17 @@ class _ViewTaskOverviewState extends State<ViewTaskOverview> {
     final activeCandidates = allItems.where((item) => item.body.archived == false).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    if (activeCandidates.isEmpty) {
-      if (!mounted) return;
-      setState(() {
-        _totalCount = 0;
-        _doneCount = 0;
-      });
-      return;
-    }
-
-    final tasks = decodeTaskItems(activeCandidates.first.body.tasks);
-    final done = tasks.where((task) => task.done).length;
+    final (total, done) = switch (activeCandidates) {
+      [] => (0, 0),
+      _ => () {
+        final tasks = decodeTaskItems(activeCandidates.first.body.tasks);
+        return (tasks.length, tasks.where((task) => task.done).length);
+      }(),
+    };
 
     if (!mounted) return;
     setState(() {
-      _totalCount = tasks.length;
+      _totalCount = total;
       _doneCount = done;
     });
   }

@@ -69,9 +69,9 @@ class _ViewTasksState extends State<ViewTasks> {
     await _checkListController!.ensureInitialization();
     _allCheckListsRx = _checkListController!.registerFilterSubscription(filterKey: _allTasksFilterKey);
     _checkListWorker = ever<List<CheckListDataItem>>(_allCheckListsRx!, (_) {
-      _reloadFromController(ensureActive: false);
+      _reloadFromController();
     });
-    await _reloadFromController(ensureActive: false);
+    await _reloadFromController();
 
     if (mounted) {
       setState(() {
@@ -123,7 +123,7 @@ class _ViewTasksState extends State<ViewTasks> {
     return [for (var i = 0; i < tasks.length; i++) tasks[i].copyWith(sortOrder: i)];
   }
 
-  Future<void> _reloadFromController({required bool ensureActive}) async {
+  Future<void> _reloadFromController() async {
     final controller = _checkListController;
     if (controller == null) return;
 
@@ -184,7 +184,7 @@ class _ViewTasksState extends State<ViewTasks> {
       TaskWidgetBridge.scheduleRefresh();
     } catch (_) {
       // A just-created local id may be swapped by server; refresh and retry once.
-      await _reloadFromController(ensureActive: true);
+      await _reloadFromController();
       final retryActive = await _resolveActiveCheckList(createIfMissing: false);
       if (retryActive == null) return;
       controller.updateData(retryActive.id, retryActive.body.copyWith(tasks: encodeTaskItems(tasks)));
@@ -473,7 +473,7 @@ class _ViewTasksState extends State<ViewTasks> {
 
   Future<void> _refreshTasks() async {
     await onReadySyncTask();
-    await _reloadFromController(ensureActive: true);
+    await _reloadFromController();
   }
 
   @override
@@ -482,6 +482,7 @@ class _ViewTasksState extends State<ViewTasks> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final activeTasks = _activeTasks;
     final archivedSorted = List<CheckListDataItem>.of(_archivedSegments)
       ..sort(
         (a, b) => (a.body.archivedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
@@ -571,20 +572,20 @@ class _ViewTasksState extends State<ViewTasks> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (_activeTasks.isEmpty)
+                        if (activeTasks.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Text('task_empty_workspace_hint'.tr),
                           ),
-                        if (_activeTasks.isNotEmpty)
+                        if (activeTasks.isNotEmpty)
                           ReorderableListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             buildDefaultDragHandles: false,
-                            itemCount: _activeTasks.length,
+                            itemCount: activeTasks.length,
                             onReorder: _reorderActiveTasks,
                             itemBuilder: (context, index) {
-                              final task = _activeTasks[index];
+                              final task = activeTasks[index];
                               return _ActiveTaskRow(
                                 key: ValueKey('active-task-${task.id}'),
                                 item: task,

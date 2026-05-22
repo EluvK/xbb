@@ -164,10 +164,8 @@ class __RepoListsState extends State<_RepoLists> with ExpansibleListMixin {
       title: repo.body.name,
       subtitle: repo.body.description,
       onTap: () {
-        setState(() {
-          repoController.onSelectRepo(repo.id);
-          settingController.updateUserInterfaceHistoryCache(notesLastOpenedRepoId: repo.id);
-        });
+        repoController.onSelectRepo(repo.id);
+        settingController.updateUserInterfaceHistoryCache(notesLastOpenedRepoId: repo.id);
         // Close the drawer on phone when tab changes
         if (MediaQuery.of(context).size.width < 600) {
           Get.back();

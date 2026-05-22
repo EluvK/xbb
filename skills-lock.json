@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "refactor:flutter": {
+      "source": "snakeo/claude-debug-and-refactor-skills-plugin",
+      "sourceType": "github",
+      "skillPath": "plugins/debug-and-refactor/skills/refactor-flutter/SKILL.md",
+      "computedHash": "ade9d2f3a5ed8b5706131ad08169948e60ba9f6ae20d22058212b55fd21970bd"
+    }
+  }
+}

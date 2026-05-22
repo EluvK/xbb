@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/components/utils.dart';
-import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/controller/utils.dart';
@@ -14,8 +13,6 @@ class CommonProfile extends StatefulWidget {
 }
 
 class _CommonProfileState extends State<CommonProfile> {
-  final settingController = Get.find<SettingController>();
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,11 +40,6 @@ class _SelfProfile extends StatefulWidget {
 
 class _SelfProfileState extends State<_SelfProfile> {
   final userManagerController = Get.find<UserManagerController>();
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,9 +132,7 @@ class _FriendProfilesState extends State<FriendProfiles> {
           children: [
             IconButton(
               onPressed: () async {
-                print('refresh friend profiles');
                 await userManagerController.fetchAndUpdateUserProfiles();
-                setState(() {});
               },
               icon: const Icon(Icons.refresh_rounded),
               tooltip: 'refresh'.tr,
@@ -153,7 +143,6 @@ class _FriendProfilesState extends State<FriendProfiles> {
                   // todo get a simple input dialog to input friend user id, and return the input
                   String friendUserId = 'test_user_123'; // replace with actual input
                   await userManagerController.addFriend(friendUserId);
-                  setState(() {});
                 },
                 icon: const Icon(Icons.add_rounded),
                 tooltip: 'add_mock_friend'.tr,

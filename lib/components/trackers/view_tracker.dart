@@ -34,19 +34,47 @@ class TrackerMatrix extends StatefulWidget {
 }
 
 class _TrackerMatrixState extends State<TrackerMatrix> {
+  static const String _trackerFilterKey = 'tracker-matrix';
+
   final TrackerController trackerController = Get.find<TrackerController>();
   final TrackerRecordController recordController = Get.find<TrackerRecordController>();
   final SettingController settingController = Get.find<SettingController>();
+
+  late RxList<TrackerDataItem> _trackers;
+  Worker? _settingWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    _trackers = _registerTrackerSubscription();
+    _settingWorker = ever(settingController.appSetting, (_) {
+      if (!mounted) return;
+      setState(() {
+        _trackers = _registerTrackerSubscription();
+      });
+    });
+  }
+
+  RxList<TrackerDataItem> _registerTrackerSubscription() {
+    trackerController.unregisterFilterSubscription(_trackerFilterKey);
+    return trackerController.registerFilterSubscription(
+      filterKey: _trackerFilterKey,
+      filters: [ColorTagFilter.fromColorTag(settingController.colorTag)],
+    );
+  }
+
+  @override
+  void dispose() {
+    _settingWorker?.dispose();
+    trackerController.unregisterFilterSubscription(_trackerFilterKey);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      List<DataItemFilter> filters = [ColorTagFilter.fromColorTag(settingController.colorTag)];
-      RxList<TrackerDataItem> trackers = trackerController.registerFilterSubscription(
-        filterKey: 'tracker-matrix',
-        filters: filters,
-      );
       final Map<String, List<TrackerDataItem>> groupedTrackers = {};
-      for (var t in trackers) {
+      for (final t in _trackers) {
         groupedTrackers.putIfAbsent(t.body.category, () => []).add(t);
       }
       // sort by category name
@@ -102,16 +130,16 @@ class _TrackerMatrixState extends State<TrackerMatrix> {
                           child: Wrap(
                             spacing: cardSpacing,
                             runSpacing: cardSpacing,
-                            children: items.map((item) {
-                              final records = recordController.registerFilterSubscription(
-                                filterKey: 'tracker-records-${item.id}',
-                                filters: [ParentIdFilter(item.id)],
-                              );
-                              return SizedBox(
-                                width: cardWidth,
-                                child: TrackerCard(item: item, records: records),
-                              );
-                            }).toList(),
+                            children: items
+                                .map(
+                                  (item) => _TrackerRecordCard(
+                                    key: ValueKey('tracker-record-card-${item.id}'),
+                                    item: item,
+                                    cardWidth: cardWidth,
+                                    recordController: recordController,
+                                  ),
+                                )
+                                .toList(),
                           ),
                         ),
                       ),
@@ -125,5 +153,60 @@ class _TrackerMatrixState extends State<TrackerMatrix> {
         },
       );
     });
+  }
+}
+
+class _TrackerRecordCard extends StatefulWidget {
+  const _TrackerRecordCard({super.key, required this.item, required this.cardWidth, required this.recordController});
+
+  final TrackerDataItem item;
+  final double cardWidth;
+  final TrackerRecordController recordController;
+
+  @override
+  State<_TrackerRecordCard> createState() => _TrackerRecordCardState();
+}
+
+class _TrackerRecordCardState extends State<_TrackerRecordCard> {
+  static const String _recordFilterPrefix = 'tracker-records-';
+
+  late String _recordFilterKey;
+  late RxList<TrackerRecordDataItem> _records;
+
+  @override
+  void initState() {
+    super.initState();
+    _recordFilterKey = '$_recordFilterPrefix${widget.item.id}';
+    _records = widget.recordController.registerFilterSubscription(
+      filterKey: _recordFilterKey,
+      filters: [ParentIdFilter(widget.item.id)],
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _TrackerRecordCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.id == widget.item.id) return;
+
+    widget.recordController.unregisterFilterSubscription(_recordFilterKey);
+    _recordFilterKey = '$_recordFilterPrefix${widget.item.id}';
+    _records = widget.recordController.registerFilterSubscription(
+      filterKey: _recordFilterKey,
+      filters: [ParentIdFilter(widget.item.id)],
+    );
+  }
+
+  @override
+  void dispose() {
+    widget.recordController.unregisterFilterSubscription(_recordFilterKey);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: widget.cardWidth,
+      child: TrackerCard(item: widget.item, records: _records),
+    );
   }
 }

@@ -18,7 +18,6 @@ class RepoEditor extends StatefulWidget {
 class _RepoEditorState extends State<RepoEditor> {
   late Repo _editedRepo;
   late final bool isSelfRepo;
-  late final bool canEditRepoInfo;
   final RepoController repoController = Get.find<RepoController>();
   final UserManagerController userManagerController = Get.find<UserManagerController>();
   Future<List<Permission>>? _initialPermissionsFuture;
@@ -57,7 +56,7 @@ class _RepoEditorState extends State<RepoEditor> {
   }
 
   Widget _editRepo(List<Permission> initialPermissions) {
-    bool canEditRepoInfo =
+    final canEditRepoInfo =
         isSelfRepo ||
         initialPermissions.any(
           (perm) =>
@@ -156,23 +155,15 @@ class RepoPermissionSchema implements PermissionSchema {
 
   @override
   List<bool> decode(AccessLevel accessLevel) {
-    switch (accessLevel) {
-      case AccessLevel.none:
-        return [false, false, false, false];
-      case AccessLevel.read:
-        return [true, false, false, false];
-      case AccessLevel.read_append2:
-        return [true, true, false, false];
-      case AccessLevel.write:
-        return [true, true, true, false];
-      case AccessLevel.fullAccess:
-        return [true, true, true, true];
+    return switch (accessLevel) {
+      AccessLevel.none => [false, false, false, false],
+      AccessLevel.read => [true, false, false, false],
+      AccessLevel.read_append2 => [true, true, false, false],
+      AccessLevel.write => [true, true, true, false],
+      AccessLevel.fullAccess => [true, true, true, true],
       // unimplemented;
-      case AccessLevel.read_append1:
-      case AccessLevel.read_append3:
-      case AccessLevel.update:
-        return [false, false, false, false];
-    }
+      AccessLevel.read_append1 || AccessLevel.read_append3 || AccessLevel.update => [false, false, false, false],
+    };
   }
 
   @override
@@ -192,19 +183,15 @@ class RepoPermissionSchema implements PermissionSchema {
 
   @override
   List<int> disableOverlappingSelections(AccessLevel accessLevel) {
-    switch (accessLevel) {
-      case AccessLevel.read_append2:
-        return [0];
-      case AccessLevel.write:
-        return [0, 1];
-      case AccessLevel.fullAccess:
-        return [0, 1, 2];
-      case AccessLevel.none:
-      case AccessLevel.read_append1:
-      case AccessLevel.read_append3:
-      case AccessLevel.update:
-      case AccessLevel.read:
-        return [];
-    }
+    return switch (accessLevel) {
+      AccessLevel.read_append2 => [0],
+      AccessLevel.write => [0, 1],
+      AccessLevel.fullAccess => [0, 1, 2],
+      AccessLevel.none ||
+      AccessLevel.read_append1 ||
+      AccessLevel.read_append3 ||
+      AccessLevel.update ||
+      AccessLevel.read => [],
+    };
   }
 }

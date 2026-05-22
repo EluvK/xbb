@@ -11,7 +11,10 @@ class PingLatencyInline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.primary;
-    final text = latencyMs == null ? '-- ms' : '$latencyMs ms';
+    final text = switch (latencyMs) {
+      final ms? => '$ms ms',
+      null => '-- ms',
+    };
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -27,7 +30,7 @@ class PingLatencyInline extends StatelessWidget {
               ? SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(color)),
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(color)),
                 )
               : Icon(Icons.network_ping_rounded, size: 18, color: color),
         ),

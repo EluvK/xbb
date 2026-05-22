@@ -320,27 +320,20 @@ class _TrackerCardState extends State<TrackerCard> {
   }
 
   Color _resolveTypeColor(String type) {
-    switch (type) {
-      case 'event':
-        return Colors.green;
-      case 'milestone':
-        return Colors.blueAccent;
-      case 'anniversary':
-        return Colors.pink;
-      default:
-        return Colors.teal;
-    }
+    return switch (type) {
+      'event' => Colors.green,
+      'milestone' => Colors.blueAccent,
+      'anniversary' => Colors.pink,
+      _ => Colors.teal,
+    };
   }
 
   IconData _resolveTypeIcon(String type) {
-    switch (type) {
-      case 'milestone':
-        return Icons.flag;
-      case 'anniversary':
-        return Icons.calendar_month_outlined;
-      default:
-        return Icons.repeat;
-    }
+    return switch (type) {
+      'milestone' => Icons.flag,
+      'anniversary' => Icons.calendar_month_outlined,
+      _ => Icons.repeat,
+    };
   }
 
   Widget _buildTypeBadge(
@@ -374,7 +367,10 @@ class _TrackerCardState extends State<TrackerCard> {
             const Icon(Icons.switch_access_shortcut_outlined, size: 12, color: Colors.orangeAccent),
             const SizedBox(width: 3),
           ],
-          Text(type, style: theme.textTheme.labelSmall?.copyWith(color: typeColor, fontWeight: FontWeight.w700)),
+          Text(
+            type,
+            style: theme.textTheme.labelSmall?.copyWith(color: typeColor, fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );
@@ -418,6 +414,11 @@ class _TrackerCardState extends State<TrackerCard> {
     required dynamic userProfile,
   }) {
     final t = item.body;
+    final progressWidget = switch (t.type) {
+      'milestone' => _buildMilestoneWidget(context, t.config, reserveRight: canEdit ? 72 : 0),
+      'anniversary' => _buildAnniversaryWidget(context, t.config, typeColor, reserveRight: canEdit ? 72 : 0),
+      _ => _buildEventWidget(context, t.config, reserveRight: canEdit ? 72 : 0),
+    };
     return Column(
       key: const ValueKey('content'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,12 +461,7 @@ class _TrackerCardState extends State<TrackerCard> {
           ),
         ],
         const SizedBox(height: 10),
-        if (t.type == 'milestone')
-          _buildMilestoneWidget(context, t.config, reserveRight: canEdit ? 72 : 0)
-        else if (t.type == 'anniversary')
-          _buildAnniversaryWidget(context, t.config, typeColor, reserveRight: canEdit ? 72 : 0)
-        else
-          _buildEventWidget(context, t.config, reserveRight: canEdit ? 72 : 0),
+        progressWidget,
       ],
     );
   }
@@ -503,11 +499,8 @@ class _TrackerCardState extends State<TrackerCard> {
             },
           ),
           DoubleClickButton(
-            buttonBuilder: (onPressed) => IconButton(
-              tooltip: 'delete'.tr,
-              onPressed: onPressed,
-              icon: const Icon(Icons.delete),
-            ),
+            buttonBuilder: (onPressed) =>
+                IconButton(tooltip: 'delete'.tr, onPressed: onPressed, icon: const Icon(Icons.delete)),
             onDoubleClick: () {
               trackerController.deleteData(widget.item.id);
               while (Get.routing.current == '/tracker/view-tracker') {
@@ -559,7 +552,7 @@ class _TrackerCardState extends State<TrackerCard> {
 
   @override
   Widget build(BuildContext context) {
-    var showItem = widget.item;
+    final showItem = widget.item;
     final TrackerController trackerController = Get.find<TrackerController>();
     final t = widget.item.body;
     final cachedAcl = trackerController.getAclCached(widget.item.id);
@@ -574,9 +567,9 @@ class _TrackerCardState extends State<TrackerCard> {
     final selfId = userCtrl.settingController.userId;
     final ownedId = widget.item.owner;
     final userProfile = userCtrl.getUserProfile(ownedId);
-    bool sharedToOthers = cachedAcl.any((p) => p.user != selfId);
-    bool sharedFromOthers = selfId != ownedId;
-    bool canEdit = oncePermissionCheck(TrackerFeatureRequires.update, ownedId, cachedAcl, null);
+    final sharedToOthers = cachedAcl.any((p) => p.user != selfId);
+    final sharedFromOthers = selfId != ownedId;
+    final canEdit = oncePermissionCheck(TrackerFeatureRequires.update, ownedId, cachedAcl, null);
 
     var card = Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -675,34 +668,34 @@ class _TrackerCardState extends State<TrackerCard> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                   Expanded(
-                     child: AnimatedSwitcher(
-                       duration: const Duration(milliseconds: 220),
-                       child: Padding(
-                         padding: EdgeInsets.only(bottom: canEdit ? 24 : 0),
-                         child: _showActions
-                              ? _buildActionsPanel(
-                                  context,
-                                  theme: theme,
-                                  trackerController: trackerController,
-                                  showItem: showItem,
-                                )
-                              : _buildTrackerContent(
-                                  context,
-                                  theme: theme,
-                                  item: widget.item,
-                                  typeColor: typeColor,
-                                  typeTintBg: typeTintBg,
-                                  typeTintEdge: typeTintEdge,
-                                  canEdit: canEdit,
-                                  sharedFromOthers: sharedFromOthers,
-                                  sharedToOthers: sharedToOthers,
-                                  userProfile: userProfile,
-                                ),
-                        ),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: canEdit ? 24 : 0),
+                        child: _showActions
+                            ? _buildActionsPanel(
+                                context,
+                                theme: theme,
+                                trackerController: trackerController,
+                                showItem: showItem,
+                              )
+                            : _buildTrackerContent(
+                                context,
+                                theme: theme,
+                                item: widget.item,
+                                typeColor: typeColor,
+                                typeTintBg: typeTintBg,
+                                typeTintEdge: typeTintEdge,
+                                canEdit: canEdit,
+                                sharedFromOthers: sharedFromOthers,
+                                sharedToOthers: sharedToOthers,
+                                userProfile: userProfile,
+                              ),
                       ),
                     ),
-                  ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -713,13 +706,7 @@ class _TrackerCardState extends State<TrackerCard> {
       clipBehavior: Clip.none,
       children: [
         card,
-        Positioned(
-          bottom: 4,
-          right: 8,
-          child: canEdit
-              ? _buildBottomEditToggle(context)
-              : const SizedBox.shrink(),
-        ),
+        Positioned(bottom: 4, right: 8, child: canEdit ? _buildBottomEditToggle(context) : const SizedBox.shrink()),
       ],
     );
   }
