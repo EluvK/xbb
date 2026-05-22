@@ -471,6 +471,11 @@ class _ViewTasksState extends State<ViewTasks> {
     });
   }
 
+  Future<void> _refreshTasks() async {
+    await onReadySyncTask();
+    await _reloadFromController(ensureActive: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isInitializing) {
@@ -488,123 +493,126 @@ class _ViewTasksState extends State<ViewTasks> {
     return Column(
       children: [
         Expanded(
-          child: ListView(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(12),
-            children: [
-              if (_allArchived.isNotEmpty)
+          child: RefreshIndicator(
+            onRefresh: _refreshTasks,
+            child: ListView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(12),
+              children: [
+                if (_allArchived.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2, bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.history, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 6),
+                        Text('task_section_history'.tr, style: Theme.of(context).textTheme.titleSmall),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: _hasMoreArchived ? _loadMoreArchived : null,
+                          icon: const Icon(Icons.unfold_more, size: 16),
+                          label: Text(
+                            _hasMoreArchived
+                                ? (showHistoryEntryLabel
+                                      ? 'task_action_show_history'.tr
+                                      : 'task_action_load_more_history'.tr)
+                                : 'task_action_history_loaded_all'.tr,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (!_collapseArchived)
+                  ...archivedSorted.map(
+                    (segmentItem) => _ArchivedSegmentCard(
+                      segment: segmentItem.body,
+                      showDetails: _showDetails,
+                      onDelete: () => _confirmAndDeleteArchivedSegment(segmentItem),
+                    ),
+                  ),
+                // if (_collapseArchived && archivedSorted.isNotEmpty)
+                //   const Padding(
+                //     padding: EdgeInsets.symmetric(vertical: 6),
+                //     child: Text('Archived 已收起'),
+                //   ),
+                const SizedBox(height: 8),
+                _TaskSectionDivider(
+                  showArchivedToggle: _allArchived.isNotEmpty,
+                  collapsed: _collapseArchived,
+                  onToggleArchived: () {
+                    setState(() {
+                      _collapseArchived = !_collapseArchived;
+                    });
+                  },
+                ),
                 Padding(
                   padding: const EdgeInsets.only(left: 2, bottom: 8),
                   child: Row(
                     children: [
-                      Icon(Icons.history, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 6),
-                      Text('task_section_history'.tr, style: Theme.of(context).textTheme.titleSmall),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: _hasMoreArchived ? _loadMoreArchived : null,
-                        icon: const Icon(Icons.unfold_more, size: 16),
-                        label: Text(
-                          _hasMoreArchived
-                              ? (showHistoryEntryLabel
-                                    ? 'task_action_show_history'.tr
-                                    : 'task_action_load_more_history'.tr)
-                              : 'task_action_history_loaded_all'.tr,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (!_collapseArchived)
-                ...archivedSorted.map(
-                  (segmentItem) => _ArchivedSegmentCard(
-                    segment: segmentItem.body,
-                    showDetails: _showDetails,
-                    onDelete: () => _confirmAndDeleteArchivedSegment(segmentItem),
-                  ),
-                ),
-              // if (_collapseArchived && archivedSorted.isNotEmpty)
-              //   const Padding(
-              //     padding: EdgeInsets.symmetric(vertical: 6),
-              //     child: Text('Archived 已收起'),
-              //   ),
-              const SizedBox(height: 8),
-              _TaskSectionDivider(
-                showArchivedToggle: _allArchived.isNotEmpty,
-                collapsed: _collapseArchived,
-                onToggleArchived: () {
-                  setState(() {
-                    _collapseArchived = !_collapseArchived;
-                  });
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 2, bottom: 8),
-                child: Row(
-                  children: [
-                    Text('task_section_workspace'.tr, style: Theme.of(context).textTheme.titleSmall),
-                    if (_isSaving)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
-                            const SizedBox(width: 6),
-                            Text('task_saving'.tr, style: Theme.of(context).textTheme.bodySmall),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_activeTasks.isEmpty)
+                      Text('task_section_workspace'.tr, style: Theme.of(context).textTheme.titleSmall),
+                      if (_isSaving)
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Text('task_empty_workspace_hint'.tr),
-                        ),
-                      if (_activeTasks.isNotEmpty)
-                        ReorderableListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          buildDefaultDragHandles: false,
-                          itemCount: _activeTasks.length,
-                          onReorder: _reorderActiveTasks,
-                          itemBuilder: (context, index) {
-                            final task = _activeTasks[index];
-                            return _ActiveTaskRow(
-                              key: ValueKey('active-task-${task.id}'),
-                              item: task,
-                              showDetails: _showDetails,
-                              isEditing: _editingTaskId == task.id,
-                              editController: _editController,
-                              editFocusNode: _editFocusNode,
-                              onTapEdit: () => _beginEdit(task),
-                              onToggleDone: (nextDone) => _toggleTaskDone(index, nextDone),
-                              onDelete: () => _confirmAndDeleteTask(index),
-                              onChanged: _applyEditingText,
-                              onSubmit: _finishEdit,
-                              dragHandle: ReorderableDelayedDragStartListener(
-                                index: index,
-                                child: Icon(
-                                  Icons.drag_indicator,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            );
-                          },
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                              const SizedBox(width: 6),
+                              Text('task_saving'.tr, style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
                         ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_activeTasks.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Text('task_empty_workspace_hint'.tr),
+                          ),
+                        if (_activeTasks.isNotEmpty)
+                          ReorderableListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            buildDefaultDragHandles: false,
+                            itemCount: _activeTasks.length,
+                            onReorder: _reorderActiveTasks,
+                            itemBuilder: (context, index) {
+                              final task = _activeTasks[index];
+                              return _ActiveTaskRow(
+                                key: ValueKey('active-task-${task.id}'),
+                                item: task,
+                                showDetails: _showDetails,
+                                isEditing: _editingTaskId == task.id,
+                                editController: _editController,
+                                editFocusNode: _editFocusNode,
+                                onTapEdit: () => _beginEdit(task),
+                                onToggleDone: (nextDone) => _toggleTaskDone(index, nextDone),
+                                onDelete: () => _confirmAndDeleteTask(index),
+                                onChanged: _applyEditingText,
+                                onSubmit: _finishEdit,
+                                dragHandle: ReorderableDelayedDragStartListener(
+                                  index: index,
+                                  child: Icon(
+                                    Icons.drag_indicator,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         SafeArea(
