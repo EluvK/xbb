@@ -99,12 +99,44 @@ bool _shouldUpdate(String latestVersion) {
   if (VERSION == debugVersionLiteral) {
     return true;
   }
-  for (int i = 0; i < latestVersion.split('.').length; i++) {
-    if (int.parse(latestVersion.split('.')[i]) > int.parse(VERSION.split('.')[i])) {
+  final latest = _parseVersion(latestVersion);
+  final current = _parseVersion(VERSION, treatNightlyChannelAsPrerelease: true);
+
+  final int maxLength = latest.parts.length > current.parts.length ? latest.parts.length : current.parts.length;
+  for (int i = 0; i < maxLength; i++) {
+    final int latestPart = i < latest.parts.length ? latest.parts[i] : 0;
+    final int currentPart = i < current.parts.length ? current.parts[i] : 0;
+    if (latestPart > currentPart) {
       return true;
     }
+    if (latestPart < currentPart) {
+      return false;
+    }
   }
+
+  if (current.isPrerelease && !latest.isPrerelease) {
+    return true;
+  }
+
   return false;
+}
+
+_ParsedVersion _parseVersion(String version, {bool treatNightlyChannelAsPrerelease = false}) {
+  final normalized = version.trim();
+  final dashIndex = normalized.indexOf('-');
+  final coreVersion = dashIndex >= 0 ? normalized.substring(0, dashIndex) : normalized;
+
+  final parts = coreVersion.split('.').map((part) => int.tryParse(part) ?? 0).toList();
+  final isPrerelease = dashIndex >= 0 || (treatNightlyChannelAsPrerelease && APP_CHANNEL == 'nightly');
+
+  return _ParsedVersion(parts: parts, isPrerelease: isPrerelease);
+}
+
+class _ParsedVersion {
+  _ParsedVersion({required this.parts, required this.isPrerelease});
+
+  final List<int> parts;
+  final bool isPrerelease;
 }
 
 void _downloadApk(String url) {
