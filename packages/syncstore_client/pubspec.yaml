@@ -1,0 +1,30 @@
+name: syncstore_client
+description: A starting point for Dart libraries or applications.
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+resolution: workspace
+
+environment:
+  sdk: ^3.10.0
+
+# Add regular dependencies here.
+dependencies:
+  cryptography: ^2.9.0
+  cryptography_flutter: ^2.3.4
+  dio: ^5.0.0
+  equatable: ^2.0.8
+  json_annotation: ^4.9.0
+  sqlite3: ^3.1.0
+  sync_annotation:
+    path: ../sync_annotation
+  uuid: ^4.5.1
+  pool: ^1.5.2
+
+dev_dependencies:
+  build_runner: ^2.10.4
+  json_serializable: ^6.11.2
+  sync_generator:
+    path: ../sync_generator
+  # lints: ^6.0.0
+  # test: ^1.25.0

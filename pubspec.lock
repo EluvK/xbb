@@ -981,24 +981,6 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "1.4.1"
-  sync_annotation:
-    dependency: "direct main"
-    description:
-      path: sync_annotation
-      ref: HEAD
-      resolved-ref: cf9ef0b4a3b3dada78baa275cbe9d607cd6d5b2f
-      url: "https://github.com/EluvK/syncstore_client.git"
-    source: git
-    version: "0.0.1"
-  sync_generator:
-    dependency: "direct dev"
-    description:
-      path: sync_generator
-      ref: master
-      resolved-ref: cf9ef0b4a3b3dada78baa275cbe9d607cd6d5b2f
-      url: "https://github.com/EluvK/syncstore_client.git"
-    source: git
-    version: "0.0.1"
   synchronized:
     dependency: transitive
     description:
@@ -1007,15 +989,6 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "3.4.0"
-  syncstore_client:
-    dependency: "direct main"
-    description:
-      path: syncstore_client
-      ref: HEAD
-      resolved-ref: cf9ef0b4a3b3dada78baa275cbe9d607cd6d5b2f
-      url: "https://github.com/EluvK/syncstore_client.git"
-    source: git
-    version: "1.0.0"
   term_glyph:
     dependency: transitive
     description:

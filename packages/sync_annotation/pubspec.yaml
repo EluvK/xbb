@@ -1,0 +1,7 @@
+name: sync_annotation
+description: Annotation package for sync codegen
+version: 0.0.1
+resolution: workspace
+
+environment:
+  sdk: ^3.10.0
