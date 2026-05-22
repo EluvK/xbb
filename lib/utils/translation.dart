@@ -542,6 +542,10 @@ class _TranslationHelper {
       "en_US": "Saved",
       "zh_CN": "已保存",
     },
+    "reset_default": {
+      "en_US": "Reset",
+      "zh_CN": "重置",
+    },
     "optional": {
       "en_US": "(Optional)",
       "zh_CN": "(可选)",

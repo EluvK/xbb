@@ -187,6 +187,7 @@ class TextInputWidget extends StatefulWidget {
     this.optional = false,
     this.helperText,
     this.inputType,
+    this.tailButton,
   });
   final TitleInterface title;
   final String initialValue;
@@ -196,6 +197,7 @@ class TextInputWidget extends StatefulWidget {
   final void Function(String) onFinished;
   final String? helperText;
   final TextInputType? inputType;
+  final Widget? tailButton;
 
   @override
   State<TextInputWidget> createState() => _TextInputWidgetState();
@@ -325,6 +327,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
                   },
                 ),
               ),
+              if (widget.tailButton != null) ...[const SizedBox(width: 8), widget.tailButton!],
             ],
           ),
         ),

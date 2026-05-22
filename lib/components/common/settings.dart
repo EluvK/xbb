@@ -27,6 +27,7 @@ class _CommonSettingsState extends State<CommonSettings> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final defaultSyncStoreUrl = SyncStoreSetting.defaults().baseUrl;
     return Container(
       color: colorScheme.surface,
       child: Center(
@@ -57,6 +58,26 @@ class _CommonSettingsState extends State<CommonSettings> {
                 TextInputWidget(
                   title: SyncStoreInputMetaEnum.address,
                   initialValue: settingController.syncStoreUrl,
+                  tailButton: OutlinedButton.icon(
+                    onPressed: settingController.syncStoreUrl == defaultSyncStoreUrl
+                        ? null
+                        : () async {
+                            settingController.updateSyncStoreSetting(baseUrl: defaultSyncStoreUrl);
+                            await reInitSyncStoreController();
+                            if (!mounted) {
+                              return;
+                            }
+                            setState(() {
+                              _pingLatencyMs = null;
+                            });
+                          },
+                    icon: Tooltip(message: 'reset_default'.tr, child: const Icon(Icons.restore)),
+                    label: const SizedBox.shrink(),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(40, 36),
+                    ),
+                  ),
                   onFinished: (value) async {
                     settingController.updateSyncStoreSetting(baseUrl: value);
                     await reInitSyncStoreController();
