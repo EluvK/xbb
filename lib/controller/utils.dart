@@ -73,6 +73,7 @@ void _executeAppUpdate(
   bool throughProxy = false,
 }) {
   // execute update
+  version = version.trim();
   final urlVersion = nightly ? 'master' : version;
   if (!throughProxy) {
     if (GetPlatform.isWindows) {
