@@ -43,21 +43,30 @@ Future<void> reInitNotesSync(SyncStoreClient client) async {
   if (settingController.notesLastOpenedRepoId != null) {
     repoController.onSelectRepo(settingController.notesLastOpenedRepoId!);
   }
-  if (settingController.notesEnabled) {
-    onReadySyncAll();
-  }
 }
 
-Future<void> onReadySyncAll() async {
+Future<void> onReadySyncAll({
+  bool showCompletionToast = true,
+  bool skipHealthCheck = false,
+  bool showErrorToast = true,
+  bool rethrowOnError = false,
+}) async {
   final repoController = Get.find<RepoController>();
   final postController = Get.find<PostController>();
   final commentController = Get.find<CommentController>();
-  final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
-  final latency = await ssClient.pingLatencyMs();
-  if (latency < 0) {
-    print('SyncStore health check failed, skipping initial sync.');
-    flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
-    return;
+  if (!skipHealthCheck) {
+    final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
+    final latency = await ssClient.pingLatencyMs();
+    if (latency < 0) {
+      print('SyncStore health check failed, skipping initial sync.');
+      if (showErrorToast) {
+        flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
+      }
+      if (rethrowOnError) {
+        throw Exception('SyncStore health check failed for notes initial sync');
+      }
+      return;
+    }
   }
   try {
     await runSyncTaskWithStatus(
@@ -93,10 +102,17 @@ Future<void> onReadySyncAll() async {
       from: 75.0,
       to: 100.0,
     );
-    successSimpleFlushBar("同步完成");
+    if (showCompletionToast) {
+      successSimpleFlushBar("同步完成");
+    }
   } catch (e) {
     print('Error during initial sync: $e');
-    flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
+    if (showErrorToast) {
+      flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
+    }
+    if (rethrowOnError) {
+      rethrow;
+    }
   } finally {}
 }
 

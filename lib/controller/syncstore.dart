@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
@@ -10,9 +11,10 @@ import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/user.dart' show reInitUserManagerController;
-import 'package:xbb/models/notes/model.dart' show reInitNotesSync;
-import 'package:xbb/models/task/model.dart' show reInitTaskSync;
-import 'package:xbb/models/tracker/model.dart' show reInitTrackerSync;
+import 'package:xbb/models/notes/model.dart' show onReadySyncAll, reInitNotesSync;
+import 'package:xbb/models/task/model.dart' show onReadySyncTask, reInitTaskSync;
+import 'package:xbb/models/tracker/model.dart' show onReadySyncTracker, reInitTrackerSync;
+import 'package:xbb/utils/utils.dart' show FlushLevel, flushBar, successSimpleFlushBar;
 
 /// ALERT: any page that call this should make sure use the new created controller.
 Future<void> reInitSyncStoreController() async {
@@ -25,9 +27,78 @@ Future<void> reInitSyncStoreController() async {
     return ctrl;
   }, permanent: true);
   await reInitUserManagerController();
-  await reInitNotesSync(Get.find<SyncStoreControl>().syncStoreClient);
-  await reInitTrackerSync(Get.find<SyncStoreControl>().syncStoreClient);
-  await reInitTaskSync(Get.find<SyncStoreControl>().syncStoreClient);
+  final syncStoreClient = Get.find<SyncStoreControl>().syncStoreClient;
+  await reInitNotesSync(syncStoreClient);
+  await reInitTrackerSync(syncStoreClient);
+  await reInitTaskSync(syncStoreClient);
+  await onReadySyncStartup();
+}
+
+Future<void> onReadySyncStartup() async {
+  final settingController = Get.find<SettingController>();
+  final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
+  final latency = await ssClient.pingLatencyMs();
+  if (latency < 0) {
+    print('SyncStore health check failed, skipping startup sync.');
+    _showStartupToast(() {
+      flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，启动同步已跳过");
+    });
+    return;
+  }
+
+  try {
+    if (settingController.notesEnabled) {
+      await onReadySyncAll(
+        showCompletionToast: false,
+        skipHealthCheck: true,
+        showErrorToast: false,
+        rethrowOnError: true,
+      );
+    }
+    if (settingController.trackerEnabled) {
+      await onReadySyncTracker(
+        showCompletionToast: false,
+        skipHealthCheck: true,
+        showErrorToast: false,
+        rethrowOnError: true,
+      );
+    }
+    if (settingController.taskEnabled) {
+      await onReadySyncTask(
+        showCompletionToast: false,
+        skipHealthCheck: true,
+        showErrorToast: false,
+        rethrowOnError: true,
+      );
+    }
+    _showStartupToast(() {
+      successSimpleFlushBar("启动同步完成");
+    });
+  } catch (e) {
+    print('Error during startup sync: $e');
+    _showStartupToast(() {
+      flushBar(FlushLevel.WARNING, "同步错误", "启动同步过程中发生错误: $e");
+    });
+  }
+}
+
+void _showStartupToast(void Function() showToast) {
+  if (Get.context != null) {
+    showToast();
+    return;
+  }
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (Get.context != null) {
+      showToast();
+      return;
+    }
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (Get.context != null) {
+        showToast();
+      }
+    });
+  });
 }
 
 class SyncStoreControl extends GetxController {

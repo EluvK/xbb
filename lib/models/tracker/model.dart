@@ -29,21 +29,29 @@ enum TrackerFeatureRequires implements FeaturePermission {
 Future<void> reInitTrackerSync(SyncStoreClient client) async {
   await reInit<TrackerController>(() => TrackerController(client), (c) => c.ensureInitialization());
   await reInit<TrackerRecordController>(() => TrackerRecordController(client), (c) => c.ensureInitialization());
-  final SettingController settingController = Get.find<SettingController>();
-  if (settingController.trackerEnabled) {
-    onReadySyncTracker();
-  }
 }
 
-Future<void> onReadySyncTracker() async {
+Future<void> onReadySyncTracker({
+  bool showCompletionToast = true,
+  bool skipHealthCheck = false,
+  bool showErrorToast = true,
+  bool rethrowOnError = false,
+}) async {
   final trackerController = Get.find<TrackerController>();
   final recordController = Get.find<TrackerRecordController>();
-  final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
-  final latency = await ssClient.pingLatencyMs();
-  if (latency < 0) {
-    print('SyncStore health check failed, skipping initial sync.');
-    flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
-    return;
+  if (!skipHealthCheck) {
+    final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
+    final latency = await ssClient.pingLatencyMs();
+    if (latency < 0) {
+      print('SyncStore health check failed, skipping initial sync.');
+      if (showErrorToast) {
+        flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
+      }
+      if (rethrowOnError) {
+        throw Exception('SyncStore health check failed for tracker initial sync');
+      }
+      return;
+    }
   }
   try {
     await runSyncTaskWithStatus(
@@ -56,10 +64,17 @@ Future<void> onReadySyncTracker() async {
       from: 0.0,
       to: 100.0,
     );
-    successSimpleFlushBar("Tracker 同步完成");
+    if (showCompletionToast) {
+      successSimpleFlushBar("Tracker 同步完成");
+    }
   } catch (e) {
     print('Error during initial sync: $e');
-    flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
+    if (showErrorToast) {
+      flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
+    }
+    if (rethrowOnError) {
+      rethrow;
+    }
   }
 }
 

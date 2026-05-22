@@ -19,21 +19,29 @@ part 'model.freezed.dart';
 Future<void> reInitTaskSync(SyncStoreClient client) async {
   await reInit<CheckListController>(() => CheckListController(client), (c) => c.ensureInitialization());
   await TaskWidgetBridge.refreshFromLocalState();
-  final SettingController settingController = Get.find<SettingController>();
-  if (settingController.taskEnabled) {
-    onReadySyncTask();
-  }
 }
 
-Future<void> onReadySyncTask() async {
+Future<void> onReadySyncTask({
+  bool showCompletionToast = true,
+  bool skipHealthCheck = false,
+  bool showErrorToast = true,
+  bool rethrowOnError = false,
+}) async {
   final checkListController = Get.find<CheckListController>();
-  final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
-  final latency = await ssClient.pingLatencyMs();
-  if (latency < 0) {
-    print('SyncStore health check failed, skipping task initial sync.');
-    flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，Task 同步已跳过");
-    await TaskWidgetBridge.refreshFromLocalState();
-    return;
+  if (!skipHealthCheck) {
+    final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
+    final latency = await ssClient.pingLatencyMs();
+    if (latency < 0) {
+      print('SyncStore health check failed, skipping task initial sync.');
+      if (showErrorToast) {
+        flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，Task 同步已跳过");
+      }
+      await TaskWidgetBridge.refreshFromLocalState();
+      if (rethrowOnError) {
+        throw Exception('SyncStore health check failed for task initial sync');
+      }
+      return;
+    }
   }
 
   try {
@@ -42,10 +50,17 @@ Future<void> onReadySyncTask() async {
       from: 0.0,
       to: 100.0,
     );
-    successSimpleFlushBar("Task 同步完成");
+    if (showCompletionToast) {
+      successSimpleFlushBar("Task 同步完成");
+    }
   } catch (e) {
     print('Error during task initial sync: $e');
-    flushBar(FlushLevel.WARNING, "同步错误", "Task 初始同步过程中发生错误: $e");
+    if (showErrorToast) {
+      flushBar(FlushLevel.WARNING, "同步错误", "Task 初始同步过程中发生错误: $e");
+    }
+    if (rethrowOnError) {
+      rethrow;
+    }
   } finally {
     await TaskWidgetBridge.refreshFromLocalState();
   }
