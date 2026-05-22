@@ -24,6 +24,46 @@ class _CommonSettingsState extends State<CommonSettings> {
   int? _pingLatencyMs;
   bool _isPinningWidget = false;
 
+  List<int> _startupTabCandidates() {
+    final candidates = <int>[];
+    if (settingController.notesEnabled) candidates.add(AppHomeStartupTabIndex.notes);
+    if (settingController.trackerEnabled) candidates.add(AppHomeStartupTabIndex.tracker);
+    if (settingController.taskEnabled) candidates.add(AppHomeStartupTabIndex.task);
+    candidates.add(AppHomeStartupTabIndex.settings);
+    return candidates;
+  }
+
+  int _effectiveStartupTabIndex() {
+    final candidates = _startupTabCandidates();
+    final selected = settingController.homeStartupTabIndex;
+    if (candidates.contains(selected)) {
+      return selected;
+    }
+    return candidates.first;
+  }
+
+  void _ensureStartupTabIndexValid() {
+    final effective = _effectiveStartupTabIndex();
+    if (effective == settingController.homeStartupTabIndex) {
+      return;
+    }
+    settingController.updateAppFeaturesManagement(homeStartupTabIndex: effective);
+  }
+
+  String _startupTabTitle(int tabIndex) {
+    switch (tabIndex) {
+      case AppHomeStartupTabIndex.notes:
+        return 'home_bar_title_note'.tr;
+      case AppHomeStartupTabIndex.tracker:
+        return 'home_bar_title_tracker'.tr;
+      case AppHomeStartupTabIndex.task:
+        return 'home_bar_title_task'.tr;
+      case AppHomeStartupTabIndex.settings:
+      default:
+        return 'home_bar_title_setting'.tr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -99,6 +139,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                   initialValue: settingController.notesEnabled,
                   onChanged: (value) {
                     settingController.updateAppFeaturesManagement(enableNotes: value);
+                    _ensureStartupTabIndexValid();
                     setState(() {});
                   },
                 ),
@@ -109,6 +150,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                   initialValue: settingController.trackerEnabled,
                   onChanged: (value) {
                     settingController.updateAppFeaturesManagement(enableTracker: value);
+                    _ensureStartupTabIndexValid();
                     setState(() {});
                   },
                 ),
@@ -119,8 +161,27 @@ class _CommonSettingsState extends State<CommonSettings> {
                   initialValue: settingController.taskEnabled,
                   onChanged: (value) {
                     settingController.updateAppFeaturesManagement(enableTask: value);
+                    _ensureStartupTabIndexValid();
                     setState(() {});
                   },
+                ),
+              ),
+              _withPadding(
+                UserDefinedInputWidget(
+                  title: AppFeatureMetaEnum.startupTab,
+                  widget: DropdownButton<int>(
+                    value: _effectiveStartupTabIndex(),
+                    onChanged: (newValue) {
+                      if (newValue == null) return;
+                      settingController.updateAppFeaturesManagement(homeStartupTabIndex: newValue);
+                      setState(() {});
+                    },
+                    items: _startupTabCandidates()
+                        .map(
+                          (tabIndex) => DropdownMenuItem<int>(value: tabIndex, child: Text(_startupTabTitle(tabIndex))),
+                        )
+                        .toList(),
+                  ),
                 ),
               ),
               if (!kIsWeb && Platform.isAndroid)

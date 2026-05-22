@@ -43,6 +43,13 @@ Future<void> runSyncTaskWithStatus(List<dynamic> tasks, {double from = 0.0, doub
   settingController.updateUserInterfaceHistoryCache(notesSyncProgress: to.toInt());
 }
 
+class AppHomeStartupTabIndex {
+  static const int notes = 0;
+  static const int tracker = 1;
+  static const int task = 2;
+  static const int settings = 3;
+}
+
 class SettingController extends GetxController {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
 
@@ -156,9 +163,20 @@ class SettingController extends GetxController {
   bool get notesEnabled => appFeaturesManagement.value.notesEnabled;
   bool get trackerEnabled => appFeaturesManagement.value.trackerEnabled;
   bool get taskEnabled => appFeaturesManagement.value.enableTask; // task is optional feature, default enabled
-  void updateAppFeaturesManagement({bool? enableNotes, bool? enableTracker, bool? enableTask}) {
+  int get homeStartupTabIndex => appFeaturesManagement.value.homeStartupTabIndex;
+  void updateAppFeaturesManagement({
+    bool? enableNotes,
+    bool? enableTracker,
+    bool? enableTask,
+    int? homeStartupTabIndex,
+  }) {
     appFeaturesManagement.update((feature) {
-      feature?.update(enableNotes: enableNotes, enableTracker: enableTracker, enableTask: enableTask);
+      feature?.update(
+        enableNotes: enableNotes,
+        enableTracker: enableTracker,
+        enableTask: enableTask,
+        homeStartupTabIndex: homeStartupTabIndex,
+      );
     });
     box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, appFeaturesManagement.value.toJson());
   }
@@ -355,26 +373,49 @@ class AppFeaturesManagement {
   bool enableNotes;
   bool enableTracker;
   bool enableTask;
+  int homeStartupTabIndex;
 
   get notesEnabled => enableNotes;
   get trackerEnabled => enableTracker;
   get taskEnabled => enableTask;
-  AppFeaturesManagement({required this.enableNotes, required this.enableTracker, required this.enableTask});
+  AppFeaturesManagement({
+    required this.enableNotes,
+    required this.enableTracker,
+    required this.enableTask,
+    required this.homeStartupTabIndex,
+  });
   factory AppFeaturesManagement.defaults() {
-    return AppFeaturesManagement(enableNotes: true, enableTracker: false, enableTask: true);
+    return AppFeaturesManagement(
+      enableNotes: true,
+      enableTracker: false,
+      enableTask: true,
+      homeStartupTabIndex: AppHomeStartupTabIndex.notes,
+    );
   }
   Map<String, dynamic> toJson() {
-    return {'enable_notes': enableNotes, 'enable_tracker': enableTracker, 'enable_task': enableTask};
+    return {
+      'enable_notes': enableNotes,
+      'enable_tracker': enableTracker,
+      'enable_task': enableTask,
+      'home_startup_tab_index': homeStartupTabIndex,
+    };
   }
 
   factory AppFeaturesManagement.fromJson(Map<String, dynamic> json) {
+    final rawStartupTabIndex = json['home_startup_tab_index'];
+    final startupTabIndex = switch (rawStartupTabIndex) {
+      int value => value,
+      num value => value.toInt(),
+      _ => AppHomeStartupTabIndex.notes,
+    };
     return AppFeaturesManagement(
       enableNotes: json['enable_notes'] ?? true,
       enableTracker: json['enable_tracker'] ?? false,
       enableTask: json['enable_task'] ?? true,
+      homeStartupTabIndex: startupTabIndex,
     );
   }
-  void update({bool? enableNotes, bool? enableTracker, bool? enableTask}) {
+  void update({bool? enableNotes, bool? enableTracker, bool? enableTask, int? homeStartupTabIndex}) {
     if (enableNotes != null) {
       this.enableNotes = enableNotes;
     }
@@ -383,6 +424,9 @@ class AppFeaturesManagement {
     }
     if (enableTask != null) {
       this.enableTask = enableTask;
+    }
+    if (homeStartupTabIndex != null) {
+      this.homeStartupTabIndex = homeStartupTabIndex;
     }
   }
 }

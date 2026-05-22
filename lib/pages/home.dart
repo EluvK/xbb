@@ -51,6 +51,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   @override
   void initState() {
     super.initState();
+    _lastSelectedTab = _tabFromStartupIndex(settingController.homeStartupTabIndex);
     final requestedTab = _tabFromLaunchId(appLaunchController.takePendingHomeTab());
     if (requestedTab != null) {
       _lastSelectedTab = requestedTab;
@@ -85,6 +86,20 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
         return HomeTabIndex.task;
       default:
         return null;
+    }
+  }
+
+  HomeTabIndex _tabFromStartupIndex(int tabIndex) {
+    switch (tabIndex) {
+      case AppHomeStartupTabIndex.tracker:
+        return HomeTabIndex.tracker;
+      case AppHomeStartupTabIndex.task:
+        return HomeTabIndex.task;
+      case AppHomeStartupTabIndex.settings:
+        return HomeTabIndex.settings;
+      case AppHomeStartupTabIndex.notes:
+      default:
+        return HomeTabIndex.notes;
     }
   }
 
