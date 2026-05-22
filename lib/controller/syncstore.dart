@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -31,7 +32,7 @@ Future<void> reInitSyncStoreController() async {
   await reInitNotesSync(syncStoreClient);
   await reInitTrackerSync(syncStoreClient);
   await reInitTaskSync(syncStoreClient);
-  await onReadySyncStartup();
+  unawaited(onReadySyncStartup());
 }
 
 Future<void> onReadySyncStartup() async {
