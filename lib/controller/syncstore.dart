@@ -12,6 +12,7 @@ import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/user.dart' show reInitUserManagerController;
+import 'package:xbb/models/clipboard/model.dart' show reInitClipboardSync;
 import 'package:xbb/models/notes/model.dart' show onReadySyncAll, reInitNotesSync;
 import 'package:xbb/models/task/model.dart' show onReadySyncTask, reInitTaskSync;
 import 'package:xbb/models/tracker/model.dart' show onReadySyncTracker, reInitTrackerSync;
@@ -32,6 +33,7 @@ Future<void> reInitSyncStoreController() async {
   await reInitNotesSync(syncStoreClient);
   await reInitTrackerSync(syncStoreClient);
   await reInitTaskSync(syncStoreClient);
+  await reInitClipboardSync(syncStoreClient);
   unawaited(onReadySyncStartup());
 }
 

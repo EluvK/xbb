@@ -167,13 +167,21 @@ V1 验收采用以下 6 条：
 ### Step 1：数据结构与存储层落地（先打地基）
 - 目标：冻结最小可运行的数据模型与本地存储接口。
 - 工作项：
-  - 定义 `ClipboardHistoryItem`（`id/content/contentHash/createdAt/localOnly/extraJson`）。
-  - 落地本地表结构与索引（重点：`createdAt`、`contentHash`）。
-  - 提供仓库接口（增、查列表、按条件查询、标记已同步）。
+  - 定义 `ClipboardHistoryEntry`：`data: String` + `localOnly: bool`（默认 `true`）。
+  - 采用 `@Repository(collectionName: 'clipboard_history', tableName: 'entry', db: ClipboardDB)`。
+  - 落地本地库接入：`clipboard.db`，并通过生成代码获得 repository/controller。
+  - 接入初始化流程：在 SyncStore 重建后同步初始化 `ClipboardHistoryEntryController`。
 - 产出：
-  - Dart 模型 + DB schema + repository/service API。
+  - Dart 模型 + DB schema + repository/controller API。
 - 验收：
   - 可完成单条写入、按时间倒序查询、`localOnly` 状态读写。
+  - 应用启动后 `ClipboardHistoryEntryController` 可完成初始化并可被 GetX 获取。
+
+#### Step 1 当前进展（已完成）
+- 新增模型与仓库定义：`lib/models/clipboard/model.dart`
+- 新增数据库接入：`lib/models/clipboard/db.dart`
+- 已生成代码：`lib/models/clipboard/model.g.dart`、`lib/models/clipboard/model.freezed.dart`
+- 已接入初始化：`lib/controller/syncstore.dart` 中新增 `reInitClipboardSync(syncStoreClient)`
 
 ### Step 2：历史页 UI（一级 Tab）与基础交互
 - 目标：让用户“看得见、选得中、可确认”。
