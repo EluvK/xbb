@@ -8,6 +8,8 @@ import 'package:xbb/utils/utils.dart';
 
 class ClipboardTrayController extends GetxController {
   static const MethodChannel _channel = MethodChannel('com.eluvk.xbb/clipboard_tray');
+  static const Duration _dedupWindow = Duration(seconds: 30);
+  static const int _dedupRecentCount = 8;
 
   final RxBool featureEnabled = false.obs;
   final RxBool listeningEnabled = false.obs;
@@ -132,6 +134,12 @@ class ClipboardTrayController extends GetxController {
     final dt = timestampMs != null
         ? DateTime.fromMillisecondsSinceEpoch(timestampMs, isUtc: true)
         : DateTime.now().toUtc();
+
+    final shouldSkip = await _shouldSkipDuplicate(text, dt);
+    if (shouldSkip) {
+      return;
+    }
+
     final owner = Get.find<SettingController>().userId;
     final entry = ClipboardHistoryEntry(data: text, localOnly: true);
     final id = const Uuid().v4();
@@ -143,5 +151,37 @@ class ClipboardTrayController extends GetxController {
     }
     lastCollectedTime.value = detailedDateStr(dt);
     await _syncNativeTrayStatus();
+  }
+
+  Future<bool> _shouldSkipDuplicate(String incoming, DateTime incomingAtUtc) async {
+    List<ClipboardHistoryEntryDataItem> items;
+    if (Get.isRegistered<ClipboardHistoryEntryController>()) {
+      final controller = Get.find<ClipboardHistoryEntryController>();
+      items = controller.getClipboardHistoryEntryDetails(selector: (item) => item);
+    } else {
+      items = await ClipboardHistoryEntryRepository().listFromLocalDb();
+    }
+
+    if (items.isEmpty) {
+      return false;
+    }
+
+    items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final latest = items.first;
+    if (latest.body.data == incoming) {
+      return true;
+    }
+
+    final recent = items.take(_dedupRecentCount);
+    for (final item in recent) {
+      if (item.body.data != incoming) {
+        continue;
+      }
+      final delta = incomingAtUtc.difference(item.createdAt).abs();
+      if (delta <= _dedupWindow) {
+        return true;
+      }
+    }
+    return false;
   }
 }

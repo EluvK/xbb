@@ -558,6 +558,10 @@ class _TranslationHelper {
       "en_US": "No clipboard history yet.",
       "zh_CN": "暂无剪贴板历史记录。",
     },
+    "clipboard_history_filter_empty": {
+      "en_US": "No matching clipboard records.",
+      "zh_CN": "没有匹配的剪贴板记录。",
+    },
     "clipboard_history_empty_content": {
       "en_US": "(Empty Text)",
       "zh_CN": "（空文本）",
@@ -589,6 +593,26 @@ class _TranslationHelper {
     "clipboard_confirm_sync_stub_message": {
       "en_US": "Selected @count items. Cloud sync will be connected in Step 5.",
       "zh_CN": "已选择 @count 条记录。云端同步将在 Step 5 接入。",
+    },
+    "clipboard_delete_selected_done": {
+      "en_US": "Deleted @count local records.",
+      "zh_CN": "已删除 @count 条本地记录。",
+    },
+    "clipboard_copy_action": {
+      "en_US": "Copy",
+      "zh_CN": "复制",
+    },
+    "clipboard_copy_done": {
+      "en_US": "Copied to clipboard",
+      "zh_CN": "已复制到剪贴板",
+    },
+    "clipboard_edit_hint": {
+      "en_US": "Edit clipboard text",
+      "zh_CN": "编辑剪贴板文本",
+    },
+    "clipboard_edit_saved": {
+      "en_US": "Clipboard text updated",
+      "zh_CN": "剪贴板文本已更新",
     },
     "app_enable_tracker_feature": {
       "en_US": "Enable Tracker Feature",

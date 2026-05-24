@@ -241,6 +241,28 @@ V1 验收采用以下 6 条：
 - 验收：
   - 重复复制不产生无效噪音数据，状态文案与实际行为一致。
 
+#### Step 4 当前进展（第一批）
+- 去重已接入（Dart 入库前）：`lib/controller/clipboard_tray.dart`
+  - 相邻去重：与最新一条文本一致则跳过
+  - 时间窗口去重：在最近 `8` 条中，`30` 秒内相同文本跳过
+- 历史页检索已接入：`lib/components/clipboard/view_clipboard_history.dart`
+  - 顶部搜索框（参考 notes 的 `searchFilterTextController` 交互）
+  - 实时过滤列表，支持清空关键字
+- 批量删除已接入：`lib/components/clipboard/view_clipboard_history.dart`
+  - 多选后支持本地删除（当前仅删除本地记录）
+  - 删除后刷新列表并提示删除条数
+
+#### Step 4 当前进展（第二批交互优化）
+- 选择数量展示改版：`lib/components/clipboard/view_clipboard_history.dart`
+  - 计数回归到按钮同一行左侧固定槽位，`0` 时不显示
+  - 避免在列表上方增减额外行高导致内容跳动
+- 长文本交互改版：`lib/components/clipboard/view_clipboard_history.dart`
+  - 点击行内容改为展开/收起详情
+  - 选择行为仅由左侧 `Checkbox` 触发
+- 条目操作增强：`lib/components/clipboard/view_clipboard_history.dart`
+  - 展开后支持复制文本到系统剪贴板
+  - 展开后支持编辑文本并保存到本地库
+
 ### Step 5：本地“确认后上云”链路
 - 目标：实现“非自动双写”的手动确认同步。
 - 工作项：
