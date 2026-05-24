@@ -83,20 +83,17 @@
   - `quitApp()`
 
 ### 4.3 数据与模型（V1）
-- 数据原则：先可运行，不做注释占位式“伪字段”。
-- 本地记录最小字段建议：
-  - `id`
-  - `content`
-  - `contentHash`
-  - `createdAt`
-  - `localOnly`（用于“未手动同步”标识）
-- 扩展字段建议：`extraJson`（可空），供后续图片/HTML元信息扩展。
+- 数据原则：先可运行、先稳定，字段保持最小化。
+- 当前落地模型：`ClipboardHistoryEntry`
+  - `data: String`
+  - `localOnly: bool`（用于“未手动同步”标识）
+- `id/createdAt/updatedAt/syncStatus` 复用 `DataItem` 外层元数据。
 
 > 说明：云端字段模型本轮不冻结，避免在未进入同步设计阶段时过早承诺。
 
 ### 4.4 去重策略
-- 规则 1：相邻去重（与最新一条 `contentHash` 相同则跳过）。
-- 规则 2：时间窗口去重（30 秒内相同 `contentHash` 跳过）。
+- 规则 1：相邻去重（与最新一条文本相同则跳过）。
+- 规则 2：时间窗口去重（30 秒内相同文本跳过）。
 - 规则作用域：本地入库前执行。
 
 ### 4.5 UI 与交互
@@ -164,106 +161,14 @@ V1 验收采用以下 6 条：
 
 > 当前基线：Windows 托盘与设置联动已具备基础能力；以下计划聚焦“剪贴板文本监听 -> 本地历史 -> 手动确认上云”。
 
-### Step 1：数据结构与存储层落地（先打地基）
-- 目标：冻结最小可运行的数据模型与本地存储接口。
-- 工作项：
-  - 定义 `ClipboardHistoryEntry`：`data: String` + `localOnly: bool`（默认 `true`）。
-  - 采用 `@Repository(collectionName: 'clipboard_history', tableName: 'entry', db: ClipboardDB)`。
-  - 落地本地库接入：`clipboard.db`，并通过生成代码获得 repository/controller。
-  - 接入初始化流程：在 SyncStore 重建后同步初始化 `ClipboardHistoryEntryController`。
-- 产出：
-  - Dart 模型 + DB schema + repository/controller API。
-- 验收：
-  - 可完成单条写入、按时间倒序查询、`localOnly` 状态读写。
-  - 应用启动后 `ClipboardHistoryEntryController` 可完成初始化并可被 GetX 获取。
+### 当前状态（简版）
+- ✅ Step 1 完成：数据结构与本地存储已落地。
+- ✅ Step 2 完成：Clipboard 一级 Tab 与历史页基础交互已落地。
+- ✅ Step 3 完成：Windows 监听链路（原生事件 -> Dart -> 本地入库）已打通。
+- ✅ Step 4 完成（本地体验范围）：去重、搜索、多选删除、展开查看、复制/编辑等交互已落地。
+- ⏭️ Step 5 待做：本地“确认后上云”链路。
 
-#### Step 1 当前进展（已完成）
-- 新增模型与仓库定义：`lib/models/clipboard/model.dart`
-- 新增数据库接入：`lib/models/clipboard/db.dart`
-- 已生成代码：`lib/models/clipboard/model.g.dart`、`lib/models/clipboard/model.freezed.dart`
-- 已接入初始化：`lib/controller/syncstore.dart` 中新增 `reInitClipboardSync(syncStoreClient)`
-
-### Step 2：历史页 UI（一级 Tab）与基础交互
-- 目标：让用户“看得见、选得中、可确认”。
-- 工作项：
-  - 新增“剪贴板历史”一级 Tab（受 `enableClipboardBackup` 开关控制）。
-  - 左侧概览面板：总数、仅本地、已同步统计。
-  - 右侧历史列表：内容摘要、采集时间、`localOnly` 状态展示。
-  - 选择态与批量操作入口（“确认同步”按钮先做 UI stub，Step 5 接云端）。
-  - 启动页候选 Tab 增加 Clipboard 项（仅在功能开启时可选）。
-- 产出：
-  - 可浏览历史 + 可选中条目 + 可触发确认动作的 UI。
-- 验收：
-  - 本地已有数据可稳定渲染，空态/长文本截断表现正常。
-
-#### Step 2 当前进展（已完成）
-- 一级 Tab 接入：`lib/pages/home.dart`
-  - 新增 `HomeTabIndex.clipboard`
-  - 新增 Tab 文案 `home_bar_title_clipboard`
-  - 仅在 `clipboardBackupEnabled` 为 true 时展示
-- 左侧概览组件：`lib/components/clipboard/view_clipboard_overview.dart`
-- 右侧历史组件：`lib/components/clipboard/view_clipboard_history.dart`
-  - 支持选择、多选清空、确认同步入口（toast 占位）
-- 启动页设置联动：
-  - `lib/controller/setting.dart` 新增 `AppHomeStartupTabIndex.clipboard`
-  - `lib/components/common/settings.dart` 启动页候选和标题映射已接入 Clipboard
-- i18n 文案新增：`lib/utils/translation.dart`
-
-### Step 3：Windows 监听链路打通（原生事件 -> Dart -> 入库）
-- 目标：实现自动监听剪贴板文本的端到端闭环。
-- 工作项：
-  - 原生层接入 `AddClipboardFormatListener` 与 `WM_CLIPBOARDUPDATE`。
-  - 仅提取文本内容，通过 MethodChannel 上报 `onClipboardTextChanged`。
-  - Dart 侧接收事件并入库（先不做复杂优化）。
-- 产出：
-  - 复制文本后可自动新增本地历史记录。
-- 验收：
-  - 开启监听时可自动入库；暂停监听时不入库；异常不崩溃。
-
-#### Step 3 当前进展（已完成）
-- Windows 原生监听已接入：`windows/runner/flutter_window.cpp`、`windows/runner/flutter_window.h`
-  - 新增 `SetListeningEnabled / RegisterClipboardListener / UnregisterClipboardListener / HandleClipboardUpdate`
-  - `WM_CLIPBOARDUPDATE` 触发时读取 `CF_UNICODETEXT`，通过 `onClipboardTextChanged` 上报 `{ text, timestampMs }`
-  - 托盘 tooltip 的最近采集时间在原生侧同步更新
-- Dart 事件落库已接入：`lib/controller/clipboard_tray.dart`
-  - 新增 `onClipboardTextChanged` 处理
-  - 监听开启时将文本写入 `clipboard_history.entry`（`localOnly=true`）
-  - 写入后触发 `ClipboardHistoryEntryController.rebuildLocal()` 刷新 UI
-
-### Step 4：体验优化与质量加固
-- 目标：降低噪音、提升状态可感知性与稳定性。
-- 工作项：
-  - 去重策略：相邻去重 + 30 秒窗口去重（入库前执行）。
-  - 托盘状态增强：显示“监听中/已暂停/最近采集时间”。
-  - 高频复制压测下的写入节流/轻量队列（必要时）。
-- 产出：
-  - 去重生效、托盘状态更清楚、频繁复制不卡顿。
-- 验收：
-  - 重复复制不产生无效噪音数据，状态文案与实际行为一致。
-
-#### Step 4 当前进展（第一批）
-- 去重已接入（Dart 入库前）：`lib/controller/clipboard_tray.dart`
-  - 相邻去重：与最新一条文本一致则跳过
-  - 时间窗口去重：在最近 `8` 条中，`30` 秒内相同文本跳过
-- 历史页检索已接入：`lib/components/clipboard/view_clipboard_history.dart`
-  - 顶部搜索框（参考 notes 的 `searchFilterTextController` 交互）
-  - 实时过滤列表，支持清空关键字
-- 批量删除已接入：`lib/components/clipboard/view_clipboard_history.dart`
-  - 多选后支持本地删除（当前仅删除本地记录）
-  - 删除后刷新列表并提示删除条数
-
-#### Step 4 当前进展（第二批交互优化）
-- 选择数量展示改版：`lib/components/clipboard/view_clipboard_history.dart`
-  - 计数回归到按钮同一行左侧固定槽位，`0` 时不显示
-  - 避免在列表上方增减额外行高导致内容跳动
-- 长文本交互改版：`lib/components/clipboard/view_clipboard_history.dart`
-  - 点击行内容改为展开/收起详情
-  - 选择行为仅由左侧 `Checkbox` 触发
-- 条目操作增强：`lib/components/clipboard/view_clipboard_history.dart`
-  - 展开后支持复制文本到系统剪贴板
-  - 展开后支持编辑文本并保存到本地库
-
-### Step 5：本地“确认后上云”链路
+### Step 5：本地“确认后上云”链路（待实现）
 - 目标：实现“非自动双写”的手动确认同步。
 - 工作项：
   - 历史页支持选中后触发同步（单条/批量）。
