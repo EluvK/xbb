@@ -163,11 +163,15 @@ class SettingController extends GetxController {
   bool get notesEnabled => appFeaturesManagement.value.notesEnabled;
   bool get trackerEnabled => appFeaturesManagement.value.trackerEnabled;
   bool get taskEnabled => appFeaturesManagement.value.enableTask; // task is optional feature, default enabled
+  bool get clipboardBackupEnabled => appFeaturesManagement.value.enableClipboardBackup;
+  bool get clipboardListeningEnabled => appFeaturesManagement.value.enableClipboardListening;
   int get homeStartupTabIndex => appFeaturesManagement.value.homeStartupTabIndex;
   void updateAppFeaturesManagement({
     bool? enableNotes,
     bool? enableTracker,
     bool? enableTask,
+    bool? enableClipboardBackup,
+    bool? enableClipboardListening,
     int? homeStartupTabIndex,
   }) {
     appFeaturesManagement.update((feature) {
@@ -175,6 +179,8 @@ class SettingController extends GetxController {
         enableNotes: enableNotes,
         enableTracker: enableTracker,
         enableTask: enableTask,
+        enableClipboardBackup: enableClipboardBackup,
+        enableClipboardListening: enableClipboardListening,
         homeStartupTabIndex: homeStartupTabIndex,
       );
     });
@@ -373,15 +379,21 @@ class AppFeaturesManagement {
   bool enableNotes;
   bool enableTracker;
   bool enableTask;
+  bool enableClipboardBackup;
+  bool enableClipboardListening;
   int homeStartupTabIndex;
 
   get notesEnabled => enableNotes;
   get trackerEnabled => enableTracker;
   get taskEnabled => enableTask;
+  get clipboardBackupEnabled => enableClipboardBackup;
+  get clipboardListeningEnabled => enableClipboardListening;
   AppFeaturesManagement({
     required this.enableNotes,
     required this.enableTracker,
     required this.enableTask,
+    required this.enableClipboardBackup,
+    required this.enableClipboardListening,
     required this.homeStartupTabIndex,
   });
   factory AppFeaturesManagement.defaults() {
@@ -389,6 +401,8 @@ class AppFeaturesManagement {
       enableNotes: true,
       enableTracker: false,
       enableTask: true,
+      enableClipboardBackup: false,
+      enableClipboardListening: false,
       homeStartupTabIndex: AppHomeStartupTabIndex.notes,
     );
   }
@@ -397,6 +411,8 @@ class AppFeaturesManagement {
       'enable_notes': enableNotes,
       'enable_tracker': enableTracker,
       'enable_task': enableTask,
+      'enable_clipboard_backup': enableClipboardBackup,
+      'enable_clipboard_listening': enableClipboardListening,
       'home_startup_tab_index': homeStartupTabIndex,
     };
   }
@@ -412,10 +428,19 @@ class AppFeaturesManagement {
       enableNotes: json['enable_notes'] ?? true,
       enableTracker: json['enable_tracker'] ?? false,
       enableTask: json['enable_task'] ?? true,
+      enableClipboardBackup: json['enable_clipboard_backup'] ?? false,
+      enableClipboardListening: json['enable_clipboard_listening'] ?? false,
       homeStartupTabIndex: startupTabIndex,
     );
   }
-  void update({bool? enableNotes, bool? enableTracker, bool? enableTask, int? homeStartupTabIndex}) {
+  void update({
+    bool? enableNotes,
+    bool? enableTracker,
+    bool? enableTask,
+    bool? enableClipboardBackup,
+    bool? enableClipboardListening,
+    int? homeStartupTabIndex,
+  }) {
     if (enableNotes != null) {
       this.enableNotes = enableNotes;
     }
@@ -424,6 +449,12 @@ class AppFeaturesManagement {
     }
     if (enableTask != null) {
       this.enableTask = enableTask;
+    }
+    if (enableClipboardBackup != null) {
+      this.enableClipboardBackup = enableClipboardBackup;
+    }
+    if (enableClipboardListening != null) {
+      this.enableClipboardListening = enableClipboardListening;
     }
     if (homeStartupTabIndex != null) {
       this.homeStartupTabIndex = homeStartupTabIndex;

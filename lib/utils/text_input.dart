@@ -89,6 +89,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
   enableNotes,
   enableTracker,
   enableTask,
+  enableClipboardBackup,
+  enableClipboardListening,
   startupTab,
   taskWidget,
   settings;
@@ -102,6 +104,10 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Colors.orange;
       case AppFeatureMetaEnum.enableTask:
         return Colors.teal;
+      case AppFeatureMetaEnum.enableClipboardBackup:
+        return Colors.deepPurple;
+      case AppFeatureMetaEnum.enableClipboardListening:
+        return Colors.indigo;
       case AppFeatureMetaEnum.startupTab:
         return Colors.cyan;
       case AppFeatureMetaEnum.taskWidget:
@@ -120,6 +126,10 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Icons.track_changes;
       case AppFeatureMetaEnum.enableTask:
         return Icons.check_box_rounded;
+      case AppFeatureMetaEnum.enableClipboardBackup:
+        return Icons.content_paste_rounded;
+      case AppFeatureMetaEnum.enableClipboardListening:
+        return Icons.hearing_rounded;
       case AppFeatureMetaEnum.startupTab:
         return Icons.play_circle_outline_rounded;
       case AppFeatureMetaEnum.taskWidget:
@@ -138,6 +148,10 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return 'app_enable_tracker_feature'.tr;
       case AppFeatureMetaEnum.enableTask:
         return 'app_enable_task_feature'.tr;
+      case AppFeatureMetaEnum.enableClipboardBackup:
+        return 'app_enable_clipboard_backup_feature'.tr;
+      case AppFeatureMetaEnum.enableClipboardListening:
+        return 'app_enable_clipboard_listening_feature'.tr;
       case AppFeatureMetaEnum.startupTab:
         return 'app_startup_tab'.tr;
       case AppFeatureMetaEnum.taskWidget:

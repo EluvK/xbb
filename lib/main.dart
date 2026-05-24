@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ApiError, ApiException;
 import 'package:xbb/controller/app_launch.dart';
+import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
@@ -33,6 +34,12 @@ void main() async {
 
   await Get.putAsync(() async {
     final controller = AppLaunchController();
+    await controller.ensureInitialization();
+    return controller;
+  }, permanent: true);
+
+  await Get.putAsync(() async {
+    final controller = ClipboardTrayController();
     await controller.ensureInitialization();
     return controller;
   }, permanent: true);

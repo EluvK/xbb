@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/components/common/ping_latency_inline.dart';
+import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/task_widget.dart';
@@ -20,6 +21,7 @@ class CommonSettings extends StatefulWidget {
 
 class _CommonSettingsState extends State<CommonSettings> {
   final settingController = Get.find<SettingController>();
+  final clipboardTrayController = Get.find<ClipboardTrayController>();
   bool _isPinging = false;
   int? _pingLatencyMs;
   bool _isPinningWidget = false;
@@ -68,6 +70,7 @@ class _CommonSettingsState extends State<CommonSettings> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final defaultSyncStoreUrl = SyncStoreSetting.defaults().baseUrl;
+    final showClipboardTraySettings = !kIsWeb && Platform.isWindows;
     return Container(
       color: colorScheme.surface,
       child: Center(
@@ -166,6 +169,61 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
+              if (showClipboardTraySettings)
+                _withPadding(
+                  BoolSelectorInputWidget(
+                    title: AppFeatureMetaEnum.enableClipboardBackup,
+                    initialValue: clipboardTrayController.featureEnabled.value,
+                    onChanged: (value) async {
+                      await clipboardTrayController.setFeatureEnabled(value);
+                      setState(() {});
+                    },
+                  ),
+                ),
+              if (showClipboardTraySettings && clipboardTrayController.featureEnabled.value)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(44, 4, 8, 4),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: AppFeatureMetaEnum.enableClipboardListening.gColor,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Icon(
+                          AppFeatureMetaEnum.enableClipboardListening.gIcon,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            AppFeatureMetaEnum.enableClipboardListening.gTitle,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        Switch(
+                          value: clipboardTrayController.listeningEnabled.value,
+                          onChanged: (value) async {
+                            await clipboardTrayController.setListeningEnabled(value);
+                            setState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               _withPadding(
                 UserDefinedInputWidget(
                   title: AppFeatureMetaEnum.startupTab,

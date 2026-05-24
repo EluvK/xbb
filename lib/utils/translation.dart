@@ -522,6 +522,14 @@ class _TranslationHelper {
       "en_US": "Enable Task Feature",
       "zh_CN": "启用任务功能",
     },
+    "app_enable_clipboard_backup_feature": {
+      "en_US": "Enable Clipboard Backup",
+      "zh_CN": "启用剪贴板备份",
+    },
+    "app_enable_clipboard_listening_feature": {
+      "en_US": "Enable Clipboard Listening",
+      "zh_CN": "启用剪贴板监听",
+    },
     "app_enable_tracker_feature": {
       "en_US": "Enable Tracker Feature",
       "zh_CN": "启用追踪功能",
