@@ -220,6 +220,16 @@ V1 验收采用以下 6 条：
 - 验收：
   - 开启监听时可自动入库；暂停监听时不入库；异常不崩溃。
 
+#### Step 3 当前进展（已完成）
+- Windows 原生监听已接入：`windows/runner/flutter_window.cpp`、`windows/runner/flutter_window.h`
+  - 新增 `SetListeningEnabled / RegisterClipboardListener / UnregisterClipboardListener / HandleClipboardUpdate`
+  - `WM_CLIPBOARDUPDATE` 触发时读取 `CF_UNICODETEXT`，通过 `onClipboardTextChanged` 上报 `{ text, timestampMs }`
+  - 托盘 tooltip 的最近采集时间在原生侧同步更新
+- Dart 事件落库已接入：`lib/controller/clipboard_tray.dart`
+  - 新增 `onClipboardTextChanged` 处理
+  - 监听开启时将文本写入 `clipboard_history.entry`（`localOnly=true`）
+  - 写入后触发 `ClipboardHistoryEntryController.rebuildLocal()` 刷新 UI
+
 ### Step 4：体验优化与质量加固
 - 目标：降低噪音、提升状态可感知性与稳定性。
 - 工作项：

@@ -34,6 +34,10 @@ class FlutterWindow : public Win32Window {
   void UpdateTrayMenuLabel();
   void UpdateTrayTooltip();
   void SendTrayEvent(const std::string& event_name, const flutter::EncodableMap& payload);
+  void SetListeningEnabled(bool enabled);
+  void RegisterClipboardListener();
+  void UnregisterClipboardListener();
+  void HandleClipboardUpdate();
 
   // The project to run.
   flutter::DartProject project_;
@@ -44,6 +48,7 @@ class FlutterWindow : public Win32Window {
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> tray_channel_;
   bool tray_icon_registered_ = false;
   bool listening_enabled_ = false;
+  bool clipboard_listener_registered_ = false;
   bool is_quitting_ = false;
   HMENU tray_menu_ = nullptr;
   std::wstring tray_last_collected_time_;

@@ -1,12 +1,17 @@
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:syncstore_client/syncstore_client.dart' show DataItem;
+import 'package:uuid/uuid.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/models/clipboard/model.dart';
+import 'package:xbb/utils/utils.dart';
 
 class ClipboardTrayController extends GetxController {
   static const MethodChannel _channel = MethodChannel('com.eluvk.xbb/clipboard_tray');
 
   final RxBool featureEnabled = false.obs;
   final RxBool listeningEnabled = false.obs;
+  final RxnString lastCollectedTime = RxnString();
 
   bool _initialized = false;
 
@@ -61,9 +66,12 @@ class ClipboardTrayController extends GetxController {
   Future<void> _syncNativeTrayStatus() async {
     try {
       await _channel.invokeMethod('setListeningEnabled', featureEnabled.value && listeningEnabled.value);
-      await _channel.invokeMethod('updateTrayStatus', {
-        'listeningEnabled': featureEnabled.value && listeningEnabled.value,
-      });
+      final payload = <String, dynamic>{'listeningEnabled': featureEnabled.value && listeningEnabled.value};
+      final ts = lastCollectedTime.value;
+      if (ts != null && ts.isNotEmpty) {
+        payload['lastCollectedTime'] = ts;
+      }
+      await _channel.invokeMethod('updateTrayStatus', payload);
     } on MissingPluginException {
       // Platform implementation unavailable on non-Windows targets.
     } on PlatformException catch (e) {
@@ -90,8 +98,50 @@ class ClipboardTrayController extends GetxController {
         return;
       case 'onTrayExitApp':
         return;
+      case 'onClipboardTextChanged':
+        await _onClipboardTextChanged(call.arguments);
+        return;
       default:
         return;
     }
+  }
+
+  Future<void> _onClipboardTextChanged(dynamic args) async {
+    if (!featureEnabled.value || !listeningEnabled.value) {
+      return;
+    }
+
+    String? text;
+    int? timestampMs;
+    if (args is Map) {
+      final rawText = args['text'];
+      if (rawText is String) {
+        text = rawText;
+      }
+      final rawTs = args['timestampMs'];
+      if (rawTs is int) {
+        timestampMs = rawTs;
+      } else if (rawTs is num) {
+        timestampMs = rawTs.toInt();
+      }
+    }
+    if (text == null || text.isEmpty) {
+      return;
+    }
+
+    final dt = timestampMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(timestampMs, isUtc: true)
+        : DateTime.now().toUtc();
+    final owner = Get.find<SettingController>().userId;
+    final entry = ClipboardHistoryEntry(data: text, localOnly: true);
+    final id = const Uuid().v4();
+    final item = DataItem<ClipboardHistoryEntry>(id, dt, dt, owner, null, null, body: entry);
+
+    await ClipboardHistoryEntryRepository().addToLocalDb(item);
+    if (Get.isRegistered<ClipboardHistoryEntryController>()) {
+      await Get.find<ClipboardHistoryEntryController>().rebuildLocal();
+    }
+    lastCollectedTime.value = detailedDateStr(dt);
+    await _syncNativeTrayStatus();
   }
 }

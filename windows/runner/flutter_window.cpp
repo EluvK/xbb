@@ -1,5 +1,6 @@
 #include "flutter_window.h"
 
+#include <chrono>
 #include <shellapi.h>
 #include <optional>
 
@@ -15,6 +16,28 @@ constexpr UINT kTrayMenuShowMainWindow = 2001;
 constexpr UINT kTrayMenuToggleListening = 2002;
 constexpr UINT kTrayMenuQuitApp = 2003;
 constexpr wchar_t kTrayTipPrefix[] = L"xbb";
+
+std::string WideToUtf8(const std::wstring& text) {
+  if (text.empty()) {
+    return std::string();
+  }
+  const int required = WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, nullptr, 0, nullptr, nullptr);
+  if (required <= 1) {
+    return std::string();
+  }
+  std::string utf8(static_cast<size_t>(required), '\0');
+  WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, utf8.data(), required, nullptr, nullptr);
+  utf8.pop_back();
+  return utf8;
+}
+
+std::wstring CurrentLocalTimeLabel() {
+  SYSTEMTIME st;
+  GetLocalTime(&st);
+  wchar_t buf[64] = {};
+  swprintf_s(buf, L"%04d-%02d-%02d %02d:%02d:%02d", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+  return std::wstring(buf);
+}
 
 }  // namespace
 
@@ -54,9 +77,7 @@ bool FlutterWindow::OnCreate() {
             result->Error("invalid_args", "Expected a bool argument.");
             return;
           }
-          listening_enabled_ = std::get<bool>(*args);
-          UpdateTrayMenuLabel();
-          UpdateTrayTooltip();
+          SetListeningEnabled(std::get<bool>(*args));
           result->Success();
           return;
         }
@@ -75,7 +96,7 @@ bool FlutterWindow::OnCreate() {
             auto listening_it = args->find(flutter::EncodableValue("listeningEnabled"));
             if (listening_it != args->end()) {
               if (const bool* value = std::get_if<bool>(&listening_it->second)) {
-                listening_enabled_ = *value;
+                SetListeningEnabled(*value);
               }
             }
             auto timestamp_it = args->find(flutter::EncodableValue("lastCollectedTime"));
@@ -85,7 +106,6 @@ bool FlutterWindow::OnCreate() {
               }
             }
           }
-          UpdateTrayMenuLabel();
           UpdateTrayTooltip();
           result->Success();
           return;
@@ -108,6 +128,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  UnregisterClipboardListener();
   RemoveTrayIcon();
   if (tray_menu_ != nullptr) {
     DestroyMenu(tray_menu_);
@@ -159,9 +180,7 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
           SendTrayEvent("onTrayShowMainWindow", flutter::EncodableMap());
           return 0;
         case kTrayMenuToggleListening: {
-          listening_enabled_ = !listening_enabled_;
-          UpdateTrayMenuLabel();
-          UpdateTrayTooltip();
+          SetListeningEnabled(!listening_enabled_);
           SendTrayEvent(
               "onTrayToggleListening",
               flutter::EncodableMap{{flutter::EncodableValue("enabled"), flutter::EncodableValue(listening_enabled_)}});
@@ -178,6 +197,10 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
+
+    case WM_CLIPBOARDUPDATE:
+      HandleClipboardUpdate();
+      return 0;
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);
@@ -290,4 +313,74 @@ void FlutterWindow::SendTrayEvent(const std::string& event_name, const flutter::
     return;
   }
   tray_channel_->InvokeMethod(event_name, std::make_unique<flutter::EncodableValue>(payload));
+}
+
+void FlutterWindow::SetListeningEnabled(bool enabled) {
+  listening_enabled_ = enabled;
+  if (listening_enabled_) {
+    RegisterClipboardListener();
+  } else {
+    UnregisterClipboardListener();
+  }
+  UpdateTrayMenuLabel();
+  UpdateTrayTooltip();
+}
+
+void FlutterWindow::RegisterClipboardListener() {
+  if (clipboard_listener_registered_) {
+    return;
+  }
+  if (AddClipboardFormatListener(GetHandle())) {
+    clipboard_listener_registered_ = true;
+  }
+}
+
+void FlutterWindow::UnregisterClipboardListener() {
+  if (!clipboard_listener_registered_) {
+    return;
+  }
+  RemoveClipboardFormatListener(GetHandle());
+  clipboard_listener_registered_ = false;
+}
+
+void FlutterWindow::HandleClipboardUpdate() {
+  if (!listening_enabled_) {
+    return;
+  }
+  if (!IsClipboardFormatAvailable(CF_UNICODETEXT)) {
+    return;
+  }
+  if (!OpenClipboard(GetHandle())) {
+    return;
+  }
+
+  std::wstring text;
+  HANDLE handle = GetClipboardData(CF_UNICODETEXT);
+  if (handle != nullptr) {
+    LPCWSTR raw = static_cast<LPCWSTR>(GlobalLock(handle));
+    if (raw != nullptr) {
+      text.assign(raw);
+      GlobalUnlock(handle);
+    }
+  }
+  CloseClipboard();
+
+  if (text.empty()) {
+    return;
+  }
+
+  const std::string utf8_text = WideToUtf8(text);
+  if (utf8_text.empty()) {
+    return;
+  }
+
+  const auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+  SendTrayEvent(
+      "onClipboardTextChanged",
+      flutter::EncodableMap{{flutter::EncodableValue("text"), flutter::EncodableValue(utf8_text)},
+                            {flutter::EncodableValue("timestampMs"), flutter::EncodableValue(static_cast<int64_t>(now_ms))}});
+
+  tray_last_collected_time_ = CurrentLocalTimeLabel();
+  UpdateTrayTooltip();
 }
