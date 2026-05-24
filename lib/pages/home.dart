@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/components/clipboard/view_clipboard_history.dart';
+import 'package:xbb/components/clipboard/view_clipboard_overview.dart';
 import 'package:xbb/components/common/profile.dart';
 import 'package:xbb/components/common/settings.dart';
 import 'package:xbb/components/notes/view_posts.dart';
@@ -15,7 +17,7 @@ import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/list_tile_card.dart' show ColorPickerButtons;
 import 'package:xbb/utils/text_input.dart';
 
-enum HomeTabIndex { notes, tracker, task, settings }
+enum HomeTabIndex { notes, tracker, task, clipboard, settings }
 
 class HomePageWrapper extends StatefulWidget {
   const HomePageWrapper({super.key});
@@ -36,12 +38,17 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     HomeTabIndex.notes: Tab(text: 'home_bar_title_note'.tr, icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
     HomeTabIndex.tracker: Tab(text: 'home_bar_title_tracker'.tr, icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon))),
     HomeTabIndex.task: Tab(text: 'home_bar_title_task'.tr, icon: const Icon(Icons.check_box_rounded)),
+    HomeTabIndex.clipboard: Tab(
+      text: 'home_bar_title_clipboard'.tr,
+      icon: Icon((AppFeatureMetaEnum.enableClipboardBackup.gIcon)),
+    ),
     HomeTabIndex.settings: Tab(text: 'home_bar_title_setting'.tr, icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
   };
 
   List<HomeTabIndex> get _activeIndices {
     List<HomeTabIndex> indices = [];
     if (settingController.taskEnabled) indices.add(HomeTabIndex.task);
+    if (settingController.clipboardBackupEnabled) indices.add(HomeTabIndex.clipboard);
     if (settingController.notesEnabled) indices.add(HomeTabIndex.notes);
     if (settingController.trackerEnabled) indices.add(HomeTabIndex.tracker);
     indices.add(HomeTabIndex.settings);
@@ -95,6 +102,8 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
         return HomeTabIndex.tracker;
       case AppHomeStartupTabIndex.task:
         return HomeTabIndex.task;
+      case AppHomeStartupTabIndex.clipboard:
+        return HomeTabIndex.clipboard;
       case AppHomeStartupTabIndex.settings:
         return HomeTabIndex.settings;
       case AppHomeStartupTabIndex.notes:
@@ -293,6 +302,8 @@ class _LeftButton extends StatelessWidget {
         return const ViewTaskOverview();
       case HomeTabIndex.settings:
         return const CommonProfile();
+      case HomeTabIndex.clipboard:
+        return const ViewClipboardOverview();
     }
   }
 }
@@ -312,6 +323,8 @@ class _RightMain extends StatelessWidget {
         return const ViewTasks();
       case HomeTabIndex.settings:
         return const CommonSettings();
+      case HomeTabIndex.clipboard:
+        return const ViewClipboardHistory();
     }
   }
 }
@@ -340,6 +353,8 @@ class _AppBar extends StatelessWidget {
         return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('home_bar_title_task'.tr)]);
       case HomeTabIndex.settings:
         return Text('home_bar_title_setting'.tr);
+      case HomeTabIndex.clipboard:
+        return Text('home_bar_title_clipboard'.tr);
     }
   }
 }

@@ -186,13 +186,28 @@ V1 验收采用以下 6 条：
 ### Step 2：历史页 UI（一级 Tab）与基础交互
 - 目标：让用户“看得见、选得中、可确认”。
 - 工作项：
-  - 新增“剪贴板历史”一级 Tab 与列表渲染。
-  - 条目展示：内容摘要、采集时间、`localOnly` 状态。
-  - 选择态与批量操作入口（“确认同步”按钮先本地打通）。
+  - 新增“剪贴板历史”一级 Tab（受 `enableClipboardBackup` 开关控制）。
+  - 左侧概览面板：总数、仅本地、已同步统计。
+  - 右侧历史列表：内容摘要、采集时间、`localOnly` 状态展示。
+  - 选择态与批量操作入口（“确认同步”按钮先做 UI stub，Step 5 接云端）。
+  - 启动页候选 Tab 增加 Clipboard 项（仅在功能开启时可选）。
 - 产出：
   - 可浏览历史 + 可选中条目 + 可触发确认动作的 UI。
 - 验收：
   - 本地已有数据可稳定渲染，空态/长文本截断表现正常。
+
+#### Step 2 当前进展（已完成）
+- 一级 Tab 接入：`lib/pages/home.dart`
+  - 新增 `HomeTabIndex.clipboard`
+  - 新增 Tab 文案 `home_bar_title_clipboard`
+  - 仅在 `clipboardBackupEnabled` 为 true 时展示
+- 左侧概览组件：`lib/components/clipboard/view_clipboard_overview.dart`
+- 右侧历史组件：`lib/components/clipboard/view_clipboard_history.dart`
+  - 支持选择、多选清空、确认同步入口（toast 占位）
+- 启动页设置联动：
+  - `lib/controller/setting.dart` 新增 `AppHomeStartupTabIndex.clipboard`
+  - `lib/components/common/settings.dart` 启动页候选和标题映射已接入 Clipboard
+- i18n 文案新增：`lib/utils/translation.dart`
 
 ### Step 3：Windows 监听链路打通（原生事件 -> Dart -> 入库）
 - 目标：实现自动监听剪贴板文本的端到端闭环。

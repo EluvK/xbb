@@ -431,6 +431,10 @@ class _TranslationHelper {
       "en_US": "Tracker",
       "zh_CN": "追踪",
     },
+    "home_bar_title_clipboard": {
+      "en_US": "Clipboard",
+      "zh_CN": "剪贴板",
+    },
     "home_bar_title_setting": {
       "en_US": "Settings",
       "zh_CN": "设置",
@@ -529,6 +533,62 @@ class _TranslationHelper {
     "app_enable_clipboard_listening_feature": {
       "en_US": "Enable Clipboard Listening",
       "zh_CN": "启用剪贴板监听",
+    },
+    "clipboard_overview_title": {
+      "en_US": "Clipboard Overview",
+      "zh_CN": "剪贴板概览",
+    },
+    "clipboard_overview_subtitle": {
+      "en_US": "Quick status of local clipboard history",
+      "zh_CN": "本地剪贴板历史快速状态",
+    },
+    "clipboard_overview_total": {
+      "en_US": "Total",
+      "zh_CN": "总数",
+    },
+    "clipboard_overview_pending": {
+      "en_US": "Local Only",
+      "zh_CN": "仅本地",
+    },
+    "clipboard_overview_synced": {
+      "en_US": "Synced",
+      "zh_CN": "已同步",
+    },
+    "clipboard_history_empty": {
+      "en_US": "No clipboard history yet.",
+      "zh_CN": "暂无剪贴板历史记录。",
+    },
+    "clipboard_history_empty_content": {
+      "en_US": "(Empty Text)",
+      "zh_CN": "（空文本）",
+    },
+    "clipboard_status_local_only": {
+      "en_US": "Local",
+      "zh_CN": "本地",
+    },
+    "clipboard_status_synced": {
+      "en_US": "Synced",
+      "zh_CN": "已同步",
+    },
+    "clipboard_selected_count": {
+      "en_US": "Selected: @count",
+      "zh_CN": "已选择：@count",
+    },
+    "clear_selection": {
+      "en_US": "Clear",
+      "zh_CN": "清空选择",
+    },
+    "clipboard_confirm_sync_action": {
+      "en_US": "Confirm Sync",
+      "zh_CN": "确认同步",
+    },
+    "clipboard_confirm_sync_title": {
+      "en_US": "Confirm Sync",
+      "zh_CN": "确认同步",
+    },
+    "clipboard_confirm_sync_stub_message": {
+      "en_US": "Selected @count items. Cloud sync will be connected in Step 5.",
+      "zh_CN": "已选择 @count 条记录。云端同步将在 Step 5 接入。",
     },
     "app_enable_tracker_feature": {
       "en_US": "Enable Tracker Feature",

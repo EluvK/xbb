@@ -47,7 +47,8 @@ class AppHomeStartupTabIndex {
   static const int notes = 0;
   static const int tracker = 1;
   static const int task = 2;
-  static const int settings = 3;
+  static const int clipboard = 3;
+  static const int settings = 4;
 }
 
 class SettingController extends GetxController {

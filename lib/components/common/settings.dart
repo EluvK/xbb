@@ -31,6 +31,7 @@ class _CommonSettingsState extends State<CommonSettings> {
     if (settingController.notesEnabled) candidates.add(AppHomeStartupTabIndex.notes);
     if (settingController.trackerEnabled) candidates.add(AppHomeStartupTabIndex.tracker);
     if (settingController.taskEnabled) candidates.add(AppHomeStartupTabIndex.task);
+    if (settingController.clipboardBackupEnabled) candidates.add(AppHomeStartupTabIndex.clipboard);
     candidates.add(AppHomeStartupTabIndex.settings);
     return candidates;
   }
@@ -60,6 +61,8 @@ class _CommonSettingsState extends State<CommonSettings> {
         return 'home_bar_title_tracker'.tr;
       case AppHomeStartupTabIndex.task:
         return 'home_bar_title_task'.tr;
+      case AppHomeStartupTabIndex.clipboard:
+        return 'home_bar_title_clipboard'.tr;
       case AppHomeStartupTabIndex.settings:
       default:
         return 'home_bar_title_setting'.tr;
