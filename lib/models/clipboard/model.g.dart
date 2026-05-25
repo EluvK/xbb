@@ -353,13 +353,13 @@ class _ClipboardHistoryEntrySyncEngine {
       final newId = await client.create(
         'clipboard_history',
         'entry',
-        local.body.toJson(),
+        local.body.toSyncJson(),
       );
       createdItem = await client.get<ClipboardHistoryEntry>(
         'clipboard_history',
         'entry',
         newId,
-        ClipboardHistoryEntry.fromJson,
+        ClipboardHistoryEntry.fromRemoteJson,
       );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
@@ -386,13 +386,13 @@ class _ClipboardHistoryEntrySyncEngine {
         'clipboard_history',
         'entry',
         local.id,
-        local.body.toJson(),
+        local.body.toSyncJson(),
       );
       updatedItem = await client.get<ClipboardHistoryEntry>(
         'clipboard_history',
         'entry',
         local.id,
-        ClipboardHistoryEntry.fromJson,
+        ClipboardHistoryEntry.fromRemoteJson,
       );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
@@ -475,7 +475,7 @@ class _ClipboardHistoryEntrySyncEngine {
           'clipboard_history',
           'entry',
           batchIds,
-          ClipboardHistoryEntry.fromJson,
+          ClipboardHistoryEntry.fromRemoteJson,
         );
         for (var item in batchItems.items) {
           await ClipboardHistoryEntryRepository().upsertToLocalDb(item);
@@ -563,7 +563,7 @@ class _ClipboardHistoryEntrySyncEngine {
           'clipboard_history',
           'entry',
           batchIds,
-          ClipboardHistoryEntry.fromJson,
+          ClipboardHistoryEntry.fromRemoteJson,
         );
         for (var item in batchItems.items) {
           await ClipboardHistoryEntryRepository().upsertToLocalDb(item);
@@ -714,7 +714,7 @@ class _ClipboardHistoryEntrySyncEngine {
             'clipboard_history',
             'entry',
             summary.id,
-            ClipboardHistoryEntry.fromJson,
+            ClipboardHistoryEntry.fromRemoteJson,
           );
       await ClipboardHistoryEntryRepository().addToLocalDb(item);
     } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
@@ -724,7 +724,7 @@ class _ClipboardHistoryEntrySyncEngine {
             'clipboard_history',
             'entry',
             summary.id,
-            ClipboardHistoryEntry.fromJson,
+            ClipboardHistoryEntry.fromRemoteJson,
           );
       await ClipboardHistoryEntryRepository().updateToLocalDb(item);
     } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {

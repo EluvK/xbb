@@ -586,17 +586,41 @@ class _TranslationHelper {
       "en_US": "Confirm Sync",
       "zh_CN": "确认同步",
     },
+    "clipboard_confirm_syncing": {
+      "en_US": "Syncing...",
+      "zh_CN": "同步中...",
+    },
     "clipboard_confirm_sync_title": {
       "en_US": "Confirm Sync",
       "zh_CN": "确认同步",
     },
-    "clipboard_confirm_sync_stub_message": {
-      "en_US": "Selected @count items. Cloud sync will be connected in Step 5.",
-      "zh_CN": "已选择 @count 条记录。云端同步将在 Step 5 接入。",
+    "clipboard_confirm_sync_success": {
+      "en_US": "Synced @synced items. Skipped @skipped already-synced items.",
+      "zh_CN": "已同步 @synced 条，跳过 @skipped 条已同步记录。",
+    },
+    "clipboard_confirm_sync_partial": {
+      "en_US": "Synced @synced items, @failed failed, skipped @skipped already-synced items. Keep failed items selected for retry.",
+      "zh_CN": "已同步 @synced 条，失败 @failed 条，跳过 @skipped 条已同步记录。失败项已保留选择，可重试。",
+    },
+    "clipboard_confirm_sync_failed": {
+      "en_US": "Sync failed for @failed items. Please retry later.",
+      "zh_CN": "有 @failed 条同步失败，请稍后重试。",
+    },
+    "clipboard_confirm_sync_nothing_to_sync": {
+      "en_US": "Selected records are already synced.",
+      "zh_CN": "所选记录均已同步。",
     },
     "clipboard_delete_selected_done": {
       "en_US": "Deleted @count local records.",
       "zh_CN": "已删除 @count 条本地记录。",
+    },
+    "clipboard_delete_selected_partial": {
+      "en_US": "Deleted @deleted records, @failed failed. Failed items are still selected for retry.",
+      "zh_CN": "已删除 @deleted 条，失败 @failed 条。失败项已保留选择，可重试。",
+    },
+    "clipboard_delete_selected_failed": {
+      "en_US": "Failed to delete @failed records. Please retry later.",
+      "zh_CN": "有 @failed 条删除失败，请稍后重试。",
     },
     "clipboard_copy_action": {
       "en_US": "Copy",
@@ -613,6 +637,18 @@ class _TranslationHelper {
     "clipboard_edit_saved": {
       "en_US": "Clipboard text updated",
       "zh_CN": "剪贴板文本已更新",
+    },
+    "clipboard_edit_no_change": {
+      "en_US": "No changes to save",
+      "zh_CN": "未检测到修改",
+    },
+    "clipboard_edit_saved_synced": {
+      "en_US": "Clipboard text updated and synced",
+      "zh_CN": "剪贴板文本已更新并同步",
+    },
+    "clipboard_edit_saved_sync_failed": {
+      "en_US": "Saved locally, but cloud sync failed",
+      "zh_CN": "已保存到本地，但云端同步失败",
     },
     "app_enable_tracker_feature": {
       "en_US": "Enable Tracker Feature",

@@ -25,6 +25,8 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
   final Set<String> _selectedIds = <String>{};
   final Set<String> _expandedIds = <String>{};
   String? _editingId;
+  bool _isSyncingSelected = false;
+  bool _isDeletingSelected = false;
 
   bool get _hasSelection => _selectedIds.isNotEmpty;
 
@@ -126,9 +128,10 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
 
   Future<void> _saveEdit(ClipboardHistoryEntryDataItem item) async {
     final newText = _editTextController.text;
-    final updatedBody = item.body.copyWith(data: newText);
-    final updatedItem = item.updatedBody(updatedBody);
-    await ClipboardHistoryEntryRepository().updateToLocalDb(updatedItem);
+    final controller = _controller;
+    if (controller == null) return;
+
+    final result = await saveEditedClipboardEntry(client: controller.client, item: item, newText: newText);
     if (Get.isRegistered<ClipboardHistoryEntryController>()) {
       await Get.find<ClipboardHistoryEntryController>().rebuildLocal();
     }
@@ -137,7 +140,23 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
       _editingId = null;
       _editTextController.clear();
     });
-    successSimpleFlushBar('clipboard_edit_saved'.tr);
+
+    if (!result.changed) {
+      flushBar(FlushLevel.INFO, null, 'clipboard_edit_no_change'.tr, upperPosition: true);
+      return;
+    }
+
+    if (!result.remoteAttempted) {
+      successSimpleFlushBar('clipboard_edit_saved'.tr);
+      return;
+    }
+
+    if (result.remoteSucceeded) {
+      successSimpleFlushBar('clipboard_edit_saved_synced'.tr);
+      return;
+    }
+
+    flushBar(FlushLevel.WARNING, null, 'clipboard_edit_saved_sync_failed'.tr, upperPosition: true);
   }
 
   Future<void> _copyText(String text) async {
@@ -145,35 +164,141 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     successSimpleFlushBar('clipboard_copy_done'.tr);
   }
 
-  void _confirmSyncSelected() {
-    if (!_hasSelection) return;
+  Future<void> _confirmSyncSelected() async {
+    if (!_hasSelection || _isSyncingSelected) return;
+    final controller = _controller;
+    if (controller == null) return;
+
+    final selectedItems = _items.where((item) => _selectedIds.contains(item.id)).toList(growable: false);
+    if (selectedItems.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isSyncingSelected = true;
+    });
+
+    final result = await confirmClipboardEntriesManualSync(client: controller.client, selectedItems: selectedItems);
+
+    await controller.rebuildLocal();
+    if (!mounted) return;
+
+    setState(() {
+      _isSyncingSelected = false;
+      if (result.failedCount > 0) {
+        _selectedIds
+          ..clear()
+          ..addAll(result.failedIds);
+      } else {
+        _selectedIds.clear();
+      }
+    });
+
+    if (result.syncedCount > 0 && result.failedCount == 0) {
+      flushBar(
+        FlushLevel.OK,
+        null,
+        'clipboard_confirm_sync_success'.trParams({
+          'synced': result.syncedCount.toString(),
+          'skipped': result.alreadySyncedCount.toString(),
+        }),
+        upperPosition: true,
+      );
+      return;
+    }
+
+    if (result.syncedCount > 0 && result.failedCount > 0) {
+      flushBar(
+        FlushLevel.WARNING,
+        'clipboard_confirm_sync_title'.tr,
+        'clipboard_confirm_sync_partial'.trParams({
+          'synced': result.syncedCount.toString(),
+          'failed': result.failedCount.toString(),
+          'skipped': result.alreadySyncedCount.toString(),
+        }),
+        upperPosition: true,
+      );
+      return;
+    }
+
+    if (result.failedCount > 0) {
+      flushBar(
+        FlushLevel.WARNING,
+        'clipboard_confirm_sync_title'.tr,
+        'clipboard_confirm_sync_failed'.trParams({'failed': result.failedCount.toString()}),
+        upperPosition: true,
+      );
+      return;
+    }
+
+    flushBar(FlushLevel.INFO, null, 'clipboard_confirm_sync_nothing_to_sync'.tr, upperPosition: true);
+  }
+
+  Future<void> _deleteSelectedLocal() async {
+    if (!_hasSelection || _isDeletingSelected) return;
+    final controller = _controller;
+    if (controller == null) return;
+
+    final selectedItems = _items.where((item) => _selectedIds.contains(item.id)).toList(growable: false);
+    if (selectedItems.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isDeletingSelected = true;
+    });
+
+    final result = await deleteClipboardEntriesWithRemoteSync(client: controller.client, selectedItems: selectedItems);
+
+    await controller.rebuildLocal();
+    if (!mounted) return;
+
+    setState(() {
+      _isDeletingSelected = false;
+      if (result.failedCount > 0) {
+        _selectedIds
+          ..clear()
+          ..addAll(result.failedIds);
+      } else {
+        _selectedIds.clear();
+      }
+    });
+
+    if (result.deletedCount > 0 && result.failedCount == 0) {
+      flushBar(
+        FlushLevel.OK,
+        null,
+        'clipboard_delete_selected_done'.trParams({'count': result.deletedCount.toString()}),
+        upperPosition: true,
+      );
+      return;
+    }
+
+    if (result.deletedCount > 0 && result.failedCount > 0) {
+      flushBar(
+        FlushLevel.WARNING,
+        null,
+        'clipboard_delete_selected_partial'.trParams({
+          'deleted': result.deletedCount.toString(),
+          'failed': result.failedCount.toString(),
+        }),
+        upperPosition: true,
+      );
+      return;
+    }
+
     flushBar(
-      FlushLevel.INFO,
-      'clipboard_confirm_sync_title'.tr,
-      'clipboard_confirm_sync_stub_message'.trParams({'count': _selectedIds.length.toString()}),
+      FlushLevel.WARNING,
+      null,
+      'clipboard_delete_selected_failed'.trParams({'failed': result.failedCount.toString()}),
       upperPosition: true,
     );
   }
 
-  Future<void> _deleteSelectedLocal() async {
-    if (!_hasSelection) return;
-    final controller = _controller;
-    if (controller == null) return;
-    final ids = _selectedIds.toList(growable: false);
-    for (final id in ids) {
-      await ClipboardHistoryEntryRepository().deleteFromLocalDb(id);
-    }
+  Future<void> _refreshClipboardHistory() async {
+    await onReadySyncClipboard();
     if (!mounted) return;
-    setState(() {
-      _selectedIds.clear();
-    });
-    await controller.rebuildLocal();
-    flushBar(
-      FlushLevel.OK,
-      null,
-      'clipboard_delete_selected_done'.trParams({'count': ids.length.toString()}),
-      upperPosition: true,
-    );
+    _refreshItems();
   }
 
   @override
@@ -192,14 +317,25 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     }
 
     if (_items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'clipboard_history_empty'.tr,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+      return RefreshIndicator(
+        onRefresh: _refreshClipboardHistory,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: 220,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'clipboard_history_empty'.tr,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -217,47 +353,62 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
         ),
         _ActionBar(
           selectedCount: _selectedIds.length,
+          isBusy: _isSyncingSelected || _isDeletingSelected,
           onClearSelection: _clearSelection,
-          onConfirmSync: _confirmSyncSelected,
+          onConfirmSync: () {
+            _confirmSyncSelected();
+          },
           onDeleteSelected: _deleteSelectedLocal,
         ),
         Expanded(
-          child: _filteredItems.isEmpty
-              ? Center(
-                  child: Text(
-                    'clipboard_history_filter_empty'.tr,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge,
+          child: RefreshIndicator(
+            onRefresh: _refreshClipboardHistory,
+            child: _filteredItems.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: 180,
+                        child: Center(
+                          child: Text(
+                            'clipboard_history_filter_empty'.tr,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: _filteredItems.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = _filteredItems[index];
+                      final isSelected = _selectedIds.contains(item.id);
+                      final isExpanded = _expandedIds.contains(item.id);
+                      final isEditing = _editingId == item.id;
+                      return _ClipboardEntryTile(
+                        item: item,
+                        isSelected: isSelected,
+                        isExpanded: isExpanded,
+                        isEditing: isEditing,
+                        editingController: _editTextController,
+                        onSelectChanged: (selected) => _toggleSelect(item.id, selected),
+                        onExpandToggle: () => _toggleExpand(item.id),
+                        onCopy: () => _copyText(item.body.data),
+                        onStartEdit: () => _startEdit(item),
+                        onCancelEdit: () {
+                          setState(() {
+                            _editingId = null;
+                            _editTextController.clear();
+                          });
+                        },
+                        onSaveEdit: () => _saveEdit(item),
+                      );
+                    },
                   ),
-                )
-              : ListView.separated(
-                  itemCount: _filteredItems.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final item = _filteredItems[index];
-                    final isSelected = _selectedIds.contains(item.id);
-                    final isExpanded = _expandedIds.contains(item.id);
-                    final isEditing = _editingId == item.id;
-                    return _ClipboardEntryTile(
-                      item: item,
-                      isSelected: isSelected,
-                      isExpanded: isExpanded,
-                      isEditing: isEditing,
-                      editingController: _editTextController,
-                      onSelectChanged: (selected) => _toggleSelect(item.id, selected),
-                      onExpandToggle: () => _toggleExpand(item.id),
-                      onCopy: () => _copyText(item.body.data),
-                      onStartEdit: () => _startEdit(item),
-                      onCancelEdit: () {
-                        setState(() {
-                          _editingId = null;
-                          _editTextController.clear();
-                        });
-                      },
-                      onSaveEdit: () => _saveEdit(item),
-                    );
-                  },
-                ),
+          ),
         ),
       ],
     );
@@ -312,12 +463,14 @@ class _SearchFilter extends StatelessWidget {
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.selectedCount,
+    required this.isBusy,
     required this.onClearSelection,
     required this.onConfirmSync,
     required this.onDeleteSelected,
   });
 
   final int selectedCount;
+  final bool isBusy;
   final VoidCallback onClearSelection;
   final VoidCallback onConfirmSync;
   final VoidCallback onDeleteSelected;
@@ -340,15 +493,18 @@ class _ActionBar extends StatelessWidget {
                 alignment: WrapAlignment.end,
                 children: [
                   TextButton.icon(
-                    onPressed: selectedCount > 0 ? onDeleteSelected : null,
+                    onPressed: selectedCount > 0 && !isBusy ? onDeleteSelected : null,
                     icon: const Icon(Icons.delete_outline_rounded),
                     label: Text('delete'.tr),
                   ),
-                  TextButton(onPressed: selectedCount > 0 ? onClearSelection : null, child: Text('clear_selection'.tr)),
+                  TextButton(
+                    onPressed: selectedCount > 0 && !isBusy ? onClearSelection : null,
+                    child: Text('clear_selection'.tr),
+                  ),
                   FilledButton.icon(
-                    onPressed: selectedCount > 0 ? onConfirmSync : null,
+                    onPressed: selectedCount > 0 && !isBusy ? onConfirmSync : null,
                     icon: const Icon(Icons.cloud_upload_rounded),
-                    label: Text('clipboard_confirm_sync_action'.tr),
+                    label: Text(isBusy ? 'clipboard_confirm_syncing'.tr : 'clipboard_confirm_sync_action'.tr),
                   ),
                 ],
               ),
