@@ -24,6 +24,7 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
   List<ClipboardHistoryEntryDataItem> _filteredItems = const [];
   final Set<String> _selectedIds = <String>{};
   final Set<String> _expandedIds = <String>{};
+  final Set<String> _collapsedDateKeys = <String>{};
   String? _editingId;
   bool _isSyncingSelected = false;
   bool _isDeletingSelected = false;
@@ -67,6 +68,8 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     final filtered = _applySearchFilter(sorted, _searchFilterTextController.text);
     _selectedIds.removeWhere((id) => !filtered.any((item) => item.id == id));
     _expandedIds.removeWhere((id) => !filtered.any((item) => item.id == id));
+    final visibleDateKeys = filtered.map((item) => _dateKey(item.createdAt)).toSet();
+    _collapsedDateKeys.removeWhere((key) => !visibleDateKeys.contains(key));
     if (!mounted) return;
     setState(() {
       _items = sorted;
@@ -118,8 +121,19 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     });
   }
 
+  void _toggleDateGroup(String dateKey) {
+    setState(() {
+      if (_collapsedDateKeys.contains(dateKey)) {
+        _collapsedDateKeys.remove(dateKey);
+      } else {
+        _collapsedDateKeys.add(dateKey);
+      }
+    });
+  }
+
   void _startEdit(ClipboardHistoryEntryDataItem item) {
     setState(() {
+      _collapsedDateKeys.remove(_dateKey(item.createdAt));
       _expandedIds.add(item.id);
       _editingId = item.id;
       _editTextController.text = item.body.data;
@@ -301,6 +315,107 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     _refreshItems();
   }
 
+  String _dateKey(DateTime dt) {
+    final local = dt.toLocal();
+    final y = local.year.toString().padLeft(4, '0');
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  String _timeLabel(DateTime dt) {
+    final local = dt.toLocal();
+    final h = local.hour.toString().padLeft(2, '0');
+    final m = local.minute.toString().padLeft(2, '0');
+    final s = local.second.toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String _weekdayLabel(DateTime dt) {
+    final isZh = (Get.locale?.languageCode ?? '').startsWith('zh');
+    if (isZh) {
+      const zhWeekdays = <int, String>{
+        DateTime.monday: '星期一',
+        DateTime.tuesday: '星期二',
+        DateTime.wednesday: '星期三',
+        DateTime.thursday: '星期四',
+        DateTime.friday: '星期五',
+        DateTime.saturday: '星期六',
+        DateTime.sunday: '星期日',
+      };
+      return zhWeekdays[dt.weekday] ?? '';
+    }
+    const enWeekdays = <int, String>{
+      DateTime.monday: 'Mon',
+      DateTime.tuesday: 'Tue',
+      DateTime.wednesday: 'Wed',
+      DateTime.thursday: 'Thu',
+      DateTime.friday: 'Fri',
+      DateTime.saturday: 'Sat',
+      DateTime.sunday: 'Sun',
+    };
+    return enWeekdays[dt.weekday] ?? '';
+  }
+
+  String _dateHeaderLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (_isSameDate(date, today)) {
+      return '${_dateKey(date)} · ${'tracker_today'.tr}';
+    }
+    if (_isSameDate(date, yesterday)) {
+      final isZh = (Get.locale?.languageCode ?? '').startsWith('zh');
+      final yesterdayLabel = isZh ? '昨天' : 'Yesterday';
+      return '${_dateKey(date)} · $yesterdayLabel';
+    }
+    return '${_dateKey(date)} · ${_weekdayLabel(date)}';
+  }
+
+  List<_ClipboardDateGroup> _groupByDate(List<ClipboardHistoryEntryDataItem> source) {
+    final groups = <_ClipboardDateGroup>[];
+    for (final item in source) {
+      final key = _dateKey(item.createdAt);
+      final local = item.createdAt.toLocal();
+      final date = DateTime(local.year, local.month, local.day);
+      if (groups.isNotEmpty && groups.last.key == key) {
+        groups.last.items.add(item);
+      } else {
+        groups.add(_ClipboardDateGroup(key: key, date: date, items: <ClipboardHistoryEntryDataItem>[item]));
+      }
+    }
+    return groups;
+  }
+
+  Widget _buildEntryTile(ClipboardHistoryEntryDataItem item) {
+    final isSelected = _selectedIds.contains(item.id);
+    final isExpanded = _expandedIds.contains(item.id);
+    final isEditing = _editingId == item.id;
+    return _ClipboardEntryTile(
+      item: item,
+      timeLabel: _timeLabel(item.createdAt),
+      isSelected: isSelected,
+      isExpanded: isExpanded,
+      isEditing: isEditing,
+      editingController: _editTextController,
+      onSelectChanged: (selected) => _toggleSelect(item.id, selected),
+      onExpandToggle: () => _toggleExpand(item.id),
+      onCopy: () => _copyText(item.body.data),
+      onStartEdit: () => _startEdit(item),
+      onCancelEdit: () {
+        setState(() {
+          _editingId = null;
+          _editTextController.clear();
+        });
+      },
+      onSaveEdit: () => _saveEdit(item),
+    );
+  }
+
   @override
   void dispose() {
     _worker?.dispose();
@@ -379,32 +494,57 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
                       ),
                     ],
                   )
-                : ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: _filteredItems.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final item = _filteredItems[index];
-                      final isSelected = _selectedIds.contains(item.id);
-                      final isExpanded = _expandedIds.contains(item.id);
-                      final isEditing = _editingId == item.id;
-                      return _ClipboardEntryTile(
-                        item: item,
-                        isSelected: isSelected,
-                        isExpanded: isExpanded,
-                        isEditing: isEditing,
-                        editingController: _editTextController,
-                        onSelectChanged: (selected) => _toggleSelect(item.id, selected),
-                        onExpandToggle: () => _toggleExpand(item.id),
-                        onCopy: () => _copyText(item.body.data),
-                        onStartEdit: () => _startEdit(item),
-                        onCancelEdit: () {
-                          setState(() {
-                            _editingId = null;
-                            _editTextController.clear();
-                          });
+                : Builder(
+                    builder: (context) {
+                      final groups = _groupByDate(_filteredItems);
+                      return ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: groups.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1, indent: 12, endIndent: 12),
+                        itemBuilder: (context, index) {
+                          final group = groups[index];
+                          final isCollapsed = _collapsedDateKeys.contains(group.key);
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                InkWell(
+                                  onTap: () => _toggleDateGroup(group.key),
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          isCollapsed ? Icons.chevron_right_rounded : Icons.expand_more_rounded,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _dateHeaderLabel(group.date),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text('${group.items.length}', style: Theme.of(context).textTheme.bodySmall),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (!isCollapsed) const Divider(height: 1),
+                                if (!isCollapsed)
+                                  ...List<Widget>.generate(group.items.length, (itemIndex) {
+                                    final tile = _buildEntryTile(group.items[itemIndex]);
+                                    if (itemIndex == group.items.length - 1) {
+                                      return tile;
+                                    }
+                                    return Column(children: [tile, const Divider(height: 1)]);
+                                  }),
+                              ],
+                            ),
+                          );
                         },
-                        onSaveEdit: () => _saveEdit(item),
                       );
                     },
                   ),
@@ -519,6 +659,7 @@ class _ActionBar extends StatelessWidget {
 class _ClipboardEntryTile extends StatelessWidget {
   const _ClipboardEntryTile({
     required this.item,
+    required this.timeLabel,
     required this.isSelected,
     required this.isExpanded,
     required this.isEditing,
@@ -532,6 +673,7 @@ class _ClipboardEntryTile extends StatelessWidget {
   });
 
   final ClipboardHistoryEntryDataItem item;
+  final String timeLabel;
   final bool isSelected;
   final bool isExpanded;
   final bool isEditing;
@@ -563,7 +705,7 @@ class _ClipboardEntryTile extends StatelessWidget {
                 maxLines: isExpanded ? 4 : 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              subtitle: Text(detailedDateStr(item.createdAt), maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(timeLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
               trailing: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -640,4 +782,12 @@ class _ClipboardEntryTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ClipboardDateGroup {
+  final String key;
+  final DateTime date;
+  final List<ClipboardHistoryEntryDataItem> items;
+
+  _ClipboardDateGroup({required this.key, required this.date, required this.items});
 }
