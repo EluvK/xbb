@@ -6,16 +6,17 @@ part of 'model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_ClipboardHistoryEntry _$ClipboardHistoryEntryFromJson(
-  Map<String, dynamic> json,
-) => _ClipboardHistoryEntry(
+_ClipboardHistoryEntry _$ClipboardHistoryEntryFromJson(Map<String, dynamic> json) => _ClipboardHistoryEntry(
   data: json['data'] as String,
+  capturedAt: json['captured_at'] == null ? null : DateTime.parse(json['captured_at'] as String),
   localOnly: json['local_only'] as bool? ?? true,
 );
 
-Map<String, dynamic> _$ClipboardHistoryEntryToJson(
-  _ClipboardHistoryEntry instance,
-) => <String, dynamic>{'data': instance.data, 'local_only': instance.localOnly};
+Map<String, dynamic> _$ClipboardHistoryEntryToJson(_ClipboardHistoryEntry instance) => <String, dynamic>{
+  'data': instance.data,
+  'captured_at': instance.capturedAt?.toIso8601String(),
+  'local_only': instance.localOnly,
+};
 
 // **************************************************************************
 // RepositoryGenerator
@@ -49,10 +50,7 @@ typedef ClipboardHistoryEntryDataItem = DataItem<ClipboardHistoryEntry>;
 class ClipboardHistoryEntryRepository {
   Future<void> addToLocalDb(ClipboardHistoryEntryDataItem item) async {
     final db = await LocalStoreClipboardHistoryEntry.getDb();
-    await db.insert(
-      LocalStoreClipboardHistoryEntry.tableName,
-      item.toJson((r) => json.encode(r.toJson())),
-    );
+    await db.insert(LocalStoreClipboardHistoryEntry.tableName, item.toJson((r) => json.encode(r.toJson())));
   }
 
   Future<ClipboardHistoryEntryDataItem?> getFromLocalDb(String id) async {
@@ -65,16 +63,13 @@ class ClipboardHistoryEntryRepository {
     if (maps.isNotEmpty) {
       return DataItem<ClipboardHistoryEntry>.fromJson(
         maps.first,
-        (jsonStr) =>
-            ClipboardHistoryEntry.fromJson(json.decode(jsonStr as String)),
+        (jsonStr) => ClipboardHistoryEntry.fromJson(json.decode(jsonStr as String)),
       );
     }
     return null;
   }
 
-  Future<List<ClipboardHistoryEntryDataItem>> listFromLocalDb({
-    String? parentId,
-  }) async {
+  Future<List<ClipboardHistoryEntryDataItem>> listFromLocalDb({String? parentId}) async {
     final db = await LocalStoreClipboardHistoryEntry.getDb();
     final whereClauses = <String>[];
     final whereArgs = <dynamic>[];
@@ -82,9 +77,7 @@ class ClipboardHistoryEntryRepository {
       whereClauses.add('parent_id = ?');
       whereArgs.add(parentId);
     }
-    final whereString = whereClauses.isNotEmpty
-        ? whereClauses.join(' AND ')
-        : null;
+    final whereString = whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null;
 
     final List<Map<String, dynamic>> maps = await db.query(
       LocalStoreClipboardHistoryEntry.tableName,
@@ -96,8 +89,7 @@ class ClipboardHistoryEntryRepository {
         .map(
           (map) => DataItem<ClipboardHistoryEntry>.fromJson(
             map,
-            (jsonStr) =>
-                ClipboardHistoryEntry.fromJson(json.decode(jsonStr as String)),
+            (jsonStr) => ClipboardHistoryEntry.fromJson(json.decode(jsonStr as String)),
           ),
         )
         .toList();
@@ -105,11 +97,7 @@ class ClipboardHistoryEntryRepository {
 
   Future<void> deleteFromLocalDb(String id) async {
     final db = await LocalStoreClipboardHistoryEntry.getDb();
-    await db.delete(
-      LocalStoreClipboardHistoryEntry.tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete(LocalStoreClipboardHistoryEntry.tableName, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> updateToLocalDb(ClipboardHistoryEntryDataItem item) async {
@@ -135,24 +123,17 @@ class _ClipboardHistoryEntryDataItemFilterSubscription {
   final RxList<ClipboardHistoryEntryDataItem> filteredList;
   final List<DataItemFilter> appliedFilters;
   final Worker worker;
-  _ClipboardHistoryEntryDataItemFilterSubscription(
-    this.filteredList,
-    this.appliedFilters,
-    this.worker,
-  );
+  _ClipboardHistoryEntryDataItemFilterSubscription(this.filteredList, this.appliedFilters, this.worker);
 }
 
 class ClipboardHistoryEntryController extends GetxController {
   final SyncStoreClient client;
   final _ClipboardHistoryEntrySyncEngine _syncEngine;
-  ClipboardHistoryEntryController(this.client)
-    : _syncEngine = _ClipboardHistoryEntrySyncEngine(client);
+  ClipboardHistoryEntryController(this.client) : _syncEngine = _ClipboardHistoryEntrySyncEngine(client);
 
-  final RxList<ClipboardHistoryEntryDataItem> _items =
-      <ClipboardHistoryEntryDataItem>[].obs;
+  final RxList<ClipboardHistoryEntryDataItem> _items = <ClipboardHistoryEntryDataItem>[].obs;
 
-  final Map<String, _ClipboardHistoryEntryDataItemFilterSubscription>
-  _dynamicSubscription = {};
+  final Map<String, _ClipboardHistoryEntryDataItemFilterSubscription> _dynamicSubscription = {};
   final Rx<String?> currentClipboardHistoryEntryId = Rx<String?>(null);
 
   @override
@@ -197,25 +178,13 @@ class ClipboardHistoryEntryController extends GetxController {
     if (existing != null && listEquals(existing.appliedFilters, filters)) {
       return existing.filteredList;
     }
-    final newList = _items
-        .where((item) => filters.every((filter) => filter.apply(item)))
-        .toList()
-        .obs;
+    final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
     existing?.worker.dispose();
-    final worker = debounce(_items, (
-      List<ClipboardHistoryEntryDataItem> value,
-    ) {
-      final newFiltered = value
-          .where((item) => filters.every((filter) => filter.apply(item)))
-          .toList();
+    final worker = debounce(_items, (List<ClipboardHistoryEntryDataItem> value) {
+      final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
       newList.assignAll(newFiltered);
     }, time: const Duration(milliseconds: 100));
-    _dynamicSubscription[filterKey] =
-        _ClipboardHistoryEntryDataItemFilterSubscription(
-          newList,
-          filters,
-          worker,
-        );
+    _dynamicSubscription[filterKey] = _ClipboardHistoryEntryDataItemFilterSubscription(newList, filters, worker);
     return newList;
   }
 
@@ -241,18 +210,11 @@ class ClipboardHistoryEntryController extends GetxController {
     List<DataItemFilter> filters = const [],
     required T Function(ClipboardHistoryEntryDataItem item) selector,
   }) {
-    return _items
-        .where((item) => filters.every((filter) => filter.apply(item)))
-        .map(selector)
-        .toList();
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
   }
 
-  int getClipboardHistoryEntryCount<T>({
-    List<DataItemFilter> filters = const [],
-  }) {
-    return _items
-        .where((item) => filters.every((filter) => filter.apply(item)))
-        .length;
+  int getClipboardHistoryEntryCount<T>({List<DataItemFilter> filters = const []}) {
+    return _items.where((item) => filters.every((filter) => filter.apply(item))).length;
   }
 
   Future<void> syncAll({int batchSize = 20}) async {
@@ -263,10 +225,7 @@ class ClipboardHistoryEntryController extends GetxController {
     await _syncEngine.syncChildrenBatch([parentId], batchSize: batchSize);
   }
 
-  Future<void> syncMultiChildren(
-    List<String> parentIds, {
-    int batchSize = 20,
-  }) async {
+  Future<void> syncMultiChildren(List<String> parentIds, {int batchSize = 20}) async {
     await _syncEngine.syncChildrenBatch(parentIds, batchSize: batchSize);
   }
 
@@ -310,11 +269,7 @@ class ClipboardHistoryEntryController extends GetxController {
     });
   }
 
-  void onUpdateLocalField(
-    String id, {
-    ColorTag? colorTag,
-    SyncStatus? syncStatus,
-  }) {
+  void onUpdateLocalField(String id, {ColorTag? colorTag, SyncStatus? syncStatus}) {
     final item = _items.firstWhere((item) => item.id == id);
     if (colorTag != null) {
       item.colorTag = colorTag;
@@ -331,10 +286,7 @@ class ClipboardHistoryEntryController extends GetxController {
       currentClipboardHistoryEntryId.value = null;
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    _syncEngine.delete(
-      id,
-      deleteFromServer ? true : status != SyncStatus.deleted,
-    );
+    _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
   }
 }
 
@@ -342,19 +294,13 @@ class _ClipboardHistoryEntrySyncEngine {
   final SyncStoreClient client;
   _ClipboardHistoryEntrySyncEngine(this.client);
 
-  Future<ClipboardHistoryEntryDataItem> create(
-    ClipboardHistoryEntryDataItem local,
-  ) async {
+  Future<ClipboardHistoryEntryDataItem> create(ClipboardHistoryEntryDataItem local) async {
     local.syncStatus = SyncStatus.syncing;
     await ClipboardHistoryEntryRepository().addToLocalDb(local);
 
     ClipboardHistoryEntryDataItem createdItem;
     try {
-      final newId = await client.create(
-        'clipboard_history',
-        'entry',
-        local.body.toSyncJson(),
-      );
+      final newId = await client.create('clipboard_history', 'entry', local.body.toSyncJson());
       createdItem = await client.get<ClipboardHistoryEntry>(
         'clipboard_history',
         'entry',
@@ -374,20 +320,13 @@ class _ClipboardHistoryEntrySyncEngine {
     return createdItem;
   }
 
-  Future<ClipboardHistoryEntryDataItem> update(
-    ClipboardHistoryEntryDataItem local,
-  ) async {
+  Future<ClipboardHistoryEntryDataItem> update(ClipboardHistoryEntryDataItem local) async {
     local.syncStatus = SyncStatus.syncing;
     await ClipboardHistoryEntryRepository().updateToLocalDb(local);
 
     ClipboardHistoryEntryDataItem updatedItem;
     try {
-      await client.update(
-        'clipboard_history',
-        'entry',
-        local.id,
-        local.body.toSyncJson(),
-      );
+      await client.update('clipboard_history', 'entry', local.id, local.body.toSyncJson());
       updatedItem = await client.get<ClipboardHistoryEntry>(
         'clipboard_history',
         'entry',
@@ -434,20 +373,17 @@ class _ClipboardHistoryEntrySyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final ClipboardHistoryEntryDataItem? localItem =
-              await ClipboardHistoryEntryRepository().getFromLocalDb(
-                summary.id,
-              );
-          if (localItem == null ||
-              localItem.updatedAt.isBefore(summary.updatedAt)) {
+          final ClipboardHistoryEntryDataItem? localItem = await ClipboardHistoryEntryRepository().getFromLocalDb(
+            summary.id,
+          );
+          if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
             // only get details for new created or updated items, otherwise just skip to save performance.
             needGetIds.add(summary.id);
           } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
             // local data is newer, need to sync to server
             localItem.syncStatus = SyncStatus.failed;
             await ClipboardHistoryEntryRepository().updateToLocalDb(localItem);
-          } else if (localItem.syncStatus == SyncStatus.deleted ||
-              localItem.syncStatus == SyncStatus.hidden) {
+          } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
             // same updatedAt but marked as special status, need to sync to server
             localItem.syncStatus = SyncStatus.archived;
             await ClipboardHistoryEntryRepository().updateToLocalDb(localItem);
@@ -455,8 +391,7 @@ class _ClipboardHistoryEntrySyncEngine {
         }
       } while (nextMarker != null);
       // 2. clean up local data that are deleted from server
-      final localItems = await ClipboardHistoryEntryRepository()
-          .listFromLocalDb();
+      final localItems = await ClipboardHistoryEntryRepository().listFromLocalDb();
       for (ClipboardHistoryEntryDataItem localItem in localItems) {
         if (localItem.owner != currentUserId) {
           continue;
@@ -497,10 +432,7 @@ class _ClipboardHistoryEntrySyncEngine {
     }
   }
 
-  Future<void> syncChildrenBatch(
-    List<String> parentIds, {
-    int batchSize = 20,
-  }) async {
+  Future<void> syncChildrenBatch(List<String> parentIds, {int batchSize = 20}) async {
     try {
       final needGetIds = <String>{};
       final serviceIds = <String>{};
@@ -517,37 +449,28 @@ class _ClipboardHistoryEntrySyncEngine {
           nextMarker = resp.pageInfo.nextMarker;
           for (var summary in resp.items) {
             serviceIds.add(summary.id);
-            final ClipboardHistoryEntryDataItem? localItem =
-                await ClipboardHistoryEntryRepository().getFromLocalDb(
-                  summary.id,
-                );
-            if (localItem == null ||
-                localItem.updatedAt.isBefore(summary.updatedAt)) {
+            final ClipboardHistoryEntryDataItem? localItem = await ClipboardHistoryEntryRepository().getFromLocalDb(
+              summary.id,
+            );
+            if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
               // only get details for new created or updated items, otherwise just skip to save performance.
               needGetIds.add(summary.id);
             } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
               // local data is newer, need to sync to server
               localItem.syncStatus = SyncStatus.failed;
-              await ClipboardHistoryEntryRepository().updateToLocalDb(
-                localItem,
-              );
-            } else if (localItem.syncStatus == SyncStatus.deleted ||
-                localItem.syncStatus == SyncStatus.hidden) {
+              await ClipboardHistoryEntryRepository().updateToLocalDb(localItem);
+            } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
               // same updatedAt but marked as special status, need to sync to server
               localItem.syncStatus = SyncStatus.archived;
-              await ClipboardHistoryEntryRepository().updateToLocalDb(
-                localItem,
-              );
+              await ClipboardHistoryEntryRepository().updateToLocalDb(localItem);
             }
           }
         } while (nextMarker != null);
       }
       // clean up local data that are deleted from server
-      final localItems = await ClipboardHistoryEntryRepository()
-          .listFromLocalDb();
+      final localItems = await ClipboardHistoryEntryRepository().listFromLocalDb();
       for (ClipboardHistoryEntryDataItem localItem in localItems) {
-        if (localItem.parentId == null ||
-            !parentIds.contains(localItem.parentId!)) {
+        if (localItem.parentId == null || !parentIds.contains(localItem.parentId!)) {
           continue;
         }
         if (!serviceIds.contains(localItem.id)) {
@@ -591,25 +514,18 @@ class _ClipboardHistoryEntrySyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list(
-          'clipboard_history',
-          'entry',
-          limit: 200,
-          marker: nextMarker,
-        );
+        final ListResponse resp = await client.list('clipboard_history', 'entry', limit: 200, marker: nextMarker);
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final ClipboardHistoryEntryDataItem? localItem =
-              await ClipboardHistoryEntryRepository().getFromLocalDb(
-                summary.id,
-              );
+          final ClipboardHistoryEntryDataItem? localItem = await ClipboardHistoryEntryRepository().getFromLocalDb(
+            summary.id,
+          );
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
-      final localItems = await ClipboardHistoryEntryRepository()
-          .listFromLocalDb();
+      final localItems = await ClipboardHistoryEntryRepository().listFromLocalDb();
       for (ClipboardHistoryEntryDataItem localItem in localItems) {
         if (localItem.owner != currentUserId) {
           continue;
@@ -641,16 +557,14 @@ class _ClipboardHistoryEntrySyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final ClipboardHistoryEntryDataItem? localItem =
-              await ClipboardHistoryEntryRepository().getFromLocalDb(
-                summary.id,
-              );
+          final ClipboardHistoryEntryDataItem? localItem = await ClipboardHistoryEntryRepository().getFromLocalDb(
+            summary.id,
+          );
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
-      final localItems = await ClipboardHistoryEntryRepository()
-          .listFromLocalDb();
+      final localItems = await ClipboardHistoryEntryRepository().listFromLocalDb();
       for (ClipboardHistoryEntryDataItem localItem in localItems) {
         if (localItem.owner == currentUserId) {
           continue;
@@ -681,16 +595,14 @@ class _ClipboardHistoryEntrySyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final ClipboardHistoryEntryDataItem? localItem =
-              await ClipboardHistoryEntryRepository().getFromLocalDb(
-                summary.id,
-              );
+          final ClipboardHistoryEntryDataItem? localItem = await ClipboardHistoryEntryRepository().getFromLocalDb(
+            summary.id,
+          );
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
-      final localItems = await ClipboardHistoryEntryRepository()
-          .listFromLocalDb(parentId: parentId);
+      final localItems = await ClipboardHistoryEntryRepository().listFromLocalDb(parentId: parentId);
       for (ClipboardHistoryEntryDataItem localItem in localItems) {
         if (!serviceIds.contains(localItem.id)) {
           localItem.syncStatus = SyncStatus.deleted;
@@ -703,36 +615,30 @@ class _ClipboardHistoryEntrySyncEngine {
     }
   }
 
-  Future<void> _compareRemote(
-    ClipboardHistoryEntryDataItem? localItem,
-    DataItemSummary summary,
-  ) async {
+  Future<void> _compareRemote(ClipboardHistoryEntryDataItem? localItem, DataItemSummary summary) async {
     if (localItem == null) {
       // new from server
-      final ClipboardHistoryEntryDataItem item = await client
-          .get<ClipboardHistoryEntry>(
-            'clipboard_history',
-            'entry',
-            summary.id,
-            ClipboardHistoryEntry.fromRemoteJson,
-          );
+      final ClipboardHistoryEntryDataItem item = await client.get<ClipboardHistoryEntry>(
+        'clipboard_history',
+        'entry',
+        summary.id,
+        ClipboardHistoryEntry.fromRemoteJson,
+      );
       await ClipboardHistoryEntryRepository().addToLocalDb(item);
     } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
       // update local data.
-      final ClipboardHistoryEntryDataItem item = await client
-          .get<ClipboardHistoryEntry>(
-            'clipboard_history',
-            'entry',
-            summary.id,
-            ClipboardHistoryEntry.fromRemoteJson,
-          );
+      final ClipboardHistoryEntryDataItem item = await client.get<ClipboardHistoryEntry>(
+        'clipboard_history',
+        'entry',
+        summary.id,
+        ClipboardHistoryEntry.fromRemoteJson,
+      );
       await ClipboardHistoryEntryRepository().updateToLocalDb(item);
     } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
       // local data is newer, need to sync to server
       localItem.syncStatus = SyncStatus.failed;
       await ClipboardHistoryEntryRepository().updateToLocalDb(localItem);
-    } else if (localItem.syncStatus == SyncStatus.deleted ||
-        localItem.syncStatus == SyncStatus.hidden) {
+    } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
       // same updatedAt but marked as special status, need to sync to server
       localItem.syncStatus = SyncStatus.archived;
       await ClipboardHistoryEntryRepository().updateToLocalDb(localItem);

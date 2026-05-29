@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ClipboardHistoryEntry implements DiagnosticableTreeMixin {
 
- String get data; bool get localOnly;
+ String get data; DateTime? get capturedAt; bool get localOnly;
 /// Create a copy of ClipboardHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,21 +29,21 @@ $ClipboardHistoryEntryCopyWith<ClipboardHistoryEntry> get copyWith => _$Clipboar
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'ClipboardHistoryEntry'))
-    ..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('localOnly', localOnly));
+    ..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('capturedAt', capturedAt))..add(DiagnosticsProperty('localOnly', localOnly));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ClipboardHistoryEntry&&(identical(other.data, data) || other.data == data)&&(identical(other.localOnly, localOnly) || other.localOnly == localOnly));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ClipboardHistoryEntry&&(identical(other.data, data) || other.data == data)&&(identical(other.capturedAt, capturedAt) || other.capturedAt == capturedAt)&&(identical(other.localOnly, localOnly) || other.localOnly == localOnly));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,data,localOnly);
+int get hashCode => Object.hash(runtimeType,data,capturedAt,localOnly);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ClipboardHistoryEntry(data: $data, localOnly: $localOnly)';
+  return 'ClipboardHistoryEntry(data: $data, capturedAt: $capturedAt, localOnly: $localOnly)';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $ClipboardHistoryEntryCopyWith<$Res>  {
   factory $ClipboardHistoryEntryCopyWith(ClipboardHistoryEntry value, $Res Function(ClipboardHistoryEntry) _then) = _$ClipboardHistoryEntryCopyWithImpl;
 @useResult
 $Res call({
- String data, bool localOnly
+ String data, DateTime? capturedAt, bool localOnly
 });
 
 
@@ -71,10 +71,11 @@ class _$ClipboardHistoryEntryCopyWithImpl<$Res>
 
 /// Create a copy of ClipboardHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? data = null,Object? localOnly = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? data = null,Object? capturedAt = freezed,Object? localOnly = null,}) {
   return _then(_self.copyWith(
 data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
-as String,localOnly: null == localOnly ? _self.localOnly : localOnly // ignore: cast_nullable_to_non_nullable
+as String,capturedAt: freezed == capturedAt ? _self.capturedAt : capturedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,localOnly: null == localOnly ? _self.localOnly : localOnly // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -160,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String data,  bool localOnly)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String data,  DateTime? capturedAt,  bool localOnly)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ClipboardHistoryEntry() when $default != null:
-return $default(_that.data,_that.localOnly);case _:
+return $default(_that.data,_that.capturedAt,_that.localOnly);case _:
   return orElse();
 
 }
@@ -181,10 +182,10 @@ return $default(_that.data,_that.localOnly);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String data,  bool localOnly)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String data,  DateTime? capturedAt,  bool localOnly)  $default,) {final _that = this;
 switch (_that) {
 case _ClipboardHistoryEntry():
-return $default(_that.data,_that.localOnly);case _:
+return $default(_that.data,_that.capturedAt,_that.localOnly);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +202,10 @@ return $default(_that.data,_that.localOnly);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String data,  bool localOnly)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String data,  DateTime? capturedAt,  bool localOnly)?  $default,) {final _that = this;
 switch (_that) {
 case _ClipboardHistoryEntry() when $default != null:
-return $default(_that.data,_that.localOnly);case _:
+return $default(_that.data,_that.capturedAt,_that.localOnly);case _:
   return null;
 
 }
@@ -216,10 +217,11 @@ return $default(_that.data,_that.localOnly);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _ClipboardHistoryEntry with DiagnosticableTreeMixin implements ClipboardHistoryEntry {
-  const _ClipboardHistoryEntry({required this.data, this.localOnly = true});
+  const _ClipboardHistoryEntry({required this.data, this.capturedAt, this.localOnly = true});
   factory _ClipboardHistoryEntry.fromJson(Map<String, dynamic> json) => _$ClipboardHistoryEntryFromJson(json);
 
 @override final  String data;
+@override final  DateTime? capturedAt;
 @override@JsonKey() final  bool localOnly;
 
 /// Create a copy of ClipboardHistoryEntry
@@ -236,21 +238,21 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'ClipboardHistoryEntry'))
-    ..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('localOnly', localOnly));
+    ..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('capturedAt', capturedAt))..add(DiagnosticsProperty('localOnly', localOnly));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ClipboardHistoryEntry&&(identical(other.data, data) || other.data == data)&&(identical(other.localOnly, localOnly) || other.localOnly == localOnly));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ClipboardHistoryEntry&&(identical(other.data, data) || other.data == data)&&(identical(other.capturedAt, capturedAt) || other.capturedAt == capturedAt)&&(identical(other.localOnly, localOnly) || other.localOnly == localOnly));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,data,localOnly);
+int get hashCode => Object.hash(runtimeType,data,capturedAt,localOnly);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ClipboardHistoryEntry(data: $data, localOnly: $localOnly)';
+  return 'ClipboardHistoryEntry(data: $data, capturedAt: $capturedAt, localOnly: $localOnly)';
 }
 
 
@@ -261,7 +263,7 @@ abstract mixin class _$ClipboardHistoryEntryCopyWith<$Res> implements $Clipboard
   factory _$ClipboardHistoryEntryCopyWith(_ClipboardHistoryEntry value, $Res Function(_ClipboardHistoryEntry) _then) = __$ClipboardHistoryEntryCopyWithImpl;
 @override @useResult
 $Res call({
- String data, bool localOnly
+ String data, DateTime? capturedAt, bool localOnly
 });
 
 
@@ -278,10 +280,11 @@ class __$ClipboardHistoryEntryCopyWithImpl<$Res>
 
 /// Create a copy of ClipboardHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? data = null,Object? localOnly = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? data = null,Object? capturedAt = freezed,Object? localOnly = null,}) {
   return _then(_ClipboardHistoryEntry(
 data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
-as String,localOnly: null == localOnly ? _self.localOnly : localOnly // ignore: cast_nullable_to_non_nullable
+as String,capturedAt: freezed == capturedAt ? _self.capturedAt : capturedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,localOnly: null == localOnly ? _self.localOnly : localOnly // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

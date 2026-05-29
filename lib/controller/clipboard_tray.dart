@@ -141,7 +141,7 @@ class ClipboardTrayController extends GetxController {
     }
 
     final owner = Get.find<SettingController>().userId;
-    final entry = ClipboardHistoryEntry(data: text, localOnly: true);
+    final entry = ClipboardHistoryEntry(data: text, capturedAt: dt, localOnly: true);
     final id = const Uuid().v4();
     final item = DataItem<ClipboardHistoryEntry>(id, dt, dt, owner, null, null, body: entry);
 
@@ -166,7 +166,7 @@ class ClipboardTrayController extends GetxController {
       return false;
     }
 
-    items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    items.sort((a, b) => _effectiveItemTime(b).compareTo(_effectiveItemTime(a)));
     final latest = items.first;
     if (latest.body.data == incoming) {
       return true;
@@ -177,11 +177,15 @@ class ClipboardTrayController extends GetxController {
       if (item.body.data != incoming) {
         continue;
       }
-      final delta = incomingAtUtc.difference(item.createdAt).abs();
+      final delta = incomingAtUtc.difference(_effectiveItemTime(item)).abs();
       if (delta <= _dedupWindow) {
         return true;
       }
     }
     return false;
+  }
+
+  DateTime _effectiveItemTime(ClipboardHistoryEntryDataItem item) {
+    return item.body.capturedAt ?? item.createdAt;
   }
 }

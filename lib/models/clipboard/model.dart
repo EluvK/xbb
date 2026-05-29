@@ -77,7 +77,8 @@ Future<void> onReadySyncClipboard({
 @freezed
 abstract class ClipboardHistoryEntry with _$ClipboardHistoryEntry {
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory ClipboardHistoryEntry({required String data, @Default(true) bool localOnly}) = _ClipboardHistoryEntry;
+  const factory ClipboardHistoryEntry({required String data, DateTime? capturedAt, @Default(true) bool localOnly}) =
+      _ClipboardHistoryEntry;
 
   factory ClipboardHistoryEntry.fromJson(Map<String, dynamic> json) => _$ClipboardHistoryEntryFromJson(json);
 
@@ -92,7 +93,10 @@ abstract class ClipboardHistoryEntry with _$ClipboardHistoryEntry {
 
 extension ClipboardHistoryEntrySyncPayload on ClipboardHistoryEntry {
   Map<String, dynamic> toSyncJson() {
-    return <String, dynamic>{'data': data};
+    return <String, dynamic>{
+      'data': data,
+      if (capturedAt != null) 'captured_at': capturedAt!.toUtc().toIso8601String(),
+    };
   }
 }
 

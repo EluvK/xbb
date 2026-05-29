@@ -58,7 +58,8 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
 
   void _refreshItems() {
     final incoming = _entriesRx?.toList(growable: false) ?? const <ClipboardHistoryEntryDataItem>[];
-    final sorted = List<ClipboardHistoryEntryDataItem>.of(incoming)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final sorted = List<ClipboardHistoryEntryDataItem>.of(incoming)
+      ..sort((a, b) => _displayTimeOf(b).compareTo(_displayTimeOf(a)));
     _selectedIds.removeWhere((id) => !sorted.any((item) => item.id == id));
     _expandedIds.removeWhere((id) => !sorted.any((item) => item.id == id));
     if (_editingId != null && !sorted.any((item) => item.id == _editingId)) {
@@ -68,7 +69,7 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     final filtered = _applySearchFilter(sorted, _searchFilterTextController.text);
     _selectedIds.removeWhere((id) => !filtered.any((item) => item.id == id));
     _expandedIds.removeWhere((id) => !filtered.any((item) => item.id == id));
-    final visibleDateKeys = filtered.map((item) => _dateKey(item.createdAt)).toSet();
+    final visibleDateKeys = filtered.map((item) => _dateKey(_displayTimeOf(item))).toSet();
     _collapsedDateKeys.removeWhere((key) => !visibleDateKeys.contains(key));
     if (!mounted) return;
     setState(() {
@@ -133,7 +134,7 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
 
   void _startEdit(ClipboardHistoryEntryDataItem item) {
     setState(() {
-      _collapsedDateKeys.remove(_dateKey(item.createdAt));
+      _collapsedDateKeys.remove(_dateKey(_displayTimeOf(item)));
       _expandedIds.add(item.id);
       _editingId = item.id;
       _editTextController.text = item.body.data;
@@ -379,8 +380,9 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
   List<_ClipboardDateGroup> _groupByDate(List<ClipboardHistoryEntryDataItem> source) {
     final groups = <_ClipboardDateGroup>[];
     for (final item in source) {
-      final key = _dateKey(item.createdAt);
-      final local = item.createdAt.toLocal();
+      final displayTime = _displayTimeOf(item);
+      final key = _dateKey(displayTime);
+      final local = displayTime.toLocal();
       final date = DateTime(local.year, local.month, local.day);
       if (groups.isNotEmpty && groups.last.key == key) {
         groups.last.items.add(item);
@@ -397,7 +399,7 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     final isEditing = _editingId == item.id;
     return _ClipboardEntryTile(
       item: item,
-      timeLabel: _timeLabel(item.createdAt),
+      timeLabel: _timeLabel(_displayTimeOf(item)),
       isSelected: isSelected,
       isExpanded: isExpanded,
       isEditing: isEditing,
@@ -790,4 +792,8 @@ class _ClipboardDateGroup {
   final List<ClipboardHistoryEntryDataItem> items;
 
   _ClipboardDateGroup({required this.key, required this.date, required this.items});
+}
+
+DateTime _displayTimeOf(ClipboardHistoryEntryDataItem item) {
+  return item.body.capturedAt ?? item.createdAt;
 }
