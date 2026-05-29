@@ -558,6 +558,7 @@ class CommentUIController extends GetxController {
     for (int i = 0; i < left.length; i++) {
       if (left[i].id != right[i].id ||
           left[i].updatedAt != right[i].updatedAt ||
+          left[i].syncStatus != right[i].syncStatus ||
           left[i].body.content != right[i].body.content) {
         return false;
       }
@@ -910,7 +911,17 @@ class CommentTree extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(userProfile.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(userProfile.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        if (comment.syncStatus == SyncStatus.pending || comment.syncStatus == SyncStatus.syncing)
+                          const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
+                        else if (comment.syncStatus == SyncStatus.failed)
+                          Icon(Icons.error_outline, size: 14, color: Colors.red.shade400),
+                      ],
+                    ),
                     Text(
                       // `updatedAt == createdAt` is not accurate as updated is written by server
                       comment.updatedAt.subtract(const Duration(seconds: 1)).isBefore(comment.createdAt)

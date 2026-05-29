@@ -67,7 +67,13 @@ Future<void> onReadySyncClipboard({
   }
 }
 
-@Repository(collectionName: 'clipboard_history', tableName: 'entry', db: ClipboardDB)
+@Repository(
+  collectionName: 'clipboard_history',
+  tableName: 'entry',
+  db: ClipboardDB,
+  toSyncJsonMethod: 'toSyncJson',
+  fromRemoteJsonFactory: 'fromRemoteJson',
+)
 @freezed
 abstract class ClipboardHistoryEntry with _$ClipboardHistoryEntry {
   @JsonSerializable(fieldRename: FieldRename.snake)

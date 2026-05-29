@@ -139,7 +139,7 @@ abstract class Repo with _$Repo {
   factory Repo.fromJson(Map<String, dynamic> json) => _$RepoFromJson(json);
 }
 
-@Repository(collectionName: 'xbb', tableName: 'post', db: NotesDB)
+@Repository(collectionName: 'xbb', tableName: 'post', db: NotesDB, parentIdField: 'repoId')
 @freezed
 abstract class Post with _$Post {
   @JsonSerializable(fieldRename: FieldRename.snake)
@@ -153,7 +153,7 @@ abstract class Post with _$Post {
   factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
 }
 
-@Repository(collectionName: 'xbb', tableName: 'comment', db: NotesDB)
+@Repository(collectionName: 'xbb', tableName: 'comment', db: NotesDB, parentIdField: 'postId')
 @freezed
 abstract class Comment with _$Comment {
   @JsonSerializable(fieldRename: FieldRename.snake)

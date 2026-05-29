@@ -13,6 +13,9 @@ class RepositoryGenerator extends GeneratorForAnnotation<Repository> {
     final tableName = annotation.read('tableName').stringValue;
     final dbType = annotation.read('db').typeValue.getDisplayString();
     final bool generateAcl = annotation.read('withAcls').boolValue;
+    final String? parentIdField = annotation.peek('parentIdField')?.stringValue;
+    final String? toSyncJsonMethod = annotation.peek('toSyncJsonMethod')?.stringValue;
+    final String? fromRemoteJsonFactory = annotation.peek('fromRemoteJsonFactory')?.stringValue;
 
     final dataItemType = '${className}DataItem';
     final repositoryType = '${className}Repository';
@@ -36,13 +39,23 @@ class RepositoryGenerator extends GeneratorForAnnotation<Repository> {
         syncEngineType,
         activeItemId,
         generateAcl,
+        parentIdField,
       ),
     );
     if (generateAcl) {
       buffer.writeln(_generateAclExtension(repositoryType, controllerType, extName, collectionName, tableName));
     }
     buffer.writeln(
-      _generateSyncEngine(className, syncEngineType, dataItemType, repositoryType, collectionName, tableName),
+      _generateSyncEngine(
+        className,
+        syncEngineType,
+        dataItemType,
+        repositoryType,
+        collectionName,
+        tableName,
+        toSyncJsonMethod,
+        fromRemoteJsonFactory,
+      ),
     );
 
     return buffer.toString();
@@ -160,7 +173,11 @@ class _${dataItemType}FilterSubscription {
     String syncEngineType,
     String activeItemId,
     bool generateAcl,
+    String? parentIdField,
   ) {
+    final String localNewArgs = parentIdField != null
+        ? "owner, newData, parentId: newData.$parentIdField"
+        : 'owner, newData';
     String aclInitLogic = generateAcl
         ? '''
 // preload ACLs for all items to make sure UI can get ACL info immediately
@@ -279,7 +296,7 @@ class $controllerType extends GetxController {
   void addData($className newData) {
     // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
-    final newItem = $dataItemType.localNew(owner, newData);
+    final newItem = $dataItemType.localNew($localNewArgs);
     // it's a temporary memory data, not even in local db yet.
     _items.add(newItem); 
     _syncEngine.create(newItem).then((fetchedItem) {
@@ -324,7 +341,14 @@ class $controllerType extends GetxController {
     String repositoryType,
     String collectionName,
     String tableName,
+    String? toSyncJsonMethod,
+    String? fromRemoteJsonFactory,
   ) {
+    final String requestBodyExpr = toSyncJsonMethod != null ? 'local.body.$toSyncJsonMethod()' : 'local.body.toJson()';
+    final String fromRemoteExpr = fromRemoteJsonFactory != null
+        ? '$className.$fromRemoteJsonFactory'
+        : '$className.fromJson';
+
     return '''
 class $syncEngineType {
   final SyncStoreClient client;
@@ -336,8 +360,8 @@ class $syncEngineType {
 
     $dataItemType createdItem;
     try {
-      final newId = await client.create('$collectionName', '$tableName', local.body.toJson());
-      createdItem = await client.get<$className>('$collectionName', '$tableName', newId, $className.fromJson);
+      final newId = await client.create('$collectionName', '$tableName', $requestBodyExpr);
+      createdItem = await client.get<$className>('$collectionName', '$tableName', newId, $fromRemoteExpr);
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await $repositoryType().updateToLocalDb(local);
@@ -356,8 +380,8 @@ class $syncEngineType {
 
     $dataItemType updatedItem;
     try {
-      await client.update('$collectionName', '$tableName', local.id, local.body.toJson());
-      updatedItem = await client.get<$className>('$collectionName', '$tableName', local.id, $className.fromJson);
+      await client.update('$collectionName', '$tableName', local.id, $requestBodyExpr);
+      updatedItem = await client.get<$className>('$collectionName', '$tableName', local.id, $fromRemoteExpr);
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await $repositoryType().updateToLocalDb(local);
@@ -422,7 +446,7 @@ class $syncEngineType {
       final needGetIdsList = needGetIds.toList();
       for (var i = 0; i < needGetIdsList.length;) {
         final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('$collectionName', '$tableName', batchIds, $className.fromJson);
+        final batchItems = await client.batchGet('$collectionName', '$tableName', batchIds, $fromRemoteExpr);
         for (var item in batchItems.items) {
           await $repositoryType().upsertToLocalDb(item);
         }
@@ -486,7 +510,7 @@ class $syncEngineType {
       final needGetIdsList = needGetIds.toList();
       for (var i = 0; i < needGetIdsList.length;) {
         final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('$collectionName', '$tableName', batchIds, $className.fromJson);
+        final batchItems = await client.batchGet('$collectionName', '$tableName', batchIds, $fromRemoteExpr);
         for (var item in batchItems.items) {
           await $repositoryType().upsertToLocalDb(item);
         }
@@ -598,11 +622,11 @@ class $syncEngineType {
   Future<void> _compareRemote($dataItemType? localItem, DataItemSummary summary) async {
     if (localItem == null) {
       // new from server
-      final $dataItemType item = await client.get<$className>('$collectionName', '$tableName', summary.id, $className.fromJson);
+      final $dataItemType item = await client.get<$className>('$collectionName', '$tableName', summary.id, $fromRemoteExpr);
       await $repositoryType().addToLocalDb(item);
     } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
       // update local data.
-      final $dataItemType item = await client.get<$className>('$collectionName', '$tableName', summary.id, $className.fromJson);
+      final $dataItemType item = await client.get<$className>('$collectionName', '$tableName', summary.id, $fromRemoteExpr);
       await $repositoryType().updateToLocalDb(item);
     } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
       // local data is newer, need to sync to server

@@ -902,7 +902,7 @@ class PostController extends GetxController {
   void addData(Post newData) {
     // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
-    final newItem = PostDataItem.localNew(owner, newData);
+    final newItem = PostDataItem.localNew(owner, newData, parentId: newData.repoId);
     // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _syncEngine.create(newItem).then((fetchedItem) {
@@ -1467,7 +1467,7 @@ class CommentController extends GetxController {
   void addData(Comment newData) {
     // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
-    final newItem = CommentDataItem.localNew(owner, newData);
+    final newItem = CommentDataItem.localNew(owner, newData, parentId: newData.postId);
     // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _syncEngine.create(newItem).then((fetchedItem) {

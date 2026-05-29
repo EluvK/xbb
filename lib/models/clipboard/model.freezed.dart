@@ -13,7 +13,7 @@ part of 'model.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$ClipboardHistoryEntry {
+mixin _$ClipboardHistoryEntry implements DiagnosticableTreeMixin {
 
  String get data; bool get localOnly;
 /// Create a copy of ClipboardHistoryEntry
@@ -25,6 +25,12 @@ $ClipboardHistoryEntryCopyWith<ClipboardHistoryEntry> get copyWith => _$Clipboar
   /// Serializes this ClipboardHistoryEntry to a JSON map.
   Map<String, dynamic> toJson();
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'ClipboardHistoryEntry'))
+    ..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('localOnly', localOnly));
+}
 
 @override
 bool operator ==(Object other) {
@@ -36,7 +42,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,data,localOnly);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'ClipboardHistoryEntry(data: $data, localOnly: $localOnly)';
 }
 
@@ -209,7 +215,7 @@ return $default(_that.data,_that.localOnly);case _:
 /// @nodoc
 
 @JsonSerializable(fieldRename: FieldRename.snake)
-class _ClipboardHistoryEntry implements ClipboardHistoryEntry {
+class _ClipboardHistoryEntry with DiagnosticableTreeMixin implements ClipboardHistoryEntry {
   const _ClipboardHistoryEntry({required this.data, this.localOnly = true});
   factory _ClipboardHistoryEntry.fromJson(Map<String, dynamic> json) => _$ClipboardHistoryEntryFromJson(json);
 
@@ -226,6 +232,12 @@ _$ClipboardHistoryEntryCopyWith<_ClipboardHistoryEntry> get copyWith => __$Clipb
 Map<String, dynamic> toJson() {
   return _$ClipboardHistoryEntryToJson(this, );
 }
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'ClipboardHistoryEntry'))
+    ..add(DiagnosticsProperty('data', data))..add(DiagnosticsProperty('localOnly', localOnly));
+}
 
 @override
 bool operator ==(Object other) {
@@ -237,7 +249,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,data,localOnly);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'ClipboardHistoryEntry(data: $data, localOnly: $localOnly)';
 }
 
