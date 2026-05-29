@@ -239,7 +239,11 @@ class _PostEditorInnerState extends State<_PostEditorInner> {
             } else {
               postController.addData(editPost);
             }
-            Get.offAllNamed('/');
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Get.offAllNamed('/');
+            }
           },
           child: const Text(' 保存 '),
         ),
