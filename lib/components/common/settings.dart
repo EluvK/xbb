@@ -28,10 +28,10 @@ class _CommonSettingsState extends State<CommonSettings> {
 
   List<int> _startupTabCandidates() {
     final candidates = <int>[];
-    if (settingController.notesEnabled) candidates.add(AppHomeStartupTabIndex.notes);
-    if (settingController.trackerEnabled) candidates.add(AppHomeStartupTabIndex.tracker);
     if (settingController.taskEnabled) candidates.add(AppHomeStartupTabIndex.task);
     if (settingController.clipboardBackupEnabled) candidates.add(AppHomeStartupTabIndex.clipboard);
+    if (settingController.notesEnabled) candidates.add(AppHomeStartupTabIndex.notes);
+    if (settingController.trackerEnabled) candidates.add(AppHomeStartupTabIndex.tracker);
     candidates.add(AppHomeStartupTabIndex.settings);
     return candidates;
   }
@@ -104,19 +104,21 @@ class _CommonSettingsState extends State<CommonSettings> {
                 TextInputWidget(
                   title: SyncStoreInputMetaEnum.address,
                   initialValue: settingController.syncStoreUrl,
-                  tailButton: OutlinedButton.icon(
-                    onPressed: settingController.syncStoreUrl == defaultSyncStoreUrl
-                        ? null
-                        : () async {
-                            settingController.updateSyncStoreSetting(baseUrl: defaultSyncStoreUrl);
-                            await reInitSyncStoreController();
-                            _resetPingLatency();
-                          },
-                    icon: Tooltip(message: 'reset_default'.tr, child: const Icon(Icons.restore)),
-                    label: const SizedBox.shrink(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: const Size(40, 36),
+                  tailButton: debugOnlyWidget(
+                    OutlinedButton.icon(
+                      onPressed: settingController.syncStoreUrl == defaultSyncStoreUrl
+                          ? null
+                          : () async {
+                              settingController.updateSyncStoreSetting(baseUrl: defaultSyncStoreUrl);
+                              await reInitSyncStoreController();
+                              _resetPingLatency();
+                            },
+                      icon: Tooltip(message: 'reset_default'.tr, child: const Icon(Icons.restore)),
+                      label: const SizedBox.shrink(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(40, 36),
+                      ),
                     ),
                   ),
                   onFinished: (value) async {
@@ -139,28 +141,6 @@ class _CommonSettingsState extends State<CommonSettings> {
               ),
               const Divider(),
               Text('app_feature_management'.tr),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableNotes,
-                  initialValue: settingController.notesEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableNotes: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableTracker,
-                  initialValue: settingController.trackerEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableTracker: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
               _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableTask,
@@ -227,6 +207,28 @@ class _CommonSettingsState extends State<CommonSettings> {
                     ),
                   ),
                 ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableNotes,
+                  initialValue: settingController.notesEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableNotes: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableTracker,
+                  initialValue: settingController.trackerEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableTracker: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
               _withPadding(
                 UserDefinedInputWidget(
                   title: AppFeatureMetaEnum.startupTab,
