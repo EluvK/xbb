@@ -101,6 +101,28 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
     });
   }
 
+  bool _isDateGroupAllSelected(_ClipboardDateGroup group) {
+    if (group.items.isEmpty) {
+      return false;
+    }
+    return group.items.every((item) => _selectedIds.contains(item.id));
+  }
+
+  void _toggleSelectDateGroup(_ClipboardDateGroup group) {
+    if (group.items.isEmpty) {
+      return;
+    }
+    final ids = group.items.map((item) => item.id).toList(growable: false);
+    final shouldUnselect = ids.every(_selectedIds.contains);
+    setState(() {
+      if (shouldUnselect) {
+        _selectedIds.removeAll(ids);
+      } else {
+        _selectedIds.addAll(ids);
+      }
+    });
+  }
+
   void _clearSelection() {
     if (!_hasSelection) return;
     setState(() {
@@ -506,6 +528,7 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
                         itemBuilder: (context, index) {
                           final group = groups[index];
                           final isCollapsed = _collapsedDateKeys.contains(group.key);
+                          final isAllSelected = _isDateGroupAllSelected(group);
                           return Padding(
                             padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                             child: Column(
@@ -522,18 +545,32 @@ class _ViewClipboardHistoryState extends State<ViewClipboardHistory> {
                                           size: 18,
                                         ),
                                         const SizedBox(width: 8),
-                                        Text(
-                                          _dateHeaderLabel(group.date),
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text('${group.items.length}', style: Theme.of(context).textTheme.bodySmall),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                         Text(
+                                           _dateHeaderLabel(group.date),
+                                           style: Theme.of(
+                                             context,
+                                           ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                                         ),
+                                         const SizedBox(width: 8),
+                                         Text('${group.items.length}', style: Theme.of(context).textTheme.bodySmall),
+                                         const Spacer(),
+                                         TextButton(
+                                           onPressed: () => _toggleSelectDateGroup(group),
+                                           style: TextButton.styleFrom(
+                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                             minimumSize: const Size(0, 28),
+                                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                           ),
+                                           child: Text(
+                                             isAllSelected
+                                                 ? 'clipboard_unselect_day_items'.tr
+                                                 : 'clipboard_select_day_items'.tr,
+                                           ),
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                 ),
                                 if (!isCollapsed) const Divider(height: 1),
                                 if (!isCollapsed)
                                   ...List<Widget>.generate(group.items.length, (itemIndex) {

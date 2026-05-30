@@ -582,6 +582,14 @@ class _TranslationHelper {
       "en_US": "Clear",
       "zh_CN": "清空选择",
     },
+    "clipboard_select_day_items": {
+      "en_US": "Select Day",
+      "zh_CN": "全选当天",
+    },
+    "clipboard_unselect_day_items": {
+      "en_US": "Unselect Day",
+      "zh_CN": "取消当天",
+    },
     "clipboard_confirm_sync_action": {
       "en_US": "Confirm Sync",
       "zh_CN": "确认同步",
