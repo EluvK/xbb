@@ -114,8 +114,10 @@ class _UpdateSheetState extends State<UpdateSheet> {
                 child: ElevatedButton(
                   onPressed: widget.hasNewVersion
                       ? () {
-                          widget.onUpdate(false, _throughProxy);
                           Get.back();
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            widget.onUpdate(false, _throughProxy);
+                          });
                         }
                       : null,
                   child: Text('do_update'.tr),
@@ -127,8 +129,10 @@ class _UpdateSheetState extends State<UpdateSheet> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    widget.onUpdate(true, _throughProxy);
                     Get.back();
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      widget.onUpdate(true, _throughProxy);
+                    });
                   },
                   child: Text('${'do_update'.tr} (nightly)'),
                 ),
