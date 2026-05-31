@@ -18,12 +18,35 @@ Map<String, dynamic> _$ChatUsageToJson(_ChatUsage instance) => <String, dynamic>
   'total_tokens': instance.totalTokens,
 };
 
+_ChatAssistantModelConfig _$ChatAssistantModelConfigFromJson(Map<String, dynamic> json) => _ChatAssistantModelConfig(
+  provider: $enumDecodeNullable(_$ChatAssistantModelProviderEnumMap, json['provider']),
+  baseUrl: json['base_url'] as String?,
+  model: json['model'] as String?,
+  temperature: (json['temperature'] as num?)?.toDouble(),
+  thinkingEnabled: json['thinking_enabled'] as bool?,
+  reasoningEffort: json['reasoning_effort'] as String?,
+);
+
+Map<String, dynamic> _$ChatAssistantModelConfigToJson(_ChatAssistantModelConfig instance) => <String, dynamic>{
+  'provider': ?_$ChatAssistantModelProviderEnumMap[instance.provider],
+  'base_url': ?instance.baseUrl,
+  'model': ?instance.model,
+  'temperature': ?instance.temperature,
+  'thinking_enabled': ?instance.thinkingEnabled,
+  'reasoning_effort': ?instance.reasoningEffort,
+};
+
+const _$ChatAssistantModelProviderEnumMap = {ChatAssistantModelProvider.deepSeek: 'deepSeek'};
+
 _ChatAssistant _$ChatAssistantFromJson(Map<String, dynamic> json) => _ChatAssistant(
   name: json['name'] as String,
   type: $enumDecode(_$ChatAssistantTypeEnumMap, json['type']),
   description: json['description'] as String,
   prompt: json['prompt'] as String,
   avatarUrl: json['avatar_url'] as String?,
+  modelConfig: json['model_config'] == null
+      ? null
+      : ChatAssistantModelConfig.fromJson(json['model_config'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$ChatAssistantToJson(_ChatAssistant instance) => <String, dynamic>{
@@ -32,6 +55,7 @@ Map<String, dynamic> _$ChatAssistantToJson(_ChatAssistant instance) => <String, 
   'description': instance.description,
   'prompt': instance.prompt,
   'avatar_url': instance.avatarUrl,
+  'model_config': instance.modelConfig,
 };
 
 const _$ChatAssistantTypeEnumMap = {ChatAssistantType.system: 'system', ChatAssistantType.userDefined: 'userDefined'};

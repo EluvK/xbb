@@ -32,6 +32,7 @@ class _CommonSettingsState extends State<CommonSettings> {
     if (settingController.clipboardBackupEnabled) candidates.add(AppHomeStartupTabIndex.clipboard);
     if (settingController.notesEnabled) candidates.add(AppHomeStartupTabIndex.notes);
     if (settingController.trackerEnabled) candidates.add(AppHomeStartupTabIndex.tracker);
+    if (settingController.chatEnabled) candidates.add(AppHomeStartupTabIndex.chat);
     candidates.add(AppHomeStartupTabIndex.settings);
     return candidates;
   }
@@ -63,6 +64,8 @@ class _CommonSettingsState extends State<CommonSettings> {
         return 'home_bar_title_task'.tr;
       case AppHomeStartupTabIndex.clipboard:
         return 'home_bar_title_clipboard'.tr;
+      case AppHomeStartupTabIndex.chat:
+        return 'home_bar_title_chat'.tr;
       case AppHomeStartupTabIndex.settings:
       default:
         return 'home_bar_title_setting'.tr;
@@ -207,6 +210,17 @@ class _CommonSettingsState extends State<CommonSettings> {
                     ),
                   ),
                 ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableChat,
+                  initialValue: settingController.chatEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableChat: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
               _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableNotes,

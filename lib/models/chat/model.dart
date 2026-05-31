@@ -15,6 +15,8 @@ enum ChatMessageRole { system, user, assistant }
 
 enum ChatAssistantType { system, userDefined }
 
+enum ChatAssistantModelProvider { deepSeek }
+
 @freezed
 abstract class ChatUsage with _$ChatUsage {
   @JsonSerializable(fieldRename: FieldRename.snake)
@@ -22,6 +24,21 @@ abstract class ChatUsage with _$ChatUsage {
       _ChatUsage;
 
   factory ChatUsage.fromJson(Map<String, dynamic> json) => _$ChatUsageFromJson(json);
+}
+
+@freezed
+abstract class ChatAssistantModelConfig with _$ChatAssistantModelConfig {
+  @JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
+  const factory ChatAssistantModelConfig({
+    ChatAssistantModelProvider? provider,
+    String? baseUrl,
+    String? model,
+    double? temperature,
+    bool? thinkingEnabled,
+    String? reasoningEffort,
+  }) = _ChatAssistantModelConfig;
+
+  factory ChatAssistantModelConfig.fromJson(Map<String, dynamic> json) => _$ChatAssistantModelConfigFromJson(json);
 }
 
 @Repository(collectionName: 'chat', tableName: 'assistant', db: ChatDB)
@@ -34,6 +51,7 @@ abstract class ChatAssistant with _$ChatAssistant {
     required String description,
     required String prompt,
     String? avatarUrl,
+    ChatAssistantModelConfig? modelConfig,
   }) = _ChatAssistant;
 
   factory ChatAssistant.fromJson(Map<String, dynamic> json) => _$ChatAssistantFromJson(json);
@@ -51,6 +69,10 @@ abstract class ChatConversation with _$ChatConversation {
   }) = _ChatConversation;
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) => _$ChatConversationFromJson(json);
+
+  static ChatConversation fromRemoteJson(Map<String, dynamic> json) {
+    return ChatConversation.fromJson(json);
+  }
 }
 
 @Repository(collectionName: 'chat', tableName: 'message', db: ChatDB, parentIdField: 'conversationId')
@@ -66,4 +88,16 @@ abstract class ChatMessage with _$ChatMessage {
   }) = _ChatMessage;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => _$ChatMessageFromJson(json);
+}
+
+extension ChatMessageSyncPayload on ChatMessage {
+  Map<String, dynamic> toSyncJson() {
+    return <String, dynamic>{
+      'conversation_id': conversationId,
+      'role': role.name,
+      'text': text,
+      if (reasoningText != null) 'reasoning_text': reasoningText,
+      if (usage != null) 'usage': usage!.toJson(),
+    };
+  }
 }

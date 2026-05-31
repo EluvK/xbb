@@ -12,6 +12,7 @@ import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/pages/home.dart';
 import 'package:xbb/pages/login.dart';
+import 'package:xbb/pages/chat/chat_page.dart';
 import 'package:xbb/pages/notes/editor_pages.dart';
 import 'package:xbb/pages/notes/view_post.dart';
 import 'package:xbb/pages/profile.dart';
@@ -97,6 +98,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/tracker/edit-tracker', page: () => const EditTrackerPage()),
         GetPage(name: '/tracker/view-tracker', page: () => const ViewTrackerDetailPage()),
         GetPage(name: '/task', page: () => const TaskPage()),
+        GetPage(name: '/chat', page: () => const ChatPage()),
       ],
       debugShowCheckedModeBanner: true,
       themeMode: themeMode,

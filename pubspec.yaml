@@ -25,6 +25,7 @@ workspace:
   - packages/sync_annotation
   - packages/sync_generator
   - packages/syncstore_client
+  - packages/deepseek_client
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -68,6 +69,8 @@ dependencies:
   cryptography: ^2.9.0
   cryptography_flutter: ^2.3.4
   board_datetime_picker: ^2.8.5
+  deepseek_client:
+    path: packages/deepseek_client
 
 dev_dependencies:
   test: ^1.26.3
@@ -85,6 +88,12 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+      name_windows: winsqlite3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -1,0 +1,14 @@
+name: deepseek_client
+description: DeepSeek API client for Dart and Flutter.
+publish_to: none
+version: 0.1.0
+resolution: workspace
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  http: ^1.2.2
+
+dev_dependencies:
+  lints: ^4.0.0

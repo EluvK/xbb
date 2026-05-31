@@ -435,6 +435,114 @@ class _TranslationHelper {
       "en_US": "Clipboard",
       "zh_CN": "剪贴板",
     },
+    "home_bar_title_chat": {
+      "en_US": "Chat",
+      "zh_CN": "对话",
+    },
+    "chat_new_conversation": {
+      "en_US": "New Conversation",
+      "zh_CN": "新建会话",
+    },
+    "chat_new_conversation_title": {
+      "en_US": "New Conversation @time",
+      "zh_CN": "新会话 @time",
+    },
+    "chat_no_conversations": {
+      "en_US": "No conversations yet.",
+      "zh_CN": "暂无会话。",
+    },
+    "chat_no_messages": {
+      "en_US": "No messages yet.",
+      "zh_CN": "暂无消息。",
+    },
+    "chat_sync_conversation": {
+      "en_US": "Sync Conversation",
+      "zh_CN": "同步会话",
+    },
+    "chat_sync_state_local_only": {
+      "en_US": "Local",
+      "zh_CN": "本地",
+    },
+    "chat_sync_state_dirty": {
+      "en_US": "Unsynced @count",
+      "zh_CN": "未同步 @count 条",
+    },
+    "chat_sync_state_synced": {
+      "en_US": "Synced",
+      "zh_CN": "已同步",
+    },
+    "chat_sync_state_failed": {
+      "en_US": "Sync Failed",
+      "zh_CN": "同步失败",
+    },
+    "chat_input_hint": {
+      "en_US": "Type a message",
+      "zh_CN": "输入消息",
+    },
+    "chat_send": {
+      "en_US": "Send",
+      "zh_CN": "发送",
+    },
+    "chat_wait_previous_response": {
+      "en_US": "Please wait for the previous response to finish.",
+      "zh_CN": "请等待上一条回复完成。",
+    },
+    "chat_syncing_input_locked": {
+      "en_US": "Current conversation is syncing. Sending is temporarily locked.",
+      "zh_CN": "当前会话正在同步，暂不可发送。",
+    },
+    "chat_request_failed": {
+      "en_US": "Chat request failed: @error",
+      "zh_CN": "聊天请求失败：@error",
+    },
+    "chat_synced_prefix_locked": {
+      "en_US": "Synced prefix is immutable.",
+      "zh_CN": "已同步前缀不可修改。",
+    },
+    "chat_retry_last_turn_only": {
+      "en_US": "Only retry for the last failed/cancelled turn is supported.",
+      "zh_CN": "仅支持重试最后一轮失败/取消的回复。",
+    },
+    "chat_sync_requires_user_message": {
+      "en_US": "At least one user message is required before sync.",
+      "zh_CN": "至少包含一条用户消息才可同步。",
+    },
+    "chat_delete_conversation_failed": {
+      "en_US": "Failed to delete conversation: @error",
+      "zh_CN": "删除会话失败：@error",
+    },
+    "chat_message_placeholder_empty": {
+      "en_US": "...",
+      "zh_CN": "...",
+    },
+    "chat_role_system": {
+      "en_US": "System",
+      "zh_CN": "系统",
+    },
+    "chat_role_user": {
+      "en_US": "You",
+      "zh_CN": "你",
+    },
+    "chat_role_assistant": {
+      "en_US": "Assistant",
+      "zh_CN": "助手",
+    },
+    "chat_message_state_streaming": {
+      "en_US": "streaming",
+      "zh_CN": "生成中",
+    },
+    "chat_message_state_completed": {
+      "en_US": "completed",
+      "zh_CN": "完成",
+    },
+    "chat_message_state_error": {
+      "en_US": "error",
+      "zh_CN": "错误",
+    },
+    "chat_message_state_cancelled": {
+      "en_US": "cancelled",
+      "zh_CN": "已取消",
+    },
     "home_bar_title_setting": {
       "en_US": "Settings",
       "zh_CN": "设置",
@@ -533,6 +641,10 @@ class _TranslationHelper {
     "app_enable_clipboard_listening_feature": {
       "en_US": "Enable Clipboard Listening",
       "zh_CN": "启用剪贴板监听",
+    },
+    "app_enable_chat_feature": {
+      "en_US": "Enable Chat Feature",
+      "zh_CN": "启用对话功能",
     },
     "clipboard_overview_title": {
       "en_US": "Clipboard Overview",

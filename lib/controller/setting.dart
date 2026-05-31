@@ -6,6 +6,8 @@ import 'package:xbb/constant.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/utils.dart';
 
+enum ChatLLMProvider { deepSeek }
+
 bool initFirstTime() {
   var settingController = Get.find<SettingController>();
   if (settingController.userId.isNotEmpty && settingController.userName.isNotEmpty) {
@@ -48,7 +50,8 @@ class AppHomeStartupTabIndex {
   static const int tracker = 1;
   static const int task = 2;
   static const int clipboard = 3;
-  static const int settings = 4;
+  static const int chat = 4;
+  static const int settings = 5;
 }
 
 class SettingController extends GetxController {
@@ -100,6 +103,11 @@ class SettingController extends GetxController {
     if (syncstore != null) {
       syncStoreSetting.value = SyncStoreSetting.fromJson(syncstore);
     }
+    // load chat llm setting from storage
+    Map<String, dynamic>? chatLlm = box.read<Map<String, dynamic>?>(STORAGE_SETTING_CHAT_LLM_SETTINGS_KEY);
+    if (chatLlm != null) {
+      chatLLMSetting.value = ChatLLMSetting.fromJson(chatLlm);
+    }
     super.onInit();
 
     _initialized = true;
@@ -128,6 +136,26 @@ class SettingController extends GetxController {
       setting?.update(baseUrl: baseUrl, enableHpke: enableHpke);
     });
     box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, syncStoreSetting.value.toJson());
+  }
+
+  // chat llm settings
+  final chatLLMSetting = ChatLLMSetting.defaults().obs;
+  ChatLLMProvider get chatProvider => chatLLMSetting.value.provider;
+  String get chatBaseUrl => chatLLMSetting.value.baseUrl;
+  String get chatModel => chatLLMSetting.value.model;
+  String? get chatApiKey => chatLLMSetting.value.apiKey;
+  double get chatTemperature => chatLLMSetting.value.temperature;
+  void updateChatLLMSetting({
+    ChatLLMProvider? provider,
+    String? baseUrl,
+    String? model,
+    String? apiKey,
+    double? temperature,
+  }) {
+    chatLLMSetting.update((setting) {
+      setting?.update(provider: provider, baseUrl: baseUrl, model: model, apiKey: apiKey, temperature: temperature);
+    });
+    box.write(STORAGE_SETTING_CHAT_LLM_SETTINGS_KEY, chatLLMSetting.value.toJson());
   }
 
   // app settings
@@ -166,6 +194,7 @@ class SettingController extends GetxController {
   bool get taskEnabled => appFeaturesManagement.value.enableTask; // task is optional feature, default enabled
   bool get clipboardBackupEnabled => appFeaturesManagement.value.enableClipboardBackup;
   bool get clipboardListeningEnabled => appFeaturesManagement.value.enableClipboardListening;
+  bool get chatEnabled => appFeaturesManagement.value.enableChat;
   int get homeStartupTabIndex => appFeaturesManagement.value.homeStartupTabIndex;
   void updateAppFeaturesManagement({
     bool? enableNotes,
@@ -173,6 +202,7 @@ class SettingController extends GetxController {
     bool? enableTask,
     bool? enableClipboardBackup,
     bool? enableClipboardListening,
+    bool? enableChat,
     int? homeStartupTabIndex,
   }) {
     appFeaturesManagement.update((feature) {
@@ -182,6 +212,7 @@ class SettingController extends GetxController {
         enableTask: enableTask,
         enableClipboardBackup: enableClipboardBackup,
         enableClipboardListening: enableClipboardListening,
+        enableChat: enableChat,
         homeStartupTabIndex: homeStartupTabIndex,
       );
     });
@@ -264,6 +295,75 @@ class SyncStoreSetting {
     }
     if (enableHpke != null) {
       this.enableHpke = enableHpke;
+    }
+  }
+}
+
+class ChatLLMSetting {
+  ChatLLMProvider provider;
+  String baseUrl;
+  String model;
+  String? apiKey;
+  double temperature;
+
+  ChatLLMSetting({
+    required this.provider,
+    required this.baseUrl,
+    required this.model,
+    required this.apiKey,
+    required this.temperature,
+  });
+
+  factory ChatLLMSetting.defaults() {
+    return ChatLLMSetting(
+      provider: ChatLLMProvider.deepSeek,
+      baseUrl: 'https://api.deepseek.com/v1',
+      model: 'deepseek-chat',
+      apiKey: null,
+      temperature: 1.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'provider': provider.name,
+      'base_url': baseUrl,
+      'model': model,
+      'api_key': apiKey,
+      'temperature': temperature,
+    };
+  }
+
+  factory ChatLLMSetting.fromJson(Map<String, dynamic> json) {
+    final providerName = json['provider'] as String?;
+    final parsedProvider = ChatLLMProvider.values.firstWhere(
+      (value) => value.name == providerName,
+      orElse: () => ChatLLMProvider.deepSeek,
+    );
+    return ChatLLMSetting(
+      provider: parsedProvider,
+      baseUrl: json['base_url'] ?? 'https://api.deepseek.com/v1',
+      model: json['model'] ?? 'deepseek-chat',
+      apiKey: json['api_key'] as String?,
+      temperature: ((json['temperature'] as num?) ?? 1.0).toDouble(),
+    );
+  }
+
+  void update({ChatLLMProvider? provider, String? baseUrl, String? model, String? apiKey, double? temperature}) {
+    if (provider != null) {
+      this.provider = provider;
+    }
+    if (baseUrl != null) {
+      this.baseUrl = baseUrl;
+    }
+    if (model != null) {
+      this.model = model;
+    }
+    if (apiKey != null) {
+      this.apiKey = apiKey;
+    }
+    if (temperature != null) {
+      this.temperature = temperature;
     }
   }
 }
@@ -382,6 +482,7 @@ class AppFeaturesManagement {
   bool enableTask;
   bool enableClipboardBackup;
   bool enableClipboardListening;
+  bool enableChat;
   int homeStartupTabIndex;
 
   get notesEnabled => enableNotes;
@@ -389,12 +490,14 @@ class AppFeaturesManagement {
   get taskEnabled => enableTask;
   get clipboardBackupEnabled => enableClipboardBackup;
   get clipboardListeningEnabled => enableClipboardListening;
+  get chatEnabled => enableChat;
   AppFeaturesManagement({
     required this.enableNotes,
     required this.enableTracker,
     required this.enableTask,
     required this.enableClipboardBackup,
     required this.enableClipboardListening,
+    required this.enableChat,
     required this.homeStartupTabIndex,
   });
   factory AppFeaturesManagement.defaults() {
@@ -404,6 +507,7 @@ class AppFeaturesManagement {
       enableTask: true,
       enableClipboardBackup: false,
       enableClipboardListening: false,
+      enableChat: true,
       homeStartupTabIndex: AppHomeStartupTabIndex.notes,
     );
   }
@@ -414,6 +518,7 @@ class AppFeaturesManagement {
       'enable_task': enableTask,
       'enable_clipboard_backup': enableClipboardBackup,
       'enable_clipboard_listening': enableClipboardListening,
+      'enable_chat': enableChat,
       'home_startup_tab_index': homeStartupTabIndex,
     };
   }
@@ -431,6 +536,7 @@ class AppFeaturesManagement {
       enableTask: json['enable_task'] ?? true,
       enableClipboardBackup: json['enable_clipboard_backup'] ?? false,
       enableClipboardListening: json['enable_clipboard_listening'] ?? false,
+      enableChat: json['enable_chat'] ?? true,
       homeStartupTabIndex: startupTabIndex,
     );
   }
@@ -440,6 +546,7 @@ class AppFeaturesManagement {
     bool? enableTask,
     bool? enableClipboardBackup,
     bool? enableClipboardListening,
+    bool? enableChat,
     int? homeStartupTabIndex,
   }) {
     if (enableNotes != null) {
@@ -456,6 +563,9 @@ class AppFeaturesManagement {
     }
     if (enableClipboardListening != null) {
       this.enableClipboardListening = enableClipboardListening;
+    }
+    if (enableChat != null) {
+      this.enableChat = enableChat;
     }
     if (homeStartupTabIndex != null) {
       this.homeStartupTabIndex = homeStartupTabIndex;

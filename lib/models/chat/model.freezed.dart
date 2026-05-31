@@ -294,9 +294,299 @@ as int,
 
 
 /// @nodoc
+mixin _$ChatAssistantModelConfig implements DiagnosticableTreeMixin {
+
+ ChatAssistantModelProvider? get provider; String? get baseUrl; String? get model; double? get temperature; bool? get thinkingEnabled; String? get reasoningEffort;
+/// Create a copy of ChatAssistantModelConfig
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ChatAssistantModelConfigCopyWith<ChatAssistantModelConfig> get copyWith => _$ChatAssistantModelConfigCopyWithImpl<ChatAssistantModelConfig>(this as ChatAssistantModelConfig, _$identity);
+
+  /// Serializes this ChatAssistantModelConfig to a JSON map.
+  Map<String, dynamic> toJson();
+
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'ChatAssistantModelConfig'))
+    ..add(DiagnosticsProperty('provider', provider))..add(DiagnosticsProperty('baseUrl', baseUrl))..add(DiagnosticsProperty('model', model))..add(DiagnosticsProperty('temperature', temperature))..add(DiagnosticsProperty('thinkingEnabled', thinkingEnabled))..add(DiagnosticsProperty('reasoningEffort', reasoningEffort));
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatAssistantModelConfig&&(identical(other.provider, provider) || other.provider == provider)&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.model, model) || other.model == model)&&(identical(other.temperature, temperature) || other.temperature == temperature)&&(identical(other.thinkingEnabled, thinkingEnabled) || other.thinkingEnabled == thinkingEnabled)&&(identical(other.reasoningEffort, reasoningEffort) || other.reasoningEffort == reasoningEffort));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,provider,baseUrl,model,temperature,thinkingEnabled,reasoningEffort);
+
+@override
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  return 'ChatAssistantModelConfig(provider: $provider, baseUrl: $baseUrl, model: $model, temperature: $temperature, thinkingEnabled: $thinkingEnabled, reasoningEffort: $reasoningEffort)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ChatAssistantModelConfigCopyWith<$Res>  {
+  factory $ChatAssistantModelConfigCopyWith(ChatAssistantModelConfig value, $Res Function(ChatAssistantModelConfig) _then) = _$ChatAssistantModelConfigCopyWithImpl;
+@useResult
+$Res call({
+ ChatAssistantModelProvider? provider, String? baseUrl, String? model, double? temperature, bool? thinkingEnabled, String? reasoningEffort
+});
+
+
+
+
+}
+/// @nodoc
+class _$ChatAssistantModelConfigCopyWithImpl<$Res>
+    implements $ChatAssistantModelConfigCopyWith<$Res> {
+  _$ChatAssistantModelConfigCopyWithImpl(this._self, this._then);
+
+  final ChatAssistantModelConfig _self;
+  final $Res Function(ChatAssistantModelConfig) _then;
+
+/// Create a copy of ChatAssistantModelConfig
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? provider = freezed,Object? baseUrl = freezed,Object? model = freezed,Object? temperature = freezed,Object? thinkingEnabled = freezed,Object? reasoningEffort = freezed,}) {
+  return _then(_self.copyWith(
+provider: freezed == provider ? _self.provider : provider // ignore: cast_nullable_to_non_nullable
+as ChatAssistantModelProvider?,baseUrl: freezed == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
+as String?,model: freezed == model ? _self.model : model // ignore: cast_nullable_to_non_nullable
+as String?,temperature: freezed == temperature ? _self.temperature : temperature // ignore: cast_nullable_to_non_nullable
+as double?,thinkingEnabled: freezed == thinkingEnabled ? _self.thinkingEnabled : thinkingEnabled // ignore: cast_nullable_to_non_nullable
+as bool?,reasoningEffort: freezed == reasoningEffort ? _self.reasoningEffort : reasoningEffort // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [ChatAssistantModelConfig].
+extension ChatAssistantModelConfigPatterns on ChatAssistantModelConfig {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ChatAssistantModelConfig value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ChatAssistantModelConfig() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ChatAssistantModelConfig value)  $default,){
+final _that = this;
+switch (_that) {
+case _ChatAssistantModelConfig():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ChatAssistantModelConfig value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ChatAssistantModelConfig() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ChatAssistantModelProvider? provider,  String? baseUrl,  String? model,  double? temperature,  bool? thinkingEnabled,  String? reasoningEffort)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ChatAssistantModelConfig() when $default != null:
+return $default(_that.provider,_that.baseUrl,_that.model,_that.temperature,_that.thinkingEnabled,_that.reasoningEffort);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ChatAssistantModelProvider? provider,  String? baseUrl,  String? model,  double? temperature,  bool? thinkingEnabled,  String? reasoningEffort)  $default,) {final _that = this;
+switch (_that) {
+case _ChatAssistantModelConfig():
+return $default(_that.provider,_that.baseUrl,_that.model,_that.temperature,_that.thinkingEnabled,_that.reasoningEffort);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ChatAssistantModelProvider? provider,  String? baseUrl,  String? model,  double? temperature,  bool? thinkingEnabled,  String? reasoningEffort)?  $default,) {final _that = this;
+switch (_that) {
+case _ChatAssistantModelConfig() when $default != null:
+return $default(_that.provider,_that.baseUrl,_that.model,_that.temperature,_that.thinkingEnabled,_that.reasoningEffort);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+@JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
+class _ChatAssistantModelConfig with DiagnosticableTreeMixin implements ChatAssistantModelConfig {
+  const _ChatAssistantModelConfig({this.provider, this.baseUrl, this.model, this.temperature, this.thinkingEnabled, this.reasoningEffort});
+  factory _ChatAssistantModelConfig.fromJson(Map<String, dynamic> json) => _$ChatAssistantModelConfigFromJson(json);
+
+@override final  ChatAssistantModelProvider? provider;
+@override final  String? baseUrl;
+@override final  String? model;
+@override final  double? temperature;
+@override final  bool? thinkingEnabled;
+@override final  String? reasoningEffort;
+
+/// Create a copy of ChatAssistantModelConfig
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ChatAssistantModelConfigCopyWith<_ChatAssistantModelConfig> get copyWith => __$ChatAssistantModelConfigCopyWithImpl<_ChatAssistantModelConfig>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$ChatAssistantModelConfigToJson(this, );
+}
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'ChatAssistantModelConfig'))
+    ..add(DiagnosticsProperty('provider', provider))..add(DiagnosticsProperty('baseUrl', baseUrl))..add(DiagnosticsProperty('model', model))..add(DiagnosticsProperty('temperature', temperature))..add(DiagnosticsProperty('thinkingEnabled', thinkingEnabled))..add(DiagnosticsProperty('reasoningEffort', reasoningEffort));
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatAssistantModelConfig&&(identical(other.provider, provider) || other.provider == provider)&&(identical(other.baseUrl, baseUrl) || other.baseUrl == baseUrl)&&(identical(other.model, model) || other.model == model)&&(identical(other.temperature, temperature) || other.temperature == temperature)&&(identical(other.thinkingEnabled, thinkingEnabled) || other.thinkingEnabled == thinkingEnabled)&&(identical(other.reasoningEffort, reasoningEffort) || other.reasoningEffort == reasoningEffort));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,provider,baseUrl,model,temperature,thinkingEnabled,reasoningEffort);
+
+@override
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  return 'ChatAssistantModelConfig(provider: $provider, baseUrl: $baseUrl, model: $model, temperature: $temperature, thinkingEnabled: $thinkingEnabled, reasoningEffort: $reasoningEffort)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ChatAssistantModelConfigCopyWith<$Res> implements $ChatAssistantModelConfigCopyWith<$Res> {
+  factory _$ChatAssistantModelConfigCopyWith(_ChatAssistantModelConfig value, $Res Function(_ChatAssistantModelConfig) _then) = __$ChatAssistantModelConfigCopyWithImpl;
+@override @useResult
+$Res call({
+ ChatAssistantModelProvider? provider, String? baseUrl, String? model, double? temperature, bool? thinkingEnabled, String? reasoningEffort
+});
+
+
+
+
+}
+/// @nodoc
+class __$ChatAssistantModelConfigCopyWithImpl<$Res>
+    implements _$ChatAssistantModelConfigCopyWith<$Res> {
+  __$ChatAssistantModelConfigCopyWithImpl(this._self, this._then);
+
+  final _ChatAssistantModelConfig _self;
+  final $Res Function(_ChatAssistantModelConfig) _then;
+
+/// Create a copy of ChatAssistantModelConfig
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? provider = freezed,Object? baseUrl = freezed,Object? model = freezed,Object? temperature = freezed,Object? thinkingEnabled = freezed,Object? reasoningEffort = freezed,}) {
+  return _then(_ChatAssistantModelConfig(
+provider: freezed == provider ? _self.provider : provider // ignore: cast_nullable_to_non_nullable
+as ChatAssistantModelProvider?,baseUrl: freezed == baseUrl ? _self.baseUrl : baseUrl // ignore: cast_nullable_to_non_nullable
+as String?,model: freezed == model ? _self.model : model // ignore: cast_nullable_to_non_nullable
+as String?,temperature: freezed == temperature ? _self.temperature : temperature // ignore: cast_nullable_to_non_nullable
+as double?,thinkingEnabled: freezed == thinkingEnabled ? _self.thinkingEnabled : thinkingEnabled // ignore: cast_nullable_to_non_nullable
+as bool?,reasoningEffort: freezed == reasoningEffort ? _self.reasoningEffort : reasoningEffort // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$ChatAssistant implements DiagnosticableTreeMixin {
 
- String get name; ChatAssistantType get type; String get description; String get prompt; String? get avatarUrl;
+ String get name; ChatAssistantType get type; String get description; String get prompt; String? get avatarUrl; ChatAssistantModelConfig? get modelConfig;
 /// Create a copy of ChatAssistant
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -310,21 +600,21 @@ $ChatAssistantCopyWith<ChatAssistant> get copyWith => _$ChatAssistantCopyWithImp
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'ChatAssistant'))
-    ..add(DiagnosticsProperty('name', name))..add(DiagnosticsProperty('type', type))..add(DiagnosticsProperty('description', description))..add(DiagnosticsProperty('prompt', prompt))..add(DiagnosticsProperty('avatarUrl', avatarUrl));
+    ..add(DiagnosticsProperty('name', name))..add(DiagnosticsProperty('type', type))..add(DiagnosticsProperty('description', description))..add(DiagnosticsProperty('prompt', prompt))..add(DiagnosticsProperty('avatarUrl', avatarUrl))..add(DiagnosticsProperty('modelConfig', modelConfig));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatAssistant&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.description, description) || other.description == description)&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatAssistant&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.description, description) || other.description == description)&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.modelConfig, modelConfig) || other.modelConfig == modelConfig));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name,type,description,prompt,avatarUrl);
+int get hashCode => Object.hash(runtimeType,name,type,description,prompt,avatarUrl,modelConfig);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ChatAssistant(name: $name, type: $type, description: $description, prompt: $prompt, avatarUrl: $avatarUrl)';
+  return 'ChatAssistant(name: $name, type: $type, description: $description, prompt: $prompt, avatarUrl: $avatarUrl, modelConfig: $modelConfig)';
 }
 
 
@@ -335,11 +625,11 @@ abstract mixin class $ChatAssistantCopyWith<$Res>  {
   factory $ChatAssistantCopyWith(ChatAssistant value, $Res Function(ChatAssistant) _then) = _$ChatAssistantCopyWithImpl;
 @useResult
 $Res call({
- String name, ChatAssistantType type, String description, String prompt, String? avatarUrl
+ String name, ChatAssistantType type, String description, String prompt, String? avatarUrl, ChatAssistantModelConfig? modelConfig
 });
 
 
-
+$ChatAssistantModelConfigCopyWith<$Res>? get modelConfig;
 
 }
 /// @nodoc
@@ -352,17 +642,30 @@ class _$ChatAssistantCopyWithImpl<$Res>
 
 /// Create a copy of ChatAssistant
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? type = null,Object? description = null,Object? prompt = null,Object? avatarUrl = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? type = null,Object? description = null,Object? prompt = null,Object? avatarUrl = freezed,Object? modelConfig = freezed,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ChatAssistantType,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,prompt: null == prompt ? _self.prompt : prompt // ignore: cast_nullable_to_non_nullable
 as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,modelConfig: freezed == modelConfig ? _self.modelConfig : modelConfig // ignore: cast_nullable_to_non_nullable
+as ChatAssistantModelConfig?,
   ));
 }
+/// Create a copy of ChatAssistant
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ChatAssistantModelConfigCopyWith<$Res>? get modelConfig {
+    if (_self.modelConfig == null) {
+    return null;
+  }
 
+  return $ChatAssistantModelConfigCopyWith<$Res>(_self.modelConfig!, (value) {
+    return _then(_self.copyWith(modelConfig: value));
+  });
+}
 }
 
 
@@ -444,10 +747,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  ChatAssistantType type,  String description,  String prompt,  String? avatarUrl)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  ChatAssistantType type,  String description,  String prompt,  String? avatarUrl,  ChatAssistantModelConfig? modelConfig)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatAssistant() when $default != null:
-return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avatarUrl);case _:
+return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avatarUrl,_that.modelConfig);case _:
   return orElse();
 
 }
@@ -465,10 +768,10 @@ return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avata
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  ChatAssistantType type,  String description,  String prompt,  String? avatarUrl)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  ChatAssistantType type,  String description,  String prompt,  String? avatarUrl,  ChatAssistantModelConfig? modelConfig)  $default,) {final _that = this;
 switch (_that) {
 case _ChatAssistant():
-return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avatarUrl);case _:
+return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avatarUrl,_that.modelConfig);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -485,10 +788,10 @@ return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avata
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  ChatAssistantType type,  String description,  String prompt,  String? avatarUrl)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  ChatAssistantType type,  String description,  String prompt,  String? avatarUrl,  ChatAssistantModelConfig? modelConfig)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatAssistant() when $default != null:
-return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avatarUrl);case _:
+return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avatarUrl,_that.modelConfig);case _:
   return null;
 
 }
@@ -500,7 +803,7 @@ return $default(_that.name,_that.type,_that.description,_that.prompt,_that.avata
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _ChatAssistant with DiagnosticableTreeMixin implements ChatAssistant {
-  const _ChatAssistant({required this.name, required this.type, required this.description, required this.prompt, this.avatarUrl});
+  const _ChatAssistant({required this.name, required this.type, required this.description, required this.prompt, this.avatarUrl, this.modelConfig});
   factory _ChatAssistant.fromJson(Map<String, dynamic> json) => _$ChatAssistantFromJson(json);
 
 @override final  String name;
@@ -508,6 +811,7 @@ class _ChatAssistant with DiagnosticableTreeMixin implements ChatAssistant {
 @override final  String description;
 @override final  String prompt;
 @override final  String? avatarUrl;
+@override final  ChatAssistantModelConfig? modelConfig;
 
 /// Create a copy of ChatAssistant
 /// with the given fields replaced by the non-null parameter values.
@@ -523,21 +827,21 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'ChatAssistant'))
-    ..add(DiagnosticsProperty('name', name))..add(DiagnosticsProperty('type', type))..add(DiagnosticsProperty('description', description))..add(DiagnosticsProperty('prompt', prompt))..add(DiagnosticsProperty('avatarUrl', avatarUrl));
+    ..add(DiagnosticsProperty('name', name))..add(DiagnosticsProperty('type', type))..add(DiagnosticsProperty('description', description))..add(DiagnosticsProperty('prompt', prompt))..add(DiagnosticsProperty('avatarUrl', avatarUrl))..add(DiagnosticsProperty('modelConfig', modelConfig));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatAssistant&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.description, description) || other.description == description)&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatAssistant&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.description, description) || other.description == description)&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.modelConfig, modelConfig) || other.modelConfig == modelConfig));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name,type,description,prompt,avatarUrl);
+int get hashCode => Object.hash(runtimeType,name,type,description,prompt,avatarUrl,modelConfig);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'ChatAssistant(name: $name, type: $type, description: $description, prompt: $prompt, avatarUrl: $avatarUrl)';
+  return 'ChatAssistant(name: $name, type: $type, description: $description, prompt: $prompt, avatarUrl: $avatarUrl, modelConfig: $modelConfig)';
 }
 
 
@@ -548,11 +852,11 @@ abstract mixin class _$ChatAssistantCopyWith<$Res> implements $ChatAssistantCopy
   factory _$ChatAssistantCopyWith(_ChatAssistant value, $Res Function(_ChatAssistant) _then) = __$ChatAssistantCopyWithImpl;
 @override @useResult
 $Res call({
- String name, ChatAssistantType type, String description, String prompt, String? avatarUrl
+ String name, ChatAssistantType type, String description, String prompt, String? avatarUrl, ChatAssistantModelConfig? modelConfig
 });
 
 
-
+@override $ChatAssistantModelConfigCopyWith<$Res>? get modelConfig;
 
 }
 /// @nodoc
@@ -565,18 +869,31 @@ class __$ChatAssistantCopyWithImpl<$Res>
 
 /// Create a copy of ChatAssistant
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? type = null,Object? description = null,Object? prompt = null,Object? avatarUrl = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? type = null,Object? description = null,Object? prompt = null,Object? avatarUrl = freezed,Object? modelConfig = freezed,}) {
   return _then(_ChatAssistant(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as ChatAssistantType,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,prompt: null == prompt ? _self.prompt : prompt // ignore: cast_nullable_to_non_nullable
 as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,modelConfig: freezed == modelConfig ? _self.modelConfig : modelConfig // ignore: cast_nullable_to_non_nullable
+as ChatAssistantModelConfig?,
   ));
 }
 
+/// Create a copy of ChatAssistant
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ChatAssistantModelConfigCopyWith<$Res>? get modelConfig {
+    if (_self.modelConfig == null) {
+    return null;
+  }
 
+  return $ChatAssistantModelConfigCopyWith<$Res>(_self.modelConfig!, (value) {
+    return _then(_self.copyWith(modelConfig: value));
+  });
+}
 }
 
 
