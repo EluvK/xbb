@@ -51,9 +51,9 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     List<HomeTabIndex> indices = [];
     if (settingController.taskEnabled) indices.add(HomeTabIndex.task);
     if (settingController.clipboardBackupEnabled) indices.add(HomeTabIndex.clipboard);
-    if (settingController.chatEnabled) indices.add(HomeTabIndex.chat);
     if (settingController.notesEnabled) indices.add(HomeTabIndex.notes);
     if (settingController.trackerEnabled) indices.add(HomeTabIndex.tracker);
+    if (settingController.chatEnabled) indices.add(HomeTabIndex.chat);
     indices.add(HomeTabIndex.settings);
     return indices;
   }

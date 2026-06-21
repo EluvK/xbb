@@ -459,6 +459,190 @@ class _TranslationHelper {
       "en_US": "Sync Conversation",
       "zh_CN": "同步会话",
     },
+    "chat_pick_assistant_title": {
+      "en_US": "Choose Assistant",
+      "zh_CN": "选择助手",
+    },
+    "chat_assistant_create": {
+      "en_US": "New Assistant",
+      "zh_CN": "新建助手",
+    },
+    "chat_assistant_edit": {
+      "en_US": "Edit Assistant",
+      "zh_CN": "编辑助手",
+    },
+    "chat_assistant_name": {
+      "en_US": "Assistant Name",
+      "zh_CN": "助手名称",
+    },
+    "chat_assistant_description": {
+      "en_US": "Description",
+      "zh_CN": "描述",
+    },
+    "chat_assistant_prompt": {
+      "en_US": "System Prompt",
+      "zh_CN": "系统提示词",
+    },
+    "chat_assistant_model_override": {
+      "en_US": "Override Model Settings",
+      "zh_CN": "覆盖模型配置",
+    },
+    "chat_assistant_model_provider": {
+      "en_US": "Provider",
+      "zh_CN": "提供方",
+    },
+    "chat_assistant_model_base_url": {
+      "en_US": "Base URL",
+      "zh_CN": "基础地址",
+    },
+    "chat_assistant_model_name": {
+      "en_US": "Model",
+      "zh_CN": "模型",
+    },
+    "chat_assistant_model_temperature": {
+      "en_US": "Temperature",
+      "zh_CN": "温度",
+    },
+    "chat_assistant_model_thinking_enabled": {
+      "en_US": "Enable Thinking",
+      "zh_CN": "开启思维链",
+    },
+    "chat_assistant_model_reasoning_effort": {
+      "en_US": "Reasoning Effort",
+      "zh_CN": "推理强度",
+    },
+    "chat_assistant_validation_title": {
+      "en_US": "Validation Error",
+      "zh_CN": "校验失败",
+    },
+    "chat_assistant_validation_required": {
+      "en_US": "Name and prompt are required.",
+      "zh_CN": "名称和提示词不能为空。",
+    },
+    "chat_assistant_validation_temperature": {
+      "en_US": "Temperature must be a valid number.",
+      "zh_CN": "温度必须是有效数字。",
+    },
+    "chat_assistant_not_found_title": {
+      "en_US": "Assistant Missing",
+      "zh_CN": "助手不存在",
+    },
+    "chat_assistant_not_found_message": {
+      "en_US": "The assistant for this conversation no longer exists.",
+      "zh_CN": "该会话关联的助手已不存在。",
+    },
+    "chat_assistants_title": {
+      "en_US": "Assistants",
+      "zh_CN": "助手",
+    },
+    "chat_assistant_section_user": {
+      "en_US": "My Assistants",
+      "zh_CN": "我的助手",
+    },
+    "chat_assistant_section_system": {
+      "en_US": "Assistant Templates",
+      "zh_CN": "助手模板",
+    },
+    "chat_assistant_empty": {
+      "en_US": "No assistants yet.",
+      "zh_CN": "暂无助手。",
+    },
+    "chat_assistant_system": {
+      "en_US": "System",
+      "zh_CN": "系统",
+    },
+    "chat_assistant_no_description": {
+      "en_US": "No description",
+      "zh_CN": "暂无描述",
+    },
+    "chat_assistant_use": {
+      "en_US": "Use",
+      "zh_CN": "使用",
+    },
+    "chat_assistant_duplicate": {
+      "en_US": "Duplicate Assistant",
+      "zh_CN": "复制助手",
+    },
+    "chat_assistant_duplicate_suffix": {
+      "en_US": "Copy",
+      "zh_CN": "副本",
+    },
+    "chat_assistant_delete": {
+      "en_US": "Delete Assistant",
+      "zh_CN": "删除助手",
+    },
+    "chat_assistant_delete_title": {
+      "en_US": "Delete Assistant",
+      "zh_CN": "删除助手",
+    },
+    "chat_assistant_delete_confirm": {
+      "en_US": "Delete assistant \"@name\"? This cannot be undone.",
+      "zh_CN": "确认删除助手“@name”吗？该操作不可撤销。",
+    },
+    "chat_settings_title": {
+      "en_US": "Chat LLM Settings",
+      "zh_CN": "对话模型设置",
+    },
+    "chat_settings_provider": {
+      "en_US": "Provider",
+      "zh_CN": "提供方",
+    },
+    "chat_settings_base_url": {
+      "en_US": "Base URL",
+      "zh_CN": "基础地址",
+    },
+    "chat_settings_api_key": {
+      "en_US": "API Key",
+      "zh_CN": "API 密钥",
+    },
+    "chat_settings_model": {
+      "en_US": "Model",
+      "zh_CN": "模型",
+    },
+    "chat_settings_temperature": {
+      "en_US": "Temperature",
+      "zh_CN": "温度",
+    },
+    "chat_settings_fetch_models": {
+      "en_US": "Update Model Options",
+      "zh_CN": "更新模型可选项",
+    },
+    "chat_settings_pick_model": {
+      "en_US": "Pick",
+      "zh_CN": "选择",
+    },
+    "chat_settings_model_picker_title": {
+      "en_US": "Select a Model",
+      "zh_CN": "选择模型",
+    },
+    "chat_settings_model_fetch_invalid": {
+      "en_US": "Base URL is required before fetching models.",
+      "zh_CN": "请先填写基础地址再拉取模型。",
+    },
+    "chat_settings_model_fetch_empty": {
+      "en_US": "No models returned.",
+      "zh_CN": "未获取到模型列表。",
+    },
+    "chat_settings_model_fetch_failed": {
+      "en_US": "Failed to fetch models: @error",
+      "zh_CN": "拉取模型失败：@error",
+    },
+    "chat_settings_model_replaced": {
+      "en_US": "Current model is unavailable. Switched to @model.",
+      "zh_CN": "当前模型不可用，已切换为 @model。",
+    },
+    "chat_settings_model_cleared": {
+      "en_US": "Current model is unavailable and has been cleared.",
+      "zh_CN": "当前模型不可用，已清空。",
+    },
+    "chat_settings_reset_default": {
+      "en_US": "Reset to Default",
+      "zh_CN": "重置默认",
+    },
+    "chat_settings_validation_error": {
+      "en_US": "Please provide valid base URL, model and temperature.",
+      "zh_CN": "请填写有效的基础地址、模型和温度。",
+    },
     "chat_sync_state_local_only": {
       "en_US": "Local",
       "zh_CN": "本地",
@@ -542,6 +726,14 @@ class _TranslationHelper {
     "chat_message_state_cancelled": {
       "en_US": "cancelled",
       "zh_CN": "已取消",
+    },
+    "chat_reasoning_title": {
+      "en_US": "Reasoning",
+      "zh_CN": "思考过程",
+    },
+    "chat_message_tokens": {
+      "en_US": "@count tokens",
+      "zh_CN": "@count tokens",
     },
     "home_bar_title_setting": {
       "en_US": "Settings",

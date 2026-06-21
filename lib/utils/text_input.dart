@@ -134,7 +134,7 @@ enum AppFeatureMetaEnum implements TitleInterface {
       case AppFeatureMetaEnum.enableClipboardListening:
         return Icons.hearing_rounded;
       case AppFeatureMetaEnum.enableChat:
-        return Icons.chat_bubble_outline_rounded;
+        return Icons.chat_rounded;
       case AppFeatureMetaEnum.startupTab:
         return Icons.play_circle_outline_rounded;
       case AppFeatureMetaEnum.taskWidget:

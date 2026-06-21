@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xbb/components/common/chat_llm_settings_card.dart';
 import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/controller/setting.dart';
@@ -145,6 +146,24 @@ class _CommonSettingsState extends State<CommonSettings> {
               const Divider(),
               Text('app_feature_management'.tr),
               _withPadding(
+                UserDefinedInputWidget(
+                  title: AppFeatureMetaEnum.startupTab,
+                  widget: DropdownButton<int>(
+                    value: _effectiveStartupTabIndex(),
+                    onChanged: (newValue) {
+                      if (newValue == null) return;
+                      settingController.updateAppFeaturesManagement(homeStartupTabIndex: newValue);
+                      setState(() {});
+                    },
+                    items: _startupTabCandidates()
+                        .map(
+                          (tabIndex) => DropdownMenuItem<int>(value: tabIndex, child: Text(_startupTabTitle(tabIndex))),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+              _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableTask,
                   initialValue: settingController.taskEnabled,
@@ -212,17 +231,6 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               _withPadding(
                 BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableChat,
-                  initialValue: settingController.chatEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableChat: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
-              _withPadding(
-                BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableNotes,
                   initialValue: settingController.notesEnabled,
                   onChanged: (value) {
@@ -244,23 +252,17 @@ class _CommonSettingsState extends State<CommonSettings> {
                 ),
               ),
               _withPadding(
-                UserDefinedInputWidget(
-                  title: AppFeatureMetaEnum.startupTab,
-                  widget: DropdownButton<int>(
-                    value: _effectiveStartupTabIndex(),
-                    onChanged: (newValue) {
-                      if (newValue == null) return;
-                      settingController.updateAppFeaturesManagement(homeStartupTabIndex: newValue);
-                      setState(() {});
-                    },
-                    items: _startupTabCandidates()
-                        .map(
-                          (tabIndex) => DropdownMenuItem<int>(value: tabIndex, child: Text(_startupTabTitle(tabIndex))),
-                        )
-                        .toList(),
-                  ),
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableChat,
+                  initialValue: settingController.chatEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableChat: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
                 ),
               ),
+              if (settingController.chatEnabled) _withPadding(const ChatLLMSettingsCard()),
               if (!kIsWeb && Platform.isAndroid)
                 _withPadding(
                   UserDefinedInputWidget(

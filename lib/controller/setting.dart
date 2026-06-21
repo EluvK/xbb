@@ -143,17 +143,26 @@ class SettingController extends GetxController {
   ChatLLMProvider get chatProvider => chatLLMSetting.value.provider;
   String get chatBaseUrl => chatLLMSetting.value.baseUrl;
   String get chatModel => chatLLMSetting.value.model;
+  List<String> get chatModelCandidates => chatLLMSetting.value.modelCandidates;
   String? get chatApiKey => chatLLMSetting.value.apiKey;
   double get chatTemperature => chatLLMSetting.value.temperature;
   void updateChatLLMSetting({
     ChatLLMProvider? provider,
     String? baseUrl,
     String? model,
+    List<String>? modelCandidates,
     String? apiKey,
     double? temperature,
   }) {
     chatLLMSetting.update((setting) {
-      setting?.update(provider: provider, baseUrl: baseUrl, model: model, apiKey: apiKey, temperature: temperature);
+      setting?.update(
+        provider: provider,
+        baseUrl: baseUrl,
+        model: model,
+        modelCandidates: modelCandidates,
+        apiKey: apiKey,
+        temperature: temperature,
+      );
     });
     box.write(STORAGE_SETTING_CHAT_LLM_SETTINGS_KEY, chatLLMSetting.value.toJson());
   }
@@ -303,6 +312,7 @@ class ChatLLMSetting {
   ChatLLMProvider provider;
   String baseUrl;
   String model;
+  List<String> modelCandidates;
   String? apiKey;
   double temperature;
 
@@ -310,6 +320,7 @@ class ChatLLMSetting {
     required this.provider,
     required this.baseUrl,
     required this.model,
+    required this.modelCandidates,
     required this.apiKey,
     required this.temperature,
   });
@@ -319,6 +330,7 @@ class ChatLLMSetting {
       provider: ChatLLMProvider.deepSeek,
       baseUrl: 'https://api.deepseek.com/v1',
       model: 'deepseek-chat',
+      modelCandidates: const [],
       apiKey: null,
       temperature: 1.0,
     );
@@ -329,6 +341,7 @@ class ChatLLMSetting {
       'provider': provider.name,
       'base_url': baseUrl,
       'model': model,
+      'model_candidates': modelCandidates,
       'api_key': apiKey,
       'temperature': temperature,
     };
@@ -344,12 +357,24 @@ class ChatLLMSetting {
       provider: parsedProvider,
       baseUrl: json['base_url'] ?? 'https://api.deepseek.com/v1',
       model: json['model'] ?? 'deepseek-chat',
+      modelCandidates: ((json['model_candidates'] as List<dynamic>?) ?? const [])
+          .map((item) => item.toString())
+          .where((item) => item.isNotEmpty)
+          .toSet()
+          .toList(),
       apiKey: json['api_key'] as String?,
       temperature: ((json['temperature'] as num?) ?? 1.0).toDouble(),
     );
   }
 
-  void update({ChatLLMProvider? provider, String? baseUrl, String? model, String? apiKey, double? temperature}) {
+  void update({
+    ChatLLMProvider? provider,
+    String? baseUrl,
+    String? model,
+    List<String>? modelCandidates,
+    String? apiKey,
+    double? temperature,
+  }) {
     if (provider != null) {
       this.provider = provider;
     }
@@ -358,6 +383,9 @@ class ChatLLMSetting {
     }
     if (model != null) {
       this.model = model;
+    }
+    if (modelCandidates != null) {
+      this.modelCandidates = modelCandidates;
     }
     if (apiKey != null) {
       this.apiKey = apiKey;
