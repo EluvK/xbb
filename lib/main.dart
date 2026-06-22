@@ -19,6 +19,8 @@ import 'package:xbb/pages/profile.dart';
 import 'package:xbb/pages/task/task_page.dart';
 import 'package:xbb/pages/trackers/edit_tracker.dart';
 import 'package:xbb/pages/trackers/view_tracker.dart';
+import 'package:xbb/pages/checkin/edit_event_page.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:xbb/utils/translation.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -32,6 +34,7 @@ void main() async {
   });
   final settingController = Get.find<SettingController>();
   await settingController.ensureInitialization();
+  await initializeDateFormatting(settingController.locale.languageCode);
 
   await Get.putAsync(() async {
     final controller = AppLaunchController();
@@ -98,6 +101,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/tracker/edit-tracker', page: () => const EditTrackerPage()),
         GetPage(name: '/tracker/view-tracker', page: () => const ViewTrackerDetailPage()),
         GetPage(name: '/task', page: () => const TaskPage()),
+        GetPage(name: '/checkin/edit-event', page: () => const EditCheckinEventPage()),
         GetPage(name: '/chat', page: () => const ChatPage()),
       ],
       debugShowCheckedModeBanner: true,

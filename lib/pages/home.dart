@@ -13,12 +13,13 @@ import 'package:xbb/components/task/view_tasks.dart';
 import 'package:xbb/components/trackers/view_brief.dart';
 import 'package:xbb/components/trackers/view_tracker.dart';
 import 'package:xbb/pages/chat/chat_page.dart';
+import 'package:xbb/pages/checkin/checkin_calendar_page.dart';
 import 'package:xbb/controller/app_launch.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/list_tile_card.dart' show ColorPickerButtons;
 import 'package:xbb/utils/text_input.dart';
 
-enum HomeTabIndex { notes, tracker, task, clipboard, chat, settings }
+enum HomeTabIndex { notes, tracker, task, clipboard, chat, checkin, settings }
 
 class HomePageWrapper extends StatefulWidget {
   const HomePageWrapper({super.key});
@@ -44,6 +45,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
       icon: Icon((AppFeatureMetaEnum.enableClipboardBackup.gIcon)),
     ),
     HomeTabIndex.chat: Tab(text: 'home_bar_title_chat'.tr, icon: Icon((AppFeatureMetaEnum.enableChat.gIcon))),
+    HomeTabIndex.checkin: Tab(text: 'home_bar_title_checkin'.tr, icon: Icon((AppFeatureMetaEnum.enableCheckin.gIcon))),
     HomeTabIndex.settings: Tab(text: 'home_bar_title_setting'.tr, icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
   };
 
@@ -54,6 +56,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     if (settingController.notesEnabled) indices.add(HomeTabIndex.notes);
     if (settingController.trackerEnabled) indices.add(HomeTabIndex.tracker);
     if (settingController.chatEnabled) indices.add(HomeTabIndex.chat);
+    if (settingController.checkinEnabled) indices.add(HomeTabIndex.checkin);
     indices.add(HomeTabIndex.settings);
     return indices;
   }
@@ -109,6 +112,8 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
         return HomeTabIndex.clipboard;
       case AppHomeStartupTabIndex.chat:
         return HomeTabIndex.chat;
+      case AppHomeStartupTabIndex.checkin:
+        return HomeTabIndex.checkin;
       case AppHomeStartupTabIndex.settings:
         return HomeTabIndex.settings;
       case AppHomeStartupTabIndex.notes:
@@ -311,6 +316,8 @@ class _LeftButton extends StatelessWidget {
         return const ViewClipboardOverview();
       case HomeTabIndex.chat:
         return const ChatSessionPanel();
+      case HomeTabIndex.checkin:
+        return const SizedBox.shrink();
     }
   }
 }
@@ -334,6 +341,8 @@ class _RightMain extends StatelessWidget {
         return const ViewClipboardHistory();
       case HomeTabIndex.chat:
         return const ChatPage();
+      case HomeTabIndex.checkin:
+        return const CheckinCalendarPage();
     }
   }
 }
@@ -366,6 +375,8 @@ class _AppBar extends StatelessWidget {
         return Text('home_bar_title_clipboard'.tr);
       case HomeTabIndex.chat:
         return Text('home_bar_title_chat'.tr);
+      case HomeTabIndex.checkin:
+        return Text('home_bar_title_checkin'.tr);
     }
   }
 }

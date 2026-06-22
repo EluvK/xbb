@@ -34,6 +34,7 @@ class _CommonSettingsState extends State<CommonSettings> {
     if (settingController.notesEnabled) candidates.add(AppHomeStartupTabIndex.notes);
     if (settingController.trackerEnabled) candidates.add(AppHomeStartupTabIndex.tracker);
     if (settingController.chatEnabled) candidates.add(AppHomeStartupTabIndex.chat);
+    if (settingController.checkinEnabled) candidates.add(AppHomeStartupTabIndex.checkin);
     candidates.add(AppHomeStartupTabIndex.settings);
     return candidates;
   }
@@ -67,6 +68,8 @@ class _CommonSettingsState extends State<CommonSettings> {
         return 'home_bar_title_clipboard'.tr;
       case AppHomeStartupTabIndex.chat:
         return 'home_bar_title_chat'.tr;
+      case AppHomeStartupTabIndex.checkin:
+        return 'home_bar_title_checkin'.tr;
       case AppHomeStartupTabIndex.settings:
       default:
         return 'home_bar_title_setting'.tr;
@@ -185,6 +188,17 @@ class _CommonSettingsState extends State<CommonSettings> {
                     },
                   ),
                 ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableCheckin,
+                  initialValue: settingController.checkinEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableCheckin: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
               if (showClipboardTraySettings && clipboardTrayController.featureEnabled.value)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(44, 4, 8, 4),

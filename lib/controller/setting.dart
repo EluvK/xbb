@@ -51,7 +51,8 @@ class AppHomeStartupTabIndex {
   static const int task = 2;
   static const int clipboard = 3;
   static const int chat = 4;
-  static const int settings = 5;
+  static const int checkin = 5;
+  static const int settings = 6;
 }
 
 class SettingController extends GetxController {
@@ -204,6 +205,7 @@ class SettingController extends GetxController {
   bool get clipboardBackupEnabled => appFeaturesManagement.value.enableClipboardBackup;
   bool get clipboardListeningEnabled => appFeaturesManagement.value.enableClipboardListening;
   bool get chatEnabled => appFeaturesManagement.value.enableChat;
+  bool get checkinEnabled => appFeaturesManagement.value.enableCheckin;
   int get homeStartupTabIndex => appFeaturesManagement.value.homeStartupTabIndex;
   void updateAppFeaturesManagement({
     bool? enableNotes,
@@ -212,6 +214,7 @@ class SettingController extends GetxController {
     bool? enableClipboardBackup,
     bool? enableClipboardListening,
     bool? enableChat,
+    bool? enableCheckin,
     int? homeStartupTabIndex,
   }) {
     appFeaturesManagement.update((feature) {
@@ -222,6 +225,7 @@ class SettingController extends GetxController {
         enableClipboardBackup: enableClipboardBackup,
         enableClipboardListening: enableClipboardListening,
         enableChat: enableChat,
+        enableCheckin: enableCheckin,
         homeStartupTabIndex: homeStartupTabIndex,
       );
     });
@@ -511,6 +515,7 @@ class AppFeaturesManagement {
   bool enableClipboardBackup;
   bool enableClipboardListening;
   bool enableChat;
+  bool enableCheckin;
   int homeStartupTabIndex;
 
   get notesEnabled => enableNotes;
@@ -519,6 +524,7 @@ class AppFeaturesManagement {
   get clipboardBackupEnabled => enableClipboardBackup;
   get clipboardListeningEnabled => enableClipboardListening;
   get chatEnabled => enableChat;
+  get checkinEnabled => enableCheckin;
   AppFeaturesManagement({
     required this.enableNotes,
     required this.enableTracker,
@@ -526,6 +532,7 @@ class AppFeaturesManagement {
     required this.enableClipboardBackup,
     required this.enableClipboardListening,
     required this.enableChat,
+    required this.enableCheckin,
     required this.homeStartupTabIndex,
   });
   factory AppFeaturesManagement.defaults() {
@@ -536,6 +543,7 @@ class AppFeaturesManagement {
       enableClipboardBackup: false,
       enableClipboardListening: false,
       enableChat: true,
+      enableCheckin: false,
       homeStartupTabIndex: AppHomeStartupTabIndex.notes,
     );
   }
@@ -547,6 +555,7 @@ class AppFeaturesManagement {
       'enable_clipboard_backup': enableClipboardBackup,
       'enable_clipboard_listening': enableClipboardListening,
       'enable_chat': enableChat,
+      'enable_checkin': enableCheckin,
       'home_startup_tab_index': homeStartupTabIndex,
     };
   }
@@ -565,6 +574,7 @@ class AppFeaturesManagement {
       enableClipboardBackup: json['enable_clipboard_backup'] ?? false,
       enableClipboardListening: json['enable_clipboard_listening'] ?? false,
       enableChat: json['enable_chat'] ?? true,
+      enableCheckin: json['enable_checkin'] ?? false,
       homeStartupTabIndex: startupTabIndex,
     );
   }
@@ -575,6 +585,7 @@ class AppFeaturesManagement {
     bool? enableClipboardBackup,
     bool? enableClipboardListening,
     bool? enableChat,
+    bool? enableCheckin,
     int? homeStartupTabIndex,
   }) {
     if (enableNotes != null) {
@@ -594,6 +605,9 @@ class AppFeaturesManagement {
     }
     if (enableChat != null) {
       this.enableChat = enableChat;
+    }
+    if (enableCheckin != null) {
+      this.enableCheckin = enableCheckin;
     }
     if (homeStartupTabIndex != null) {
       this.homeStartupTabIndex = homeStartupTabIndex;

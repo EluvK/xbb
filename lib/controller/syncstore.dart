@@ -16,6 +16,7 @@ import 'package:xbb/models/clipboard/model.dart' show onReadySyncClipboard, reIn
 import 'package:xbb/models/notes/model.dart' show onReadySyncAll, reInitNotesSync;
 import 'package:xbb/models/task/model.dart' show onReadySyncTask, reInitTaskSync;
 import 'package:xbb/models/tracker/model.dart' show onReadySyncTracker, reInitTrackerSync;
+import 'package:xbb/models/checkin/model.dart' show onReadySyncCheckin, reInitCheckinSync;
 import 'package:xbb/utils/utils.dart' show FlushLevel, flushBar, successSimpleFlushBar;
 
 /// ALERT: any page that call this should make sure use the new created controller.
@@ -34,6 +35,7 @@ Future<void> reInitSyncStoreController() async {
   await reInitTrackerSync(syncStoreClient);
   await reInitTaskSync(syncStoreClient);
   await reInitClipboardSync(syncStoreClient);
+  await reInitCheckinSync(syncStoreClient);
   unawaited(onReadySyncStartup());
 }
 
@@ -76,6 +78,14 @@ Future<void> onReadySyncStartup() async {
     }
     if (settingController.clipboardBackupEnabled) {
       await onReadySyncClipboard(
+        showCompletionToast: false,
+        skipHealthCheck: true,
+        showErrorToast: false,
+        rethrowOnError: true,
+      );
+    }
+    if (settingController.checkinEnabled) {
+      await onReadySyncCheckin(
         showCompletionToast: false,
         skipHealthCheck: true,
         showErrorToast: false,

@@ -92,6 +92,7 @@ enum AppFeatureMetaEnum implements TitleInterface {
   enableClipboardBackup,
   enableClipboardListening,
   enableChat,
+  enableCheckin,
   startupTab,
   taskWidget,
   settings;
@@ -111,6 +112,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Colors.indigo;
       case AppFeatureMetaEnum.enableChat:
         return Colors.blueAccent;
+      case AppFeatureMetaEnum.enableCheckin:
+        return Colors.pink;
       case AppFeatureMetaEnum.startupTab:
         return Colors.cyan;
       case AppFeatureMetaEnum.taskWidget:
@@ -135,6 +138,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Icons.hearing_rounded;
       case AppFeatureMetaEnum.enableChat:
         return Icons.chat_rounded;
+      case AppFeatureMetaEnum.enableCheckin:
+        return Icons.check_circle_outline_rounded;
       case AppFeatureMetaEnum.startupTab:
         return Icons.play_circle_outline_rounded;
       case AppFeatureMetaEnum.taskWidget:
@@ -159,6 +164,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return 'app_enable_clipboard_listening_feature'.tr;
       case AppFeatureMetaEnum.enableChat:
         return 'app_enable_chat_feature'.tr;
+      case AppFeatureMetaEnum.enableCheckin:
+        return 'app_enable_checkin_feature'.tr;
       case AppFeatureMetaEnum.startupTab:
         return 'app_startup_tab'.tr;
       case AppFeatureMetaEnum.taskWidget:

@@ -439,6 +439,10 @@ class _TranslationHelper {
       "en_US": "Chat",
       "zh_CN": "对话",
     },
+    "home_bar_title_checkin": {
+      "en_US": "Check-in",
+      "zh_CN": "打卡",
+    },
     "chat_new_conversation": {
       "en_US": "New Conversation",
       "zh_CN": "新建会话",
@@ -837,6 +841,10 @@ class _TranslationHelper {
     "app_enable_chat_feature": {
       "en_US": "Enable Chat Feature",
       "zh_CN": "启用对话功能",
+    },
+    "app_enable_checkin_feature": {
+      "en_US": "Enable Check-in Feature",
+      "zh_CN": "开启打卡功能",
     },
     "clipboard_overview_title": {
       "en_US": "Clipboard Overview",
@@ -1272,6 +1280,101 @@ class _TranslationHelper {
       "en_US": "Full Access",
       "zh_CN": "全部权限",
     },
+
+    // --- Pages: Check-in (打卡) ---
+    "checkin_create_event": {
+      "en_US": "Create Event",
+      "zh_CN": "创建打卡事件",
+    },
+    "checkin_edit_event": {
+      "en_US": "Edit Event",
+      "zh_CN": "编辑打卡事件",
+    },
+    "checkin_delete_event": {
+      "en_US": "Delete Event",
+      "zh_CN": "删除打卡事件",
+    },
+    "checkin_delete_confirm": {
+      "en_US": "Delete this event and all its check-in records? This cannot be undone.",
+      "zh_CN": "删除此事件及其所有打卡记录？此操作不可撤销。",
+    },
+    "checkin_event_name": {
+      "en_US": "Event Name",
+      "zh_CN": "事件名称",
+    },
+    "checkin_name_required": {
+      "en_US": "Name is required",
+      "zh_CN": "请输入事件名称",
+    },
+    "checkin_event_description": {
+      "en_US": "Description (optional)",
+      "zh_CN": "描述（可选）",
+    },
+    "checkin_event_color": {
+      "en_US": "Color",
+      "zh_CN": "颜色",
+    },
+    "checkin_save": {
+      "en_US": "Save",
+      "zh_CN": "保存",
+    },
+    "checkin_no_events": {
+      "en_US": "No events yet. Tap + to create one.",
+      "zh_CN": "暂无打卡事件。点击 + 创建。",
+    },
+    "checkin_filter_all": {
+      "en_US": "All",
+      "zh_CN": "全部",
+    },
+    "checkin_note": {
+      "en_US": "Note",
+      "zh_CN": "备注",
+    },
+    "checkin_checkin": {
+      "en_US": "Check in",
+      "zh_CN": "打卡",
+    },
+    "checkin_undo": {
+      "en_US": "Undo",
+      "zh_CN": "撤销打卡",
+    },
+    "checkin_undo_title": {
+      "en_US": "Undo Check-in",
+      "zh_CN": "撤销打卡",
+    },
+    "checkin_undo_confirm": {
+      "en_US": "Undo check-in for @name?",
+      "zh_CN": "确认撤销 @name 的打卡？",
+    },
+    "checkin_done": {
+      "en_US": "Done",
+      "zh_CN": "已打卡",
+    },
+    "checkin_not_yet": {
+      "en_US": "Not yet",
+      "zh_CN": "未打卡",
+    },
+    "checkin_record_time": {
+      "en_US": "Time",
+      "zh_CN": "时间",
+    },
+    "checkin_edit_record": {
+      "en_US": "Edit Check-in",
+      "zh_CN": "编辑打卡记录",
+    },
+    "checkin_completed_times": {
+      "en_US": "{count} times this month",
+      "zh_CN": "本月{count}次",
+    },
+    "checkin_past_date_forbidden": {
+      "en_US": "Cannot check in for past dates before event creation",
+      "zh_CN": "不能补打事件创建前的日期",
+    },
+    "checkin_future_date_forbidden": {
+      "en_US": "Cannot check in for future dates",
+      "zh_CN": "不能预打未来的日期",
+    },
+
 //   }; // below is old. keep for a while.
 // }
 // class _TranslationHelper {
