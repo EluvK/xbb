@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_randomcolor/flutter_randomcolor.dart';
 import 'package:get/get.dart';
+import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/utils/color_picker.dart';
 import 'package:xbb/utils/text_input.dart';
@@ -72,6 +73,7 @@ class _EditCheckinEventPageState extends State<EditCheckinEventPage> {
     } else {
       _controller.addData(event);
     }
+    CheckinWidgetBridge.scheduleRefresh();
     Navigator.pop(context);
   }
 
@@ -85,6 +87,7 @@ class _EditCheckinEventPageState extends State<EditCheckinEventPage> {
       confirmTextColor: Colors.white,
       onConfirm: () {
         _controller.deleteData(_editingItem!.id);
+        CheckinWidgetBridge.scheduleRefresh();
         Navigator.pop(context);
         Navigator.pop(context);
       },

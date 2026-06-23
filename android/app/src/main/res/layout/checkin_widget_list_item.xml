@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/task_widget_list_item_background"
-    android:minHeight="48dp"
+    android:minHeight="44dp"
     android:padding="10dp">
 
     <LinearLayout
@@ -34,12 +34,12 @@
 
         <TextView
             android:id="@+id/checkin_widget_item_check"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/checkin_widget_checked_icon"
             android:textColor="#FF4CAF50"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:visibility="gone" />
 
@@ -47,23 +47,10 @@
             android:id="@+id/checkin_widget_item_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
+            android:layout_marginStart="4dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="#5F5F5F"
-            android:textSize="11sp"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/checkin_widget_item_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/checkin_widget_btn_background"
-            android:gravity="center"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="3dp"
-            android:text="@string/checkin_widget_checkin_btn"
-            android:textColor="@android:color/white"
             android:textSize="11sp"
             android:visibility="gone" />
     </LinearLayout>

@@ -16,6 +16,5 @@
     <string name="checkin_widget_state_empty">No events configured</string>
     <string name="checkin_widget_state_requires_login">Please sign in in the app</string>
     <string name="checkin_widget_empty_loading">Open the app to view check-in</string>
-    <string name="checkin_widget_checkin_btn">Check in</string>
     <string name="checkin_widget_checked_icon">✓</string>
 </resources>

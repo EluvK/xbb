@@ -16,6 +16,5 @@
     <string name="checkin_widget_state_empty">暂未配置打卡事件</string>
     <string name="checkin_widget_state_requires_login">请先在应用内登录</string>
     <string name="checkin_widget_empty_loading">点击打开应用查看打卡</string>
-    <string name="checkin_widget_checkin_btn">打卡</string>
     <string name="checkin_widget_checked_icon">✓</string>
 </resources>
