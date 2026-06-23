@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/models/checkin/db.dart';
@@ -18,6 +19,7 @@ part 'model.freezed.dart';
 Future<void> reInitCheckinSync(SyncStoreClient client) async {
   await reInit<CheckinEventController>(() => CheckinEventController(client), (c) => c.ensureInitialization());
   await reInit<CheckinRecordController>(() => CheckinRecordController(client), (c) => c.ensureInitialization());
+  CheckinWidgetBridge.scheduleRefresh();
 }
 
 Future<void> onReadySyncCheckin({
@@ -54,6 +56,7 @@ Future<void> onReadySyncCheckin({
       from: 0.0,
       to: 100.0,
     );
+    CheckinWidgetBridge.scheduleRefresh();
     if (showCompletionToast) {
       successSimpleFlushBar("打卡同步完成");
     }

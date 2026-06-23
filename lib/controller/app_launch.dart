@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:xbb/controller/setting.dart';
 
 const String taskHomeTabId = 'task';
+const String checkinHomeTabId = 'checkin';
 
 class AppLaunchController extends GetxController with WidgetsBindingObserver {
   static const MethodChannel _channel = MethodChannel('com.eluvk.xbb/launch');

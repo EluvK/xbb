@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:xbb/components/checkin/checkin_calendar.dart';
 import 'package:xbb/components/checkin/day_event_list.dart';
 import 'package:xbb/components/checkin/event_list_bar.dart';
+import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/models/checkin/model.dart';
 
 class CheckinCalendarPage extends StatefulWidget {
@@ -63,6 +64,7 @@ class _CheckinCalendarPageState extends State<CheckinCalendarPage> {
   }
 
   void _onDataChanged() {
+    CheckinWidgetBridge.scheduleRefresh();
     setState(() {});
   }
 

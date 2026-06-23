@@ -8,6 +8,7 @@ import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/utils.dart';
 import 'package:xbb/utils/text_input.dart';
@@ -26,6 +27,7 @@ class _CommonSettingsState extends State<CommonSettings> {
   bool _isPinging = false;
   int? _pingLatencyMs;
   bool _isPinningWidget = false;
+  bool _isPinningCheckinWidget = false;
 
   List<int> _startupTabCandidates() {
     final candidates = <int>[];
@@ -290,6 +292,19 @@ class _CommonSettingsState extends State<CommonSettings> {
                     ),
                   ),
                 ),
+              if (!kIsWeb && Platform.isAndroid && settingController.checkinEnabled)
+                _withPadding(
+                  UserDefinedInputWidget(
+                    title: AppFeatureMetaEnum.checkinWidget,
+                    widget: ElevatedButton.icon(
+                      onPressed: _isPinningCheckinWidget ? null : _onAddCheckinWidget,
+                      icon: _isPinningCheckinWidget
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.add_to_home_screen_rounded),
+                      label: Text('add_checkin_widget_to_home'.tr),
+                    ),
+                  ),
+                ),
               const Divider(),
               Text('app_version'.trParams({'version': DISPLAY_VERSION})),
               _withPadding(versionInfo(context)),
@@ -390,6 +405,26 @@ class _CommonSettingsState extends State<CommonSettings> {
       builder: (ctx) => AlertDialog(
         title: Text('add_task_widget_title'.tr),
         content: Text('add_task_widget_guide_message'.tr),
+        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('confirm'.tr))],
+      ),
+    );
+  }
+
+  Future<void> _onAddCheckinWidget() async {
+    setState(() => _isPinningCheckinWidget = true);
+    try {
+      await CheckinWidgetBridge.requestPinWidget();
+    } catch (_) {
+      // best-effort: ignore errors from the system API
+    } finally {
+      if (mounted) setState(() => _isPinningCheckinWidget = false);
+    }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('add_checkin_widget_title'.tr),
+        content: Text('add_checkin_widget_guide_message'.tr),
         actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('confirm'.tr))],
       ),
     );

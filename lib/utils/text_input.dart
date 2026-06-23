@@ -95,6 +95,7 @@ enum AppFeatureMetaEnum implements TitleInterface {
   enableCheckin,
   startupTab,
   taskWidget,
+  checkinWidget,
   settings;
 
   @override
@@ -118,6 +119,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Colors.cyan;
       case AppFeatureMetaEnum.taskWidget:
         return Colors.blue;
+      case AppFeatureMetaEnum.checkinWidget:
+        return Colors.pink;
       case AppFeatureMetaEnum.settings:
         return Colors.grey;
     }
@@ -144,6 +147,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return Icons.play_circle_outline_rounded;
       case AppFeatureMetaEnum.taskWidget:
         return Icons.add_to_home_screen_rounded;
+      case AppFeatureMetaEnum.checkinWidget:
+        return Icons.check_circle_outline_rounded;
       case AppFeatureMetaEnum.settings:
         return Icons.settings_rounded;
     }
@@ -170,6 +175,8 @@ enum AppFeatureMetaEnum implements TitleInterface {
         return 'app_startup_tab'.tr;
       case AppFeatureMetaEnum.taskWidget:
         return 'task_widget_label'.tr;
+      case AppFeatureMetaEnum.checkinWidget:
+        return 'checkin_widget_label'.tr;
       case AppFeatureMetaEnum.settings:
         return 'app_enable_setting'.tr;
     }

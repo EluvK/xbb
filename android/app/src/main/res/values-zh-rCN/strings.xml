@@ -8,4 +8,14 @@
     <string name="task_widget_state_empty">当前活跃工作区暂无未完成任务</string>
     <string name="task_widget_state_requires_login">请先在应用内登录</string>
     <string name="task_widget_empty_loading">点击打开应用查看任务</string>
+    <string name="checkin_widget_title">打卡</string>
+    <string name="checkin_widget_description">显示今日打卡事件状态。</string>
+    <string name="checkin_widget_subtitle_ready">%1$d 已打卡 · 共 %2$d 个事件</string>
+    <string name="checkin_widget_subtitle_empty">今日全部已打卡</string>
+    <string name="checkin_widget_subtitle_requires_login">登录后即可加载打卡</string>
+    <string name="checkin_widget_state_empty">暂未配置打卡事件</string>
+    <string name="checkin_widget_state_requires_login">请先在应用内登录</string>
+    <string name="checkin_widget_empty_loading">点击打开应用查看打卡</string>
+    <string name="checkin_widget_checkin_btn">打卡</string>
+    <string name="checkin_widget_checked_icon">✓</string>
 </resources>

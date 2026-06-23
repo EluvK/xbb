@@ -97,6 +97,8 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     switch (tabId) {
       case taskHomeTabId:
         return HomeTabIndex.task;
+      case checkinHomeTabId:
+        return HomeTabIndex.checkin;
       default:
         return null;
     }

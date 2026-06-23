@@ -64,5 +64,33 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHECKIN_WIDGET_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "updateSnapshot" -> {
+                    val snapshot = call.argument<String>("snapshot")
+                    CheckinWidgetStorage.saveSnapshot(this, snapshot)
+                    CheckinWidgetProvider.refreshAllWidgets(this)
+                    result.success(null)
+                }
+
+                "requestPinWidget" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val appWidgetManager = AppWidgetManager.getInstance(this)
+                        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                            val provider = ComponentName(this, CheckinWidgetProvider::class.java)
+                            appWidgetManager.requestPinAppWidget(provider, null, null)
+                            result.success(true)
+                        } else {
+                            result.success(false)
+                        }
+                    } else {
+                        result.success(false)
+                    }
+                }
+
+                else -> result.notImplemented()
+            }
+        }
     }
 }
