@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/utils/time_picker.dart';
 import 'package:board_datetime_picker/board_datetime_picker.dart';
@@ -151,60 +152,125 @@ class DayEventList extends StatelessWidget {
           const Divider(height: 1),
           const SizedBox(height: 8),
           Text(
-            '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}',
-            style: Theme.of(context).textTheme.titleSmall,
+            DateFormat.MMMd(Get.locale?.languageCode).format(day),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           ...events.map((event) {
             final record = records.firstWhereOrNull(
               (r) => r.body.eventId == event.id && r.body.localDayKey == dayKey,
             );
             final done = record != null;
             final color = Color(event.body.colorValue);
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  Icon(Icons.circle, color: color, size: 12),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(event.body.name, style: Theme.of(context).textTheme.bodyMedium),
-                  ),
-                  if (done) ...[
-                    Text(
-                      '${_fmtTime(record.body.createdAtUtc)}${record.body.note != null ? ' · ${record.body.note}' : ''}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: color.withValues(alpha: 0.25)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          done ? Icons.check_circle : Icons.circle,
+                          color: color,
+                          size: done ? 14 : 10,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            event.body.name,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (done)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _fmtTime(record.body.createdAtUtc),
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              _ActionButton(
+                                icon: Icons.edit_outlined,
+                                color: Colors.grey,
+                                onPressed: () => _editRecord(context, record),
+                              ),
+                              _ActionButton(
+                                icon: Icons.undo,
+                                color: Colors.red.shade300,
+                                onPressed: isAllowed ? () => _toggleCheckin(context, event) : null,
+                              ),
+                            ],
+                          )
+                        else
+                          ElevatedButton(
+                            onPressed: isAllowed ? () => _toggleCheckin(context, event) : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: color,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Text('checkin_checkin'.tr, style: const TextStyle(fontSize: 13)),
+                          ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    IconButton(
-                      icon: const Icon(Icons.edit, size: 18),
-                      onPressed: () => _editRecord(context, record),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.undo, size: 18, color: Colors.red.shade300),
-                      onPressed: isAllowed ? () => _toggleCheckin(context, event) : null,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ] else
-                    ElevatedButton(
-                      onPressed: isAllowed ? () => _toggleCheckin(context, event) : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    if (done && record.body.note != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 24, top: 4),
+                        child: Text(
+                          record.body.note!,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
                       ),
-                      child: Text('checkin_checkin'.tr, style: const TextStyle(fontSize: 13)),
-                    ),
-                ],
+                  ],
+                ),
               ),
             );
           }),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onPressed;
+
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: IconButton(
+        icon: Icon(icon, size: 18, color: color),
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        splashRadius: 16,
       ),
     );
   }
