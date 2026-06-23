@@ -3,14 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/components/clipboard/view_clipboard_history.dart';
-import 'package:xbb/components/clipboard/view_clipboard_overview.dart';
-import 'package:xbb/components/common/profile.dart';
 import 'package:xbb/components/common/settings.dart';
 import 'package:xbb/components/notes/view_posts.dart';
 import 'package:xbb/components/notes/view_repos.dart';
-import 'package:xbb/components/task/view_task_overview.dart';
 import 'package:xbb/components/task/view_tasks.dart';
-import 'package:xbb/components/trackers/view_brief.dart';
 import 'package:xbb/components/trackers/view_tracker.dart';
 import 'package:xbb/pages/chat/chat_page.dart';
 import 'package:xbb/pages/checkin/checkin_calendar_page.dart';
@@ -32,9 +28,8 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   final SettingController settingController = Get.find<SettingController>();
   final AppLaunchController appLaunchController = Get.find<AppLaunchController>();
 
-  HomeTabIndex _lastSelectedTab = HomeTabIndex.notes;
+  HomeTabIndex _selectedTab = HomeTabIndex.notes;
   Worker? _launchWorker;
-  TabController? _tabController;
 
   final Map<HomeTabIndex, Tab> _allTabs = {
     HomeTabIndex.notes: Tab(text: 'home_bar_title_note'.tr, icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
@@ -52,11 +47,11 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   List<HomeTabIndex> get _activeIndices {
     List<HomeTabIndex> indices = [];
     if (settingController.taskEnabled) indices.add(HomeTabIndex.task);
-    if (settingController.clipboardBackupEnabled) indices.add(HomeTabIndex.clipboard);
     if (settingController.notesEnabled) indices.add(HomeTabIndex.notes);
     if (settingController.trackerEnabled) indices.add(HomeTabIndex.tracker);
-    if (settingController.chatEnabled) indices.add(HomeTabIndex.chat);
     if (settingController.checkinEnabled) indices.add(HomeTabIndex.checkin);
+    if (settingController.chatEnabled) indices.add(HomeTabIndex.chat);
+    if (settingController.clipboardBackupEnabled) indices.add(HomeTabIndex.clipboard);
     indices.add(HomeTabIndex.settings);
     return indices;
   }
@@ -64,23 +59,17 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   @override
   void initState() {
     super.initState();
-    _lastSelectedTab = _tabFromStartupIndex(settingController.homeStartupTabIndex);
+    _selectedTab = _tabFromStartupIndex(settingController.homeStartupTabIndex);
     final requestedTab = _tabFromLaunchId(appLaunchController.takePendingHomeTab());
     if (requestedTab != null) {
-      _lastSelectedTab = requestedTab;
+      _selectedTab = requestedTab;
     }
     _launchWorker = ever<String?>(appLaunchController.pendingHomeTab, (tabId) {
       final requested = _tabFromLaunchId(tabId);
       if (requested == null) return;
-
-      _lastSelectedTab = requested;
       final activeIndices = _activeIndices;
-      final targetIndex = activeIndices.indexOf(requested);
-      if (mounted) {
-        setState(() {});
-      }
-      if (_tabController != null && targetIndex != -1 && _tabController!.index != targetIndex) {
-        _tabController!.animateTo(targetIndex);
+      if (activeIndices.contains(requested) && mounted) {
+        setState(() => _selectedTab = requested);
       }
       appLaunchController.clearPendingHomeTab();
     });
@@ -88,7 +77,6 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
 
   @override
   void dispose() {
-    _tabController?.removeListener(_handleTabChanged);
     _launchWorker?.dispose();
     super.dispose();
   }
@@ -124,150 +112,124 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     }
   }
 
-  void _handleTabChanged() {
-    final tabController = _tabController;
-    if (tabController == null || tabController.indexIsChanging) return;
-    final activeIndices = _activeIndices;
-    if (tabController.index < 0 || tabController.index >= activeIndices.length) {
-      return;
-    }
-    _lastSelectedTab = activeIndices[tabController.index];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final activeIndices = _activeIndices;
-      final activeTabs = activeIndices.map((e) => _allTabs[e]!).toList();
+      if (activeIndices.isEmpty) return const SizedBox.shrink();
 
-      int newInitialIndex = activeIndices.indexOf(_lastSelectedTab);
-      if (newInitialIndex == -1) newInitialIndex = 0;
+      var selected = _selectedTab;
+      if (!activeIndices.contains(selected)) {
+        selected = activeIndices.first;
+      }
+      final tabs = activeIndices.map((e) => _allTabs[e]!).toList();
 
-      return DefaultTabController(
-        key: ValueKey(activeIndices.length),
-        length: activeTabs.length,
-        initialIndex: newInitialIndex,
-        child: Builder(
-          builder: (context) {
-            final tabController = DefaultTabController.of(context);
-            if (!identical(_tabController, tabController)) {
-              _tabController?.removeListener(_handleTabChanged);
-              _tabController = tabController;
-              _tabController?.addListener(_handleTabChanged);
-            }
-            return _HomePage(tabController: tabController, tabs: activeTabs, activeIndices: activeIndices);
-          },
-        ),
+      return _HomePage(
+        selectedTab: selected,
+        tabs: tabs,
+        activeIndices: activeIndices,
+        onTabChanged: (tab) {
+          setState(() => _selectedTab = tab);
+        },
       );
     });
   }
 }
 
 class _HomePage extends GetResponsiveView {
-  _HomePage({required this.tabController, required this.tabs, required this.activeIndices});
+  _HomePage({required this.selectedTab, required this.tabs, required this.activeIndices, required this.onTabChanged});
 
-  final TabController tabController;
+  final HomeTabIndex selectedTab;
   final List<Tab> tabs;
   final List<HomeTabIndex> activeIndices;
+  final ValueChanged<HomeTabIndex> onTabChanged;
+
+  bool get _hasSidebar => selectedTab == HomeTabIndex.notes || selectedTab == HomeTabIndex.chat;
 
   @override
   Widget? phone() {
-    return ListenableBuilder(
-      listenable: tabController,
-      builder: (context, child) {
-        final currentTab = activeIndices[tabController.index];
-
-        return Scaffold(
-          drawer: Drawer(
-            width: Get.width * 0.85,
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TabBarController(tabs: tabs, tabController: tabController),
-                  const Divider(),
-                  Expanded(child: _LeftButton(index: currentTab)),
-                ],
-              ),
-            ),
-          ),
-          appBar: AppBar(title: _AppBar(index: currentTab), titleSpacing: 0.0),
-          body: _RightMain(index: currentTab),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: tabController.index,
-            onDestinationSelected: (index) {
-              if (index != tabController.index) {
-                tabController.animateTo(index);
-              }
-            },
-            destinations: tabs
-                .map((tab) => NavigationDestination(icon: tab.icon ?? const Icon(Icons.circle), label: tab.text ?? ''))
-                .toList(),
-          ),
-        );
-      },
+    return Scaffold(
+      drawer: _hasSidebar
+          ? Drawer(
+              width: Get.width * 0.85,
+              child: SafeArea(child: _FeatureSidebar(index: selectedTab)),
+            )
+          : null,
+      appBar: AppBar(title: _AppBarTitle(index: selectedTab), titleSpacing: 0.0),
+      body: _RightMain(index: selectedTab),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: activeIndices.indexOf(selectedTab),
+        onDestinationSelected: (index) {
+          final tab = activeIndices[index];
+          if (tab != selectedTab) onTabChanged(tab);
+        },
+        destinations: tabs
+            .map((tab) => NavigationDestination(icon: tab.icon ?? const Icon(Icons.circle), label: tab.text ?? ''))
+            .toList(),
+      ),
     );
   }
 
   @override
   Widget? desktop() {
-    return ListenableBuilder(
-      listenable: tabController,
-      builder: (context, child) {
-        final currentTab = activeIndices[tabController.index];
-
-        return Scaffold(
-          body: Row(
-            children: [
-              SizedBox(
-                width: min(max(Get.width * 0.3, 280), 400),
-                child: Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-                      child: const _GlobalColorController(),
-                    ),
-                    TabBarController(tabs: tabs, tabController: tabController),
-                    Expanded(child: _LeftButton(index: currentTab)),
-                  ],
-                ),
-              ),
-              const VerticalDivider(),
-              Flexible(child: _RightMain(index: currentTab)),
-            ],
+    return Scaffold(
+      body: Row(
+        children: [
+          NavigationRail(
+            selectedIndex: activeIndices.indexOf(selectedTab),
+            onDestinationSelected: (index) => onTabChanged(activeIndices[index]),
+            labelType: NavigationRailLabelType.all,
+            destinations: tabs
+                .map(
+                  (tab) => NavigationRailDestination(
+                    icon: tab.icon ?? const Icon(Icons.circle),
+                    label: Text(tab.text ?? ''),
+                  ),
+                )
+                .toList(),
           ),
-        );
-      },
+          const VerticalDivider(width: 1),
+          Expanded(
+            child: Column(
+              children: [
+                _DesktopHeader(tab: selectedTab),
+                const Divider(height: 1),
+                Expanded(
+                  child: Row(
+                    children: [
+                      if (_hasSidebar)
+                        SizedBox(
+                          width: min(max(Get.width * 0.3, 280.0), 400.0),
+                          child: _FeatureSidebar(index: selectedTab),
+                        ),
+                      if (_hasSidebar) const VerticalDivider(width: 1),
+                      Flexible(child: _RightMain(index: selectedTab)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class TabBarController extends StatelessWidget {
-  const TabBarController({super.key, required this.tabs, required this.tabController});
-
-  final List<Tab> tabs;
-  final TabController tabController;
+class _FeatureSidebar extends StatelessWidget {
+  const _FeatureSidebar({required this.index});
+  final HomeTabIndex index;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-      child: TabBar(
-        tabs: tabs,
-        controller: tabController,
-        onTap: (int _) {
-          if (!tabController.indexIsChanging) {
-            final scaffoldState = Scaffold.maybeOf(context);
-            if (scaffoldState != null && scaffoldState.isDrawerOpen) {
-              Navigator.of(context).pop();
-            }
-          }
-        },
-        labelColor: Theme.of(context).colorScheme.primary,
-        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-        indicatorColor: Theme.of(context).colorScheme.primary,
-      ),
-    );
+    switch (index) {
+      case HomeTabIndex.notes:
+        return const ViewRepos();
+      case HomeTabIndex.chat:
+        return const ChatSessionPanel();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 }
 
@@ -299,31 +261,6 @@ class _GlobalColorControllerState extends State<_GlobalColorController> {
   }
 }
 
-class _LeftButton extends StatelessWidget {
-  const _LeftButton({required this.index});
-  final HomeTabIndex index;
-
-  @override
-  Widget build(BuildContext context) {
-    switch (index) {
-      case HomeTabIndex.notes:
-        return const ViewRepos();
-      case HomeTabIndex.tracker:
-        return const ViewTrackerBrief();
-      case HomeTabIndex.task:
-        return const ViewTaskOverview();
-      case HomeTabIndex.settings:
-        return const CommonProfile();
-      case HomeTabIndex.clipboard:
-        return const ViewClipboardOverview();
-      case HomeTabIndex.chat:
-        return const ChatSessionPanel();
-      case HomeTabIndex.checkin:
-        return const SizedBox.shrink();
-    }
-  }
-}
-
 class _RightMain extends StatelessWidget {
   const _RightMain({required this.index});
   final HomeTabIndex index;
@@ -349,8 +286,49 @@ class _RightMain extends StatelessWidget {
   }
 }
 
-class _AppBar extends StatelessWidget {
-  const _AppBar({required this.index});
+class _DesktopHeader extends StatelessWidget {
+  const _DesktopHeader({required this.tab});
+  final HomeTabIndex tab;
+
+  bool get _showColorController => [HomeTabIndex.notes, HomeTabIndex.tracker, HomeTabIndex.chat].contains(tab);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (tab == HomeTabIndex.notes) const Flexible(child: RepoQuickSwitcher()) else Text(_titleForTab(tab)),
+          if (_showColorController) const _GlobalColorController(),
+        ],
+      ),
+    );
+  }
+
+  String _titleForTab(HomeTabIndex tab) {
+    switch (tab) {
+      case HomeTabIndex.tracker:
+        return 'home_bar_title_tracker'.tr;
+      case HomeTabIndex.task:
+        return 'home_bar_title_task'.tr;
+      case HomeTabIndex.clipboard:
+        return 'home_bar_title_clipboard'.tr;
+      case HomeTabIndex.chat:
+        return 'home_bar_title_chat'.tr;
+      case HomeTabIndex.checkin:
+        return 'home_bar_title_checkin'.tr;
+      case HomeTabIndex.settings:
+        return 'home_bar_title_setting'.tr;
+      default:
+        return '';
+    }
+  }
+}
+
+class _AppBarTitle extends StatelessWidget {
+  const _AppBarTitle({required this.index});
   final HomeTabIndex index;
 
   @override
@@ -369,14 +347,17 @@ class _AppBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [Text('home_bar_title_tracker'.tr), const _GlobalColorController()],
         );
+      case HomeTabIndex.chat:
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [Text('home_bar_title_chat'.tr), const _GlobalColorController()],
+        );
       case HomeTabIndex.task:
-        return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('home_bar_title_task'.tr)]);
+        return Text('home_bar_title_task'.tr);
       case HomeTabIndex.settings:
         return Text('home_bar_title_setting'.tr);
       case HomeTabIndex.clipboard:
         return Text('home_bar_title_clipboard'.tr);
-      case HomeTabIndex.chat:
-        return Text('home_bar_title_chat'.tr);
       case HomeTabIndex.checkin:
         return Text('home_bar_title_checkin'.tr);
     }

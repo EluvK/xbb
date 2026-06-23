@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/models/task/model.dart';
 
+// UNUSED in current layout - task overview sidebar was removed during desktop refactoring.
 class ViewTaskOverview extends StatefulWidget {
   const ViewTaskOverview({super.key});
 

@@ -860,7 +860,7 @@ class _TranslationHelper {
     },
     "app_enable_checkin_feature": {
       "en_US": "Enable Check-in Feature",
-      "zh_CN": "开启打卡功能",
+      "zh_CN": "启用打卡功能",
     },
     "clipboard_overview_title": {
       "en_US": "Clipboard Overview",

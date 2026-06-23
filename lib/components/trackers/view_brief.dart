@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:xbb/controller/utils.dart';
 import 'package:xbb/models/tracker/model.dart';
 
+// UNUSED in current layout - tracker brief sidebar was removed during desktop refactoring.
 class ViewTrackerBrief extends StatelessWidget {
   const ViewTrackerBrief({super.key});
 

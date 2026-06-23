@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xbb/components/common/chat_llm_settings_card.dart';
 import 'package:xbb/components/common/ping_latency_inline.dart';
+import 'package:xbb/components/common/profile.dart';
 import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
@@ -32,11 +33,11 @@ class _CommonSettingsState extends State<CommonSettings> {
   List<int> _startupTabCandidates() {
     final candidates = <int>[];
     if (settingController.taskEnabled) candidates.add(AppHomeStartupTabIndex.task);
-    if (settingController.clipboardBackupEnabled) candidates.add(AppHomeStartupTabIndex.clipboard);
     if (settingController.notesEnabled) candidates.add(AppHomeStartupTabIndex.notes);
     if (settingController.trackerEnabled) candidates.add(AppHomeStartupTabIndex.tracker);
-    if (settingController.chatEnabled) candidates.add(AppHomeStartupTabIndex.chat);
     if (settingController.checkinEnabled) candidates.add(AppHomeStartupTabIndex.checkin);
+    if (settingController.chatEnabled) candidates.add(AppHomeStartupTabIndex.chat);
+    if (settingController.clipboardBackupEnabled) candidates.add(AppHomeStartupTabIndex.clipboard);
     candidates.add(AppHomeStartupTabIndex.settings);
     return candidates;
   }
@@ -179,17 +180,28 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
-              if (showClipboardTraySettings)
-                _withPadding(
-                  BoolSelectorInputWidget(
-                    title: AppFeatureMetaEnum.enableClipboardBackup,
-                    initialValue: clipboardTrayController.featureEnabled.value,
-                    onChanged: (value) async {
-                      await clipboardTrayController.setFeatureEnabled(value);
-                      setState(() {});
-                    },
-                  ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableNotes,
+                  initialValue: settingController.notesEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableNotes: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
                 ),
+              ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableTracker,
+                  initialValue: settingController.trackerEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableTracker: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
               _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableCheckin,
@@ -201,6 +213,28 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableChat,
+                  initialValue: settingController.chatEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableChat: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
+              if (showClipboardTraySettings)
+                _withPadding(
+                  BoolSelectorInputWidget(
+                    title: AppFeatureMetaEnum.enableClipboardBackup,
+                    initialValue: clipboardTrayController.featureEnabled.value,
+                    onChanged: (value) async {
+                      await clipboardTrayController.setFeatureEnabled(value);
+                      setState(() {});
+                    },
+                  ),
+                ),
               if (showClipboardTraySettings && clipboardTrayController.featureEnabled.value)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(44, 4, 8, 4),
@@ -245,39 +279,6 @@ class _CommonSettingsState extends State<CommonSettings> {
                     ),
                   ),
                 ),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableNotes,
-                  initialValue: settingController.notesEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableNotes: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableTracker,
-                  initialValue: settingController.trackerEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableTracker: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableChat,
-                  initialValue: settingController.chatEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableChat: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
               if (settingController.chatEnabled) _withPadding(const ChatLLMSettingsCard()),
               if (!kIsWeb && Platform.isAndroid)
                 _withPadding(
@@ -308,6 +309,8 @@ class _CommonSettingsState extends State<CommonSettings> {
               const Divider(),
               Text('app_version'.trParams({'version': DISPLAY_VERSION})),
               _withPadding(versionInfo(context)),
+              const Divider(),
+              const CommonProfile(),
             ],
           ),
         ),

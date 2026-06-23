@@ -17,7 +17,8 @@ class _CommonProfileState extends State<CommonProfile> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-      child: ListView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           const _SelfProfile(),
           Padding(
