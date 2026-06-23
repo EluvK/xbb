@@ -542,7 +542,7 @@ class AppFeaturesManagement {
       enableTask: true,
       enableClipboardBackup: false,
       enableClipboardListening: false,
-      enableChat: true,
+      enableChat: false,
       enableCheckin: false,
       homeStartupTabIndex: AppHomeStartupTabIndex.notes,
     );
@@ -573,7 +573,7 @@ class AppFeaturesManagement {
       enableTask: json['enable_task'] ?? true,
       enableClipboardBackup: json['enable_clipboard_backup'] ?? false,
       enableClipboardListening: json['enable_clipboard_listening'] ?? false,
-      enableChat: json['enable_chat'] ?? true,
+      enableChat: json['enable_chat'] ?? false,
       enableCheckin: json['enable_checkin'] ?? false,
       homeStartupTabIndex: startupTabIndex,
     );
