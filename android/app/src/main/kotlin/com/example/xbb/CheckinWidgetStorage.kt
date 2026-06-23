@@ -56,7 +56,7 @@ object CheckinWidgetStorage {
                         CheckinWidgetItem(
                             id = itemJson.optString("id"),
                             eventName = itemJson.optString("event_name"),
-                            eventColor = itemJson.optInt("event_color", 0xFF9C27B0),
+                            eventColor = itemJson.optInt("event_color", 0xFF9C27B0.toInt()),
                             isChecked = itemJson.optBoolean("is_checked", false),
                             checkinTime = itemJson.optString("checkin_time", ""),
                         ),

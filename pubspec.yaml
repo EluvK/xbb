@@ -92,11 +92,11 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
 
-hooks:
-  user_defines:
-    sqlite3:
-      source: system
-      name_windows: winsqlite3
+# hooks:
+#   user_defines:
+#     sqlite3:
+#       source: system
+#       name_windows: winsqlite3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
