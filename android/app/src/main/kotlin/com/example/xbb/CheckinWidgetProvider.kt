@@ -51,10 +51,22 @@ class CheckinWidgetProvider : AppWidgetProvider() {
                 val snapshot = applyStaleReset(CheckinWidgetStorage.loadSnapshot(context))
                 val views = RemoteViews(context.packageName, layoutId)
 
-                views.setTextViewText(R.id.checkin_widget_title, context.getString(R.string.checkin_widget_title))
-                views.setTextViewText(R.id.checkin_widget_subtitle, subtitleFor(context, snapshot))
+                if (layoutId != R.layout.checkin_widget_medium) {
+                    appWidgetManager.notifyAppWidgetViewDataChanged(intArrayOf(appWidgetId), R.id.checkin_widget_list)
+                    views.setTextViewText(R.id.checkin_widget_empty, emptyMessageFor(context, snapshot))
+                    views.setEmptyView(R.id.checkin_widget_list, R.id.checkin_widget_empty)
 
-                if (layoutId != R.layout.checkin_widget_xsmall) {
+                    val serviceIntent = Intent(context, CheckinWidgetRemoteViewsService::class.java).apply {
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                        data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                    }
+                    views.setRemoteAdapter(R.id.checkin_widget_list, serviceIntent)
+                    views.setPendingIntentTemplate(R.id.checkin_widget_list, createLaunchPendingIntent(context, appWidgetId))
+                    views.setOnClickPendingIntent(R.id.checkin_widget_root, createLaunchPendingIntent(context, appWidgetId))
+                } else {
+                    views.setTextViewText(R.id.checkin_widget_title, context.getString(R.string.checkin_widget_title))
+                    views.setTextViewText(R.id.checkin_widget_subtitle, subtitleFor(context, snapshot))
+
                     appWidgetManager.notifyAppWidgetViewDataChanged(intArrayOf(appWidgetId), R.id.checkin_widget_list)
                     views.setTextViewText(R.id.checkin_widget_empty, emptyMessageFor(context, snapshot))
                     views.setEmptyView(R.id.checkin_widget_list, R.id.checkin_widget_empty)
@@ -67,8 +79,6 @@ class CheckinWidgetProvider : AppWidgetProvider() {
 
                     views.setOnClickPendingIntent(R.id.checkin_widget_header, createLaunchPendingIntent(context, appWidgetId))
                     views.setPendingIntentTemplate(R.id.checkin_widget_list, createLaunchPendingIntent(context, appWidgetId))
-                } else {
-                    views.setOnClickPendingIntent(R.id.checkin_widget_root, createLaunchPendingIntent(context, appWidgetId))
                 }
 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
@@ -92,10 +102,10 @@ class CheckinWidgetProvider : AppWidgetProvider() {
             val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
             val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
             val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-            return when {
-                minWidth < 120 || minHeight < 80 -> R.layout.checkin_widget_xsmall
-                minWidth < 180 -> R.layout.checkin_widget_small
-                else -> R.layout.checkin_widget_medium
+            return if (minWidth < 160 || minHeight < 160) {
+                R.layout.checkin_widget_xsmall
+            } else {
+                R.layout.checkin_widget_medium
             }
         }
 

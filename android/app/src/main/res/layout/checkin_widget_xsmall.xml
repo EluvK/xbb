@@ -4,28 +4,24 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/task_widget_background"
-    android:gravity="center"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="6dp">
+
+    <ListView
+        android:id="@+id/checkin_widget_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="4dp"
+        android:scrollbars="vertical" />
 
     <TextView
-        android:id="@+id/checkin_widget_title"
-        android:layout_width="wrap_content"
+        android:id="@+id/checkin_widget_empty"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="@android:color/black"
-        android:textSize="12sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/checkin_widget_subtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:ellipsize="end"
-        android:maxLines="1"
+        android:gravity="center"
         android:textColor="#5F5F5F"
-        android:textSize="10sp" />
-
+        android:textSize="10sp"
+        android:visibility="gone" />
 </LinearLayout>
