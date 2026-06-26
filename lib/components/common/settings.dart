@@ -25,6 +25,7 @@ class CommonSettings extends StatefulWidget {
 class _CommonSettingsState extends State<CommonSettings> {
   final settingController = Get.find<SettingController>();
   final clipboardTrayController = Get.find<ClipboardTrayController>();
+  late final TextInputHistory _syncStoreUrlHistory = SyncStoreUrlHistory(settingController);
   bool _isPinging = false;
   int? _pingLatencyMs;
   bool _isPinningWidget = false;
@@ -114,6 +115,7 @@ class _CommonSettingsState extends State<CommonSettings> {
                 TextInputWidget(
                   title: SyncStoreInputMetaEnum.address,
                   initialValue: settingController.syncStoreUrl,
+                  history: _syncStoreUrlHistory,
                   tailButton: debugOnlyWidget(
                     OutlinedButton.icon(
                       onPressed: settingController.syncStoreUrl == defaultSyncStoreUrl

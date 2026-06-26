@@ -5,6 +5,7 @@ import 'package:syncstore_client/syncstore_client.dart' show ColorTag, UserProfi
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/utils.dart';
+import 'package:xbb/utils/text_input.dart';
 
 enum ChatLLMProvider { deepSeek }
 
@@ -132,9 +133,9 @@ class SettingController extends GetxController {
   final syncStoreSetting = SyncStoreSetting.defaults().obs;
   String get syncStoreUrl => syncStoreSetting.value.url;
   bool get syncStoreHpkeEnabled => syncStoreSetting.value.hpkeEnabled;
-  void updateSyncStoreSetting({String? baseUrl, bool? enableHpke}) {
+  void updateSyncStoreSetting({String? baseUrl, bool? enableHpke, List<String>? urlHistory}) {
     syncStoreSetting.update((setting) {
-      setting?.update(baseUrl: baseUrl, enableHpke: enableHpke);
+      setting?.update(baseUrl: baseUrl, enableHpke: enableHpke, urlHistory: urlHistory);
     });
     box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, syncStoreSetting.value.toJson());
   }
@@ -281,33 +282,39 @@ class SettingController extends GetxController {
 class SyncStoreSetting {
   String baseUrl;
   bool enableHpke;
+  List<String> urlHistory;
 
   get url => baseUrl;
   get hpkeEnabled => enableHpke;
 
-  SyncStoreSetting({required this.baseUrl, required this.enableHpke});
+  SyncStoreSetting({required this.baseUrl, required this.enableHpke, List<String>? urlHistory})
+    : urlHistory = urlHistory ?? [];
 
   factory SyncStoreSetting.defaults() {
     return SyncStoreSetting(baseUrl: 'http://127.0.0.1:10101/api', enableHpke: false);
   }
 
   Map<String, dynamic> toJson() {
-    return {'base_url': baseUrl, 'enable_hpke': enableHpke};
+    return {'base_url': baseUrl, 'enable_hpke': enableHpke, 'url_history': urlHistory};
   }
 
   factory SyncStoreSetting.fromJson(Map<String, dynamic> json) {
     return SyncStoreSetting(
       baseUrl: json['base_url'] ?? 'http://127.0.0.1:10101/api',
       enableHpke: json['enable_hpke'] ?? false,
+      urlHistory: ((json['url_history'] as List<dynamic>?) ?? []).cast<String>(),
     );
   }
 
-  void update({String? baseUrl, bool? enableHpke}) {
+  void update({String? baseUrl, bool? enableHpke, List<String>? urlHistory}) {
     if (baseUrl != null) {
       this.baseUrl = baseUrl;
     }
     if (enableHpke != null) {
       this.enableHpke = enableHpke;
+    }
+    if (urlHistory != null) {
+      this.urlHistory = urlHistory;
     }
   }
 }
@@ -731,5 +738,37 @@ class QuickLoginInfo {
     } else if (userId != null && userInfo == null) {
       quickLoginMap.remove(userId);
     }
+  }
+}
+
+class SyncStoreUrlHistory implements TextInputHistory {
+  final SettingController _controller;
+
+  SyncStoreUrlHistory(this._controller);
+
+  @override
+  List<String> load() {
+    return List.from(_controller.syncStoreSetting.value.urlHistory);
+  }
+
+  @override
+  void save(String value) {
+    final list = load();
+    list.remove(value);
+    list.insert(0, value);
+    if (list.length > 10) list.removeLast();
+    _controller.updateSyncStoreSetting(urlHistory: list);
+  }
+
+  @override
+  void remove(String value) {
+    final list = load();
+    list.remove(value);
+    _controller.updateSyncStoreSetting(urlHistory: list);
+  }
+
+  @override
+  void clear() {
+    _controller.updateSyncStoreSetting(urlHistory: []);
   }
 }

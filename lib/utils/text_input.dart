@@ -8,6 +8,13 @@ abstract interface class TitleInterface {
   Color get gColor;
 }
 
+abstract interface class TextInputHistory {
+  List<String> load();
+  void save(String value);
+  void remove(String value);
+  void clear();
+}
+
 enum SyncStoreInputMetaEnum implements TitleInterface {
   address,
   enableTunnel;
@@ -230,6 +237,7 @@ class TextInputWidget extends StatefulWidget {
     this.helperText,
     this.inputType,
     this.tailButton,
+    this.history,
   });
   final TitleInterface title;
   final String initialValue;
@@ -240,6 +248,7 @@ class TextInputWidget extends StatefulWidget {
   final String? helperText;
   final TextInputType? inputType;
   final Widget? tailButton;
+  final TextInputHistory? history;
 
   @override
   State<TextInputWidget> createState() => _TextInputWidgetState();
@@ -248,6 +257,9 @@ class TextInputWidget extends StatefulWidget {
 class _TextInputWidgetState extends State<TextInputWidget> {
   late FocusNode _focusNode;
   late TextEditingController _controller;
+  final LayerLink _historyLayerLink = LayerLink();
+  final GlobalKey _targetKey = GlobalKey();
+  OverlayEntry? _historyOverlay;
   String? _lastCommittedValue;
 
   void _ensureVisibleAfterFocus() {
@@ -271,9 +283,90 @@ class _TextInputWidgetState extends State<TextInputWidget> {
     }
     _lastCommittedValue = value;
     widget.onFinished(value);
+    if (value.isNotEmpty) {
+      widget.history?.save(value);
+    }
     if (showSavedTip) {
       successSimpleFlushBar('input_saved'.tr);
     }
+  }
+
+  void _applyHistoryEntry(String value) {
+    _dismissHistoryOverlay();
+    _controller.text = value;
+    _controller.selection = TextSelection.collapsed(offset: value.length);
+    _commitInput(showSavedTip: true);
+  }
+
+  void _dismissHistoryOverlay() {
+    _historyOverlay?.remove();
+    _historyOverlay = null;
+  }
+
+  void _showHistoryOverlay() {
+    _dismissHistoryOverlay();
+    final entries = widget.history?.load() ?? [];
+    if (entries.isEmpty) return;
+    if (!mounted) return;
+
+    final targetBox = _targetKey.currentContext?.findRenderObject() as RenderBox?;
+    final targetWidth = (targetBox != null && targetBox.hasSize) ? targetBox.size.width : 360.0;
+
+    _historyOverlay = OverlayEntry(builder: (ctx) {
+      return Stack(
+        children: [
+          GestureDetector(
+            onTap: () {
+              _focusNode.unfocus();
+              _dismissHistoryOverlay();
+            },
+            child: Container(color: Colors.transparent),
+          ),
+          CompositedTransformFollower(
+            link: _historyLayerLink,
+            targetAnchor: Alignment.bottomLeft,
+            followerAnchor: Alignment.topLeft,
+            child: Container(
+              width: targetWidth,
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(8),
+                clipBehavior: Clip.antiAlias,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  shrinkWrap: true,
+                  children: [
+                    for (final entry in entries.take(10))
+                      _HistoryEntryTile(
+                        text: entry,
+                        onTap: () => _applyHistoryEntry(entry),
+                        onDelete: () {
+                          widget.history?.remove(entry);
+                          _showHistoryOverlay();
+                        },
+                      ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      child: TextButton(
+                        onPressed: () {
+                          widget.history?.clear();
+                          _dismissHistoryOverlay();
+                        },
+                        child: Text('input_history_clear'.tr),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+
+    Overlay.of(context).insert(_historyOverlay!);
   }
 
   @override
@@ -286,7 +379,13 @@ class _TextInputWidgetState extends State<TextInputWidget> {
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         _ensureVisibleAfterFocus();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _focusNode.hasFocus) {
+            _showHistoryOverlay();
+          }
+        });
       } else {
+        _dismissHistoryOverlay();
         _commitInput();
       }
     });
@@ -305,6 +404,7 @@ class _TextInputWidgetState extends State<TextInputWidget> {
 
   @override
   void dispose() {
+    _dismissHistoryOverlay();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -339,39 +439,77 @@ class _TextInputWidgetState extends State<TextInputWidget> {
               ),
               Flexible(
                 flex: 2,
-                child: TextField(
-                  autofocus: widget.autoFocus,
-                  focusNode: _focusNode,
-                  controller: _controller,
-                  scrollPadding: EdgeInsets.only(
-                    left: 20,
-                    top: 20,
-                    right: 20,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 100,
+                child: CompositedTransformTarget(
+                  key: _targetKey,
+                  link: _historyLayerLink,
+                  child: TextField(
+                    autofocus: widget.autoFocus,
+                    focusNode: _focusNode,
+                    controller: _controller,
+                    scrollPadding: EdgeInsets.only(
+                      left: 20,
+                      top: 20,
+                      right: 20,
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 100,
+                    ),
+                    onTapOutside: (_) {
+                      _focusNode.unfocus();
+                      _commitInput();
+                    },
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(8),
+                      hintText: widget.optional ? 'optional'.tr : '',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      helperText: widget.helperText,
+                    ),
+                    keyboardType: widget.inputType,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                    onSubmitted: (value) {
+                      print(value);
+                      _commitInput(showSavedTip: true);
+                    },
                   ),
-                  onTapOutside: (_) {
-                    _focusNode.unfocus();
-                    _commitInput();
-                  },
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.all(8),
-                    hintText: widget.optional ? 'optional'.tr : '',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    helperText: widget.helperText,
-                  ),
-                  keyboardType: widget.inputType,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                  onSubmitted: (value) {
-                    print(value);
-                    _commitInput(showSavedTip: true);
-                  },
                 ),
               ),
               if (widget.tailButton != null) ...[const SizedBox(width: 8), widget.tailButton!],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryEntryTile extends StatelessWidget {
+  const _HistoryEntryTile({required this.text, required this.onTap, required this.onDelete});
+  final String text;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(text, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+            ),
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 16,
+                icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                onPressed: onDelete,
+              ),
+            ),
+          ],
         ),
       ),
     );

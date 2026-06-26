@@ -1018,6 +1018,22 @@ class _TranslationHelper {
       "en_US": "(Optional)",
       "zh_CN": "(可选)",
     },
+    "input_history": {
+      "en_US": "History",
+      "zh_CN": "历史记录",
+    },
+    "input_history_empty": {
+      "en_US": "No history yet",
+      "zh_CN": "暂无历史记录",
+    },
+    "input_history_clear": {
+      "en_US": "Clear history",
+      "zh_CN": "清除历史记录",
+    },
+    "input_history_cleared": {
+      "en_US": "History cleared",
+      "zh_CN": "历史记录已清除",
+    },
 
     // --- Tracker: UI Texts ---
     "tracker_panic": {
