@@ -155,7 +155,7 @@ class _HomePage extends GetResponsiveView {
               child: SafeArea(child: _FeatureSidebar(index: selectedTab)),
             )
           : null,
-      appBar: AppBar(title: _AppBarTitle(index: selectedTab), titleSpacing: 0.0),
+      appBar: AppBar(title: _AppBarTitle(index: selectedTab), titleSpacing: _hasSidebar ? 0.0 : 16.0),
       body: _RightMain(index: selectedTab),
       bottomNavigationBar: NavigationBar(
         selectedIndex: activeIndices.indexOf(selectedTab),
