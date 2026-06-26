@@ -1,13 +1,17 @@
 package com.eluvk.xbb
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.util.Calendar
 
 class MainActivity : FlutterActivity() {
     private var pendingLaunchTab: String? = null
@@ -71,6 +75,7 @@ class MainActivity : FlutterActivity() {
                     val snapshot = call.argument<String>("snapshot")
                     CheckinWidgetStorage.saveSnapshot(this, snapshot)
                     CheckinWidgetProvider.refreshAllWidgets(this)
+                    scheduleMidnightRefresh()
                     result.success(null)
                 }
 
@@ -92,5 +97,22 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun scheduleMidnightRefresh() {
+        val calendar = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 1)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, MidnightRefreshReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
     }
 }

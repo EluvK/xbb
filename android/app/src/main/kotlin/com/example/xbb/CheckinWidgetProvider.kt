@@ -9,6 +9,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.RemoteViews
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class CheckinWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(
@@ -43,24 +46,30 @@ class CheckinWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetIds: IntArray,
         ) {
-            appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.checkin_widget_list)
             appWidgetIds.forEach { appWidgetId ->
-                val snapshot = CheckinWidgetStorage.loadSnapshot(context)
-                val views = RemoteViews(context.packageName, layoutFor(appWidgetManager, appWidgetId))
+                val layoutId = layoutFor(appWidgetManager, appWidgetId)
+                val snapshot = applyStaleReset(CheckinWidgetStorage.loadSnapshot(context))
+                val views = RemoteViews(context.packageName, layoutId)
 
                 views.setTextViewText(R.id.checkin_widget_title, context.getString(R.string.checkin_widget_title))
                 views.setTextViewText(R.id.checkin_widget_subtitle, subtitleFor(context, snapshot))
-                views.setTextViewText(R.id.checkin_widget_empty, emptyMessageFor(context, snapshot))
-                views.setEmptyView(R.id.checkin_widget_list, R.id.checkin_widget_empty)
 
-                val serviceIntent = Intent(context, CheckinWidgetRemoteViewsService::class.java).apply {
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                if (layoutId != R.layout.checkin_widget_xsmall) {
+                    appWidgetManager.notifyAppWidgetViewDataChanged(intArrayOf(appWidgetId), R.id.checkin_widget_list)
+                    views.setTextViewText(R.id.checkin_widget_empty, emptyMessageFor(context, snapshot))
+                    views.setEmptyView(R.id.checkin_widget_list, R.id.checkin_widget_empty)
+
+                    val serviceIntent = Intent(context, CheckinWidgetRemoteViewsService::class.java).apply {
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                        data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                    }
+                    views.setRemoteAdapter(R.id.checkin_widget_list, serviceIntent)
+
+                    views.setOnClickPendingIntent(R.id.checkin_widget_header, createLaunchPendingIntent(context, appWidgetId))
+                    views.setPendingIntentTemplate(R.id.checkin_widget_list, createLaunchPendingIntent(context, appWidgetId))
+                } else {
+                    views.setOnClickPendingIntent(R.id.checkin_widget_root, createLaunchPendingIntent(context, appWidgetId))
                 }
-                views.setRemoteAdapter(R.id.checkin_widget_list, serviceIntent)
-
-                views.setOnClickPendingIntent(R.id.checkin_widget_header, createLaunchPendingIntent(context, appWidgetId))
-                views.setPendingIntentTemplate(R.id.checkin_widget_list, createLaunchPendingIntent(context, appWidgetId))
 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
@@ -82,11 +91,23 @@ class CheckinWidgetProvider : AppWidgetProvider() {
         private fun layoutFor(appWidgetManager: AppWidgetManager, appWidgetId: Int): Int {
             val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
             val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-            return if (minWidth < 180) {
-                R.layout.checkin_widget_small
-            } else {
-                R.layout.checkin_widget_medium
+            val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+            return when {
+                minWidth < 120 || minHeight < 80 -> R.layout.checkin_widget_xsmall
+                minWidth < 180 -> R.layout.checkin_widget_small
+                else -> R.layout.checkin_widget_medium
             }
+        }
+
+        private fun applyStaleReset(snapshot: CheckinWidgetSnapshot): CheckinWidgetSnapshot {
+            if (snapshot.state != "ready" || snapshot.generatedAt.isEmpty()) return snapshot
+            val snapshotDate = snapshot.generatedAt.substring(0, minOf(10, snapshot.generatedAt.length))
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            if (snapshotDate >= today) return snapshot
+            return snapshot.copy(
+                checkedCount = 0,
+                items = snapshot.items.map { it.copy(isChecked = false, checkinTime = "") }
+            )
         }
 
         private fun subtitleFor(context: Context, snapshot: CheckinWidgetSnapshot): String {

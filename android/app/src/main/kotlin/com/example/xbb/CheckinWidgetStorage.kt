@@ -23,6 +23,7 @@ data class CheckinWidgetSnapshot(
     val eventCount: Int,
     val checkedCount: Int,
     val items: List<CheckinWidgetItem>,
+    val generatedAt: String = "",
 )
 
 object CheckinWidgetStorage {
@@ -42,6 +43,7 @@ object CheckinWidgetStorage {
             eventCount = 0,
             checkedCount = 0,
             items = emptyList(),
+            generatedAt = "",
         )
     }
 
@@ -69,6 +71,7 @@ object CheckinWidgetStorage {
                 eventCount = json.optInt("event_count", 0),
                 checkedCount = json.optInt("checked_count", 0),
                 items = items,
+                generatedAt = json.optString("generated_at", ""),
             )
         }.getOrElse {
             CheckinWidgetSnapshot(
@@ -76,6 +79,7 @@ object CheckinWidgetStorage {
                 eventCount = 0,
                 checkedCount = 0,
                 items = emptyList(),
+                generatedAt = "",
             )
         }
     }
