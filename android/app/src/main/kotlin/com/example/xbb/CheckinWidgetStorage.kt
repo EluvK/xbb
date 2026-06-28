@@ -24,7 +24,25 @@ data class CheckinWidgetSnapshot(
     val checkedCount: Int,
     val items: List<CheckinWidgetItem>,
     val generatedAt: String = "",
-)
+) {
+    fun toJsonString(): String = JSONObject().apply {
+        put("state", state)
+        put("event_count", eventCount)
+        put("checked_count", checkedCount)
+        put("generated_at", generatedAt)
+        val itemsArr = JSONArray()
+        items.forEach { item ->
+            itemsArr.put(JSONObject().apply {
+                put("id", item.id)
+                put("event_name", item.eventName)
+                put("event_color", item.eventColor)
+                put("is_checked", item.isChecked)
+                put("checkin_time", item.checkinTime)
+            })
+        }
+        put("items", itemsArr)
+    }.toString()
+}
 
 object CheckinWidgetStorage {
     fun saveSnapshot(context: Context, snapshotJson: String?) {
@@ -32,6 +50,10 @@ object CheckinWidgetStorage {
             .edit()
             .putString(CHECKIN_WIDGET_SNAPSHOT_KEY, snapshotJson)
             .apply()
+    }
+
+    fun saveSnapshot(context: Context, snapshot: CheckinWidgetSnapshot) {
+        saveSnapshot(context, snapshot.toJsonString())
     }
 
     fun loadSnapshot(context: Context): CheckinWidgetSnapshot {

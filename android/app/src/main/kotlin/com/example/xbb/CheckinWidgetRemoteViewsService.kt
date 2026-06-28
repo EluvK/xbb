@@ -39,11 +39,8 @@ class CheckinWidgetRemoteViewsFactory(
             setInt(R.id.checkin_widget_item_dot, "setColorFilter", item.eventColor)
             if (item.isChecked) {
                 setViewVisibility(R.id.checkin_widget_item_check, android.view.View.VISIBLE)
-                setTextViewText(R.id.checkin_widget_item_time, item.checkinTime)
-                setViewVisibility(R.id.checkin_widget_item_time, android.view.View.VISIBLE)
             } else {
                 setViewVisibility(R.id.checkin_widget_item_check, android.view.View.GONE)
-                setViewVisibility(R.id.checkin_widget_item_time, android.view.View.GONE)
             }
             setOnClickFillInIntent(
                 R.id.checkin_widget_item_root,

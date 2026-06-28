@@ -42,16 +42,5 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/checkin_widget_item_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="3dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="#5F5F5F"
-            android:textSize="10sp"
-            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

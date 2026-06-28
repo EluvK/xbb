@@ -48,7 +48,9 @@ class CheckinWidgetProvider : AppWidgetProvider() {
         ) {
             appWidgetIds.forEach { appWidgetId ->
                 val layoutId = layoutFor(appWidgetManager, appWidgetId)
-                val snapshot = applyStaleReset(CheckinWidgetStorage.loadSnapshot(context))
+                var snapshot = CheckinWidgetStorage.loadSnapshot(context)
+                snapshot = applyStaleReset(snapshot)
+                CheckinWidgetStorage.saveSnapshot(context, snapshot)
                 val views = RemoteViews(context.packageName, layoutId)
 
                 if (layoutId != R.layout.checkin_widget_medium) {
