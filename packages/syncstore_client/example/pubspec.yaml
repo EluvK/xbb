@@ -11,7 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
   get: ^4.6.6
+  path: ^1.9.1
+  json_annotation: ^4.9.0
   sqflite: ^2.4.2
   sqflite_common_ffi: ^2.4.0
+  sync_annotation:
+    path: ../../sync_annotation
   syncstore_client:
     path: ../

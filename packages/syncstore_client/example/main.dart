@@ -18,7 +18,7 @@ Future<void> debug() async {
   // print('Current repos count: ${currentRepos.length}');
   // print('Debugging done.');
 }
-void test_hpke() async {
+void testHpke() async {
   final aad = Uint8List.fromList("/api/data/xbb/repo".codeUnits);
   final message = Uint8List.fromList("null".codeUnits);
   print("message: $message");
@@ -71,7 +71,7 @@ void main() async {
   final viewRepos = controller.getRepoDetails(selector: (c) => c);
   if (viewRepos.length > 2) {
     String secondRepoId = viewRepos[1].id;
-    print('1. Updated local repo: ${secondRepoId}');
+    print('1. Updated local repo: $secondRepoId');
     final Repo updatedData = Repo(
       name: viewRepos.last.body.name,
       status: viewRepos.last.body.status,

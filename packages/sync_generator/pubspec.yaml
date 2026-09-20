@@ -10,6 +10,7 @@ environment:
 dependencies:
   sync_annotation:
     path: ../sync_annotation
+  build: ^4.0.0
   source_gen: ^4.1.1
   analyzer: '>=8.0.0 <9.0.0'
 

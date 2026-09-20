@@ -64,7 +64,7 @@ class DataItem<T> {
   });
 
   factory DataItem.localNew(String owner, T body, {String? parentId, String? unique}) {
-    final id = Uuid().v4();
+    final id = const Uuid().v4();
     final now = DateTime.now().toUtc();
     return DataItem<T>(id, now, now, owner, parentId, unique, body: body, syncStatus: SyncStatus.pending);
   }
@@ -143,8 +143,11 @@ class BatchGetResponse<T> {
 enum AccessLevel {
   none, // `none` only exist at client side to make UI easier
   read,
+  // ignore: constant_identifier_names
   read_append1,
+  // ignore: constant_identifier_names
   read_append2,
+  // ignore: constant_identifier_names
   read_append3,
   update,
   write,

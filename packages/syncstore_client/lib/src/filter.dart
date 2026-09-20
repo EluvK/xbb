@@ -25,7 +25,7 @@ abstract class DataItemBodyEquatableFilter<T> extends Equatable implements DataI
 
 class ParentIdFilter extends EquatableFilter {
   final String parentId;
-  ParentIdFilter(this.parentId);
+  const ParentIdFilter(this.parentId);
 
   @override
   bool apply(DataItem<dynamic> item) {
@@ -38,7 +38,7 @@ class ParentIdFilter extends EquatableFilter {
 
 class IdsFilter extends EquatableFilter {
   final List<String> ids;
-  IdsFilter(this.ids);
+  const IdsFilter(this.ids);
 
   @override
   bool apply(DataItem<dynamic> item) {
@@ -116,7 +116,7 @@ enum ColorTagFilter implements DataItemFilter {
 
 class OrFilter<T> extends EquatableFilter<T> {
   final Iterable<DataItemFilter<T>> filters;
-  OrFilter(this.filters);
+  const OrFilter(this.filters);
 
   @override
   bool apply(DataItem<T> item) {

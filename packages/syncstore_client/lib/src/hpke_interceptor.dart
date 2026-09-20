@@ -11,6 +11,7 @@
 /// Take no responsibility for any security issues arising from incomplete or incorrect implementation.
 /// So please use with caution and at your own risk.
 /// Read the RFC 9180 for more details: https://www.rfc-editor.org/rfc/rfc9180.html
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -267,7 +268,7 @@ class HpkeInterceptor extends Interceptor {
       _keyState[options] = sessionKeyPair; // 暂存私钥
 
       // 2. encrypt the request body
-      final aad = utf8.encode('/api' + Uri.parse(options.path).path);
+      final aad = utf8.encode('/api${Uri.parse(options.path).path}');
       final payload = options.data is List<int> ? options.data : utf8.encode(jsonEncode(options.data));
 
       final result = await _hpke.seal(plaintext: payload, recipientPub: serverPublicKey, aad: aad);
@@ -296,7 +297,7 @@ class HpkeInterceptor extends Interceptor {
     if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! <= 299) {
       final KeyPair? sessionKeyPair = _keyState[response.requestOptions];
       final String? encKeyB64 = response.headers.value('X-Enc');
-      final aad = utf8.encode('/api' + Uri.parse(response.requestOptions.path).path);
+      final aad = utf8.encode('/api${Uri.parse(response.requestOptions.path).path}');
       if (sessionKeyPair != null && encKeyB64 != null && response.data != null) {
         try {
           final sessionPublicKey = await sessionKeyPair.extractPublicKey();

@@ -15,6 +15,7 @@ class Avatar {
 
 const String assetsPrefix = 'assets://';
 // Backward-compatible alias for existing imports/usages.
+// ignore: constant_identifier_names
 const String ASSETS_PREFIX = assetsPrefix;
 
 Iterable<Avatar> predefinedAvatarList() {

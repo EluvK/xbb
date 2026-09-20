@@ -191,7 +191,7 @@ class SyncStoreClient {
   ) {
     return perform(() async {
       final resp = await _dio.get('/data/$namespace/$collection/$id', options: _buildOptions());
-      final fromJsonT = (Object? json) => fromJson(json as Map<String, dynamic>);
+      T fromJsonT(Object? json) => fromJson(json as Map<String, dynamic>);
       return DataItem<T>.fromJson(resp.data, fromJsonT);
     });
   }
@@ -274,8 +274,8 @@ class AuthService {
       );
       final data = _normalizeResp(resp);
       _persistTokens(data);
-      final user_id = data['user_id'] as String;
-      return user_id;
+      final userId = data['user_id'] as String;
+      return userId;
     });
   }
 
@@ -324,7 +324,7 @@ ApiException _wrapDioException(DioException e) {
   }
   if (e.response != null) {
     final status = e.response!.statusCode ?? 0;
-    final data = try_decode_data(e.response!.data);
+    final data = _tryDecodeData(e.response!.data);
     print('Error with response data: $data');
     print('Error with response status: $status');
     if (status == 401) return ApiException(ApiError.loginRequired, data);
@@ -344,7 +344,7 @@ Future<T> perform<T>(Future<T> Function() f) async {
   }
 }
 
-String try_decode_data(dynamic data) {
+String _tryDecodeData(dynamic data) {
   if (data is String) {
     return data;
   } else if (data is List<int>) {

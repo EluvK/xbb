@@ -11,7 +11,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class NotesDB {
   // static Database? _db;
-  static Map<String, Database> _dbCache = {};
+  static final Map<String, Database> _dbCache = {};
 
   Future<Database> getDb() async {
     final userId = Get.find<SettingController>().userId;

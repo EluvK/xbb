@@ -200,7 +200,7 @@ class $controllerType extends GetxController {
   @override
   Future<void> onInit() async {
     await rebuildLocal();
-    ${aclInitLogic}
+    $aclInitLogic
     super.onInit();
     _initialized = true;
   }
@@ -676,7 +676,7 @@ extension ${repositoryType}Acl on $repositoryType {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 }
-extension ${controllerType}Acl on ${controllerType} {
+extension ${controllerType}Acl on $controllerType {
   Future<void> syncAcls() async {
     try {
       for (var item in _items) {
@@ -697,18 +697,18 @@ extension ${controllerType}Acl on ${controllerType} {
   Future<List<Permission>> getAclRefresh(String dataId) async {
     try {
       final List<Permission> getAcls = await client.getAcls('$collectionName', '$tableName', dataId);
-      await ${repositoryType}().setAcls(dataId, getAcls);
+      await $repositoryType().setAcls(dataId, getAcls);
       _aclCache[dataId] = getAcls;
       return getAcls;
     } catch (e) {
       print("Error fetching ACLs from server: \$e");
-      return await ${repositoryType}().getAcls(dataId);
+      return await $repositoryType().getAcls(dataId);
     }
   }
   Future<void> setAcls(String dataId, List<Permission> permissions) async {
     try {
       await client.updateAcls('$collectionName', '$tableName', dataId, permissions);
-      await ${repositoryType}().setAcls(dataId, permissions);
+      await $repositoryType().setAcls(dataId, permissions);
       _aclCache[dataId] = permissions;
     } catch (e) {
       print("Error updating ACLs to server: \$e");

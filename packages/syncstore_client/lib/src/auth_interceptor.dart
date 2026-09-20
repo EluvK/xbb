@@ -112,7 +112,7 @@ class AuthInterceptor extends Interceptor {
       return false;
     } finally {
       // allow a short delay before nulling to reduce races (optional)
-      Future.delayed(Duration(milliseconds: 10), () {
+      Future.delayed(const Duration(milliseconds: 10), () {
         _refreshCompleter = null;
       });
     }

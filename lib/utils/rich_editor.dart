@@ -118,7 +118,7 @@ class _RichEditorState extends State<RichEditor> {
             decoration: InputDecoration(
               labelText: 'contents:',
               alignLabelWithHint: true,
-              hoverColor: colorScheme.surface.withOpacity(0.2),
+              hoverColor: colorScheme.surface.withValues(alpha: 0.2),
             ),
           ),
         ),
@@ -482,7 +482,7 @@ class _RichEditorState extends State<RichEditor> {
     if (selection.isCollapsed) {
       // 没有选中文本，在光标位置插入水平分割线，光标自动移动到下一行
       final cursorPosition = selection.baseOffset;
-      final newText = '\n---\n';
+      const newText = '\n---\n';
       textEditingController.value = textEditingController.value.copyWith(
         text: text.replaceRange(cursorPosition, cursorPosition, newText),
         selection: TextSelection.collapsed(offset: cursorPosition + 5),
@@ -491,7 +491,7 @@ class _RichEditorState extends State<RichEditor> {
       // 选中了文本，在选中区域前后插入水平分割线
       final start = selection.start;
       final end = selection.end;
-      final newText = '\n---\n';
+      const newText = '\n---\n';
       textEditingController.value = textEditingController.value.copyWith(
         text: text.replaceRange(start, end, newText),
         selection: TextSelection.collapsed(offset: start + 5),

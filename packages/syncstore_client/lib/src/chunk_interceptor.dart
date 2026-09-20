@@ -25,7 +25,7 @@ class ConcurrentChunkInterceptor extends Interceptor {
 
     final totalSize = fullData.length;
     final totalChunks = (totalSize / chunkSize).ceil();
-    final uploadId = Uuid().v4();
+    final uploadId = const Uuid().v4();
     print("Starting chunked upload: totalSize=$totalSize bytes, totalChunks=$totalChunks, uploadId=$uploadId");
 
     // calculate and update global progress
