@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/utils/color_picker.dart';
 import 'package:xbb/utils/double_click.dart';
 
 /// A generic ListTileCard widget to display DataItem<T> information.
@@ -50,27 +49,6 @@ class ListTileCard<T> extends StatefulWidget {
 
   @override
   State<ListTileCard<T>> createState() => _ListTileCardState<T>();
-}
-
-extension ColorTagExtension on ColorTag {
-  Color? toColor() {
-    switch (this) {
-      case ColorTag.red:
-        return Colors.red[400];
-      case ColorTag.green:
-        return Colors.lightGreen[400];
-      case ColorTag.blue:
-        return Colors.blue[400];
-      case ColorTag.yellow:
-        return Colors.yellow[400];
-      case ColorTag.orange:
-        return Colors.orange[400];
-      case ColorTag.gray:
-        return Colors.grey[400];
-      case ColorTag.none:
-        return Colors.transparent;
-    }
-  }
 }
 
 enum _MoreContentState { none, buttons, preview }
@@ -227,152 +205,6 @@ class _ListTileCardState<T> extends State<ListTileCard<T>> {
           Visibility(visible: moreContent != null, child: moreContent ?? Container()),
         ],
       ),
-    );
-  }
-}
-
-class InlineColorPickerButton extends StatefulWidget {
-  final ColorTag value;
-  final ValueChanged<ColorTag> onSelected;
-
-  const InlineColorPickerButton({super.key, required this.value, required this.onSelected});
-
-  @override
-  State<InlineColorPickerButton> createState() => _InlineColorPickerButtonState();
-}
-
-class _InlineColorPickerButtonState extends State<InlineColorPickerButton> {
-  bool expanded = false;
-  Timer? _autoCollapseTimer;
-
-  void _cancelAutoCollapseTimer() {
-    _autoCollapseTimer?.cancel();
-    _autoCollapseTimer = null;
-  }
-
-  void _startAutoCollapseTimer() {
-    _cancelAutoCollapseTimer();
-    _autoCollapseTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && expanded) {
-        setState(() => expanded = false);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _cancelAutoCollapseTimer();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeInOutCubic,
-      alignment: Alignment.centerLeft,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 280),
-        reverseDuration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
-          return FadeTransition(
-            opacity: curved,
-            child: SizeTransition(sizeFactor: curved, axis: Axis.horizontal, axisAlignment: -1.0, child: child),
-          );
-        },
-        layoutBuilder: (currentChild, previousChildren) {
-          return Stack(
-            alignment: Alignment.centerLeft,
-            children: [...previousChildren, if (currentChild != null) currentChild],
-          );
-        },
-        child: expanded
-            ? ColorPickerButtons(
-                key: const ValueKey('picker-expanded'),
-                selectedTag: widget.value,
-                onSelected: (tag) {
-                  _cancelAutoCollapseTimer();
-                  widget.onSelected(tag);
-                  // should wait for inner animation to finish
-                  Future.delayed(const Duration(milliseconds: 200), () {
-                    if (mounted) {
-                      setState(() => expanded = false);
-                    }
-                  });
-                },
-              )
-            : IconButton(
-                key: const ValueKey('picker-collapsed'),
-                icon: Icon(
-                  Icons.color_lens_rounded,
-                  color: widget.value.toColor() == Colors.transparent ? null : widget.value.toColor(),
-                ),
-                onPressed: () => setState(() {
-                  expanded = !expanded;
-                  if (expanded) {
-                    _startAutoCollapseTimer();
-                  } else {
-                    _cancelAutoCollapseTimer();
-                  }
-                }),
-              ),
-      ),
-    );
-  }
-}
-
-class ColorPickerButtons extends StatelessWidget {
-  final double iconSize;
-  final double spacing;
-  final ColorTag selectedTag;
-  final ValueChanged<ColorTag> onSelected;
-
-  const ColorPickerButtons({
-    super.key,
-    this.iconSize = 16.0,
-    this.spacing = 2.0,
-    required this.selectedTag,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: spacing,
-      children: ColorTag.values.where((tag) => tag != ColorTag.none).map((tag) {
-        final selected = selectedTag == tag;
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => {selected ? onSelected(ColorTag.none) : onSelected(tag)},
-          child: Padding(
-            // add padding for easier tap area
-            padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
-            child: AnimatedScale(
-              scale: selected ? 1.3 : 0.9,
-              duration: const Duration(milliseconds: 150),
-              child: Container(
-                width: iconSize,
-                height: iconSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: tag.toColor()?.withAlpha(selected ? 255 : 198),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
-                    width: selected ? iconSize / 6.0 : 0.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }

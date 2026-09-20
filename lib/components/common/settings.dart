@@ -171,34 +171,17 @@ class _CommonSettingsState extends State<CommonSettings> {
                   ),
                 ),
               ),
+              _buildSectionHeader(
+                context: context,
+                title: 'section_efficiency'.tr,
+                icon: Icons.bolt_outlined,
+              ),
               _withPadding(
                 BoolSelectorInputWidget(
                   title: AppFeatureMetaEnum.enableTask,
                   initialValue: settingController.taskEnabled,
                   onChanged: (value) {
                     settingController.updateAppFeaturesManagement(enableTask: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableNotes,
-                  initialValue: settingController.notesEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableNotes: value);
-                    _ensureStartupTabIndexValid();
-                    setState(() {});
-                  },
-                ),
-              ),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableTracker,
-                  initialValue: settingController.trackerEnabled,
-                  onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableTracker: value);
                     _ensureStartupTabIndexValid();
                     setState(() {});
                   },
@@ -217,10 +200,52 @@ class _CommonSettingsState extends State<CommonSettings> {
               ),
               _withPadding(
                 BoolSelectorInputWidget(
-                  title: AppFeatureMetaEnum.enableChat,
-                  initialValue: settingController.chatEnabled,
+                  title: AppFeatureMetaEnum.enableTracker,
+                  initialValue: settingController.trackerEnabled,
                   onChanged: (value) {
-                    settingController.updateAppFeaturesManagement(enableChat: value);
+                    settingController.updateAppFeaturesManagement(enableTracker: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
+              if (!kIsWeb && Platform.isAndroid)
+                _withPadding(
+                  UserDefinedInputWidget(
+                    title: AppFeatureMetaEnum.taskWidget,
+                    widget: ElevatedButton.icon(
+                      onPressed: _isPinningWidget ? null : _onAddTaskWidget,
+                      icon: _isPinningWidget
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.add_to_home_screen_rounded),
+                      label: Text('add_task_widget_to_home'.tr),
+                    ),
+                  ),
+                ),
+              if (!kIsWeb && Platform.isAndroid && settingController.checkinEnabled)
+                _withPadding(
+                  UserDefinedInputWidget(
+                    title: AppFeatureMetaEnum.checkinWidget,
+                    widget: ElevatedButton.icon(
+                      onPressed: _isPinningCheckinWidget ? null : _onAddCheckinWidget,
+                      icon: _isPinningCheckinWidget
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.add_to_home_screen_rounded),
+                      label: Text('add_checkin_widget_to_home'.tr),
+                    ),
+                  ),
+                ),
+              _buildSectionHeader(
+                context: context,
+                title: 'section_records'.tr,
+                icon: Icons.auto_stories_outlined,
+              ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableNotes,
+                  initialValue: settingController.notesEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableNotes: value);
                     _ensureStartupTabIndexValid();
                     setState(() {});
                   },
@@ -281,33 +306,23 @@ class _CommonSettingsState extends State<CommonSettings> {
                     ),
                   ),
                 ),
+              _buildSectionHeader(
+                context: context,
+                title: 'section_ai'.tr,
+                icon: Icons.auto_awesome_outlined,
+              ),
+              _withPadding(
+                BoolSelectorInputWidget(
+                  title: AppFeatureMetaEnum.enableChat,
+                  initialValue: settingController.chatEnabled,
+                  onChanged: (value) {
+                    settingController.updateAppFeaturesManagement(enableChat: value);
+                    _ensureStartupTabIndexValid();
+                    setState(() {});
+                  },
+                ),
+              ),
               if (settingController.chatEnabled) _withPadding(const ChatLLMSettingsCard()),
-              if (!kIsWeb && Platform.isAndroid)
-                _withPadding(
-                  UserDefinedInputWidget(
-                    title: AppFeatureMetaEnum.taskWidget,
-                    widget: ElevatedButton.icon(
-                      onPressed: _isPinningWidget ? null : _onAddTaskWidget,
-                      icon: _isPinningWidget
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.add_to_home_screen_rounded),
-                      label: Text('add_task_widget_to_home'.tr),
-                    ),
-                  ),
-                ),
-              if (!kIsWeb && Platform.isAndroid && settingController.checkinEnabled)
-                _withPadding(
-                  UserDefinedInputWidget(
-                    title: AppFeatureMetaEnum.checkinWidget,
-                    widget: ElevatedButton.icon(
-                      onPressed: _isPinningCheckinWidget ? null : _onAddCheckinWidget,
-                      icon: _isPinningCheckinWidget
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.add_to_home_screen_rounded),
-                      label: Text('add_checkin_widget_to_home'.tr),
-                    ),
-                  ),
-                ),
               const Divider(),
               Text('app_version'.trParams({'version': DISPLAY_VERSION})),
               _withPadding(versionInfo(context)),
@@ -322,6 +337,33 @@ class _CommonSettingsState extends State<CommonSettings> {
 
   Widget _withPadding(Widget child) {
     return Padding(padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0), child: child);
+  }
+
+  Widget _buildSectionHeader({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 12.0, right: 12.0, top: 14.0, bottom: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.primary,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _resetPingLatency() {

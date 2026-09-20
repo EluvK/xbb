@@ -8,14 +8,109 @@ import 'package:xbb/components/notes/view_posts.dart';
 import 'package:xbb/components/notes/view_repos.dart';
 import 'package:xbb/components/task/view_tasks.dart';
 import 'package:xbb/components/trackers/view_tracker.dart';
-import 'package:xbb/pages/chat/chat_page.dart';
-import 'package:xbb/pages/checkin/checkin_calendar_page.dart';
 import 'package:xbb/controller/app_launch.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/utils/list_tile_card.dart' show ColorPickerButtons;
+import 'package:xbb/pages/chat/chat_page.dart';
+import 'package:xbb/pages/checkin/checkin_calendar_page.dart';
+import 'package:xbb/utils/color_picker.dart' show PaletteColorPickerButton;
 import 'package:xbb/utils/text_input.dart';
 
 enum HomeTabIndex { notes, tracker, task, clipboard, chat, checkin, settings }
+
+enum FeatureSection { efficiency, records, ai }
+
+extension FeatureSectionExt on FeatureSection {
+  String get title {
+    switch (this) {
+      case FeatureSection.efficiency:
+        return 'section_efficiency'.tr;
+      case FeatureSection.records:
+        return 'section_records'.tr;
+      case FeatureSection.ai:
+        return 'section_ai'.tr;
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case FeatureSection.efficiency:
+        return Icons.bolt_outlined;
+      case FeatureSection.records:
+        return Icons.auto_stories_outlined;
+      case FeatureSection.ai:
+        return Icons.auto_awesome_outlined;
+    }
+  }
+
+  IconData get selectedIcon {
+    switch (this) {
+      case FeatureSection.efficiency:
+        return Icons.bolt;
+      case FeatureSection.records:
+        return Icons.auto_stories;
+      case FeatureSection.ai:
+        return Icons.auto_awesome;
+    }
+  }
+
+  List<HomeTabIndex> get candidateTabs {
+    switch (this) {
+      case FeatureSection.efficiency:
+        return [HomeTabIndex.task, HomeTabIndex.checkin, HomeTabIndex.tracker];
+      case FeatureSection.records:
+        return [HomeTabIndex.notes, HomeTabIndex.clipboard];
+      case FeatureSection.ai:
+        return [HomeTabIndex.chat];
+    }
+  }
+}
+
+FeatureSection? sectionForTab(HomeTabIndex tab) {
+  for (final section in FeatureSection.values) {
+    if (section.candidateTabs.contains(tab)) {
+      return section;
+    }
+  }
+  return null;
+}
+
+IconData _iconDataForTab(HomeTabIndex tab) {
+  switch (tab) {
+    case HomeTabIndex.notes:
+      return AppFeatureMetaEnum.enableNotes.gIcon;
+    case HomeTabIndex.tracker:
+      return AppFeatureMetaEnum.enableTracker.gIcon;
+    case HomeTabIndex.task:
+      return Icons.check_box_rounded;
+    case HomeTabIndex.clipboard:
+      return AppFeatureMetaEnum.enableClipboardBackup.gIcon;
+    case HomeTabIndex.chat:
+      return AppFeatureMetaEnum.enableChat.gIcon;
+    case HomeTabIndex.checkin:
+      return AppFeatureMetaEnum.enableCheckin.gIcon;
+    case HomeTabIndex.settings:
+      return AppFeatureMetaEnum.settings.gIcon;
+  }
+}
+
+String _titleForTab(HomeTabIndex tab) {
+  switch (tab) {
+    case HomeTabIndex.notes:
+      return 'home_bar_title_note'.tr;
+    case HomeTabIndex.tracker:
+      return 'home_bar_title_tracker'.tr;
+    case HomeTabIndex.task:
+      return 'home_bar_title_task'.tr;
+    case HomeTabIndex.clipboard:
+      return 'home_bar_title_clipboard'.tr;
+    case HomeTabIndex.chat:
+      return 'home_bar_title_chat'.tr;
+    case HomeTabIndex.checkin:
+      return 'home_bar_title_checkin'.tr;
+    case HomeTabIndex.settings:
+      return 'home_bar_title_setting'.tr;
+  }
+}
 
 class HomePageWrapper extends StatefulWidget {
   const HomePageWrapper({super.key});
@@ -29,20 +124,8 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   final AppLaunchController appLaunchController = Get.find<AppLaunchController>();
 
   HomeTabIndex _selectedTab = HomeTabIndex.notes;
+  final Map<FeatureSection, HomeTabIndex> _sectionActiveTabs = {};
   Worker? _launchWorker;
-
-  final Map<HomeTabIndex, Tab> _allTabs = {
-    HomeTabIndex.notes: Tab(text: 'home_bar_title_note'.tr, icon: Icon((AppFeatureMetaEnum.enableNotes.gIcon))),
-    HomeTabIndex.tracker: Tab(text: 'home_bar_title_tracker'.tr, icon: Icon((AppFeatureMetaEnum.enableTracker.gIcon))),
-    HomeTabIndex.task: Tab(text: 'home_bar_title_task'.tr, icon: const Icon(Icons.check_box_rounded)),
-    HomeTabIndex.clipboard: Tab(
-      text: 'home_bar_title_clipboard'.tr,
-      icon: Icon((AppFeatureMetaEnum.enableClipboardBackup.gIcon)),
-    ),
-    HomeTabIndex.chat: Tab(text: 'home_bar_title_chat'.tr, icon: Icon((AppFeatureMetaEnum.enableChat.gIcon))),
-    HomeTabIndex.checkin: Tab(text: 'home_bar_title_checkin'.tr, icon: Icon((AppFeatureMetaEnum.enableCheckin.gIcon))),
-    HomeTabIndex.settings: Tab(text: 'home_bar_title_setting'.tr, icon: Icon((AppFeatureMetaEnum.settings.gIcon))),
-  };
 
   List<HomeTabIndex> get _activeIndices {
     List<HomeTabIndex> indices = [];
@@ -52,7 +135,6 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     if (settingController.checkinEnabled) indices.add(HomeTabIndex.checkin);
     if (settingController.chatEnabled) indices.add(HomeTabIndex.chat);
     if (settingController.clipboardBackupEnabled) indices.add(HomeTabIndex.clipboard);
-    indices.add(HomeTabIndex.settings);
     return indices;
   }
 
@@ -64,12 +146,14 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
     if (requestedTab != null) {
       _selectedTab = requestedTab;
     }
+    _recordSectionTab(_selectedTab);
+
     _launchWorker = ever<String?>(appLaunchController.pendingHomeTab, (tabId) {
       final requested = _tabFromLaunchId(tabId);
       if (requested == null) return;
       final activeIndices = _activeIndices;
       if (activeIndices.contains(requested) && mounted) {
-        setState(() => _selectedTab = requested);
+        _onTabChanged(requested);
       }
       appLaunchController.clearPendingHomeTab();
     });
@@ -79,6 +163,31 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   void dispose() {
     _launchWorker?.dispose();
     super.dispose();
+  }
+
+  void _recordSectionTab(HomeTabIndex tab) {
+    final section = sectionForTab(tab);
+    if (section != null) {
+      _sectionActiveTabs[section] = tab;
+    }
+  }
+
+  void _onTabChanged(HomeTabIndex tab) {
+    _recordSectionTab(tab);
+    setState(() => _selectedTab = tab);
+  }
+
+  void _onSectionSelected(FeatureSection section) {
+    final activeIndices = _activeIndices;
+    final sectionTabs = section.candidateTabs.where((t) => activeIndices.contains(t)).toList();
+    if (sectionTabs.isEmpty) return;
+
+    final remembered = _sectionActiveTabs[section];
+    if (remembered != null && sectionTabs.contains(remembered)) {
+      _onTabChanged(remembered);
+    } else {
+      _onTabChanged(sectionTabs.first);
+    }
   }
 
   HomeTabIndex? _tabFromLaunchId(String? tabId) {
@@ -116,38 +225,55 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   Widget build(BuildContext context) {
     return Obx(() {
       final activeIndices = _activeIndices;
-      if (activeIndices.isEmpty) return const SizedBox.shrink();
+      if (activeIndices.isEmpty && _selectedTab != HomeTabIndex.settings) {
+        return const SizedBox.shrink();
+      }
 
       var selected = _selectedTab;
-      if (!activeIndices.contains(selected)) {
-        selected = activeIndices.first;
+      if (selected != HomeTabIndex.settings && !activeIndices.contains(selected)) {
+        selected = activeIndices.isNotEmpty ? activeIndices.first : HomeTabIndex.settings;
       }
-      final tabs = activeIndices.map((e) => _allTabs[e]!).toList();
 
       return _HomePage(
         selectedTab: selected,
-        tabs: tabs,
         activeIndices: activeIndices,
-        onTabChanged: (tab) {
-          setState(() => _selectedTab = tab);
-        },
+        onTabChanged: _onTabChanged,
+        onSectionSelected: _onSectionSelected,
       );
     });
   }
 }
 
 class _HomePage extends GetResponsiveView {
-  _HomePage({required this.selectedTab, required this.tabs, required this.activeIndices, required this.onTabChanged});
+  _HomePage({
+    required this.selectedTab,
+    required this.activeIndices,
+    required this.onTabChanged,
+    required this.onSectionSelected,
+  });
 
   final HomeTabIndex selectedTab;
-  final List<Tab> tabs;
   final List<HomeTabIndex> activeIndices;
   final ValueChanged<HomeTabIndex> onTabChanged;
+  final ValueChanged<FeatureSection> onSectionSelected;
+
+  final SettingController settingController = Get.find<SettingController>();
 
   bool get _hasSidebar => selectedTab == HomeTabIndex.notes || selectedTab == HomeTabIndex.chat;
 
   @override
   Widget? phone() {
+    final activeSections = FeatureSection.values.where((section) {
+      return section.candidateTabs.any((tab) => activeIndices.contains(tab));
+    }).toList();
+
+    final currentSection = sectionForTab(selectedTab);
+    final currentSectionActiveTabs = currentSection == null
+        ? <HomeTabIndex>[]
+        : currentSection.candidateTabs.where((tab) => activeIndices.contains(tab)).toList();
+
+    final showColorController = [HomeTabIndex.notes, HomeTabIndex.tracker, HomeTabIndex.chat].contains(selectedTab);
+
     return Scaffold(
       drawer: _hasSidebar
           ? Drawer(
@@ -155,18 +281,62 @@ class _HomePage extends GetResponsiveView {
               child: SafeArea(child: _FeatureSidebar(index: selectedTab)),
             )
           : null,
-      appBar: AppBar(title: _AppBarTitle(index: selectedTab), titleSpacing: _hasSidebar ? 0.0 : 16.0),
-      body: _RightMain(index: selectedTab),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: activeIndices.indexOf(selectedTab),
-        onDestinationSelected: (index) {
-          final tab = activeIndices[index];
-          if (tab != selectedTab) onTabChanged(tab);
-        },
-        destinations: tabs
-            .map((tab) => NavigationDestination(icon: tab.icon ?? const Icon(Icons.circle), label: tab.text ?? ''))
-            .toList(),
+      appBar: AppBar(
+        title: _AppBarTitle(index: selectedTab),
+        titleSpacing: _hasSidebar ? 0.0 : 16.0,
+        actions: [
+          if (showColorController)
+            Obx(
+              () => PaletteColorPickerButton(
+                selectedTag: settingController.colorTag,
+                onSelected: (newTag) {
+                  settingController.updateAppSetting(colorTag: newTag);
+                },
+              ),
+            ),
+          IconButton(
+            tooltip: 'home_bar_title_setting'.tr,
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              Get.to(
+                () => Scaffold(
+                  appBar: AppBar(title: Text('home_bar_title_setting'.tr)),
+                  body: const SafeArea(child: CommonSettings()),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
+      body: Column(
+        children: [
+          Expanded(child: _RightMain(index: selectedTab)),
+          if (currentSectionActiveTabs.length > 1)
+            _MobileSubFeatureSwitcher(
+              activeTabs: currentSectionActiveTabs,
+              selectedTab: selectedTab,
+              onTabChanged: onTabChanged,
+            ),
+        ],
+      ),
+      bottomNavigationBar: activeSections.isEmpty
+          ? null
+          : NavigationBar(
+              selectedIndex: currentSection != null && activeSections.contains(currentSection)
+                  ? activeSections.indexOf(currentSection)
+                  : 0,
+              onDestinationSelected: (index) {
+                onSectionSelected(activeSections[index]);
+              },
+              destinations: activeSections.map((section) {
+                return NavigationDestination(
+                  icon: Icon(section.icon),
+                  selectedIcon: Icon(section.selectedIcon),
+                  label: section.title,
+                );
+              }).toList(),
+            ),
     );
   }
 
@@ -175,18 +345,10 @@ class _HomePage extends GetResponsiveView {
     return Scaffold(
       body: Row(
         children: [
-          NavigationRail(
-            selectedIndex: activeIndices.indexOf(selectedTab),
-            onDestinationSelected: (index) => onTabChanged(activeIndices[index]),
-            labelType: NavigationRailLabelType.all,
-            destinations: tabs
-                .map(
-                  (tab) => NavigationRailDestination(
-                    icon: tab.icon ?? const Icon(Icons.circle),
-                    label: Text(tab.text ?? ''),
-                  ),
-                )
-                .toList(),
+          _DesktopSidebar(
+            selectedTab: selectedTab,
+            activeIndices: activeIndices,
+            onTabChanged: onTabChanged,
           ),
           const VerticalDivider(width: 1),
           Expanded(
@@ -216,6 +378,250 @@ class _HomePage extends GetResponsiveView {
   }
 }
 
+class _MobileSubFeatureSwitcher extends StatelessWidget {
+  const _MobileSubFeatureSwitcher({
+    required this.activeTabs,
+    required this.selectedTab,
+    required this.onTabChanged,
+  });
+
+  final List<HomeTabIndex> activeTabs;
+  final HomeTabIndex selectedTab;
+  final ValueChanged<HomeTabIndex> onTabChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 6.0, bottom: 8.0),
+      alignment: Alignment.center,
+      child: Container(
+        padding: const EdgeInsets.all(3.0),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withAlpha(120),
+          borderRadius: BorderRadius.circular(24.0),
+          border: Border.all(
+            color: theme.dividerColor.withAlpha(20),
+            width: 0.5,
+          ),
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: activeTabs.map((tab) {
+              final isSelected = tab == selectedTab;
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (!isSelected) {
+                    onTabChanged(tab);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
+                  decoration: BoxDecoration(
+                    color: isSelected ? colorScheme.surface : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20.0),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(16),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1.5),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _iconDataForTab(tab),
+                        size: 15,
+                        color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant.withAlpha(200),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _titleForTab(tab),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant.withAlpha(200),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopSidebar extends StatelessWidget {
+  const _DesktopSidebar({
+    required this.selectedTab,
+    required this.activeIndices,
+    required this.onTabChanged,
+  });
+
+  final HomeTabIndex selectedTab;
+  final List<HomeTabIndex> activeIndices;
+  final ValueChanged<HomeTabIndex> onTabChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final settingController = Get.find<SettingController>();
+    final activeSections = FeatureSection.values.where((section) {
+      return section.candidateTabs.any((tab) => activeIndices.contains(tab));
+    }).toList();
+
+    return Container(
+      width: 200,
+      color: theme.colorScheme.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'XBB',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Obx(
+                      () => PaletteColorPickerButton(
+                        selectedTag: settingController.colorTag,
+                        onSelected: (newTag) {
+                          settingController.updateAppSetting(colorTag: newTag);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+              children: [
+                for (final section in activeSections) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12.0, top: 12.0, bottom: 4.0),
+                    child: Text(
+                      section.title,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant.withAlpha(180),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  for (final tab in section.candidateTabs.where((t) => activeIndices.contains(t)))
+                    _DesktopSidebarTile(
+                      icon: _iconDataForTab(tab),
+                      title: _titleForTab(tab),
+                      isSelected: tab == selectedTab,
+                      onTap: () => onTabChanged(tab),
+                    ),
+                ],
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: _DesktopSidebarTile(
+              icon: AppFeatureMetaEnum.settings.gIcon,
+              title: 'home_bar_title_setting'.tr,
+              isSelected: selectedTab == HomeTabIndex.settings,
+              onTap: () => onTabChanged(HomeTabIndex.settings),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopSidebarTile extends StatelessWidget {
+  const _DesktopSidebarTile({
+    required this.icon,
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final backgroundColor = isSelected ? colorScheme.secondaryContainer : Colors.transparent;
+    final foregroundColor = isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurface;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Material(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8.0),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8.0),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: foregroundColor,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: foregroundColor,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FeatureSidebar extends StatelessWidget {
   const _FeatureSidebar({required this.index});
   final HomeTabIndex index;
@@ -230,34 +636,6 @@ class _FeatureSidebar extends StatelessWidget {
       default:
         return const SizedBox.shrink();
     }
-  }
-}
-
-class _GlobalColorController extends StatefulWidget {
-  const _GlobalColorController();
-
-  @override
-  State<_GlobalColorController> createState() => _GlobalColorControllerState();
-}
-
-class _GlobalColorControllerState extends State<_GlobalColorController> {
-  final settingController = Get.find<SettingController>();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: ColorPickerButtons(
-          selectedTag: settingController.colorTag,
-          onSelected: (newTag) {
-            setState(() {
-              settingController.updateAppSetting(colorTag: newTag);
-            });
-          },
-        ),
-      ),
-    );
   }
 }
 
@@ -290,8 +668,6 @@ class _DesktopHeader extends StatelessWidget {
   const _DesktopHeader({required this.tab});
   final HomeTabIndex tab;
 
-  bool get _showColorController => [HomeTabIndex.notes, HomeTabIndex.tracker, HomeTabIndex.chat].contains(tab);
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -300,30 +676,16 @@ class _DesktopHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (tab == HomeTabIndex.notes) const Flexible(child: RepoQuickSwitcher()) else Text(_titleForTab(tab)),
-          if (_showColorController) const _GlobalColorController(),
+          if (tab == HomeTabIndex.notes)
+            const Flexible(child: RepoQuickSwitcher())
+          else
+            Text(
+              _titleForTab(tab),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
         ],
       ),
     );
-  }
-
-  String _titleForTab(HomeTabIndex tab) {
-    switch (tab) {
-      case HomeTabIndex.tracker:
-        return 'home_bar_title_tracker'.tr;
-      case HomeTabIndex.task:
-        return 'home_bar_title_task'.tr;
-      case HomeTabIndex.clipboard:
-        return 'home_bar_title_clipboard'.tr;
-      case HomeTabIndex.chat:
-        return 'home_bar_title_chat'.tr;
-      case HomeTabIndex.checkin:
-        return 'home_bar_title_checkin'.tr;
-      case HomeTabIndex.settings:
-        return 'home_bar_title_setting'.tr;
-      default:
-        return '';
-    }
   }
 }
 
@@ -333,33 +695,9 @@ class _AppBarTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    switch (index) {
-      case HomeTabIndex.notes:
-        return const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(child: RepoQuickSwitcher()),
-            _GlobalColorController(),
-          ],
-        );
-      case HomeTabIndex.tracker:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text('home_bar_title_tracker'.tr), const _GlobalColorController()],
-        );
-      case HomeTabIndex.chat:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text('home_bar_title_chat'.tr), const _GlobalColorController()],
-        );
-      case HomeTabIndex.task:
-        return Text('home_bar_title_task'.tr);
-      case HomeTabIndex.settings:
-        return Text('home_bar_title_setting'.tr);
-      case HomeTabIndex.clipboard:
-        return Text('home_bar_title_clipboard'.tr);
-      case HomeTabIndex.checkin:
-        return Text('home_bar_title_checkin'.tr);
+    if (index == HomeTabIndex.notes) {
+      return const RepoQuickSwitcher();
     }
+    return Text(_titleForTab(index));
   }
 }

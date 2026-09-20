@@ -443,6 +443,50 @@ class _TranslationHelper {
       "en_US": "Notes",
       "zh_CN": "笔记",
     },
+    "section_efficiency": {
+      "en_US": "Efficiency",
+      "zh_CN": "效率",
+    },
+    "section_records": {
+      "en_US": "Records",
+      "zh_CN": "记录",
+    },
+    "section_ai": {
+      "en_US": "AI",
+      "zh_CN": "AI",
+    },
+    "color_picker_tooltip": {
+      "en_US": "ColorPicker",
+      "zh_CN": "颜色选择",
+    },
+    "color_tag_none": {
+      "en_US": "All Colors",
+      "zh_CN": "全部颜色",
+    },
+    "color_tag_red": {
+      "en_US": "Red",
+      "zh_CN": "红色",
+    },
+    "color_tag_orange": {
+      "en_US": "Orange",
+      "zh_CN": "橙色",
+    },
+    "color_tag_yellow": {
+      "en_US": "Yellow",
+      "zh_CN": "黄色",
+    },
+    "color_tag_green": {
+      "en_US": "Green",
+      "zh_CN": "绿色",
+    },
+    "color_tag_blue": {
+      "en_US": "Blue",
+      "zh_CN": "蓝色",
+    },
+    "color_tag_gray": {
+      "en_US": "Gray",
+      "zh_CN": "灰色",
+    },
     "home_bar_title_tracker": {
       "en_US": "Tracker",
       "zh_CN": "追踪",

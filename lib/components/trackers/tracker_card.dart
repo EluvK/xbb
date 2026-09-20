@@ -7,8 +7,8 @@ import 'package:xbb/components/common/permission.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/tracker/model.dart';
+import 'package:xbb/utils/color_picker.dart';
 import 'package:xbb/utils/double_click.dart';
-import 'package:xbb/utils/list_tile_card.dart';
 
 class TrackerCard extends StatefulWidget {
   const TrackerCard({super.key, required this.item, required this.records});
