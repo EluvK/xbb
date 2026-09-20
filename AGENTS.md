@@ -1,25 +1,19 @@
-## About This Repo
-- A flutter app named XBB. Root(`lib/main.dart`)
-- GetStorage for local cache + SQLite for user data + syncstore protocol to sync with server.
-- With submodules : `sync_annotation` + `sync_generator` (model annotation && codegen for sync engines), `syncstore_client` (syncstore protocol client), `deepseek_client` (DeepSeek protocol client).
+# Agent Guidelines
 
-## High-value commands
-- Analyze: `flutter analyze`.
+## Repo Overview
+- XBB: Cross-platform Flutter app (`lib/main.dart`) with local-first SQLite + GetStorage cache, synced via SyncStore protocol.
+- Packages (`packages/`): `sync_annotation` + `sync_generator` (codegen), `syncstore_client` (sync client), `deepseek_client` (LLM client).
 
-## App feature list
-- Notes
-- Task
-- Tracker
-- Chat
-- Clipboard
+## Code Structure
+- `lib/components/{feature}/*`: UI widgets.
+- `lib/controller/*`: App & feature state controllers (GetX).
+- `lib/models/{feature}/*`: Domain models (`model.dart`) & SQLite providers (`db.dart`).
+- `lib/pages/*`: Route screens.
 
-Each feature has its own data models, local DB, sync engine, and UI components. Load further details ONLY if needed(.agents/features/*.md)
+## Invariants & Critical Rules
+- Codegen: Never edit `*.g.dart` or `*.freezed.dart`. Modify `model.dart` and run `dart run build_runner build --delete-conflicting-outputs`.
+- i18n: Add new translation keys inside their respective feature section in `lib/utils/translation.dart`, never at the end of the file.
 
-## Code Architecture
-- lib/components/{feature}/*: UI components for each feature.
-- lib/controllers/{feature}/*: State management and business logic for each feature or app settings.
-- lib/models/{feature}/*: Data models for each feature, with annotations for codegen.
-- lib/pages/*: App pages/screens, composed of components and controllers.
-
-## Codegen rules (critical)
-- Do not hand-edit generated files: `lib/models/**/model.g.dart` and `lib/models/**/model.freezed.dart`. Use annotations in `model.dart` and run `dart run build_runner build --delete-conflicting-outputs` to regenerate.
+## Progressive Disclosure
+- System concepts & domain glossary: Read `CONTEXT.md`.
+- Feature-specific design & schemas: Load only when needed from `docs/domain/<feature>.md` (`notes`, `task`, `tracker`, `checkin`, `clipboard`, `chat`, `syncstore_protocol`, `codegen_pipeline`).
