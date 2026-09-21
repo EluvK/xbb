@@ -760,6 +760,14 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "7.0.2"
+  pie_menu:
+    dependency: "direct main"
+    description:
+      name: pie_menu
+      sha256: "5d935590a2534d70202d1b47528467ea919089b2beeb775537eb39484b8adf27"
+      url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
+    source: hosted
+    version: "3.8.3"
   platform:
     dependency: transitive
     description:
