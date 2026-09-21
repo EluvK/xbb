@@ -34,7 +34,7 @@ Active and archived lists are sorted via `sortTaskItems`:
 
 - Debounced Writes: Fast toggling and typing are debounced by 1 second before writing to SQLite and triggering cloud sync to minimize churn.
 - Draft Workflow: New tasks begin as local in-memory drafts. If the user blurs an empty input field, the draft is silently dropped without saving.
-- Archive Action: Users can archive the current active checklist. This sets `archived = true`, assigns `archivedAt = now()`, and creates a fresh empty active workspace.
+- Archive Action: Users can archive completed tasks from the active checklist. This extracts all completed items (`done == true`) into a new historical checklist segment (`archived = true`, `archivedAt = now()`), while preserving unfinished tasks in the active workspace. The archive button is enabled only when completed tasks exist.
 
 ---
 

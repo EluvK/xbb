@@ -117,7 +117,7 @@ class _ViewTasksState extends State<ViewTasks> {
     return frozen;
   }
 
-  bool get _hasActiveTasks => _activeTasks.isNotEmpty;
+  bool get _hasCompletedTasks => _activeTasks.any((task) => task.done);
 
   List<TaskItem> _normalizeSortOrder(List<TaskItem> tasks) {
     return [for (var i = 0; i < tasks.length; i++) tasks[i].copyWith(sortOrder: i)];
@@ -349,10 +349,15 @@ class _ViewTasksState extends State<ViewTasks> {
     _beginEdit(created);
   }
 
-  Future<void> _archiveCurrentTasks() async {
+  Future<void> _archiveCompletedTasks() async {
     final controller = _checkListController;
     if (controller == null) return;
-    if (!_hasActiveTasks) {
+
+    if (_editingTaskId != null) {
+      await _finishEdit();
+    }
+
+    if (!_hasCompletedTasks) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('task_no_archivable_items'.tr)));
       return;
@@ -360,19 +365,39 @@ class _ViewTasksState extends State<ViewTasks> {
 
     final active = await _resolveActiveCheckList(createIfMissing: false);
     if (active == null) return;
-    final archivedAt = DateTime.now();
 
+    final currentTasks = List<TaskItem>.of(_activeTasks);
+    final completed = currentTasks.where((task) => task.done).toList();
+    final remaining = currentTasks.where((task) => !task.done).toList();
+    if (completed.isEmpty) return;
+
+    _debounceSaveTimer?.cancel();
+    _pendingSaveTasks = null;
+    _debounceQueuedTasks = null;
     _debounceArchiveTimer?.cancel();
-    _debounceArchiveTimer = Timer(const Duration(seconds: 1), () {
-      controller.updateData(active.id, active.body.copyWith(archived: true, archivedAt: archivedAt));
-      controller.addData(const CheckList(tasks: '[]', archived: false, archivedAt: null));
-      TaskWidgetBridge.scheduleRefresh();
-      if (mounted) {
-        setState(() {
-          _archivedLoadCount = 0;
-        });
-      }
-    });
+
+    final archivedAt = DateTime.now();
+    final normalizedRemaining = _normalizeSortOrder(remaining);
+    final updatedActive = active.body.copyWith(
+      tasks: encodeTaskItems(normalizedRemaining),
+      archived: false,
+      archivedAt: null,
+    );
+
+    controller.addData(CheckList(
+      tasks: encodeTaskItems(completed),
+      archived: true,
+      archivedAt: archivedAt,
+    ));
+    controller.updateData(active.id, updatedActive);
+    TaskWidgetBridge.scheduleRefresh();
+
+    if (mounted) {
+      setState(() {
+        _activeCheckList = updatedActive;
+        _archivedLoadCount = 0;
+      });
+    }
   }
 
   Future<bool> _confirmAction({required String titleKey, required String contentKey}) async {
@@ -392,13 +417,13 @@ class _ViewTasksState extends State<ViewTasks> {
     return result == true;
   }
 
-  Future<void> _confirmAndArchiveWorkspace() async {
+  Future<void> _confirmAndArchiveCompleted() async {
     final confirmed = await _confirmAction(
       titleKey: 'task_confirm_archive_title',
       contentKey: 'task_confirm_archive_content',
     );
     if (!confirmed) return;
-    await _archiveCurrentTasks();
+    await _archiveCompletedTasks();
   }
 
   Future<void> _confirmAndDeleteTask(int index) async {
@@ -627,9 +652,9 @@ class _ViewTasksState extends State<ViewTasks> {
             child: Row(
               children: [
                 FilledButton.tonalIcon(
-                  onPressed: _hasActiveTasks ? () => _confirmAndArchiveWorkspace() : null,
+                  onPressed: _hasCompletedTasks ? () => _confirmAndArchiveCompleted() : null,
                   icon: const Icon(Icons.archive_outlined),
-                  label: Text('task_action_archive_workspace'.tr),
+                  label: Text('task_action_archive_completed'.tr),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.tonal(

@@ -291,9 +291,13 @@ class _TranslationHelper {
       "en_US": "Workspace",
       "zh_CN": "工作区",
     },
+    "task_action_archive_completed": {
+      "en_US": "Archive Completed",
+      "zh_CN": "归档已完成",
+    },
     "task_action_archive_workspace": {
-      "en_US": "Archive Workspace",
-      "zh_CN": "归档工作区",
+      "en_US": "Archive Completed",
+      "zh_CN": "归档已完成",
     },
     "task_action_add": {
       "en_US": "Task",
@@ -344,8 +348,8 @@ class _TranslationHelper {
       "zh_CN": "点击编辑任务内容",
     },
     "task_no_archivable_items": {
-      "en_US": "No items to archive in workspace",
-      "zh_CN": "当前没有可归档任务",
+      "en_US": "No completed tasks to archive",
+      "zh_CN": "当前没有已完成的可归档任务",
     },
     "task_saving": {
       "en_US": "Saving...",
@@ -412,12 +416,12 @@ class _TranslationHelper {
       "zh_CN": "更新时间",
     },
     "task_confirm_archive_title": {
-      "en_US": "Archive Workspace",
-      "zh_CN": "归档工作区",
+      "en_US": "Archive Completed",
+      "zh_CN": "归档已完成",
     },
     "task_confirm_archive_content": {
-      "en_US": "Archive current workspace? This will create a new workspace.",
-      "zh_CN": "确认归档当前工作区吗？归档后会自动创建新的工作区。",
+      "en_US": "Archive all completed tasks? Incomplete tasks will remain in the workspace.",
+      "zh_CN": "确认归档当前工作区中所有已完成的任务吗？未完成的任务将保留在工作区。",
     },
     "task_confirm_delete_title": {
       "en_US": "Delete Task",
