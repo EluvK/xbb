@@ -140,17 +140,6 @@ class _CommonSettingsState extends State<CommonSettings> {
                   },
                 ),
               ),
-              _withPadding(
-                BoolSelectorInputWidget(
-                  title: SyncStoreInputMetaEnum.enableTunnel,
-                  initialValue: settingController.syncStoreHpkeEnabled,
-                  onChanged: (value) async {
-                    settingController.updateSyncStoreSetting(enableHpke: value);
-                    await reInitSyncStoreController();
-                    _resetPingLatency();
-                  },
-                ),
-              ),
               const Divider(),
               Text('app_feature_management'.tr),
               _withPadding(

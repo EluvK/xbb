@@ -86,7 +86,7 @@
 
 ### 阶段三：客户端 Local-First 核心与平滑迁移层
 
-- [ ] **TASK-3.1: 客户端彻底清理老旧网络与生成器依赖**
+- [x] **TASK-3.1: 客户端彻底清理老旧网络与生成器依赖**
   - **依赖**: TASK-1.1
   - **工作内容**:
     1. 移除 `packages/syncstore_client` 中的 `HpkeInterceptor` 与 `ConcurrentChunkInterceptor`。

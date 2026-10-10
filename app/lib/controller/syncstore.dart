@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
-import 'package:cryptography/cryptography.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
@@ -132,7 +131,6 @@ class SyncStoreControl extends GetxController {
     client.value = SyncStoreClient(
       baseUrl: settingController.syncStoreUrl,
       tokenStorage: tokenStorage,
-      enableHpke: settingController.syncStoreHpkeEnabled,
     );
   }
 
@@ -287,21 +285,5 @@ class GetStorageTokenStorage implements TokenStorage {
   @override
   String? getUserId() {
     return settingController.userId;
-  }
-
-  @override
-  Future<PublicKey?> getHpkePubKey() {
-    final pubKeyB64 = box.read<String?>(TOKEN_HPKE_PUBKEY_KEY);
-    if (pubKeyB64 == null) {
-      return Future.value(null);
-    }
-    final pubKeyBytes = base64Decode(pubKeyB64);
-    final publicKey = SimplePublicKey(pubKeyBytes, type: KeyPairType.x25519);
-    return Future.value(publicKey);
-  }
-
-  @override
-  Future<void> setHpkePubKey(String pubKeyBase64) {
-    return box.write(TOKEN_HPKE_PUBKEY_KEY, pubKeyBase64);
   }
 }

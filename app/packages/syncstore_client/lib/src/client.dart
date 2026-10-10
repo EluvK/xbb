@@ -2,8 +2,6 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'auth_interceptor.dart';
-import 'chunk_interceptor.dart';
-import 'hpke_interceptor.dart';
 import 'token_storage.dart';
 import 'models.dart';
 import 'errors.dart';
@@ -12,50 +10,34 @@ class SyncStoreClient {
   final Dio _dio;
   final TokenStorage tokenStorage;
   final AuthService authService;
-  final bool enableHpke;
 
-  SyncStoreClient._(this._dio, this.tokenStorage, this.authService, this.enableHpke);
+  Dio get dio => _dio;
+
+  SyncStoreClient._(this._dio, this.tokenStorage, this.authService);
 
   factory SyncStoreClient({
     required String baseUrl,
     required TokenStorage tokenStorage,
-    required bool enableHpke,
     Dio? dio,
   }) {
     final client = dio ?? Dio(BaseOptions(baseUrl: baseUrl));
     final authSrv = AuthService(client, tokenStorage);
     client.interceptors.add(AuthInterceptor(tokenStorage, authSrv));
-    if (enableHpke) {
-      // try to get existing public key from storage
-      tokenStorage.getHpkePubKey().then((publicKey) {
-        if (publicKey != null) {
-          client.interceptors.add(HpkeInterceptor(publicKey));
-          client.interceptors.add(ConcurrentChunkInterceptor());
-        }
-      });
-    }
-    return SyncStoreClient._(client, tokenStorage, authSrv, enableHpke);
+    return SyncStoreClient._(client, tokenStorage, authSrv);
   }
 
   // helper function to build Options for request
-  Options _buildOptions({bool skipAuth = false, bool skipHpke = false, ResponseType responseType = ResponseType.json}) {
+  Options _buildOptions({bool skipAuth = false, ResponseType responseType = ResponseType.json}) {
     final extra = <String, dynamic>{};
     if (skipAuth) {
       extra['skipAuthInterceptor'] = true;
-    }
-    if (enableHpke && !skipHpke && _dio.interceptors.any((element) => element is HpkeInterceptor)) {
-      extra['secureHpke'] = true;
-      extra['isChunked'] = true; // 只有启用HPKE才启用分片上传
-      responseType = ResponseType.bytes;
     }
     return Options(extra: extra, responseType: responseType);
   }
 
   Future<Uint8List> download(String url, {bool isPublic = false}) {
     return perform(() async {
-      // public download does not need auth, enable skip auth.
-      // not support hpke for public download for now.
-      final options = _buildOptions(skipAuth: isPublic, skipHpke: true, responseType: ResponseType.bytes);
+      final options = _buildOptions(skipAuth: isPublic, responseType: ResponseType.bytes);
       final resp = await _dio.get<List<int>>(url, options: options);
       return Uint8List.fromList(resp.data!);
     });
@@ -70,7 +52,6 @@ class SyncStoreClient {
   }
 
   Future<bool> logout() async {
-    // Just clear tokens, todo might need to call server logout endpoint in future
     await tokenStorage.clear();
     return true;
   }
@@ -86,29 +67,19 @@ class SyncStoreClient {
   Future<int> pingLatencyMs() async {
     try {
       final stopwatch = Stopwatch()..start();
-      await _dio.get('/health', options: _buildOptions(skipAuth: true, skipHpke: true));
+      await _dio.get('/health', options: _buildOptions(skipAuth: true));
       stopwatch.stop();
       return stopwatch.elapsedMilliseconds;
     } catch (_) {
-      // Use -1 to represent unreachable/failed health request.
       return -1;
     }
   }
 
   Future<UserProfile> getProfile(String userId) {
     return perform(() async {
-      // in case of first time login, we need to skip hpke to get public key?
-      // this api can be no harm called without hpke.
-      final resp = await _dio.get('/user/profile/$userId', options: _buildOptions(skipHpke: true));
+      final resp = await _dio.get('/user/profile/$userId', options: _buildOptions());
       final data = resp.data as Map<String, dynamic>;
-      final userProfile = UserProfile.fromJson(data);
-      tokenStorage.setHpkePubKey(userProfile.publicKey);
-      // update HpkeInterceptor with new public key if needed
-      final publicKey = await tokenStorage.getHpkePubKey();
-      if (publicKey == null) return userProfile;
-      _dio.interceptors.removeWhere((element) => element is HpkeInterceptor);
-      _dio.interceptors.add(HpkeInterceptor(publicKey));
-      return userProfile;
+      return UserProfile.fromJson(data);
     });
   }
 
@@ -207,7 +178,7 @@ class SyncStoreClient {
   /// delete data by id
   Future<void> delete(String namespace, String collection, String id) {
     return perform(() async {
-      await _dio.delete('/data/$namespace/$collection/$id', options: _buildOptions(skipHpke: true));
+      await _dio.delete('/data/$namespace/$collection/$id', options: _buildOptions());
     });
   }
 
@@ -254,7 +225,7 @@ class SyncStoreClient {
 
   Future<void> deleteAcls(String namespace, String collection, String id) {
     return perform(() async {
-      await _dio.delete('/acl/$namespace/$collection/$id', options: _buildOptions(skipHpke: true));
+      await _dio.delete('/acl/$namespace/$collection/$id', options: _buildOptions());
     });
   }
 }
@@ -270,7 +241,7 @@ class AuthService {
       final resp = await dio.post(
         '/auth/name-login',
         data: {'username': username, 'password': password},
-        options: Options(extra: {'skipAuthInterceptor': true, 'skipHpke': true}),
+        options: Options(extra: {'skipAuthInterceptor': true}),
       );
       final data = _normalizeResp(resp);
       _persistTokens(data);
@@ -289,7 +260,7 @@ class AuthService {
       final resp = await dio.post(
         '/auth/refresh',
         data: {'refresh_token': refreshToken},
-        options: Options(extra: {'skipAuthInterceptor': true, 'skipHpke': true}),
+        options: Options(extra: {'skipAuthInterceptor': true}),
       );
       final data = _normalizeResp(resp);
       _persistTokens(data);

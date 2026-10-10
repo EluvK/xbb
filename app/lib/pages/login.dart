@@ -207,17 +207,6 @@ class _LoginBodyState extends State<LoginBody> {
               setState(() {});
             },
           ),
-          BoolSelectorInputWidget(
-            title: SyncStoreInputMetaEnum.enableTunnel,
-            initialValue: settingController.syncStoreHpkeEnabled,
-            onChanged: (value) async {
-              print('value: $value');
-              settingController.updateSyncStoreSetting(enableHpke: value);
-              await reInitSyncStoreController();
-              _pingLatencyMs = null;
-              setState(() {});
-            },
-          ),
         ],
       ),
     );

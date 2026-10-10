@@ -16,16 +16,13 @@ abstract interface class TextInputHistory {
 }
 
 enum SyncStoreInputMetaEnum implements TitleInterface {
-  address,
-  enableTunnel;
+  address;
 
   @override
   Color get gColor {
     switch (this) {
       case SyncStoreInputMetaEnum.address:
         return Colors.orange;
-      case SyncStoreInputMetaEnum.enableTunnel:
-        return Colors.blue;
     }
   }
 
@@ -34,8 +31,6 @@ enum SyncStoreInputMetaEnum implements TitleInterface {
     switch (this) {
       case SyncStoreInputMetaEnum.address:
         return Icons.cloud;
-      case SyncStoreInputMetaEnum.enableTunnel:
-        return Icons.link;
     }
   }
 
@@ -44,8 +39,6 @@ enum SyncStoreInputMetaEnum implements TitleInterface {
     switch (this) {
       case SyncStoreInputMetaEnum.address:
         return 'app_server_url'.tr;
-      case SyncStoreInputMetaEnum.enableTunnel:
-        return 'app_enable_tunnel'.tr;
     }
   }
 }

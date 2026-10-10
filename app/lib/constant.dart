@@ -3,7 +3,6 @@ const String GET_STORAGE_FILE_KEY = 'XbbGetStorage2';
 
 const String TOKEN_ACCESS_KEY = 'AccessToken';
 const String TOKEN_REFRESH_KEY = 'RefreshToken';
-const String TOKEN_HPKE_PUBKEY_KEY = 'HpkePublicKey';
 
 const String STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY = 'SyncStoreSettings';
 const String STORAGE_SETTING_CHAT_LLM_SETTINGS_KEY = 'ChatLlmSettings';

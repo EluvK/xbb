@@ -132,10 +132,9 @@ class SettingController extends GetxController {
   // syncstore settings
   final syncStoreSetting = SyncStoreSetting.defaults().obs;
   String get syncStoreUrl => syncStoreSetting.value.url;
-  bool get syncStoreHpkeEnabled => syncStoreSetting.value.hpkeEnabled;
-  void updateSyncStoreSetting({String? baseUrl, bool? enableHpke, List<String>? urlHistory}) {
+  void updateSyncStoreSetting({String? baseUrl, List<String>? urlHistory}) {
     syncStoreSetting.update((setting) {
-      setting?.update(baseUrl: baseUrl, enableHpke: enableHpke, urlHistory: urlHistory);
+      setting?.update(baseUrl: baseUrl, urlHistory: urlHistory);
     });
     box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, syncStoreSetting.value.toJson());
   }
@@ -281,37 +280,31 @@ class SettingController extends GetxController {
 
 class SyncStoreSetting {
   String baseUrl;
-  bool enableHpke;
   List<String> urlHistory;
 
   get url => baseUrl;
-  get hpkeEnabled => enableHpke;
 
-  SyncStoreSetting({required this.baseUrl, required this.enableHpke, List<String>? urlHistory})
+  SyncStoreSetting({required this.baseUrl, List<String>? urlHistory})
     : urlHistory = urlHistory ?? [];
 
   factory SyncStoreSetting.defaults() {
-    return SyncStoreSetting(baseUrl: 'http://127.0.0.1:10101/api', enableHpke: false);
+    return SyncStoreSetting(baseUrl: 'http://127.0.0.1:10101/api');
   }
 
   Map<String, dynamic> toJson() {
-    return {'base_url': baseUrl, 'enable_hpke': enableHpke, 'url_history': urlHistory};
+    return {'base_url': baseUrl, 'url_history': urlHistory};
   }
 
   factory SyncStoreSetting.fromJson(Map<String, dynamic> json) {
     return SyncStoreSetting(
       baseUrl: json['base_url'] ?? 'http://127.0.0.1:10101/api',
-      enableHpke: json['enable_hpke'] ?? false,
       urlHistory: ((json['url_history'] as List<dynamic>?) ?? []).cast<String>(),
     );
   }
 
-  void update({String? baseUrl, bool? enableHpke, List<String>? urlHistory}) {
+  void update({String? baseUrl, List<String>? urlHistory}) {
     if (baseUrl != null) {
       this.baseUrl = baseUrl;
-    }
-    if (enableHpke != null) {
-      this.enableHpke = enableHpke;
     }
     if (urlHistory != null) {
       this.urlHistory = urlHistory;
