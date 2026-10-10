@@ -1,7 +1,18 @@
 use std::path::{Path, PathBuf};
 use salvo::http::StatusCode;
 use salvo::prelude::*;
+use sqlx::SqlitePool;
 use crate::auth::AuthMiddleware;
+
+#[derive(Clone)]
+pub struct DbMiddleware(pub SqlitePool);
+
+#[handler]
+impl DbMiddleware {
+    async fn handle(&self, depot: &mut Depot) {
+        depot.insert("pool", self.0.clone());
+    }
+}
 
 #[handler]
 pub async fn app_version(req: &mut Request, res: &mut Response) {
@@ -100,8 +111,27 @@ pub fn create_app_router_with_auth(auth: AuthMiddleware) -> Router {
             Router::with_path("sync/v1")
                 .hoop(auth)
                 .push(Router::with_path("whoami").get(sync_whoami))
+                .push(Router::with_path("push").post(crate::sync::sync_push))
         )
         // 3. 针对旧客户端同步接口的统一优雅拦截 (返回 426)
+        .push(deprecated_router("data"))
+        .push(deprecated_router("data/{**rest}"))
+        .push(deprecated_router("batch-data"))
+        .push(deprecated_router("batch-data/{**rest}"))
+}
+
+pub fn create_app_router_with_db(pool: SqlitePool, auth: AuthMiddleware) -> Router {
+    Router::new()
+        .hoop(DbMiddleware(pool))
+        .push(Router::with_path("fs/public/{app}/version").get(app_version))
+        .push(Router::with_path("fs/public/{app}/CHANGELOG").get(app_changelog))
+        .push(Router::with_path("fs/public/{app}/download").get(app_download))
+        .push(
+            Router::with_path("sync/v1")
+                .hoop(auth)
+                .push(Router::with_path("whoami").get(sync_whoami))
+                .push(Router::with_path("push").post(crate::sync::sync_push))
+        )
         .push(deprecated_router("data"))
         .push(deprecated_router("data/{**rest}"))
         .push(deprecated_router("batch-data"))

@@ -47,7 +47,7 @@
     3. **老接口优雅拦截**：对所有匹配 `/data/*`、`/batch-data/*` 的旧路径，一律返回 HTTP 426 (Upgrade Required)，附带清晰 JSON 升级提示。
   - **验收标准**: curl 测试 `/fs/public/...` 正常返回，访问 `/data/...` 返回 426。
 
-- [ ] **TASK-2.3: 实现提交变更接口 `POST /sync/v1/push`**
+- [x] **TASK-2.3: 实现提交变更接口 `POST /sync/v1/push`**
   - **依赖**: TASK-2.1, TASK-2.2
   - **工作内容**:
     1. 解析 `PushRequest`（包含 `client_id`, `mutations: [{ table, id, op, data, base_version }]`）。
