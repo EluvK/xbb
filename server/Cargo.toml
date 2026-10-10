@@ -11,6 +11,10 @@ path = "src/lib.rs"
 name = "server"
 path = "src/main.rs"
 
+[[bin]]
+name = "migrate_legacy"
+path = "src/bin/migrate_legacy.rs"
+
 [dependencies]
 anyhow = "1.0.100"
 chrono = { version = "0.4.42", features = ["serde"] }

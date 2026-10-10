@@ -74,7 +74,7 @@
     3. 撤权时追加一条 `DELETE` 投影事件。
   - **验收标准**: 单元测试模拟“用户 B 先同步完、A 之后授权 B、B 再次增量 Pull 能够无缝拉到历史数据”。
 
-- [ ] **TASK-2.6: 编写存量数据迁移工具（`migrate_legacy`）**
+- [x] **TASK-2.6: 编写存量数据迁移工具（`migrate_legacy`）**
   - **依赖**: TASK-2.5
   - **工作内容**:
     1. 在 `server/src/bin/migrate_legacy.rs` 编写离线数据迁移 CLI。

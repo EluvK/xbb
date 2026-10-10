@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS acls (
 CREATE INDEX IF NOT EXISTS idx_acls_user ON acls (user_id, table_name, entity_id);
 "#;
 
-pub async fn create_sqlite_pool(database_url: &str) -> Result<SqlitePool> {
+pub async fn create_raw_pool(database_url: &str) -> Result<SqlitePool> {
     let connect_opts = SqliteConnectOptions::from_str(database_url)?
         .create_if_missing(true)
         .journal_mode(SqliteJournalMode::Wal)
@@ -89,8 +89,12 @@ pub async fn create_sqlite_pool(database_url: &str) -> Result<SqlitePool> {
         .await
         .with_context(|| format!("Failed to connect to SQLite at {database_url}"))?;
 
-    init_schema(&pool).await?;
+    Ok(pool)
+}
 
+pub async fn create_sqlite_pool(database_url: &str) -> Result<SqlitePool> {
+    let pool = create_raw_pool(database_url).await?;
+    init_schema(&pool).await?;
     Ok(pool)
 }
 
