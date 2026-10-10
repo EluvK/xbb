@@ -2,6 +2,9 @@
 
 XBB is a cross-platform Flutter personal productivity workspace with a local-first architecture, SQLite data isolation, and cloud synchronization via the `syncstore` protocol.
 
+- Domain Glossary: [GLOSSARY.md](GLOSSARY.md)
+- Architecture Decisions: [docs/adr/README.md](docs/adr/README.md)
+
 ---
 
 ## 1. Architecture Stack
