@@ -94,7 +94,7 @@
     3. 简化网络客户端为标准 Dio，只挂载标准 Bearer JWT 拦截器。
   - **验收标准**: `app/` 编译成功，无 HPKE 及分片相关残留。
 
-- [ ] **TASK-3.2: 建立本地 Local-First 数据库与 Outbox 表结构**
+- [x] **TASK-3.2: 建立本地 Local-First 数据库与 Outbox 表结构**
   - **依赖**: TASK-3.1
   - **工作内容**:
     1. 引入/确认本地 SQLite 支持（推荐使用 Drift 或继续扩展 sqflite 体系）。
