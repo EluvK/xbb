@@ -6,7 +6,7 @@
       "request": "launch",
       "type": "dart",
       "cwd": "app",
-      "program": "app/lib/main.dart",
+      "program": "lib/main.dart",
       "preLaunchTask": "Start Rust Server"
     },
     {
@@ -14,7 +14,7 @@
       "request": "launch",
       "type": "dart",
       "cwd": "app",
-      "program": "app/lib/main.dart"
+      "program": "lib/main.dart"
     },
     {
       "name": "Server (Rust - CodeLLDB)",
