@@ -34,3 +34,29 @@ pub struct PushResponse {
     pub applied_ids: Vec<String>,
     pub conflicts: Vec<ConflictItem>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PullQuery {
+    #[serde(default)]
+    pub checkpoint: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ChangeItem {
+    pub seq: i64,
+    pub table: String,
+    pub id: String,
+    pub op: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
+    pub version: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PullResponse {
+    pub checkpoint: i64,
+    pub has_more: bool,
+    pub changes: Vec<ChangeItem>,
+}

@@ -2,5 +2,5 @@ pub mod handlers;
 pub mod models;
 pub mod service;
 
-pub use handlers::sync_push;
-pub use models::{ConflictItem, Mutation, PushRequest, PushResponse};
+pub use handlers::{sync_pull, sync_push};
+pub use models::{ChangeItem, ConflictItem, Mutation, PullQuery, PullResponse, PushRequest, PushResponse};

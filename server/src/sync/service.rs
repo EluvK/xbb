@@ -2,8 +2,8 @@ use std::sync::LazyLock;
 use anyhow::Result;
 use sqlx::SqlitePool;
 use tokio::sync::Mutex;
-use crate::storage::EntityRecord;
-use super::models::{ConflictItem, PushRequest, PushResponse};
+use crate::storage::{ChangeLogRecord, EntityRecord};
+use super::models::{ChangeItem, ConflictItem, PullResponse, PushRequest, PushResponse};
 
 static SYNC_WRITE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
@@ -175,3 +175,68 @@ pub async fn handle_push(
         conflicts,
     })
 }
+
+pub async fn handle_pull(
+    pool: &SqlitePool,
+    user_id: &str,
+    checkpoint: i64,
+    limit: i64,
+) -> Result<PullResponse> {
+    let limit = limit.clamp(1, 1000);
+    let fetch_limit = limit + 1;
+
+    let rows = sqlx::query_as::<_, ChangeLogRecord>(
+        r#"
+        SELECT seq, table_name, entity_id, owner_id, op, data, version, created_at
+        FROM change_log
+        WHERE seq > ?
+          AND (
+            owner_id = ?
+            OR EXISTS (
+              SELECT 1 FROM acls
+              WHERE acls.table_name = change_log.table_name
+                AND acls.entity_id = change_log.entity_id
+                AND acls.user_id = ?
+            )
+          )
+        ORDER BY seq ASC
+        LIMIT ?
+        "#,
+    )
+    .bind(checkpoint)
+    .bind(user_id)
+    .bind(user_id)
+    .bind(fetch_limit)
+    .fetch_all(pool)
+    .await?;
+
+    let has_more = rows.len() > limit as usize;
+    let records = if has_more {
+        &rows[..limit as usize]
+    } else {
+        &rows[..]
+    };
+
+    let mut new_checkpoint = checkpoint;
+    let mut changes = Vec::with_capacity(records.len());
+
+    for rec in records {
+        new_checkpoint = rec.seq;
+        let data = rec.data.as_deref().and_then(|d| serde_json::from_str(d).ok());
+        changes.push(ChangeItem {
+            seq: rec.seq,
+            table: rec.table_name.clone(),
+            id: rec.entity_id.clone(),
+            op: rec.op.clone(),
+            data,
+            version: rec.version,
+        });
+    }
+
+    Ok(PullResponse {
+        checkpoint: new_checkpoint,
+        has_more,
+        changes,
+    })
+}
+
