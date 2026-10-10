@@ -1,0 +1,48 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Full Stack: Client + Server (Auto Start Server)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "app",
+      "program": "app/lib/main.dart",
+      "preLaunchTask": "Start Rust Server"
+    },
+    {
+      "name": "Client (Flutter Only)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "app",
+      "program": "app/lib/main.dart"
+    },
+    {
+      "name": "Server (Rust - CodeLLDB)",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=server",
+          "--package=server"
+        ],
+        "filter": {
+          "name": "server",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}/server"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (Client + Rust Debugger)",
+      "configurations": [
+        "Client (Flutter Only)",
+        "Server (Rust - CodeLLDB)"
+      ],
+      "stopAll": true
+    }
+  ]
+}

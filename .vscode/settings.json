@@ -1,0 +1,8 @@
+{
+  "dart.projectSearchPaths": [
+    "app"
+  ],
+  "rust-analyzer.linkedProjects": [
+    "server/Cargo.toml"
+  ]
+}
