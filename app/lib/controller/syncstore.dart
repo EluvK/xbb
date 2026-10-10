@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
@@ -139,7 +140,41 @@ class SyncStoreControl extends GetxController {
   @override
   Future<void> onInit() async {
     super.onInit();
+    final userId = settingController.userId;
+    if (userId.isNotEmpty && client.value != null) {
+      try {
+        final db = await LocalFirstDB.getDb(userId: userId);
+        SyncWorker.configure(
+          dio: client.value!.dio,
+          db: db,
+          onUpgradeRequired: (msg) {
+            _showUpgradeDialog(msg);
+          },
+        ).start();
+      } catch (e) {
+        print('Failed to start SyncWorker: $e');
+      }
+    }
     _initialized = true;
+  }
+
+  void _showUpgradeDialog(String msg) {
+    if (Get.context != null) {
+      Get.defaultDialog(
+        title: '版本升级提示',
+        middleText: msg,
+        textConfirm: '知道了',
+        onConfirm: () {
+          Get.back();
+        },
+      );
+    }
+  }
+
+  @override
+  void onClose() {
+    SyncWorker.instance.stop();
+    super.onClose();
   }
 
   bool _initialized = false;

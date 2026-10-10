@@ -6,3 +6,5 @@ export 'outbox_dao.dart';
 export 'sync_meta_dao.dart';
 export 'local_first_db.dart';
 export 'legacy_data_migrator.dart';
+export 'sync_models.dart';
+export 'sync_worker.dart';
