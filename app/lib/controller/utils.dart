@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:xbb/components/common/update.dart';
 import 'package:xbb/controller/setting.dart';

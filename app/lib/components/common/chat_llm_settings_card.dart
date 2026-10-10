@@ -1,6 +1,6 @@
 import 'package:deepseek_client/deepseek_client.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/utils.dart';
 

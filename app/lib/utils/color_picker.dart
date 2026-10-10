@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_randomcolor/flutter_randomcolor.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 
 export 'package:syncstore_client/syncstore_client.dart' show ColorTag;

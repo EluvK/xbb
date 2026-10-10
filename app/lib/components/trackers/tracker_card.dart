@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/common/permission.dart';
 import 'package:xbb/components/utils.dart';

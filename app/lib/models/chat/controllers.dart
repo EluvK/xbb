@@ -33,6 +33,7 @@ class ChatAssistantController extends GetxController {
   }
 
   bool _initialized = false;
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();
@@ -225,6 +226,7 @@ class ChatConversationController extends GetxController {
   }
 
   bool _initialized = false;
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();
@@ -413,6 +415,7 @@ class ChatMessageController extends GetxController {
   }
 
   bool _initialized = false;
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

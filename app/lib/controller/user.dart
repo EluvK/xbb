@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/constant.dart';
@@ -53,6 +53,7 @@ class UserManagerController extends GetxController {
   }
 
   bool _initialized = false;
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

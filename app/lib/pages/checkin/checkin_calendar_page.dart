@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/components/checkin/checkin_calendar.dart';
 import 'package:xbb/components/checkin/day_event_list.dart';
 import 'package:xbb/components/checkin/event_list_bar.dart';

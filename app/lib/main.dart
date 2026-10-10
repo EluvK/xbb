@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ApiError, ApiException;
 import 'package:xbb/controller/app_launch.dart';
 import 'package:xbb/controller/clipboard_tray.dart';
@@ -21,7 +21,6 @@ import 'package:xbb/pages/trackers/edit_tracker.dart';
 import 'package:xbb/pages/trackers/view_tracker.dart';
 import 'package:xbb/pages/checkin/edit_event_page.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:xbb/utils/translation.dart';
 import 'package:xbb/utils/utils.dart';
 
 void main() async {
@@ -86,24 +85,24 @@ class MyApp extends StatelessWidget {
     final mediaQueryData = MediaQuery.of(context);
     final scale = mediaQueryData.textScaler.clamp(minScaleFactor: fontScale, maxScaleFactor: fontScale + 0.1);
 
-    var app = GetMaterialApp(
+    var app = MaterialApp(
+      navigatorKey: AppNavigator.navigatorKey,
       scrollBehavior: const MaterialScrollBehavior().copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       initialRoute: initialRoute,
-      translations: Translation(),
       locale: locale,
-      getPages: [
-        GetPage(name: '/', page: () => const HomePageWrapper()),
-        GetPage(name: '/login', page: () => const LoginPage()),
-        GetPage(name: '/profile', page: () => const ProfilePage()),
-        GetPage(name: '/notes/view-post', page: () => const ViewPostPage()),
-        GetPage(name: '/notes/edit-post', page: () => const EditPostPage()),
-        GetPage(name: '/notes/edit-repo', page: () => const EditRepoPage()),
-        GetPage(name: '/tracker/edit-tracker', page: () => const EditTrackerPage()),
-        GetPage(name: '/tracker/view-tracker', page: () => const ViewTrackerDetailPage()),
-        GetPage(name: '/task', page: () => const TaskPage()),
-        GetPage(name: '/checkin/edit-event', page: () => const EditCheckinEventPage()),
-        GetPage(name: '/chat', page: () => const ChatPage()),
-      ],
+      routes: {
+        '/': (context) => const HomePageWrapper(),
+        '/login': (context) => const LoginPage(),
+        '/profile': (context) => const ProfilePage(),
+        '/notes/view-post': (context) => const ViewPostPage(),
+        '/notes/edit-post': (context) => const EditPostPage(),
+        '/notes/edit-repo': (context) => const EditRepoPage(),
+        '/tracker/edit-tracker': (context) => const EditTrackerPage(),
+        '/tracker/view-tracker': (context) => const ViewTrackerDetailPage(),
+        '/task': (context) => const TaskPage(),
+        '/checkin/edit-event': (context) => const EditCheckinEventPage(),
+        '/chat': (context) => const ChatPage(),
+      },
       debugShowCheckedModeBanner: true,
       themeMode: themeMode,
       theme: FlexThemeData.light(

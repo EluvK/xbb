@@ -32,6 +32,7 @@ class CheckListController extends GetxController {
   }
 
   bool _initialized = false;
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

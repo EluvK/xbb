@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/components/chat/chat_message_card.dart';
 import 'package:xbb/controller/chat.dart';
 

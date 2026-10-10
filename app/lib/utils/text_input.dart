@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/utils/utils.dart';
 
 abstract interface class TitleInterface {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/models/clipboard/model.dart';
 
 // UNUSED in current layout - clipboard overview sidebar was removed during desktop refactoring.

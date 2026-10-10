@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/components/common/chat_llm_settings_card.dart';
 import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/components/common/profile.dart';

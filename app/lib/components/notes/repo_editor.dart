@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/acl_editor.dart';
 import 'package:xbb/controller/user.dart';

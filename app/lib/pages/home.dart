@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:pie_menu/pie_menu.dart';
 import 'package:xbb/components/clipboard/view_clipboard_history.dart';
 import 'package:xbb/components/common/settings.dart';

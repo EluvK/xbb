@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/components/utils.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/user.dart';

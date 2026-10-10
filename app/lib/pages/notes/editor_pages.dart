@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/components/notes/post_editor.dart';
 import 'package:xbb/components/notes/repo_editor.dart';
 import 'package:xbb/models/notes/model.dart';

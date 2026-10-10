@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/controller/chat.dart';
 import 'package:xbb/models/chat/model.dart';

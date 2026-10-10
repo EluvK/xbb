@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag, UserProfile;
 import 'package:xbb/constant.dart';
@@ -116,6 +116,7 @@ class SettingController extends GetxController {
   }
 
   bool _initialized = false;
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

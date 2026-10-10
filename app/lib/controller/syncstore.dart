@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:get_storage/get_storage.dart';
@@ -178,6 +178,7 @@ class SyncStoreControl extends GetxController {
   }
 
   bool _initialized = false;
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

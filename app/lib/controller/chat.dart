@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:uuid/uuid.dart';
@@ -137,6 +137,7 @@ class ChatController extends GetxController {
   String? _streamingMessageId;
   bool _initialized = false;
 
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

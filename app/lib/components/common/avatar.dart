@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/controller/setting.dart';
 
 class Avatar {

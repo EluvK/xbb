@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:syncstore_client/syncstore_client.dart';

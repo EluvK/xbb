@@ -142,7 +142,7 @@
     2. 移除对业务模型上 `withAcls` 等特化注解参数的依赖。
   - **验收标准**: 运行 build_runner 仅生成纯净的模型映射与数据表定义。
 
-- [ ] **TASK-4.3: 逐模块重构与彻底淘汰 GetX**
+- [x] **TASK-4.3: 逐模块重构与彻底淘汰 GetX**
   - **依赖**: TASK-4.2
   - **工作内容**:
     将各业务模块的 Controller 改造为轻量状态管理（推荐统一的无侵入方案，例如 Riverpod / 响应式 SQLite Query Stream）：

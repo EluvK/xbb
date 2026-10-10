@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart' show DataItem;
 import 'package:uuid/uuid.dart';
 import 'package:xbb/controller/setting.dart';
@@ -29,6 +29,7 @@ class ClipboardTrayController extends GetxController {
     _initialized = true;
   }
 
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

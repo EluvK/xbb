@@ -1,8 +1,8 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
 import 'package:path/path.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -10,6 +10,58 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 
 part 'main.g.dart';
+
+class Get {
+  static final Map<Type, dynamic> _m = {};
+  static T find<T>() => _m[T];
+  static Future<T> putAsync<T>(Future<T> Function() f) async {
+    final v = await f();
+    _m[T] = v;
+    return v;
+  }
+}
+
+class Rx<T> {
+  T value;
+  Rx(this.value);
+}
+
+class RxList<T> extends ChangeNotifier with ListMixin<T> {
+  final List<T> _l = [];
+  RxList([Iterable<T>? i]) { if (i != null) _l.addAll(i); }
+  @override
+  int get length => _l.length;
+  @override
+  set length(int newLen) => _l.length = newLen;
+  @override
+  T operator [](int idx) => _l[idx];
+  @override
+  void operator []=(int idx, T v) => _l[idx] = v;
+  @override
+  void add(T v) => _l.add(v);
+  @override
+  void clear() => _l.clear();
+  List<T> get value => this;
+  set value(Iterable<T> v) { _l.clear(); _l.addAll(v); }
+  void assignAll(Iterable<T> i) { _l.clear(); _l.addAll(i); }
+  T? firstWhereOrNull(bool Function(T) f) {
+    for (final e in _l) { if (f(e)) return e; }
+    return null;
+  }
+}
+
+extension ObsExt<T> on List<T> {
+  RxList<T> get obs => RxList<T>(this);
+}
+
+typedef Worker = dynamic;
+
+abstract class GetxController {
+  Future<void> onInit() async {}
+  void onClose() {}
+}
+
+Worker debounce<T>(dynamic listenable, dynamic cb, {dynamic time}) => null;
 
 Future<void> debug() async {
   // print('Debugging...');

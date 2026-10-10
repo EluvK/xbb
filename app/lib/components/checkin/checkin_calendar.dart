@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:xbb/models/checkin/model.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 
 class CheckinCalendar extends StatefulWidget {
   const CheckinCalendar({

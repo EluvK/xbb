@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 
 class PingLatencyInline extends StatelessWidget {
   const PingLatencyInline({super.key, required this.isLoading, required this.latencyMs, required this.onRefresh});

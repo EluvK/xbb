@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_randomcolor/flutter_randomcolor.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/utils/color_picker.dart';

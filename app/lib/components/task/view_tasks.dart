@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import 'package:syncstore_client/syncstore_client.dart' show SyncStatus;
 import 'package:uuid/uuid.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/models/task/model.dart';
 import 'package:xbb/utils/utils.dart';

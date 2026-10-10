@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/controller/setting.dart';
 
 const String taskHomeTabId = 'task';
@@ -22,6 +22,7 @@ class AppLaunchController extends GetxController with WidgetsBindingObserver {
     _initialized = true;
   }
 
+  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

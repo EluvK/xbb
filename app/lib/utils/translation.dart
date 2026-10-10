@@ -1,10 +1,33 @@
-import 'package:get/get.dart';
-
-class Translation extends Translations {
-  @override
-  Map<String, Map<String, String>> get keys => _keys;
+class Translation {
+  static String currentLocale = 'zh_CN';
 
   static final Map<String, Map<String, String>> _keys = _TranslationHelper.loadTranslations();
+
+  static Map<String, Map<String, String>> get keys => _keys;
+
+  static String translate(String key) {
+    final langMap = _keys[currentLocale] ?? _keys['zh_CN'] ?? _keys['en_US'];
+    if (langMap != null && langMap.containsKey(key)) {
+      return langMap[key]!;
+    }
+    final fallbackMap = _keys['zh_CN'] ?? _keys['en_US'];
+    if (fallbackMap != null && fallbackMap.containsKey(key)) {
+      return fallbackMap[key]!;
+    }
+    return key;
+  }
+}
+
+extension TranslationStringExtension on String {
+  String get tr => Translation.translate(this);
+
+  String trParams([Map<String, String> params = const {}]) {
+    var result = tr;
+    params.forEach((key, value) {
+      result = result.replaceAll('@$key', value).replaceAll('{$key}', value);
+    });
+    return result;
+  }
 }
 
 class _TranslationHelper {

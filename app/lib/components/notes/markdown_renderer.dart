@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 // ignore: depend_on_referenced_packages
 import 'package:markdown/markdown.dart' as md;
@@ -471,7 +471,7 @@ class CommentUIController extends GetxController {
     commentsMap = map;
     commentsUnmatched = unmatchedComments;
 
-    debounce(registeredComments, (updatedComments) {
+    debounce<List<CommentDataItem>>(registeredComments, (updatedComments) {
       var (newMap, unmatchedComments) = _updateComments(updatedComments);
 
       final allPossibleKeys = <String?>{...commentsMap.keys, ...newMap.keys};

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/models/notes/model.dart';

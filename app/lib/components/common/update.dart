@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:xbb/core/core.dart';
 import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/utils/utils.dart';
@@ -57,7 +57,7 @@ class _UpdateSheetState extends State<UpdateSheet> {
                       ],
                     ),
                   ),
-                  IconButton(onPressed: Get.back, icon: const Icon(Icons.close), tooltip: '关闭'),
+                  const IconButton(onPressed: Get.back, icon: Icon(Icons.close), tooltip: '关闭'),
                 ],
               ),
               const SizedBox(height: 8),
