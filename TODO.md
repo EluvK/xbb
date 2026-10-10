@@ -135,7 +135,7 @@
        `SELECT * FROM post WHERE repo_id = ? ORDER BY created_at DESC`。
   - **验收标准**: 断网状态下，在笔记本之间切换，笔记列表依旧瞬间渲染呈现。
 
-- [ ] **TASK-4.2: 废除 `sync_generator` 中越界的 Controller 代码生成**
+- [x] **TASK-4.2: 废除 `sync_generator` 中越界的 Controller 代码生成**
   - **依赖**: TASK-4.1
   - **工作内容**:
     1. 移除 `sync_generator` 中生成 `GetxController`、`_SyncEngine` 以及 ACL 同步扩展的代码。

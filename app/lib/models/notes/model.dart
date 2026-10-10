@@ -15,6 +15,7 @@ import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
+part 'controllers.dart';
 
 enum NotesFeatureRequires implements FeaturePermission {
   updateRepo(ACLMask.updateOnly),
@@ -131,7 +132,7 @@ Future<void> reInit<T extends GetxController>(
   }
 }
 
-@Repository(collectionName: 'xbb', tableName: 'repo', db: NotesDB, withAcls: true)
+@Repository(collectionName: 'xbb', tableName: 'repo', db: NotesDB)
 @freezed
 abstract class Repo with _$Repo {
   const factory Repo({required String name, required String status, String? description}) = _Repo;

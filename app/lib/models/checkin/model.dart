@@ -15,6 +15,7 @@ import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
+part 'controllers.dart';
 
 Future<void> reInitCheckinSync(SyncStoreClient client) async {
   await reInit<CheckinEventController>(() => CheckinEventController(client), (c) => c.ensureInitialization());

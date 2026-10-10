@@ -14,6 +14,7 @@ import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
+part 'controllers.dart';
 
 Future<void> reInitClipboardSync(SyncStoreClient client) async {
   if (Get.isRegistered<ClipboardHistoryEntryController>()) {

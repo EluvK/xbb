@@ -15,6 +15,7 @@ import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
+part 'controllers.dart';
 
 enum TrackerFeatureRequires implements FeaturePermission {
   update(ACLMask.updateOnly),
@@ -93,7 +94,7 @@ Future<void> reInit<T extends GetxController>(
   }
 }
 
-@Repository(collectionName: 'tracker', tableName: 'tracker', db: TrackerDB, withAcls: true)
+@Repository(collectionName: 'tracker', tableName: 'tracker', db: TrackerDB)
 @Freezed()
 abstract class Tracker with _$Tracker {
   @JsonSerializable(fieldRename: FieldRename.snake)

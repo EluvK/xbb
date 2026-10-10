@@ -10,6 +10,7 @@ import 'package:xbb/models/chat/db.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
+part 'controllers.dart';
 
 enum ChatMessageRole { system, user, assistant }
 
