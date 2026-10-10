@@ -60,3 +60,18 @@ pub struct PullResponse {
     pub has_more: bool,
     pub changes: Vec<ChangeItem>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AclGrantRequest {
+    pub table: String,
+    pub entity_id: String,
+    pub grantee_id: String,
+    pub permission: String, // "READ" | "WRITE"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AclRevokeRequest {
+    pub table: String,
+    pub entity_id: String,
+    pub grantee_id: String,
+}

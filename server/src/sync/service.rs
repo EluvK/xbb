@@ -3,7 +3,10 @@ use anyhow::Result;
 use sqlx::SqlitePool;
 use tokio::sync::Mutex;
 use crate::storage::{ChangeLogRecord, EntityRecord};
-use super::models::{ChangeItem, ConflictItem, PullResponse, PushRequest, PushResponse};
+use super::models::{
+    AclGrantRequest, AclRevokeRequest, ChangeItem, ConflictItem, PullResponse, PushRequest,
+    PushResponse,
+};
 
 static SYNC_WRITE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
@@ -238,5 +241,121 @@ pub async fn handle_pull(
         has_more,
         changes,
     })
+}
+
+pub async fn grant_permission(
+    pool: &SqlitePool,
+    caller_id: &str,
+    req: AclGrantRequest,
+) -> Result<()> {
+    let _guard = SYNC_WRITE_LOCK.lock().await;
+    let mut tx = pool.begin().await?;
+
+    let entity = sqlx::query_as::<_, EntityRecord>(
+        "SELECT * FROM entities WHERE table_name = ? AND id = ?"
+    )
+    .bind(&req.table)
+    .bind(&req.entity_id)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or_else(|| anyhow::anyhow!("Entity not found"))?;
+
+    if entity.owner_id != caller_id {
+        let caller_acl: Option<(String,)> = sqlx::query_as(
+            "SELECT permission FROM acls WHERE table_name = ? AND entity_id = ? AND user_id = ?"
+        )
+        .bind(&req.table)
+        .bind(&req.entity_id)
+        .bind(caller_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        if !matches!(caller_acl, Some((perm,)) if perm == "WRITE") {
+            return Err(anyhow::anyhow!("Permission denied"));
+        }
+    }
+
+    sqlx::query(
+        "INSERT OR REPLACE INTO acls (table_name, entity_id, user_id, permission) VALUES (?, ?, ?, ?)"
+    )
+    .bind(&req.table)
+    .bind(&req.entity_id)
+    .bind(&req.grantee_id)
+    .bind(&req.permission)
+    .execute(&mut *tx)
+    .await?;
+
+    let now = chrono::Utc::now().timestamp_millis();
+    sqlx::query(
+        "INSERT INTO change_log (table_name, entity_id, owner_id, op, data, version, created_at) \
+         VALUES (?, ?, ?, 'PUT', ?, ?, ?)"
+    )
+    .bind(&req.table)
+    .bind(&req.entity_id)
+    .bind(&entity.owner_id)
+    .bind(&entity.data)
+    .bind(entity.version)
+    .bind(now)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    Ok(())
+}
+
+pub async fn revoke_permission(
+    pool: &SqlitePool,
+    caller_id: &str,
+    req: AclRevokeRequest,
+) -> Result<()> {
+    let _guard = SYNC_WRITE_LOCK.lock().await;
+    let mut tx = pool.begin().await?;
+
+    let entity = sqlx::query_as::<_, EntityRecord>(
+        "SELECT * FROM entities WHERE table_name = ? AND id = ?"
+    )
+    .bind(&req.table)
+    .bind(&req.entity_id)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or_else(|| anyhow::anyhow!("Entity not found"))?;
+
+    if entity.owner_id != caller_id {
+        let caller_acl: Option<(String,)> = sqlx::query_as(
+            "SELECT permission FROM acls WHERE table_name = ? AND entity_id = ? AND user_id = ?"
+        )
+        .bind(&req.table)
+        .bind(&req.entity_id)
+        .bind(caller_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        if !matches!(caller_acl, Some((perm,)) if perm == "WRITE") {
+            return Err(anyhow::anyhow!("Permission denied"));
+        }
+    }
+
+    sqlx::query("DELETE FROM acls WHERE table_name = ? AND entity_id = ? AND user_id = ?")
+        .bind(&req.table)
+        .bind(&req.entity_id)
+        .bind(&req.grantee_id)
+        .execute(&mut *tx)
+        .await?;
+
+    let now = chrono::Utc::now().timestamp_millis();
+    sqlx::query(
+        "INSERT INTO change_log (table_name, entity_id, owner_id, op, data, version, created_at) \
+         VALUES (?, ?, ?, 'DELETE', NULL, ?, ?)"
+    )
+    .bind(&req.table)
+    .bind(&req.entity_id)
+    .bind(&req.grantee_id)
+    .bind(entity.version)
+    .bind(now)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    Ok(())
 }
 
