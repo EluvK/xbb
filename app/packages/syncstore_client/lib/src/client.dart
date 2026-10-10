@@ -134,24 +134,6 @@ class SyncStoreClient {
     });
   }
 
-  Future<ListResponse> batchListChildren(
-    String namespace,
-    String collection,
-    List<String> parentIds, {
-    String? marker,
-  }) {
-    return perform(() async {
-      final query = <String, dynamic>{if (marker != null) 'marker': marker};
-      final resp = await _dio.post(
-        '/batch-data/$namespace/$collection/by_parent_ids',
-        data: {'ids': parentIds},
-        queryParameters: query,
-        options: _buildOptions(),
-      );
-      final data = resp.data as Map<String, dynamic>;
-      return ListResponse.fromJson(data);
-    });
-  }
 
   /// get data by id
   Future<DataItem<T>> get<T extends Object>(

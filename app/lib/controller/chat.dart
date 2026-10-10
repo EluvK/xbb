@@ -290,13 +290,7 @@ class ChatController extends GetxController {
   }
 
   Future<List<ChatMessageDataItem>> _loadMessagesByConversation(String conversationId) async {
-    final messages = await ChatMessageRepository().listFromLocalDb(parentId: conversationId);
-    messages.sort((a, b) {
-      final t = a.createdAt.compareTo(b.createdAt);
-      if (t != 0) return t;
-      return a.id.compareTo(b.id);
-    });
-    return messages;
+    return await ChatMessageRepository().listByParentIdFromLocalDb(conversationId, desc: false);
   }
 
   Future<void> selectConversation(String conversationId) async {

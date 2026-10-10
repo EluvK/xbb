@@ -4,6 +4,7 @@ import 'package:xbb/components/common/permission.dart';
 import 'package:xbb/components/notes/post_viewer.dart';
 import 'package:xbb/controller/utils.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/sync/v2/sync_worker.dart';
 
 class ViewPostPage extends StatelessWidget {
   const ViewPostPage({super.key});
@@ -20,8 +21,10 @@ class ViewPostPage extends StatelessWidget {
           debugOnlyWidget(
             IconButton(
               onPressed: () async {
+                try {
+                  await SyncWorker.instance.triggerSync();
+                } catch (_) {}
                 CommentController commentController = Get.find<CommentController>();
-                await commentController.syncChildren(post.id);
                 await commentController.rebuildLocal();
               },
               icon: const Icon(Icons.sync),

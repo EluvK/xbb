@@ -12,8 +12,13 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class NotesDB {
   // static Database? _db;
   static final Map<String, Database> _dbCache = {};
+  static Database? mockDb;
+  static void setMockDb(Database? db) => mockDb = db;
 
   Future<Database> getDb() async {
+    if (mockDb != null) {
+      return mockDb!;
+    }
     final userId = Get.find<SettingController>().userId;
     if (_dbCache.containsKey(userId)) {
       return _dbCache[userId]!;

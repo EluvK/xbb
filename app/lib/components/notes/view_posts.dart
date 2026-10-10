@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/sync/v2/sync_worker.dart';
 import 'package:xbb/utils/expansible_list.dart';
 import 'package:xbb/utils/list_tile_card.dart';
 import 'package:xbb/utils/utils.dart';
@@ -29,28 +30,11 @@ class ViewPosts extends StatelessWidget {
         onRefresh: () async {
           final repoId = repoController.currentRepoId.value;
           if (repoId != null) {
-            await runSyncTaskWithStatus(
-              [
-                () => repoController.getAclRefresh(repoId),
-                () => postController.syncChildren(repoId),
-                () => postController.rebuildLocal(),
-              ],
-              from: 0,
-              to: 30,
-            );
-            final postsId = postController.getPostDetails(
-              selector: (post) => post.id,
-              filters: [ParentIdFilter(repoId)],
-            );
-            await runSyncTaskWithStatus(
-              [
-                () => commentController.syncMultiChildren(postsId),
-                () => postController.rebuildLocal(),
-                () => commentController.rebuildLocal(),
-              ],
-              from: 30,
-              to: 100,
-            );
+            try {
+              await SyncWorker.instance.triggerSync();
+            } catch (_) {}
+            await postController.rebuildLocal();
+            await commentController.rebuildLocal();
             successSimpleFlushBar("同步完成");
           }
         },

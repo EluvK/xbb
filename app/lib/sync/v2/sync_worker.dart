@@ -259,6 +259,20 @@ class SyncWorker {
       final nowStr = DateTime.now().toUtc().toIso8601String();
       final dataStr = change.dataAsString ?? '{}';
 
+      String? parentId;
+      final parsed = change.parsedData;
+      if (parsed is Map) {
+        parentId = (parsed['repo_id'] ??
+                parsed['post_id'] ??
+                parsed['conversation_id'] ??
+                parsed['parent_id'] ??
+                parsed['repoId'] ??
+                parsed['postId'] ??
+                parsed['conversationId'] ??
+                parsed['parentId'])
+            ?.toString();
+      }
+
       final exists = await txn.query(
         table,
         where: 'id = ?',
@@ -267,13 +281,17 @@ class SyncWorker {
       );
 
       if (exists.isNotEmpty) {
+        final updateMap = <String, dynamic>{
+          'body': dataStr,
+          'sync_status': 'synced',
+          'updated_at': nowStr,
+        };
+        if (parentId != null) {
+          updateMap['parent_id'] = parentId;
+        }
         await txn.update(
           table,
-          {
-            'body': dataStr,
-            'sync_status': 'synced',
-            'updated_at': nowStr,
-          },
+          updateMap,
           where: 'id = ?',
           whereArgs: [entityId],
         );
@@ -285,7 +303,7 @@ class SyncWorker {
             'created_at': nowStr,
             'updated_at': nowStr,
             'owner': 'remote',
-            'parent_id': null,
+            'parent_id': parentId,
             'unique': null,
             'sync_status': 'synced',
             'color_tag': 'none',

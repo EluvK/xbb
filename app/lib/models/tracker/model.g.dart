@@ -23,54 +23,68 @@ Map<String, dynamic> _$TrackerToJson(_Tracker instance) => <String, dynamic>{
 };
 
 EventTrackerConfig _$EventTrackerConfigFromJson(Map<String, dynamic> json) =>
-    EventTrackerConfig(periodDays: (json['period_days'] as num).toInt(), $type: json['type'] as String?);
+    EventTrackerConfig(
+      periodDays: (json['period_days'] as num).toInt(),
+      $type: json['type'] as String?,
+    );
 
-Map<String, dynamic> _$EventTrackerConfigToJson(EventTrackerConfig instance) => <String, dynamic>{
-  'period_days': instance.periodDays,
-  'type': instance.$type,
-};
+Map<String, dynamic> _$EventTrackerConfigToJson(EventTrackerConfig instance) =>
+    <String, dynamic>{
+      'period_days': instance.periodDays,
+      'type': instance.$type,
+    };
 
-MilestoneTrackerConfig _$MilestoneTrackerConfigFromJson(Map<String, dynamic> json) => MilestoneTrackerConfig(
+MilestoneTrackerConfig _$MilestoneTrackerConfigFromJson(
+  Map<String, dynamic> json,
+) => MilestoneTrackerConfig(
   goalType: json['goal_type'] as String,
   targetValue: json['target_value'] as String,
   progressMode: json['progress_mode'] as String? ?? 'accumulate',
   $type: json['type'] as String?,
 );
 
-Map<String, dynamic> _$MilestoneTrackerConfigToJson(MilestoneTrackerConfig instance) => <String, dynamic>{
+Map<String, dynamic> _$MilestoneTrackerConfigToJson(
+  MilestoneTrackerConfig instance,
+) => <String, dynamic>{
   'goal_type': instance.goalType,
   'target_value': instance.targetValue,
   'progress_mode': instance.progressMode,
   'type': instance.$type,
 };
 
-AnniversaryTrackerConfig _$AnniversaryTrackerConfigFromJson(Map<String, dynamic> json) => AnniversaryTrackerConfig(
+AnniversaryTrackerConfig _$AnniversaryTrackerConfigFromJson(
+  Map<String, dynamic> json,
+) => AnniversaryTrackerConfig(
   baseDate: DateTime.parse(json['base_date'] as String),
   isLunar: json['is_lunar'] as bool,
   remindType: json['remind_type'] as String,
   $type: json['type'] as String?,
 );
 
-Map<String, dynamic> _$AnniversaryTrackerConfigToJson(AnniversaryTrackerConfig instance) => <String, dynamic>{
+Map<String, dynamic> _$AnniversaryTrackerConfigToJson(
+  AnniversaryTrackerConfig instance,
+) => <String, dynamic>{
   'base_date': instance.baseDate.toIso8601String(),
   'is_lunar': instance.isLunar,
   'remind_type': instance.remindType,
   'type': instance.$type,
 };
 
-_TrackerRecord _$TrackerRecordFromJson(Map<String, dynamic> json) => _TrackerRecord(
-  trackerId: json['tracker_id'] as String,
-  timestamp: DateTime.parse(json['timestamp'] as String),
-  value: json['value'] as String?,
-  content: json['content'] as String?,
-);
+_TrackerRecord _$TrackerRecordFromJson(Map<String, dynamic> json) =>
+    _TrackerRecord(
+      trackerId: json['tracker_id'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      value: json['value'] as String?,
+      content: json['content'] as String?,
+    );
 
-Map<String, dynamic> _$TrackerRecordToJson(_TrackerRecord instance) => <String, dynamic>{
-  'tracker_id': instance.trackerId,
-  'timestamp': instance.timestamp.toIso8601String(),
-  'value': instance.value,
-  'content': instance.content,
-};
+Map<String, dynamic> _$TrackerRecordToJson(_TrackerRecord instance) =>
+    <String, dynamic>{
+      'tracker_id': instance.trackerId,
+      'timestamp': instance.timestamp.toIso8601String(),
+      'value': instance.value,
+      'content': instance.content,
+    };
 
 // **************************************************************************
 // RepositoryGenerator
@@ -104,7 +118,10 @@ typedef TrackerDataItem = DataItem<Tracker>;
 class TrackerRepository {
   Future<void> addToLocalDb(TrackerDataItem item) async {
     final db = await LocalStoreTracker.getDb();
-    await db.insert(LocalStoreTracker.tableName, item.toJson((r) => json.encode(r.toJson())));
+    await db.insert(
+      LocalStoreTracker.tableName,
+      item.toJson((r) => json.encode(r.toJson())),
+    );
   }
 
   Future<TrackerDataItem?> getFromLocalDb(String id) async {
@@ -115,7 +132,10 @@ class TrackerRepository {
       whereArgs: [id],
     );
     if (maps.isNotEmpty) {
-      return DataItem<Tracker>.fromJson(maps.first, (jsonStr) => Tracker.fromJson(json.decode(jsonStr as String)));
+      return DataItem<Tracker>.fromJson(
+        maps.first,
+        (jsonStr) => Tracker.fromJson(json.decode(jsonStr as String)),
+      );
     }
     return null;
   }
@@ -128,22 +148,54 @@ class TrackerRepository {
       whereClauses.add('parent_id = ?');
       whereArgs.add(parentId);
     }
-    final whereString = whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null;
+    final whereString = whereClauses.isNotEmpty
+        ? whereClauses.join(' AND ')
+        : null;
 
     final List<Map<String, dynamic>> maps = await db.query(
       LocalStoreTracker.tableName,
       where: whereString,
       whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'created_at DESC',
     );
 
     return maps
-        .map((map) => DataItem<Tracker>.fromJson(map, (jsonStr) => Tracker.fromJson(json.decode(jsonStr as String))))
+        .map(
+          (map) => DataItem<Tracker>.fromJson(
+            map,
+            (jsonStr) => Tracker.fromJson(json.decode(jsonStr as String)),
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<TrackerDataItem>> listByParentIdFromLocalDb(
+    String parentId, {
+    bool desc = true,
+  }) async {
+    final db = await LocalStoreTracker.getDb();
+    final order = desc ? 'DESC' : 'ASC';
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+      'SELECT * FROM ${LocalStoreTracker.tableName} WHERE parent_id = ? ORDER BY created_at $order',
+      [parentId],
+    );
+    return maps
+        .map(
+          (map) => DataItem<Tracker>.fromJson(
+            map,
+            (jsonStr) => Tracker.fromJson(json.decode(jsonStr as String)),
+          ),
+        )
         .toList();
   }
 
   Future<void> deleteFromLocalDb(String id) async {
     final db = await LocalStoreTracker.getDb();
-    await db.delete(LocalStoreTracker.tableName, where: 'id = ?', whereArgs: [id]);
+    await db.delete(
+      LocalStoreTracker.tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> updateToLocalDb(TrackerDataItem item) async {
@@ -169,7 +221,11 @@ class _TrackerDataItemFilterSubscription {
   final RxList<TrackerDataItem> filteredList;
   final List<DataItemFilter> appliedFilters;
   final Worker worker;
-  _TrackerDataItemFilterSubscription(this.filteredList, this.appliedFilters, this.worker);
+  _TrackerDataItemFilterSubscription(
+    this.filteredList,
+    this.appliedFilters,
+    this.worker,
+  );
 }
 
 class TrackerController extends GetxController {
@@ -178,8 +234,10 @@ class TrackerController extends GetxController {
   TrackerController(this.client) : _syncEngine = _TrackerSyncEngine(client);
 
   final RxList<TrackerDataItem> _items = <TrackerDataItem>[].obs;
-  final RxMap<String, List<Permission>> _aclCache = <String, List<Permission>>{}.obs;
-  final Map<String, _TrackerDataItemFilterSubscription> _dynamicSubscription = {};
+  final RxMap<String, List<Permission>> _aclCache =
+      <String, List<Permission>>{}.obs;
+  final Map<String, _TrackerDataItemFilterSubscription> _dynamicSubscription =
+      {};
   final Rx<String?> currentTrackerId = Rx<String?>(null);
 
   @override
@@ -228,13 +286,22 @@ class TrackerController extends GetxController {
     if (existing != null && listEquals(existing.appliedFilters, filters)) {
       return existing.filteredList;
     }
-    final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    final newList = _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .toList()
+        .obs;
     existing?.worker.dispose();
     final worker = debounce(_items, (List<TrackerDataItem> value) {
-      final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
+      final newFiltered = value
+          .where((item) => filters.every((filter) => filter.apply(item)))
+          .toList();
       newList.assignAll(newFiltered);
     }, time: const Duration(milliseconds: 100));
-    _dynamicSubscription[filterKey] = _TrackerDataItemFilterSubscription(newList, filters, worker);
+    _dynamicSubscription[filterKey] = _TrackerDataItemFilterSubscription(
+      newList,
+      filters,
+      worker,
+    );
     return newList;
   }
 
@@ -260,11 +327,16 @@ class TrackerController extends GetxController {
     List<DataItemFilter> filters = const [],
     required T Function(TrackerDataItem item) selector,
   }) {
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
+    return _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .map(selector)
+        .toList();
   }
 
   int getTrackerCount<T>({List<DataItemFilter> filters = const []}) {
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).length;
+    return _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .length;
   }
 
   Future<void> syncAll({int batchSize = 20}) async {
@@ -275,7 +347,10 @@ class TrackerController extends GetxController {
     await _syncEngine.syncChildrenBatch([parentId], batchSize: batchSize);
   }
 
-  Future<void> syncMultiChildren(List<String> parentIds, {int batchSize = 20}) async {
+  Future<void> syncMultiChildren(
+    List<String> parentIds, {
+    int batchSize = 20,
+  }) async {
     await _syncEngine.syncChildrenBatch(parentIds, batchSize: batchSize);
   }
 
@@ -319,7 +394,11 @@ class TrackerController extends GetxController {
     });
   }
 
-  void onUpdateLocalField(String id, {ColorTag? colorTag, SyncStatus? syncStatus}) {
+  void onUpdateLocalField(
+    String id, {
+    ColorTag? colorTag,
+    SyncStatus? syncStatus,
+  }) {
     final item = _items.firstWhere((item) => item.id == id);
     if (colorTag != null) {
       item.colorTag = colorTag;
@@ -336,7 +415,10 @@ class TrackerController extends GetxController {
       currentTrackerId.value = null;
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
+    _syncEngine.delete(
+      id,
+      deleteFromServer ? true : status != SyncStatus.deleted,
+    );
   }
 }
 
@@ -353,13 +435,18 @@ extension TrackerRepositoryAcl on TrackerRepository {
       return [];
     }
     final permissionsJson = maps.first['permissions'] as String;
-    final List<dynamic> permissionsList = json.decode(permissionsJson) as List<dynamic>;
-    return permissionsList.map((e) => Permission.fromJson(e as Map<String, dynamic>)).toList();
+    final List<dynamic> permissionsList =
+        json.decode(permissionsJson) as List<dynamic>;
+    return permissionsList
+        .map((e) => Permission.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> setAcls(String dataId, List<Permission> permissions) async {
     final db = await LocalStoreTracker.getDb();
-    final permissionsJson = json.encode(permissions.map((e) => e.toJson()).toList());
+    final permissionsJson = json.encode(
+      permissions.map((e) => e.toJson()).toList(),
+    );
     await db.insert(tableNameAcl, {
       'data_id': dataId,
       'data_collection': 'tracker',
@@ -390,7 +477,11 @@ extension TrackerControllerAcl on TrackerController {
   List<Permission> getAclCached(String dataId) => _aclCache[dataId] ?? [];
   Future<List<Permission>> getAclRefresh(String dataId) async {
     try {
-      final List<Permission> getAcls = await client.getAcls('tracker', 'tracker', dataId);
+      final List<Permission> getAcls = await client.getAcls(
+        'tracker',
+        'tracker',
+        dataId,
+      );
       await TrackerRepository().setAcls(dataId, getAcls);
       _aclCache[dataId] = getAcls;
       return getAcls;
@@ -421,8 +512,17 @@ class _TrackerSyncEngine {
 
     TrackerDataItem createdItem;
     try {
-      final newId = await client.create('tracker', 'tracker', local.body.toJson());
-      createdItem = await client.get<Tracker>('tracker', 'tracker', newId, Tracker.fromJson);
+      final newId = await client.create(
+        'tracker',
+        'tracker',
+        local.body.toJson(),
+      );
+      createdItem = await client.get<Tracker>(
+        'tracker',
+        'tracker',
+        newId,
+        Tracker.fromJson,
+      );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await TrackerRepository().updateToLocalDb(local);
@@ -443,7 +543,12 @@ class _TrackerSyncEngine {
     TrackerDataItem updatedItem;
     try {
       await client.update('tracker', 'tracker', local.id, local.body.toJson());
-      updatedItem = await client.get<Tracker>('tracker', 'tracker', local.id, Tracker.fromJson);
+      updatedItem = await client.get<Tracker>(
+        'tracker',
+        'tracker',
+        local.id,
+        Tracker.fromJson,
+      );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await TrackerRepository().updateToLocalDb(local);
@@ -484,15 +589,18 @@ class _TrackerSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerDataItem? localItem = await TrackerRepository().getFromLocalDb(summary.id);
-          if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
+          final TrackerDataItem? localItem = await TrackerRepository()
+              .getFromLocalDb(summary.id);
+          if (localItem == null ||
+              localItem.updatedAt.isBefore(summary.updatedAt)) {
             // only get details for new created or updated items, otherwise just skip to save performance.
             needGetIds.add(summary.id);
           } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
             // local data is newer, need to sync to server
             localItem.syncStatus = SyncStatus.failed;
             await TrackerRepository().updateToLocalDb(localItem);
-          } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+          } else if (localItem.syncStatus == SyncStatus.deleted ||
+              localItem.syncStatus == SyncStatus.hidden) {
             // same updatedAt but marked as special status, need to sync to server
             localItem.syncStatus = SyncStatus.archived;
             await TrackerRepository().updateToLocalDb(localItem);
@@ -515,7 +623,12 @@ class _TrackerSyncEngine {
       final needGetIdsList = needGetIds.toList();
       for (var i = 0; i < needGetIdsList.length;) {
         final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('tracker', 'tracker', batchIds, Tracker.fromJson);
+        final batchItems = await client.batchGet(
+          'tracker',
+          'tracker',
+          batchIds,
+          Tracker.fromJson,
+        );
         for (var item in batchItems.items) {
           await TrackerRepository().upsertToLocalDb(item);
         }
@@ -536,73 +649,12 @@ class _TrackerSyncEngine {
     }
   }
 
-  Future<void> syncChildrenBatch(List<String> parentIds, {int batchSize = 20}) async {
-    try {
-      final needGetIds = <String>{};
-      final serviceIds = <String>{};
-      for (var i = 0; i < parentIds.length; i += 100) {
-        final parentIdsBatch = parentIds.skip(i).take(100).toList();
-        String? nextMarker;
-        do {
-          final ListResponse resp = await client.batchListChildren(
-            'tracker',
-            'tracker',
-            parentIdsBatch,
-            marker: nextMarker,
-          );
-          nextMarker = resp.pageInfo.nextMarker;
-          for (var summary in resp.items) {
-            serviceIds.add(summary.id);
-            final TrackerDataItem? localItem = await TrackerRepository().getFromLocalDb(summary.id);
-            if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
-              // only get details for new created or updated items, otherwise just skip to save performance.
-              needGetIds.add(summary.id);
-            } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
-              // local data is newer, need to sync to server
-              localItem.syncStatus = SyncStatus.failed;
-              await TrackerRepository().updateToLocalDb(localItem);
-            } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
-              // same updatedAt but marked as special status, need to sync to server
-              localItem.syncStatus = SyncStatus.archived;
-              await TrackerRepository().updateToLocalDb(localItem);
-            }
-          }
-        } while (nextMarker != null);
-      }
-      // clean up local data that are deleted from server
-      final localItems = await TrackerRepository().listFromLocalDb();
-      for (TrackerDataItem localItem in localItems) {
-        if (localItem.parentId == null || !parentIds.contains(localItem.parentId!)) {
-          continue;
-        }
-        if (!serviceIds.contains(localItem.id)) {
-          localItem.syncStatus = SyncStatus.deleted;
-          await TrackerRepository().updateToLocalDb(localItem);
-        }
-      }
-      // batch get details for items that need to be updated or created locally
-      final needGetIdsList = needGetIds.toList();
-      for (var i = 0; i < needGetIdsList.length;) {
-        final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('tracker', 'tracker', batchIds, Tracker.fromJson);
-        for (var item in batchItems.items) {
-          await TrackerRepository().upsertToLocalDb(item);
-        }
-        final truncated = batchItems.truncated;
-        if (truncated != null) {
-          i = needGetIdsList.indexOf(truncated);
-          if (i == -1) {
-            // just in case, if truncated id is not found in the list, fallback to next batch.
-            i += batchSize;
-          }
-        } else {
-          i += batchSize;
-        }
-      }
-    } catch (e) {
-      // todo more error handling?
-      rethrow;
-    }
+  Future<void> syncChildrenBatch(
+    List<String> parentIds, {
+    int batchSize = 20,
+  }) async {
+    // 父子关系网络同步已彻底移除（废除 by_parent_ids），所有数据均由本地 Local-First 统一变更流管理
+    return;
   }
 
   Future<void> syncOwned() async {
@@ -611,11 +663,17 @@ class _TrackerSyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('tracker', 'tracker', limit: 200, marker: nextMarker);
+        final ListResponse resp = await client.list(
+          'tracker',
+          'tracker',
+          limit: 200,
+          marker: nextMarker,
+        );
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerDataItem? localItem = await TrackerRepository().getFromLocalDb(summary.id);
+          final TrackerDataItem? localItem = await TrackerRepository()
+              .getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
@@ -652,7 +710,8 @@ class _TrackerSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerDataItem? localItem = await TrackerRepository().getFromLocalDb(summary.id);
+          final TrackerDataItem? localItem = await TrackerRepository()
+              .getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
@@ -688,12 +747,15 @@ class _TrackerSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerDataItem? localItem = await TrackerRepository().getFromLocalDb(summary.id);
+          final TrackerDataItem? localItem = await TrackerRepository()
+              .getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
-      final localItems = await TrackerRepository().listFromLocalDb(parentId: parentId);
+      final localItems = await TrackerRepository().listFromLocalDb(
+        parentId: parentId,
+      );
       for (TrackerDataItem localItem in localItems) {
         if (!serviceIds.contains(localItem.id)) {
           localItem.syncStatus = SyncStatus.deleted;
@@ -706,20 +768,34 @@ class _TrackerSyncEngine {
     }
   }
 
-  Future<void> _compareRemote(TrackerDataItem? localItem, DataItemSummary summary) async {
+  Future<void> _compareRemote(
+    TrackerDataItem? localItem,
+    DataItemSummary summary,
+  ) async {
     if (localItem == null) {
       // new from server
-      final TrackerDataItem item = await client.get<Tracker>('tracker', 'tracker', summary.id, Tracker.fromJson);
+      final TrackerDataItem item = await client.get<Tracker>(
+        'tracker',
+        'tracker',
+        summary.id,
+        Tracker.fromJson,
+      );
       await TrackerRepository().addToLocalDb(item);
     } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
       // update local data.
-      final TrackerDataItem item = await client.get<Tracker>('tracker', 'tracker', summary.id, Tracker.fromJson);
+      final TrackerDataItem item = await client.get<Tracker>(
+        'tracker',
+        'tracker',
+        summary.id,
+        Tracker.fromJson,
+      );
       await TrackerRepository().updateToLocalDb(item);
     } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
       // local data is newer, need to sync to server
       localItem.syncStatus = SyncStatus.failed;
       await TrackerRepository().updateToLocalDb(localItem);
-    } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+    } else if (localItem.syncStatus == SyncStatus.deleted ||
+        localItem.syncStatus == SyncStatus.hidden) {
       // same updatedAt but marked as special status, need to sync to server
       localItem.syncStatus = SyncStatus.archived;
       await TrackerRepository().updateToLocalDb(localItem);
@@ -755,7 +831,10 @@ typedef TrackerRecordDataItem = DataItem<TrackerRecord>;
 class TrackerRecordRepository {
   Future<void> addToLocalDb(TrackerRecordDataItem item) async {
     final db = await LocalStoreTrackerRecord.getDb();
-    await db.insert(LocalStoreTrackerRecord.tableName, item.toJson((r) => json.encode(r.toJson())));
+    await db.insert(
+      LocalStoreTrackerRecord.tableName,
+      item.toJson((r) => json.encode(r.toJson())),
+    );
   }
 
   Future<TrackerRecordDataItem?> getFromLocalDb(String id) async {
@@ -774,7 +853,9 @@ class TrackerRecordRepository {
     return null;
   }
 
-  Future<List<TrackerRecordDataItem>> listFromLocalDb({String? parentId}) async {
+  Future<List<TrackerRecordDataItem>> listFromLocalDb({
+    String? parentId,
+  }) async {
     final db = await LocalStoreTrackerRecord.getDb();
     final whereClauses = <String>[];
     final whereArgs = <dynamic>[];
@@ -782,12 +863,15 @@ class TrackerRecordRepository {
       whereClauses.add('parent_id = ?');
       whereArgs.add(parentId);
     }
-    final whereString = whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null;
+    final whereString = whereClauses.isNotEmpty
+        ? whereClauses.join(' AND ')
+        : null;
 
     final List<Map<String, dynamic>> maps = await db.query(
       LocalStoreTrackerRecord.tableName,
       where: whereString,
       whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'created_at DESC',
     );
 
     return maps
@@ -800,9 +884,33 @@ class TrackerRecordRepository {
         .toList();
   }
 
+  Future<List<TrackerRecordDataItem>> listByParentIdFromLocalDb(
+    String parentId, {
+    bool desc = true,
+  }) async {
+    final db = await LocalStoreTrackerRecord.getDb();
+    final order = desc ? 'DESC' : 'ASC';
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+      'SELECT * FROM ${LocalStoreTrackerRecord.tableName} WHERE parent_id = ? ORDER BY created_at $order',
+      [parentId],
+    );
+    return maps
+        .map(
+          (map) => DataItem<TrackerRecord>.fromJson(
+            map,
+            (jsonStr) => TrackerRecord.fromJson(json.decode(jsonStr as String)),
+          ),
+        )
+        .toList();
+  }
+
   Future<void> deleteFromLocalDb(String id) async {
     final db = await LocalStoreTrackerRecord.getDb();
-    await db.delete(LocalStoreTrackerRecord.tableName, where: 'id = ?', whereArgs: [id]);
+    await db.delete(
+      LocalStoreTrackerRecord.tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> updateToLocalDb(TrackerRecordDataItem item) async {
@@ -828,17 +936,23 @@ class _TrackerRecordDataItemFilterSubscription {
   final RxList<TrackerRecordDataItem> filteredList;
   final List<DataItemFilter> appliedFilters;
   final Worker worker;
-  _TrackerRecordDataItemFilterSubscription(this.filteredList, this.appliedFilters, this.worker);
+  _TrackerRecordDataItemFilterSubscription(
+    this.filteredList,
+    this.appliedFilters,
+    this.worker,
+  );
 }
 
 class TrackerRecordController extends GetxController {
   final SyncStoreClient client;
   final _TrackerRecordSyncEngine _syncEngine;
-  TrackerRecordController(this.client) : _syncEngine = _TrackerRecordSyncEngine(client);
+  TrackerRecordController(this.client)
+    : _syncEngine = _TrackerRecordSyncEngine(client);
 
   final RxList<TrackerRecordDataItem> _items = <TrackerRecordDataItem>[].obs;
 
-  final Map<String, _TrackerRecordDataItemFilterSubscription> _dynamicSubscription = {};
+  final Map<String, _TrackerRecordDataItemFilterSubscription>
+  _dynamicSubscription = {};
   final Rx<String?> currentTrackerRecordId = Rx<String?>(null);
 
   @override
@@ -883,13 +997,22 @@ class TrackerRecordController extends GetxController {
     if (existing != null && listEquals(existing.appliedFilters, filters)) {
       return existing.filteredList;
     }
-    final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    final newList = _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .toList()
+        .obs;
     existing?.worker.dispose();
     final worker = debounce(_items, (List<TrackerRecordDataItem> value) {
-      final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
+      final newFiltered = value
+          .where((item) => filters.every((filter) => filter.apply(item)))
+          .toList();
       newList.assignAll(newFiltered);
     }, time: const Duration(milliseconds: 100));
-    _dynamicSubscription[filterKey] = _TrackerRecordDataItemFilterSubscription(newList, filters, worker);
+    _dynamicSubscription[filterKey] = _TrackerRecordDataItemFilterSubscription(
+      newList,
+      filters,
+      worker,
+    );
     return newList;
   }
 
@@ -915,11 +1038,16 @@ class TrackerRecordController extends GetxController {
     List<DataItemFilter> filters = const [],
     required T Function(TrackerRecordDataItem item) selector,
   }) {
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
+    return _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .map(selector)
+        .toList();
   }
 
   int getTrackerRecordCount<T>({List<DataItemFilter> filters = const []}) {
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).length;
+    return _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .length;
   }
 
   Future<void> syncAll({int batchSize = 20}) async {
@@ -930,7 +1058,10 @@ class TrackerRecordController extends GetxController {
     await _syncEngine.syncChildrenBatch([parentId], batchSize: batchSize);
   }
 
-  Future<void> syncMultiChildren(List<String> parentIds, {int batchSize = 20}) async {
+  Future<void> syncMultiChildren(
+    List<String> parentIds, {
+    int batchSize = 20,
+  }) async {
     await _syncEngine.syncChildrenBatch(parentIds, batchSize: batchSize);
   }
 
@@ -974,7 +1105,11 @@ class TrackerRecordController extends GetxController {
     });
   }
 
-  void onUpdateLocalField(String id, {ColorTag? colorTag, SyncStatus? syncStatus}) {
+  void onUpdateLocalField(
+    String id, {
+    ColorTag? colorTag,
+    SyncStatus? syncStatus,
+  }) {
     final item = _items.firstWhere((item) => item.id == id);
     if (colorTag != null) {
       item.colorTag = colorTag;
@@ -991,7 +1126,10 @@ class TrackerRecordController extends GetxController {
       currentTrackerRecordId.value = null;
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
+    _syncEngine.delete(
+      id,
+      deleteFromServer ? true : status != SyncStatus.deleted,
+    );
   }
 }
 
@@ -1005,8 +1143,17 @@ class _TrackerRecordSyncEngine {
 
     TrackerRecordDataItem createdItem;
     try {
-      final newId = await client.create('tracker', 'record', local.body.toJson());
-      createdItem = await client.get<TrackerRecord>('tracker', 'record', newId, TrackerRecord.fromJson);
+      final newId = await client.create(
+        'tracker',
+        'record',
+        local.body.toJson(),
+      );
+      createdItem = await client.get<TrackerRecord>(
+        'tracker',
+        'record',
+        newId,
+        TrackerRecord.fromJson,
+      );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await TrackerRecordRepository().updateToLocalDb(local);
@@ -1027,7 +1174,12 @@ class _TrackerRecordSyncEngine {
     TrackerRecordDataItem updatedItem;
     try {
       await client.update('tracker', 'record', local.id, local.body.toJson());
-      updatedItem = await client.get<TrackerRecord>('tracker', 'record', local.id, TrackerRecord.fromJson);
+      updatedItem = await client.get<TrackerRecord>(
+        'tracker',
+        'record',
+        local.id,
+        TrackerRecord.fromJson,
+      );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await TrackerRecordRepository().updateToLocalDb(local);
@@ -1068,15 +1220,18 @@ class _TrackerRecordSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerRecordDataItem? localItem = await TrackerRecordRepository().getFromLocalDb(summary.id);
-          if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
+          final TrackerRecordDataItem? localItem =
+              await TrackerRecordRepository().getFromLocalDb(summary.id);
+          if (localItem == null ||
+              localItem.updatedAt.isBefore(summary.updatedAt)) {
             // only get details for new created or updated items, otherwise just skip to save performance.
             needGetIds.add(summary.id);
           } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
             // local data is newer, need to sync to server
             localItem.syncStatus = SyncStatus.failed;
             await TrackerRecordRepository().updateToLocalDb(localItem);
-          } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+          } else if (localItem.syncStatus == SyncStatus.deleted ||
+              localItem.syncStatus == SyncStatus.hidden) {
             // same updatedAt but marked as special status, need to sync to server
             localItem.syncStatus = SyncStatus.archived;
             await TrackerRecordRepository().updateToLocalDb(localItem);
@@ -1099,7 +1254,12 @@ class _TrackerRecordSyncEngine {
       final needGetIdsList = needGetIds.toList();
       for (var i = 0; i < needGetIdsList.length;) {
         final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('tracker', 'record', batchIds, TrackerRecord.fromJson);
+        final batchItems = await client.batchGet(
+          'tracker',
+          'record',
+          batchIds,
+          TrackerRecord.fromJson,
+        );
         for (var item in batchItems.items) {
           await TrackerRecordRepository().upsertToLocalDb(item);
         }
@@ -1120,73 +1280,12 @@ class _TrackerRecordSyncEngine {
     }
   }
 
-  Future<void> syncChildrenBatch(List<String> parentIds, {int batchSize = 20}) async {
-    try {
-      final needGetIds = <String>{};
-      final serviceIds = <String>{};
-      for (var i = 0; i < parentIds.length; i += 100) {
-        final parentIdsBatch = parentIds.skip(i).take(100).toList();
-        String? nextMarker;
-        do {
-          final ListResponse resp = await client.batchListChildren(
-            'tracker',
-            'record',
-            parentIdsBatch,
-            marker: nextMarker,
-          );
-          nextMarker = resp.pageInfo.nextMarker;
-          for (var summary in resp.items) {
-            serviceIds.add(summary.id);
-            final TrackerRecordDataItem? localItem = await TrackerRecordRepository().getFromLocalDb(summary.id);
-            if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
-              // only get details for new created or updated items, otherwise just skip to save performance.
-              needGetIds.add(summary.id);
-            } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
-              // local data is newer, need to sync to server
-              localItem.syncStatus = SyncStatus.failed;
-              await TrackerRecordRepository().updateToLocalDb(localItem);
-            } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
-              // same updatedAt but marked as special status, need to sync to server
-              localItem.syncStatus = SyncStatus.archived;
-              await TrackerRecordRepository().updateToLocalDb(localItem);
-            }
-          }
-        } while (nextMarker != null);
-      }
-      // clean up local data that are deleted from server
-      final localItems = await TrackerRecordRepository().listFromLocalDb();
-      for (TrackerRecordDataItem localItem in localItems) {
-        if (localItem.parentId == null || !parentIds.contains(localItem.parentId!)) {
-          continue;
-        }
-        if (!serviceIds.contains(localItem.id)) {
-          localItem.syncStatus = SyncStatus.deleted;
-          await TrackerRecordRepository().updateToLocalDb(localItem);
-        }
-      }
-      // batch get details for items that need to be updated or created locally
-      final needGetIdsList = needGetIds.toList();
-      for (var i = 0; i < needGetIdsList.length;) {
-        final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('tracker', 'record', batchIds, TrackerRecord.fromJson);
-        for (var item in batchItems.items) {
-          await TrackerRecordRepository().upsertToLocalDb(item);
-        }
-        final truncated = batchItems.truncated;
-        if (truncated != null) {
-          i = needGetIdsList.indexOf(truncated);
-          if (i == -1) {
-            // just in case, if truncated id is not found in the list, fallback to next batch.
-            i += batchSize;
-          }
-        } else {
-          i += batchSize;
-        }
-      }
-    } catch (e) {
-      // todo more error handling?
-      rethrow;
-    }
+  Future<void> syncChildrenBatch(
+    List<String> parentIds, {
+    int batchSize = 20,
+  }) async {
+    // 父子关系网络同步已彻底移除（废除 by_parent_ids），所有数据均由本地 Local-First 统一变更流管理
+    return;
   }
 
   Future<void> syncOwned() async {
@@ -1195,11 +1294,17 @@ class _TrackerRecordSyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('tracker', 'record', limit: 200, marker: nextMarker);
+        final ListResponse resp = await client.list(
+          'tracker',
+          'record',
+          limit: 200,
+          marker: nextMarker,
+        );
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerRecordDataItem? localItem = await TrackerRecordRepository().getFromLocalDb(summary.id);
+          final TrackerRecordDataItem? localItem =
+              await TrackerRecordRepository().getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
@@ -1236,7 +1341,8 @@ class _TrackerRecordSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerRecordDataItem? localItem = await TrackerRecordRepository().getFromLocalDb(summary.id);
+          final TrackerRecordDataItem? localItem =
+              await TrackerRecordRepository().getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
@@ -1272,12 +1378,15 @@ class _TrackerRecordSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final TrackerRecordDataItem? localItem = await TrackerRecordRepository().getFromLocalDb(summary.id);
+          final TrackerRecordDataItem? localItem =
+              await TrackerRecordRepository().getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
-      final localItems = await TrackerRecordRepository().listFromLocalDb(parentId: parentId);
+      final localItems = await TrackerRecordRepository().listFromLocalDb(
+        parentId: parentId,
+      );
       for (TrackerRecordDataItem localItem in localItems) {
         if (!serviceIds.contains(localItem.id)) {
           localItem.syncStatus = SyncStatus.deleted;
@@ -1290,7 +1399,10 @@ class _TrackerRecordSyncEngine {
     }
   }
 
-  Future<void> _compareRemote(TrackerRecordDataItem? localItem, DataItemSummary summary) async {
+  Future<void> _compareRemote(
+    TrackerRecordDataItem? localItem,
+    DataItemSummary summary,
+  ) async {
     if (localItem == null) {
       // new from server
       final TrackerRecordDataItem item = await client.get<TrackerRecord>(
@@ -1313,7 +1425,8 @@ class _TrackerRecordSyncEngine {
       // local data is newer, need to sync to server
       localItem.syncStatus = SyncStatus.failed;
       await TrackerRecordRepository().updateToLocalDb(localItem);
-    } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+    } else if (localItem.syncStatus == SyncStatus.deleted ||
+        localItem.syncStatus == SyncStatus.hidden) {
       // same updatedAt but marked as special status, need to sync to server
       localItem.syncStatus = SyncStatus.archived;
       await TrackerRecordRepository().updateToLocalDb(localItem);

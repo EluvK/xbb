@@ -8,8 +8,13 @@ import 'package:xbb/models/chat/model.dart';
 
 class ChatDB {
   static final Map<String, Database> _dbCache = <String, Database>{};
+  static Database? mockDb;
+  static void setMockDb(Database? db) => mockDb = db;
 
   Future<Database> getDb() async {
+    if (mockDb != null) {
+      return mockDb!;
+    }
     final userId = Get.find<SettingController>().userId;
     if (_dbCache.containsKey(userId)) {
       return _dbCache[userId]!;

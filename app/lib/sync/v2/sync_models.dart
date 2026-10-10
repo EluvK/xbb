@@ -141,6 +141,20 @@ class SyncChangeItem {
     if (data is String) return data as String;
     return jsonEncode(data);
   }
+
+  /// 获取解析后的 JSON 对象 (Map 或 List)
+  dynamic get parsedData {
+    if (data == null) return null;
+    if (data is Map || data is List) return data;
+    if (data is String) {
+      try {
+        return jsonDecode(data as String);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
 }
 
 /// GET /sync/v1/pull 响应体

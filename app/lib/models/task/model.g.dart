@@ -9,20 +9,25 @@ part of 'model.dart';
 _CheckList _$CheckListFromJson(Map<String, dynamic> json) => _CheckList(
   tasks: json['tasks'] as String,
   archived: json['archived'] as bool,
-  archivedAt: json['archived_at'] == null ? null : DateTime.parse(json['archived_at'] as String),
+  archivedAt: json['archived_at'] == null
+      ? null
+      : DateTime.parse(json['archived_at'] as String),
 );
 
-Map<String, dynamic> _$CheckListToJson(_CheckList instance) => <String, dynamic>{
-  'tasks': instance.tasks,
-  'archived': instance.archived,
-  'archived_at': instance.archivedAt?.toIso8601String(),
-};
+Map<String, dynamic> _$CheckListToJson(_CheckList instance) =>
+    <String, dynamic>{
+      'tasks': instance.tasks,
+      'archived': instance.archived,
+      'archived_at': instance.archivedAt?.toIso8601String(),
+    };
 
 _TaskItem _$TaskItemFromJson(Map<String, dynamic> json) => _TaskItem(
   id: json['id'] as String,
   content: json['content'] as String,
   done: json['done'] as bool,
-  doneAt: json['done_at'] == null ? null : DateTime.parse(json['done_at'] as String),
+  doneAt: json['done_at'] == null
+      ? null
+      : DateTime.parse(json['done_at'] as String),
   lastModifiedAt: DateTime.parse(json['last_modified_at'] as String),
   sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
 );
@@ -68,7 +73,10 @@ typedef CheckListDataItem = DataItem<CheckList>;
 class CheckListRepository {
   Future<void> addToLocalDb(CheckListDataItem item) async {
     final db = await LocalStoreCheckList.getDb();
-    await db.insert(LocalStoreCheckList.tableName, item.toJson((r) => json.encode(r.toJson())));
+    await db.insert(
+      LocalStoreCheckList.tableName,
+      item.toJson((r) => json.encode(r.toJson())),
+    );
   }
 
   Future<CheckListDataItem?> getFromLocalDb(String id) async {
@@ -79,7 +87,10 @@ class CheckListRepository {
       whereArgs: [id],
     );
     if (maps.isNotEmpty) {
-      return DataItem<CheckList>.fromJson(maps.first, (jsonStr) => CheckList.fromJson(json.decode(jsonStr as String)));
+      return DataItem<CheckList>.fromJson(
+        maps.first,
+        (jsonStr) => CheckList.fromJson(json.decode(jsonStr as String)),
+      );
     }
     return null;
   }
@@ -92,24 +103,54 @@ class CheckListRepository {
       whereClauses.add('parent_id = ?');
       whereArgs.add(parentId);
     }
-    final whereString = whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null;
+    final whereString = whereClauses.isNotEmpty
+        ? whereClauses.join(' AND ')
+        : null;
 
     final List<Map<String, dynamic>> maps = await db.query(
       LocalStoreCheckList.tableName,
       where: whereString,
       whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'created_at DESC',
     );
 
     return maps
         .map(
-          (map) => DataItem<CheckList>.fromJson(map, (jsonStr) => CheckList.fromJson(json.decode(jsonStr as String))),
+          (map) => DataItem<CheckList>.fromJson(
+            map,
+            (jsonStr) => CheckList.fromJson(json.decode(jsonStr as String)),
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<CheckListDataItem>> listByParentIdFromLocalDb(
+    String parentId, {
+    bool desc = true,
+  }) async {
+    final db = await LocalStoreCheckList.getDb();
+    final order = desc ? 'DESC' : 'ASC';
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+      'SELECT * FROM ${LocalStoreCheckList.tableName} WHERE parent_id = ? ORDER BY created_at $order',
+      [parentId],
+    );
+    return maps
+        .map(
+          (map) => DataItem<CheckList>.fromJson(
+            map,
+            (jsonStr) => CheckList.fromJson(json.decode(jsonStr as String)),
+          ),
         )
         .toList();
   }
 
   Future<void> deleteFromLocalDb(String id) async {
     final db = await LocalStoreCheckList.getDb();
-    await db.delete(LocalStoreCheckList.tableName, where: 'id = ?', whereArgs: [id]);
+    await db.delete(
+      LocalStoreCheckList.tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> updateToLocalDb(CheckListDataItem item) async {
@@ -135,7 +176,11 @@ class _CheckListDataItemFilterSubscription {
   final RxList<CheckListDataItem> filteredList;
   final List<DataItemFilter> appliedFilters;
   final Worker worker;
-  _CheckListDataItemFilterSubscription(this.filteredList, this.appliedFilters, this.worker);
+  _CheckListDataItemFilterSubscription(
+    this.filteredList,
+    this.appliedFilters,
+    this.worker,
+  );
 }
 
 class CheckListController extends GetxController {
@@ -145,7 +190,8 @@ class CheckListController extends GetxController {
 
   final RxList<CheckListDataItem> _items = <CheckListDataItem>[].obs;
 
-  final Map<String, _CheckListDataItemFilterSubscription> _dynamicSubscription = {};
+  final Map<String, _CheckListDataItemFilterSubscription> _dynamicSubscription =
+      {};
   final Rx<String?> currentCheckListId = Rx<String?>(null);
 
   @override
@@ -190,13 +236,22 @@ class CheckListController extends GetxController {
     if (existing != null && listEquals(existing.appliedFilters, filters)) {
       return existing.filteredList;
     }
-    final newList = _items.where((item) => filters.every((filter) => filter.apply(item))).toList().obs;
+    final newList = _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .toList()
+        .obs;
     existing?.worker.dispose();
     final worker = debounce(_items, (List<CheckListDataItem> value) {
-      final newFiltered = value.where((item) => filters.every((filter) => filter.apply(item))).toList();
+      final newFiltered = value
+          .where((item) => filters.every((filter) => filter.apply(item)))
+          .toList();
       newList.assignAll(newFiltered);
     }, time: const Duration(milliseconds: 100));
-    _dynamicSubscription[filterKey] = _CheckListDataItemFilterSubscription(newList, filters, worker);
+    _dynamicSubscription[filterKey] = _CheckListDataItemFilterSubscription(
+      newList,
+      filters,
+      worker,
+    );
     return newList;
   }
 
@@ -222,11 +277,16 @@ class CheckListController extends GetxController {
     List<DataItemFilter> filters = const [],
     required T Function(CheckListDataItem item) selector,
   }) {
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).map(selector).toList();
+    return _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .map(selector)
+        .toList();
   }
 
   int getCheckListCount<T>({List<DataItemFilter> filters = const []}) {
-    return _items.where((item) => filters.every((filter) => filter.apply(item))).length;
+    return _items
+        .where((item) => filters.every((filter) => filter.apply(item)))
+        .length;
   }
 
   Future<void> syncAll({int batchSize = 20}) async {
@@ -237,7 +297,10 @@ class CheckListController extends GetxController {
     await _syncEngine.syncChildrenBatch([parentId], batchSize: batchSize);
   }
 
-  Future<void> syncMultiChildren(List<String> parentIds, {int batchSize = 20}) async {
+  Future<void> syncMultiChildren(
+    List<String> parentIds, {
+    int batchSize = 20,
+  }) async {
     await _syncEngine.syncChildrenBatch(parentIds, batchSize: batchSize);
   }
 
@@ -281,7 +344,11 @@ class CheckListController extends GetxController {
     });
   }
 
-  void onUpdateLocalField(String id, {ColorTag? colorTag, SyncStatus? syncStatus}) {
+  void onUpdateLocalField(
+    String id, {
+    ColorTag? colorTag,
+    SyncStatus? syncStatus,
+  }) {
     final item = _items.firstWhere((item) => item.id == id);
     if (colorTag != null) {
       item.colorTag = colorTag;
@@ -298,7 +365,10 @@ class CheckListController extends GetxController {
       currentCheckListId.value = null;
     }
     final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    _syncEngine.delete(id, deleteFromServer ? true : status != SyncStatus.deleted);
+    _syncEngine.delete(
+      id,
+      deleteFromServer ? true : status != SyncStatus.deleted,
+    );
   }
 }
 
@@ -312,8 +382,17 @@ class _CheckListSyncEngine {
 
     CheckListDataItem createdItem;
     try {
-      final newId = await client.create('task', 'check_list', local.body.toJson());
-      createdItem = await client.get<CheckList>('task', 'check_list', newId, CheckList.fromJson);
+      final newId = await client.create(
+        'task',
+        'check_list',
+        local.body.toJson(),
+      );
+      createdItem = await client.get<CheckList>(
+        'task',
+        'check_list',
+        newId,
+        CheckList.fromJson,
+      );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await CheckListRepository().updateToLocalDb(local);
@@ -334,7 +413,12 @@ class _CheckListSyncEngine {
     CheckListDataItem updatedItem;
     try {
       await client.update('task', 'check_list', local.id, local.body.toJson());
-      updatedItem = await client.get<CheckList>('task', 'check_list', local.id, CheckList.fromJson);
+      updatedItem = await client.get<CheckList>(
+        'task',
+        'check_list',
+        local.id,
+        CheckList.fromJson,
+      );
     } catch (e) {
       local.syncStatus = SyncStatus.failed;
       await CheckListRepository().updateToLocalDb(local);
@@ -375,15 +459,18 @@ class _CheckListSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final CheckListDataItem? localItem = await CheckListRepository().getFromLocalDb(summary.id);
-          if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
+          final CheckListDataItem? localItem = await CheckListRepository()
+              .getFromLocalDb(summary.id);
+          if (localItem == null ||
+              localItem.updatedAt.isBefore(summary.updatedAt)) {
             // only get details for new created or updated items, otherwise just skip to save performance.
             needGetIds.add(summary.id);
           } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
             // local data is newer, need to sync to server
             localItem.syncStatus = SyncStatus.failed;
             await CheckListRepository().updateToLocalDb(localItem);
-          } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+          } else if (localItem.syncStatus == SyncStatus.deleted ||
+              localItem.syncStatus == SyncStatus.hidden) {
             // same updatedAt but marked as special status, need to sync to server
             localItem.syncStatus = SyncStatus.archived;
             await CheckListRepository().updateToLocalDb(localItem);
@@ -406,7 +493,12 @@ class _CheckListSyncEngine {
       final needGetIdsList = needGetIds.toList();
       for (var i = 0; i < needGetIdsList.length;) {
         final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('task', 'check_list', batchIds, CheckList.fromJson);
+        final batchItems = await client.batchGet(
+          'task',
+          'check_list',
+          batchIds,
+          CheckList.fromJson,
+        );
         for (var item in batchItems.items) {
           await CheckListRepository().upsertToLocalDb(item);
         }
@@ -427,73 +519,12 @@ class _CheckListSyncEngine {
     }
   }
 
-  Future<void> syncChildrenBatch(List<String> parentIds, {int batchSize = 20}) async {
-    try {
-      final needGetIds = <String>{};
-      final serviceIds = <String>{};
-      for (var i = 0; i < parentIds.length; i += 100) {
-        final parentIdsBatch = parentIds.skip(i).take(100).toList();
-        String? nextMarker;
-        do {
-          final ListResponse resp = await client.batchListChildren(
-            'task',
-            'check_list',
-            parentIdsBatch,
-            marker: nextMarker,
-          );
-          nextMarker = resp.pageInfo.nextMarker;
-          for (var summary in resp.items) {
-            serviceIds.add(summary.id);
-            final CheckListDataItem? localItem = await CheckListRepository().getFromLocalDb(summary.id);
-            if (localItem == null || localItem.updatedAt.isBefore(summary.updatedAt)) {
-              // only get details for new created or updated items, otherwise just skip to save performance.
-              needGetIds.add(summary.id);
-            } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
-              // local data is newer, need to sync to server
-              localItem.syncStatus = SyncStatus.failed;
-              await CheckListRepository().updateToLocalDb(localItem);
-            } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
-              // same updatedAt but marked as special status, need to sync to server
-              localItem.syncStatus = SyncStatus.archived;
-              await CheckListRepository().updateToLocalDb(localItem);
-            }
-          }
-        } while (nextMarker != null);
-      }
-      // clean up local data that are deleted from server
-      final localItems = await CheckListRepository().listFromLocalDb();
-      for (CheckListDataItem localItem in localItems) {
-        if (localItem.parentId == null || !parentIds.contains(localItem.parentId!)) {
-          continue;
-        }
-        if (!serviceIds.contains(localItem.id)) {
-          localItem.syncStatus = SyncStatus.deleted;
-          await CheckListRepository().updateToLocalDb(localItem);
-        }
-      }
-      // batch get details for items that need to be updated or created locally
-      final needGetIdsList = needGetIds.toList();
-      for (var i = 0; i < needGetIdsList.length;) {
-        final batchIds = needGetIdsList.skip(i).take(batchSize).toList();
-        final batchItems = await client.batchGet('task', 'check_list', batchIds, CheckList.fromJson);
-        for (var item in batchItems.items) {
-          await CheckListRepository().upsertToLocalDb(item);
-        }
-        final truncated = batchItems.truncated;
-        if (truncated != null) {
-          i = needGetIdsList.indexOf(truncated);
-          if (i == -1) {
-            // just in case, if truncated id is not found in the list, fallback to next batch.
-            i += batchSize;
-          }
-        } else {
-          i += batchSize;
-        }
-      }
-    } catch (e) {
-      // todo more error handling?
-      rethrow;
-    }
+  Future<void> syncChildrenBatch(
+    List<String> parentIds, {
+    int batchSize = 20,
+  }) async {
+    // 父子关系网络同步已彻底移除（废除 by_parent_ids），所有数据均由本地 Local-First 统一变更流管理
+    return;
   }
 
   Future<void> syncOwned() async {
@@ -502,11 +533,17 @@ class _CheckListSyncEngine {
       String? nextMarker;
       final serviceIds = <String>{};
       do {
-        final ListResponse resp = await client.list('task', 'check_list', limit: 200, marker: nextMarker);
+        final ListResponse resp = await client.list(
+          'task',
+          'check_list',
+          limit: 200,
+          marker: nextMarker,
+        );
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final CheckListDataItem? localItem = await CheckListRepository().getFromLocalDb(summary.id);
+          final CheckListDataItem? localItem = await CheckListRepository()
+              .getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
@@ -543,7 +580,8 @@ class _CheckListSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final CheckListDataItem? localItem = await CheckListRepository().getFromLocalDb(summary.id);
+          final CheckListDataItem? localItem = await CheckListRepository()
+              .getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
@@ -579,12 +617,15 @@ class _CheckListSyncEngine {
         nextMarker = resp.pageInfo.nextMarker;
         for (var summary in resp.items) {
           serviceIds.add(summary.id);
-          final CheckListDataItem? localItem = await CheckListRepository().getFromLocalDb(summary.id);
+          final CheckListDataItem? localItem = await CheckListRepository()
+              .getFromLocalDb(summary.id);
           await _compareRemote(localItem, summary);
         }
       } while (nextMarker != null);
       // clean up local data that are deleted from server
-      final localItems = await CheckListRepository().listFromLocalDb(parentId: parentId);
+      final localItems = await CheckListRepository().listFromLocalDb(
+        parentId: parentId,
+      );
       for (CheckListDataItem localItem in localItems) {
         if (!serviceIds.contains(localItem.id)) {
           localItem.syncStatus = SyncStatus.deleted;
@@ -597,20 +638,34 @@ class _CheckListSyncEngine {
     }
   }
 
-  Future<void> _compareRemote(CheckListDataItem? localItem, DataItemSummary summary) async {
+  Future<void> _compareRemote(
+    CheckListDataItem? localItem,
+    DataItemSummary summary,
+  ) async {
     if (localItem == null) {
       // new from server
-      final CheckListDataItem item = await client.get<CheckList>('task', 'check_list', summary.id, CheckList.fromJson);
+      final CheckListDataItem item = await client.get<CheckList>(
+        'task',
+        'check_list',
+        summary.id,
+        CheckList.fromJson,
+      );
       await CheckListRepository().addToLocalDb(item);
     } else if (localItem.updatedAt.isBefore(summary.updatedAt)) {
       // update local data.
-      final CheckListDataItem item = await client.get<CheckList>('task', 'check_list', summary.id, CheckList.fromJson);
+      final CheckListDataItem item = await client.get<CheckList>(
+        'task',
+        'check_list',
+        summary.id,
+        CheckList.fromJson,
+      );
       await CheckListRepository().updateToLocalDb(item);
     } else if (localItem.updatedAt.isAfter(summary.updatedAt)) {
       // local data is newer, need to sync to server
       localItem.syncStatus = SyncStatus.failed;
       await CheckListRepository().updateToLocalDb(localItem);
-    } else if (localItem.syncStatus == SyncStatus.deleted || localItem.syncStatus == SyncStatus.hidden) {
+    } else if (localItem.syncStatus == SyncStatus.deleted ||
+        localItem.syncStatus == SyncStatus.hidden) {
       // same updatedAt but marked as special status, need to sync to server
       localItem.syncStatus = SyncStatus.archived;
       await CheckListRepository().updateToLocalDb(localItem);
