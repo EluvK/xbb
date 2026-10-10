@@ -18,7 +18,7 @@
     3. 修复 `app/` 内部相对路径依赖（检查 `pubspec.yaml` 中各内部 package 引用）。
   - **验收标准**: 在 `app/` 目录下执行 `flutter pub get` 与 `flutter test`（若有）通过，无文件丢失。
 
-- [ ] **TASK-1.2: 初始化全新 Rust 服务端工程**
+- [x] **TASK-1.2: 初始化全新 Rust 服务端工程**
   - **依赖**: TASK-1.1
   - **工作内容**:
     1. 在根目录下新建 `server/` 目录，初始化 Cargo 项目（使用 Salvo 或 Axum，推荐 Salvo 与现有技术栈对齐，集成 tokio, sqlx/rusqlite, serde, tracing, jsonwebtoken）。
