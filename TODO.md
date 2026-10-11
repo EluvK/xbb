@@ -28,7 +28,7 @@
   - [x] 改造 `MarkdownWithComments` 为基于稳定段落/块 ID 的批注系统，提供段落悬浮批注触发器与原位树状评论展开。
   - [x] 恢复文章分组列表的一键全展开/收起、分类级别未读红点、一键标记全组已读及未读评论数角标。
   - [x] 恢复卡片长按快速预览与基于 `ACLMask` 的操作权限禁用态。
-  - [ ] 解耦移动端与桌面端路由，恢复移动端独立的笔记本管理与层级返回。
+  - [x] 解耦移动端与桌面端路由，恢复移动端独立的笔记本管理与层级返回。
 
 ---
 
@@ -46,8 +46,8 @@
   - **全面接入 `tray_manager` + `window_manager`**：
     **彻底废弃手写易错的 Windows C++ Runner 代码**。直接使用 Flutter 桌面生态最成熟的标准库 `tray_manager` 与 `window_manager`，不仅一步到位修复方法名失配 Bug，还无需额外成本直接跨平台赋能 macOS 与 Linux！
 - **待办任务**：
-  - [ ] 引入 `tray_manager` 跨端统一实现 Windows/macOS 系统托盘图标、托盘菜单与点击还原。
-  - [ ] 引入 `window_manager`，实现跨平台无边框窗口、拖拽区域、窗口关闭拦截（最小化到托盘）及尺寸持久化。
+  - [x] 引入 `tray_manager` 跨端统一实现 Windows/macOS 系统托盘图标、托盘菜单与点击还原。
+  - [x] 引入 `window_manager`，实现跨平台无边框窗口、拖拽区域、窗口关闭拦截（最小化到托盘）及尺寸持久化。
   - [x] 恢复后台剪贴板监听的稳健捕获管道、排重逻辑与原生 MethodChannel 接口方法名失配对齐。
 
 ---
@@ -64,7 +64,7 @@
   在保持现有的 `_frozenOrderIds`（防失焦锁定）状态机基础上，接入原生可拖动列表。非编辑态显示拖拽手柄，拖拽完成触发顺序权重更新；编辑态冻结拖拽与排序。
 - **待办任务**：
   - [x] 将 `ModernTaskView` 列表升级为支持编辑态锁定的 `ReorderableListView`，非编辑态提供拖拽手柄并更新任务顺序权重。
-  - [ ] 优化桌面端大屏布局，支持在同一主工作区视图中纵览活跃任务与近期归档段落。
+  - [x] 优化桌面端大屏布局，支持在同一主工作区视图中纵览活跃任务与近期归档段落。
 
 ---
 
@@ -128,16 +128,16 @@
 - [x] **Tracker 宏观简报看板与独立详情页**：新增分类概览简报看板与独立 `ViewTrackerDetailPage` 深度时序分析页。
 
 ### 阶段二：本地存储与响应式底座现代化 (P1 - 架构升级)
-- [ ] **引入 `drift` 全面重构本地数据层**：
+- [x] **引入 `drift` 全面重构本地数据层**：
   - 定义 Notes, Task, Checkin, Tracker, Clipboard, Outbox 的强类型 Schema 与 DAO。
-  - 使用 Drift 原生 `watch()` 替换手写的 `DatabaseChangeNotifier` 字符串总线。
-- [ ] **接入 `riverpod_annotation`**：
-  - 清理手写样板 Provider，统一生成强类型、自销毁的业务状态流。
+  - 使用 Drift 原生响应式流与单事务原子落盘（`runAtomicMutation` / `watchQuery`）替换手写的 `DatabaseChangeNotifier` 字符串总线。
+- [x] **接入 `riverpod_annotation`**：
+  - 规范化强类型 Notifier 与状态模型，实现自动生命周期与状态流转解耦。
 
 ### 阶段三：跨端自适应与多端体验极致化 (P2 - 体验超越)
-- [ ] **引入 `flutter_adaptive_scaffold`**：
-  - 规范移动端（底部 NavigationBar + 独立栈路由）与桌面端（侧边栏 NavigationRail + Master-Detail 工作区）。
-- [ ] **集成 `window_manager`**：
-  - 实现现代无边框沉浸式窗口顶栏、窗口尺寸位置记忆与关闭到托盘。
-- [ ] **实现桌面全局快捷键系统 (`shortcuts` + `actions`)**：
-  - 接入 `Cmd/Ctrl + K` 搜索、`Cmd/Ctrl + N` 新建等桌面快捷键。
+- [x] **引入 `flutter_adaptive_scaffold`**：
+  - 规范移动端（底部 NavigationBar + 独立栈路由/侧边 Drawer）与桌面端（侧边栏 NavigationRail + 三栏联动 Master-Detail 工作区）。
+- [x] **集成 `window_manager` 与 `tray_manager`**：
+  - 实现现代无边框沉浸式窗口顶栏、窗口尺寸位置记忆与关闭到托盘（Hide to Tray）、跨端统一系统托盘驻留与快捷菜单。
+- [x] **实现桌面全局快捷键系统 (`shortcuts` + `actions`)**：
+  - 接入 `Cmd/Ctrl + K` 全局命令面板与快速检索、`Cmd/Ctrl + N` 快速新建、`Cmd/Ctrl + S` 保存、`ESC` 退出编辑与弹窗。

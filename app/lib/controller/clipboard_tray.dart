@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:xbb/core/desktop/desktop_manager.dart';
 import 'package:xbb/data/repositories/clipboard_repository.dart';
 import 'package:xbb/models/clipboard/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
@@ -70,6 +71,9 @@ class ClipboardTrayService extends ChangeNotifier {
     } on PlatformException catch (e) {
       debugPrint('Sync clipboard tray status failed: $e');
     }
+    try {
+      await DesktopManager.instance.updateTrayMenu();
+    } catch (_) {}
   }
 
   Future<dynamic> _onMethodCall(MethodCall call) async {

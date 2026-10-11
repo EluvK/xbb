@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pie_menu/pie_menu.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/core/shortcuts/app_shortcuts.dart';
+import 'package:xbb/core/shortcuts/command_palette_dialog.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/chat/modern_chat_view.dart';
 import 'package:xbb/presentation/checkin/modern_checkin_view.dart';
@@ -29,6 +31,78 @@ class ModernHomeShell extends ConsumerStatefulWidget {
 class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
   AppTab _currentTab = AppTab.notes;
   bool _initializedTab = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AppShortcutDispatcher.instance.onSearch = _openCommandPalette;
+    AppShortcutDispatcher.instance.onNewItem = _handleQuickNew;
+    AppShortcutDispatcher.instance.onEscape = () => Navigator.of(context).maybePop();
+  }
+
+  @override
+  void dispose() {
+    AppShortcutDispatcher.instance.onSearch = null;
+    AppShortcutDispatcher.instance.onNewItem = null;
+    AppShortcutDispatcher.instance.onEscape = null;
+    super.dispose();
+  }
+
+  List<AppTab> _getAvailableTabs(dynamic settings) {
+    final tabs = <AppTab>[];
+    if (settings.notesEnabled) tabs.add(AppTab.notes);
+    if (settings.taskEnabled) tabs.add(AppTab.task);
+    if (settings.checkinEnabled) tabs.add(AppTab.checkin);
+    if (settings.trackerEnabled) tabs.add(AppTab.tracker);
+    if (settings.clipboardEnabled) tabs.add(AppTab.clipboard);
+    if (settings.chatEnabled) tabs.add(AppTab.chat);
+    tabs.add(AppTab.settings);
+    return tabs;
+  }
+
+  void _openCommandPalette() {
+    final settings = ref.read(appSettingsProvider);
+    final tabs = _getAvailableTabs(settings);
+    final items = <CommandPaletteItem>[];
+
+    for (final tab in tabs) {
+      items.add(
+        CommandPaletteItem(
+          title: '切换至 ${_getTitleForTab(tab)}',
+          subtitle: '快捷跳转到 ${_getTitleForTab(tab)} 模块',
+          icon: _getIconForTab(tab),
+          onExecute: () => setState(() => _currentTab = tab),
+        ),
+      );
+    }
+
+    items.add(
+      CommandPaletteItem(
+        title: '快速新建待办任务',
+        subtitle: '跳转至待办事项清单',
+        icon: Icons.add_task_rounded,
+        shortcutHint: 'Cmd+N',
+        onExecute: () => setState(() => _currentTab = AppTab.task),
+      ),
+    );
+    items.add(
+      CommandPaletteItem(
+        title: '快速撰写新笔记',
+        subtitle: '跳转至知识库写下新文档',
+        icon: Icons.post_add_rounded,
+        shortcutHint: 'Cmd+N',
+        onExecute: () => setState(() => _currentTab = AppTab.notes),
+      ),
+    );
+
+    CommandPaletteDialog.show(context, items: items);
+  }
+
+  void _handleQuickNew() {
+    if (_currentTab != AppTab.notes && _currentTab != AppTab.task) {
+      setState(() => _currentTab = AppTab.task);
+    }
+  }
 
   static AppTab getTabFromStartupIndex(int index) {
     return switch (index) {
@@ -232,7 +306,8 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
             ),
     );
 
-    return isDesktop ? shellScaffold : PieCanvas(child: shellScaffold);
+    final wrapped = isDesktop ? shellScaffold : PieCanvas(child: shellScaffold);
+    return GlobalShortcutsWrapper(child: wrapped);
   }
 
   Widget _buildCurrentTabView() {

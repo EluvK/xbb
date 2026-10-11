@@ -102,27 +102,32 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
 
     final doneCount = tasks.where((t) => t.done).length;
     final totalCount = tasks.length;
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width >= 900;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          _showArchived ? 'task_archived_list'.tr : 'task_active_list'.tr,
+          isDesktop
+              ? 'task_active_list'.tr
+              : (_showArchived ? 'task_archived_list'.tr : 'task_active_list'.tr),
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            tooltip: _showArchived ? 'task_view_active_tooltip'.tr : 'task_view_archived_tooltip'.tr,
-            icon: Icon(_showArchived ? Icons.checklist_rounded : Icons.archive_outlined),
-            onPressed: () => setState(() => _showArchived = !_showArchived),
-          ),
-          if (!_showArchived)
+          if (!isDesktop)
+            IconButton(
+              tooltip: _showArchived ? 'task_view_active_tooltip'.tr : 'task_view_archived_tooltip'.tr,
+              icon: Icon(_showArchived ? Icons.checklist_rounded : Icons.archive_outlined),
+              onPressed: () => setState(() => _showArchived = !_showArchived),
+            ),
+          if (!_showArchived || isDesktop)
             IconButton(
               tooltip: _showDetails ? 'task_view_details_hide_tooltip'.tr : 'task_view_details_show_tooltip'.tr,
               icon: Icon(_showDetails ? Icons.visibility_rounded : Icons.visibility_outlined),
               onPressed: () => setState(() => _showDetails = !_showDetails),
             ),
-          if (!_showArchived && doneCount > 0)
+          if ((!_showArchived || isDesktop) && doneCount > 0)
             IconButton(
               tooltip: 'task_archive_completed_tooltip'.tr,
               icon: const Icon(Icons.archive),
@@ -146,112 +151,154 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
           const SizedBox(width: AppSpacing.sm),
         ],
       ),
-      body: _showArchived
-          ? const TaskHistoryView()
-          : Column(
+      body: isDesktop
+          ? Row(
               children: [
-                // 顶部输入条与快速添加
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  child: Row(
+                Expanded(
+                  child: _buildActiveWorkspace(theme, totalCount, doneCount, orderedTasks, userId),
+                ),
+                const VerticalDivider(width: 1),
+                SizedBox(
+                  width: 380,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _textController,
-                          focusNode: _focusNode,
-                          onSubmitted: (_) => _submitNewTask(),
-                          decoration: InputDecoration(
-                            hintText: 'task_input_hint'.tr,
-                            filled: true,
-                            fillColor: theme.colorScheme.surfaceContainerLow,
-                            prefixIcon: const Icon(Icons.add_circle_outline, size: 20),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.arrow_upward_rounded, size: 18),
-                              onPressed: _submitNewTask,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.history_rounded, size: 18),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              'task_archived_list'.tr,
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: AppSpacing.sm,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: AppRadius.roundedMd,
-                              borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: AppRadius.roundedMd,
-                              borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
-                            ),
-                          ),
+                          ],
                         ),
                       ),
-                      if (totalCount > 0) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        ModernBadge(
-                          label: '$doneCount / $totalCount',
-                          color: doneCount == totalCount ? Colors.green : theme.colorScheme.primary,
-                        ),
-                      ],
+                      const Divider(height: 1),
+                      const Expanded(child: TaskHistoryView()),
                     ],
                   ),
                 ),
-                // 活跃任务概览统计卡片
-                if (totalCount > 0)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                    child: TaskOverviewCard(
-                      totalCount: totalCount,
-                      doneCount: doneCount,
-                      isCollapsed: _isOverviewCollapsed,
-                      onToggleCollapse: () => setState(() => _isOverviewCollapsed = !_isOverviewCollapsed),
+              ],
+            )
+          : (_showArchived
+              ? const TaskHistoryView()
+              : _buildActiveWorkspace(theme, totalCount, doneCount, orderedTasks, userId)),
+    );
+  }
+
+  Widget _buildActiveWorkspace(
+    ThemeData theme,
+    int totalCount,
+    int doneCount,
+    List<TaskItem> orderedTasks,
+    String userId,
+  ) {
+    return Column(
+      children: [
+        // 顶部输入条与快速添加
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  onSubmitted: (_) => _submitNewTask(),
+                  decoration: InputDecoration(
+                    hintText: 'task_input_hint'.tr,
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerLow,
+                    prefixIcon: const Icon(Icons.add_circle_outline, size: 20),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.arrow_upward_rounded, size: 18),
+                      onPressed: _submitNewTask,
+                    ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: AppRadius.roundedMd,
+                      borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: AppRadius.roundedMd,
+                      borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
                     ),
                   ),
-                // 任务列表
-                Expanded(
-                  child: orderedTasks.isEmpty
-                      ? ModernEmptyState(
-                          icon: Icons.checklist_rounded,
-                          title: 'task_empty_title'.tr,
-                          subtitle: 'task_empty_desc'.tr,
-                        )
-                      : ReorderableListView.builder(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          itemCount: orderedTasks.length,
-                          buildDefaultDragHandles: false,
-                          onReorder: (oldIndex, newIndex) {
-                            if (_editingTaskId != null) return;
-                            ref.read(taskRepositoryProvider).reorderTasks(oldIndex, newIndex, userId);
-                          },
-                          itemBuilder: (context, index) {
-                            final task = orderedTasks[index];
-                            final isEditing = _editingTaskId == task.id;
-                            return Padding(
-                              key: ValueKey('task-${task.id}'),
-                              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                              child: InlineTaskTile(
-                                task: task,
-                                isEditing: isEditing,
-                                dragIndex: _editingTaskId == null ? index : null,
-                                onTapEdit: () => _startEditing(task, orderedTasks),
-                                onSubmitted: (newContent) => _submitEditing(task.id, newContent, userId),
-                                onCancel: _cancelEditing,
-                                onToggleDone: (val) {
-                                  ref.read(taskRepositoryProvider).toggleTaskDone(task.id, userId);
-                                },
-                                onDelete: () {
-                                  if (_editingTaskId == task.id) {
-                                    _cancelEditing();
-                                  }
-                                  ref.read(taskRepositoryProvider).deleteTask(task.id, userId);
-                                },
-                                showDetails: _showDetails,
-                              ),
-                            );
-                          },
-                        ),
+                ),
+              ),
+              if (totalCount > 0) ...[
+                const SizedBox(width: AppSpacing.sm),
+                ModernBadge(
+                  label: '$doneCount / $totalCount',
+                  color: doneCount == totalCount ? Colors.green : theme.colorScheme.primary,
                 ),
               ],
+            ],
+          ),
+        ),
+        // 活跃任务概览统计卡片
+        if (totalCount > 0)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+            child: TaskOverviewCard(
+              totalCount: totalCount,
+              doneCount: doneCount,
+              isCollapsed: _isOverviewCollapsed,
+              onToggleCollapse: () => setState(() => _isOverviewCollapsed = !_isOverviewCollapsed),
             ),
+          ),
+        // 任务列表
+        Expanded(
+          child: orderedTasks.isEmpty
+              ? ModernEmptyState(
+                  icon: Icons.checklist_rounded,
+                  title: 'task_empty_title'.tr,
+                  subtitle: 'task_empty_desc'.tr,
+                )
+              : ReorderableListView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: orderedTasks.length,
+                  buildDefaultDragHandles: false,
+                  onReorder: (oldIndex, newIndex) {
+                    if (_editingTaskId != null) return;
+                    ref.read(taskRepositoryProvider).reorderTasks(oldIndex, newIndex, userId);
+                  },
+                  itemBuilder: (context, index) {
+                    final task = orderedTasks[index];
+                    final isEditing = _editingTaskId == task.id;
+                    return Padding(
+                      key: ValueKey('task-${task.id}'),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                      child: InlineTaskTile(
+                        task: task,
+                        isEditing: isEditing,
+                        dragIndex: _editingTaskId == null ? index : null,
+                        onTapEdit: () => _startEditing(task, orderedTasks),
+                        onSubmitted: (newContent) => _submitEditing(task.id, newContent, userId),
+                        onCancel: _cancelEditing,
+                        onToggleDone: (val) {
+                          ref.read(taskRepositoryProvider).toggleTaskDone(task.id, userId);
+                        },
+                        onDelete: () {
+                          if (_editingTaskId == task.id) {
+                            _cancelEditing();
+                          }
+                          ref.read(taskRepositoryProvider).deleteTask(task.id, userId);
+                        },
+                        showDetails: _showDetails,
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

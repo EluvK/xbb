@@ -130,42 +130,58 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 800;
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: Row(
-        children: [
-          // 栏 1: 笔记本列表 (仅在桌面端或无选中文章时展开)
-          if (isDesktop)
+    return PopScope(
+      canPop: isDesktop || selectedPostId == null,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && selectedPostId != null) {
+          ref.read(selectedPostIdProvider.notifier).state = null;
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.colorScheme.surface,
+        drawer: !isDesktop
+            ? Drawer(
+                child: SafeArea(
+                  child: _buildRepoSidebar(selectedRepoId, userId, isDesktop: false),
+                ),
+              )
+            : null,
+        body: Row(
+          children: [
+            // 栏 1: 笔记本列表 (仅在桌面端或无选中文章时展开)
+            if (isDesktop)
+              SizedBox(
+                width: 220,
+                child: _buildRepoSidebar(selectedRepoId, userId, isDesktop: true),
+              ),
+            if (isDesktop) const VerticalDivider(width: 1),
+
+            // 栏 2: 文章列表
             SizedBox(
-              width: 220,
-              child: _buildRepoSidebar(selectedRepoId, userId),
+              width: isDesktop ? 300 : (selectedPostId == null ? width : 0),
+              child: selectedPostId == null || isDesktop
+                  ? _buildPostList(postsAsync, selectedRepoId, selectedPostId, userId, isDesktop: isDesktop)
+                  : const SizedBox.shrink(),
             ),
-          if (isDesktop) const VerticalDivider(width: 1),
+            if (isDesktop) const VerticalDivider(width: 1),
 
-          // 栏 2: 文章列表
-          SizedBox(
-            width: isDesktop ? 300 : (selectedPostId == null ? width : 0),
-            child: selectedPostId == null || isDesktop
-                ? _buildPostList(postsAsync, selectedRepoId, selectedPostId, userId)
-                : const SizedBox.shrink(),
-          ),
-          if (isDesktop) const VerticalDivider(width: 1),
-
-          // 栏 3: 正文预览与沉浸编辑
-          Expanded(
-            child: selectedPostId == null && !isDesktop
-                ? const SizedBox.shrink()
-                : _buildPostDetail(currentPostAsync, isDesktop),
-          ),
-        ],
+            // 栏 3: 正文预览与沉浸编辑
+            Expanded(
+              child: selectedPostId == null && !isDesktop
+                  ? const SizedBox.shrink()
+                  : _buildPostDetail(currentPostAsync, isDesktop),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRepoSidebar(
     String? selectedRepoId,
-    String userId,
-  ) {
+    String userId, {
+    required bool isDesktop,
+  }) {
     final theme = Theme.of(context);
     final myReposAsync = ref.watch(myReposStreamProvider);
     final subscribedReposAsync = ref.watch(subscribedReposStreamProvider);
@@ -217,6 +233,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   asyncData: myReposAsync,
                   selectedRepoId: selectedRepoId,
                   emptyText: 'my_repos'.tr,
+                  isDesktop: isDesktop,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 // 卡片 2: 订阅的小本本
@@ -229,6 +246,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   asyncData: subscribedReposAsync,
                   selectedRepoId: selectedRepoId,
                   emptyText: 'subscribe_repos'.tr,
+                  isDesktop: isDesktop,
                 ),
               ],
             ),
@@ -247,6 +265,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     required AsyncValue<List<DataItem<Repo>>> asyncData,
     required String? selectedRepoId,
     required String emptyText,
+    required bool isDesktop,
   }) {
     final theme = Theme.of(context);
     final count = asyncData.value?.length ?? 0;
@@ -301,6 +320,9 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                       onTap: () {
                         ref.read(selectedRepoIdProvider.notifier).state = repo.id;
                         ref.read(selectedPostIdProvider.notifier).state = null;
+                        if (!isDesktop) {
+                          Navigator.of(context).maybePop();
+                        }
                       },
                       child: Row(
                         children: [
@@ -360,8 +382,9 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     AsyncValue<List<DataItem<Post>>> postsAsync,
     String? selectedRepoId,
     String? selectedPostId,
-    String userId,
-  ) {
+    String userId, {
+    required bool isDesktop,
+  }) {
     final theme = Theme.of(context);
     return Column(
       children: [
@@ -371,6 +394,16 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
             children: [
               Row(
                 children: [
+                  if (!isDesktop) ...[
+                    Builder(
+                      builder: (ctx) => IconButton(
+                        icon: const Icon(Icons.menu_book_outlined, size: 20),
+                        tooltip: '笔记本列表',
+                        onPressed: () => Scaffold.of(ctx).openDrawer(),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
                   const RepoQuickSwitcher(),
                   const Spacer(),
                   IconButton.filledTonal(

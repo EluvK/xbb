@@ -5,6 +5,8 @@ import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/clipboard_tray.dart';
+import 'package:xbb/core/desktop/desktop_manager.dart';
+import 'package:xbb/core/desktop/desktop_title_bar.dart';
 import 'package:xbb/core/network/api_client.dart';
 import 'package:xbb/core/router/app_router.dart';
 import 'package:xbb/core/theme/app_theme.dart';
@@ -77,6 +79,9 @@ void main() async {
     Translation.setLocale(sys.languageCode == 'en' ? 'en_US' : 'zh_CN');
   }
 
+  // 初始化桌面端无边框窗口与系统托盘管理 (window_manager + tray_manager)
+  await DesktopManager.instance.init(minimizeToTrayOnClose: true);
+
   runApp(
     ProviderScope(
       overrides: [
@@ -110,7 +115,12 @@ class ModernXbbApp extends ConsumerWidget {
         final mediaQueryData = MediaQuery.of(context);
         return MediaQuery(
           data: mediaQueryData.copyWith(textScaler: TextScaler.linear(settings.fontScale)),
-          child: child ?? const SizedBox.shrink(),
+          child: Column(
+            children: [
+              const DesktopTitleBar(),
+              Expanded(child: child ?? const SizedBox.shrink()),
+            ],
+          ),
         );
       },
     );
