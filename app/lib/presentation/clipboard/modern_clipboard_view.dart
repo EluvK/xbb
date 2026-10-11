@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xbb/core/theme/tokens.dart';
+import 'package:xbb/presentation/clipboard/clipboard_date_group_view.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
@@ -10,7 +11,8 @@ class ModernClipboardView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final entries = ref.watch(filteredClipboardEntriesProvider);
+    final groups = ref.watch(groupedClipboardEntriesProvider);
+    final collapsedDates = ref.watch(collapsedClipboardDatesProvider);
     final entriesAsync = ref.watch(clipboardEntriesStreamProvider);
 
     return Scaffold(
@@ -54,84 +56,25 @@ class ModernClipboardView extends ConsumerWidget {
               onChanged: (v) => ref.read(clipboardSearchQueryProvider.notifier).state = v,
             ),
           ),
-          // 列表内容
+          // 列表内容（按日期分组并支持折叠/展开）
           Expanded(
             child: entriesAsync.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : entries.isEmpty
+                : groups.isEmpty
                     ? const ModernEmptyState(
                         icon: Icons.content_paste_off_rounded,
                         title: '无剪贴板记录',
                         subtitle: '复制文本后即可在此处查看历史、快捷复用或备份',
                       )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        itemCount: entries.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                        itemCount: groups.length,
                         itemBuilder: (context, index) {
-                          final item = entries[index];
-                          final entry = item.body;
-                          return ModernCard(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    ModernBadge(
-                                      label: entry.localOnly ? '本地隐私 (ADR-0002)' : '已云端同步',
-                                      color: entry.localOnly ? Colors.teal : Colors.blue,
-                                      icon: entry.localOnly ? Icons.lock_outline : Icons.cloud_done_outlined,
-                                    ),
-                                    Text(
-                                      entry.capturedAt?.toLocal().toString().split('.').first ?? '',
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant.withAlpha(140),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                Text(
-                                  entry.data,
-                                  style: theme.textTheme.bodyMedium,
-                                  maxLines: 4,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (entry.localOnly)
-                                      TextButton.icon(
-                                        icon: const Icon(Icons.cloud_upload_outlined, size: 16),
-                                        label: const Text('备份上云'),
-                                        onPressed: () {
-                                          ref.read(clipboardRepositoryProvider).syncToCloud(item);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('已确认并入队同步')),
-                                          );
-                                        },
-                                      ),
-                                    TextButton.icon(
-                                      icon: const Icon(Icons.copy, size: 16),
-                                      label: const Text('复制'),
-                                      onPressed: () {
-                                        ref.read(clipboardRepositoryProvider).copyToClipboard(entry.data);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('已复制到系统剪贴板')),
-                                        );
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline, size: 18),
-                                      onPressed: () => ref.read(clipboardRepositoryProvider).delete(item.id),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                          final group = groups[index];
+                          final isCollapsed = collapsedDates.contains(group.dateKey);
+                          return ClipboardDateGroupView(
+                            group: group,
+                            isCollapsed: isCollapsed,
                           );
                         },
                       ),

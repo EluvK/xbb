@@ -30,3 +30,89 @@ final filteredClipboardEntriesProvider = Provider<List<DataItem<ClipboardHistory
     error: (_, __) => <DataItem<ClipboardHistoryEntry>>[],
   );
 });
+
+class ClipboardDateGroup {
+  final String dateKey;
+  final DateTime date;
+  final List<DataItem<ClipboardHistoryEntry>> entries;
+
+  const ClipboardDateGroup({
+    required this.dateKey,
+    required this.date,
+    required this.entries,
+  });
+}
+
+String formatClipboardDateKey(DateTime dt) {
+  final local = dt.toLocal();
+  final y = local.year.toString().padLeft(4, '0');
+  final m = local.month.toString().padLeft(2, '0');
+  final d = local.day.toString().padLeft(2, '0');
+  return '$y-$m-$d';
+}
+
+DateTime clipboardDisplayTimeOf(DataItem<ClipboardHistoryEntry> item) {
+  return item.body.capturedAt ?? item.createdAt;
+}
+
+final groupedClipboardEntriesProvider = Provider<List<ClipboardDateGroup>>((ref) {
+  final entries = ref.watch(filteredClipboardEntriesProvider);
+  if (entries.isEmpty) return const [];
+
+  final sorted = List<DataItem<ClipboardHistoryEntry>>.from(entries)
+    ..sort((a, b) {
+      final timeA = clipboardDisplayTimeOf(a);
+      final timeB = clipboardDisplayTimeOf(b);
+      return timeB.compareTo(timeA);
+    });
+
+  final groups = <ClipboardDateGroup>[];
+  for (final item in sorted) {
+    final displayTime = clipboardDisplayTimeOf(item);
+    final local = displayTime.toLocal();
+    final dateKey = formatClipboardDateKey(local);
+    final date = DateTime(local.year, local.month, local.day);
+    if (groups.isNotEmpty && groups.last.dateKey == dateKey) {
+      groups.last.entries.add(item);
+    } else {
+      groups.add(ClipboardDateGroup(dateKey: dateKey, date: date, entries: [item]));
+    }
+  }
+  return groups;
+});
+
+final collapsedClipboardDatesProvider = StateNotifierProvider<CollapsedClipboardDatesNotifier, Set<String>>((ref) {
+  return CollapsedClipboardDatesNotifier();
+});
+
+class CollapsedClipboardDatesNotifier extends StateNotifier<Set<String>> {
+  CollapsedClipboardDatesNotifier() : super(<String>{});
+
+  void toggle(String dateKey) {
+    if (state.contains(dateKey)) {
+      state = Set<String>.from(state)..remove(dateKey);
+    } else {
+      state = Set<String>.from(state)..add(dateKey);
+    }
+  }
+
+  void collapse(String dateKey) {
+    if (!state.contains(dateKey)) {
+      state = Set<String>.from(state)..add(dateKey);
+    }
+  }
+
+  void expand(String dateKey) {
+    if (state.contains(dateKey)) {
+      state = Set<String>.from(state)..remove(dateKey);
+    }
+  }
+
+  void collapseAll(Iterable<String> keys) {
+    state = Set<String>.from(state)..addAll(keys);
+  }
+
+  void expandAll() {
+    state = <String>{};
+  }
+}
