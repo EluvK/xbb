@@ -17,6 +17,11 @@ final trackersStreamProvider = StreamProvider<List<DataItem<Tracker>>>((ref) {
 
 final selectedTrackerIdProvider = StateProvider<String?>((ref) => null);
 
+final trackerRecordsProvider = StreamProvider.family<List<DataItem<TrackerRecord>>, String>((ref, trackerId) {
+  final repo = ref.watch(trackerRepositoryProvider);
+  return repo.watchRecordsByTracker(trackerId);
+});
+
 final selectedTrackerRecordsStreamProvider = StreamProvider<List<DataItem<TrackerRecord>>>((ref) {
   final repo = ref.watch(trackerRepositoryProvider);
   final trackerId = ref.watch(selectedTrackerIdProvider);

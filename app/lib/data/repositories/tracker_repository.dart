@@ -47,7 +47,7 @@ class TrackerRepository {
         whereArgs: [trackerId],
         orderBy: 'created_at DESC',
       );
-      return rows.map((r) {
+      final list = rows.map((r) {
         final bodyStr = r['body'] as String? ?? '{}';
         final record = TrackerRecord.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<TrackerRecord>(
@@ -61,7 +61,35 @@ class TrackerRepository {
           syncStatus: SyncStatus.synced,
         );
       }).toList();
+      list.sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
+      return list;
     });
+  }
+
+  /// 一次性获取某追踪器的全部记录
+  Future<List<DataItem<TrackerRecord>>> getRecordsByTracker(String trackerId) async {
+    final rows = await db.query(
+      'tracker_record',
+      where: 'parent_id = ?',
+      whereArgs: [trackerId],
+      orderBy: 'created_at DESC',
+    );
+    final list = rows.map((r) {
+      final bodyStr = r['body'] as String? ?? '{}';
+      final record = TrackerRecord.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+      return DataItem<TrackerRecord>(
+        r['id'] as String,
+        DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
+        DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
+        r['owner'] as String? ?? 'default',
+        trackerId,
+        null,
+        body: record,
+        syncStatus: SyncStatus.synced,
+      );
+    }).toList();
+    list.sort((a, b) => b.body.timestamp.compareTo(a.body.timestamp));
+    return list;
   }
 
   /// 保存追踪器
@@ -70,6 +98,29 @@ class TrackerRepository {
     final row = <String, dynamic>{
       'id': item.id,
       'created_at': nowIso,
+      'updated_at': nowIso,
+      'owner': item.owner,
+      'parent_id': null,
+      'sync_status': 'pending',
+      'color_tag': 'default',
+      'body': jsonEncode(item.body.toJson()),
+    };
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'tracker',
+      entityId: item.id,
+      entityRow: row,
+    );
+    changeNotifier.notify('tracker');
+    SyncWorker.instance.notifyLocalWrite();
+  }
+
+  /// 更新追踪器
+  Future<void> updateTracker(DataItem<Tracker> item) async {
+    final nowIso = DateTime.now().toIso8601String();
+    final row = <String, dynamic>{
+      'id': item.id,
+      'created_at': item.createdAt.toIso8601String(),
       'updated_at': nowIso,
       'owner': item.owner,
       'parent_id': null,
@@ -104,11 +155,12 @@ class TrackerRepository {
     required String? value,
     required String? content,
     required String currentUserId,
+    DateTime? timestamp,
   }) async {
     final newId = UuidService.v7();
     final record = TrackerRecord(
       trackerId: trackerId,
-      timestamp: DateTime.now(),
+      timestamp: timestamp ?? DateTime.now(),
       value: value,
       content: content,
     );
@@ -128,6 +180,40 @@ class TrackerRepository {
       tableName: 'tracker_record',
       entityId: newId,
       entityRow: row,
+    );
+    changeNotifier.notify('tracker_record');
+    SyncWorker.instance.notifyLocalWrite();
+  }
+
+  /// 更新追踪记录
+  Future<void> updateRecord(DataItem<TrackerRecord> item) async {
+    final nowIso = DateTime.now().toIso8601String();
+    final row = <String, dynamic>{
+      'id': item.id,
+      'created_at': item.createdAt.toIso8601String(),
+      'updated_at': nowIso,
+      'owner': item.owner,
+      'parent_id': item.parentId,
+      'sync_status': 'pending',
+      'color_tag': 'default',
+      'body': jsonEncode(item.body.toJson()),
+    };
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'tracker_record',
+      entityId: item.id,
+      entityRow: row,
+    );
+    changeNotifier.notify('tracker_record');
+    SyncWorker.instance.notifyLocalWrite();
+  }
+
+  /// 删除追踪记录
+  Future<void> deleteRecord(String recordId) async {
+    await LocalFirstDB.persistDeleteRaw(
+      db: db,
+      tableName: 'tracker_record',
+      entityId: recordId,
     );
     changeNotifier.notify('tracker_record');
     SyncWorker.instance.notifyLocalWrite();
