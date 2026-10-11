@@ -12,6 +12,12 @@ class ViewPostPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args = Get.arguments;
+    if (args == null || args is! List || args.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('错误')),
+        body: const Center(child: Text('未能获取笔记参数')),
+      );
+    }
     final PostDataItem post = args[0];
     final RepoController repoController = Get.find<RepoController>();
     return Scaffold(

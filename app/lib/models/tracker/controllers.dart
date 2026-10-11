@@ -156,20 +156,20 @@ class TrackerController extends GetxController {
   }
 
   void addData(Tracker newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = TrackerDataItem.localNew(owner, newData);
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, Tracker updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -177,14 +177,15 @@ class TrackerController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    TrackerRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -192,8 +193,37 @@ class TrackerController extends GetxController {
     if (currentTrackerId.value == id) {
       currentTrackerId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(TrackerDataItem item) async {
+    try {
+      final db = await LocalStoreTracker.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreTracker.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist tracker item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreTracker.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreTracker.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete tracker item $id: $e');
+    }
   }
 }
 
@@ -428,20 +458,20 @@ class TrackerRecordController extends GetxController {
   }
 
   void addData(TrackerRecord newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = TrackerRecordDataItem.localNew(owner, newData);
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, TrackerRecord updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -449,14 +479,15 @@ class TrackerRecordController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    TrackerRecordRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -464,7 +495,36 @@ class TrackerRecordController extends GetxController {
     if (currentTrackerRecordId.value == id) {
       currentTrackerRecordId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(TrackerRecordDataItem item) async {
+    try {
+      final db = await LocalStoreTrackerRecord.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreTrackerRecord.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist tracker_record item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreTrackerRecord.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreTrackerRecord.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete tracker_record item $id: $e');
+    }
   }
 }

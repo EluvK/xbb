@@ -1,37 +1,18 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:xbb/core/core.dart';
-import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/models/tracker/model.dart';
+import 'package:xbb/sync/v2/local_first_db.dart';
 
 class TrackerDB {
-  static final Map<String, Database> _dbCache = {};
+  static Database? mockDb;
+  static void setMockDb(Database? db) => mockDb = db;
 
   Future<Database> getDb() async {
-    final userId = Get.find<SettingController>().userId;
-    if (_dbCache.containsKey(userId)) {
-      return _dbCache[userId]!;
+    if (mockDb != null) {
+      return mockDb!;
     }
-    if (!GetPlatform.isAndroid && !GetPlatform.isIOS) {
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
-    }
-
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, userId, 'tracker.db');
-
-    _dbCache[userId] ??= await databaseFactoryFfi.openDatabase(
-      path,
-      options: OpenDatabaseOptions(
-        version: 1,
-        onCreate: (Database db, int version) async {
-          await db.execute(LocalStoreTracker.onCreateTableTrackerSQL);
-          await db.execute(LocalStoreTrackerRecord.onCreateTableTrackerRecordSQL);
-          await db.execute(onCreateTableAcl);
-        },
-      ),
-    );
-    return _dbCache[userId]!;
+    final setting = Get.findOrNull<SettingController>();
+    final userId = setting != null && setting.userId.isNotEmpty ? setting.userId : 'default';
+    return await LocalFirstDB.getDb(userId: userId);
   }
 }

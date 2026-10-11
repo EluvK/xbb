@@ -155,20 +155,20 @@ class RepoController extends GetxController {
   }
 
   void addData(Repo newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = RepoDataItem.localNew(owner, newData);
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, Repo updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -176,14 +176,15 @@ class RepoController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    RepoRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -191,8 +192,37 @@ class RepoController extends GetxController {
     if (currentRepoId.value == id) {
       currentRepoId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(RepoDataItem item) async {
+    try {
+      final db = await LocalStoreRepo.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreRepo.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist repo item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreRepo.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreRepo.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete repo item $id: $e');
+    }
   }
 }
 
@@ -425,24 +455,24 @@ class PostController extends GetxController {
   }
 
   void addData(Post newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = PostDataItem.localNew(
       owner,
       newData,
       parentId: newData.repoId,
     );
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, Post updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -450,14 +480,15 @@ class PostController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    PostRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -465,8 +496,37 @@ class PostController extends GetxController {
     if (currentPostId.value == id) {
       currentPostId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(PostDataItem item) async {
+    try {
+      final db = await LocalStorePost.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStorePost.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist post item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStorePost.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStorePost.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete post item $id: $e');
+    }
   }
 }
 
@@ -620,24 +680,24 @@ class CommentController extends GetxController {
   }
 
   void addData(Comment newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = CommentDataItem.localNew(
       owner,
       newData,
       parentId: newData.postId,
     );
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, Comment updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -645,14 +705,15 @@ class CommentController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    CommentRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -660,7 +721,36 @@ class CommentController extends GetxController {
     if (currentCommentId.value == id) {
       currentCommentId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(CommentDataItem item) async {
+    try {
+      final db = await LocalStoreComment.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreComment.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist comment item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreComment.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreComment.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete comment item $id: $e');
+    }
   }
 }

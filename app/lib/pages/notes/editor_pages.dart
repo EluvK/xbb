@@ -55,14 +55,16 @@ class EditRepoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args = Get.arguments;
-    final RepoDataItem repo = args?[0];
-    return
-    // withPopAlert(
-    // context,
-    Scaffold(
+    final RepoDataItem? repo = (args != null && args is List && args.isNotEmpty) ? args[0] : null;
+    if (repo == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('错误')),
+        body: const Center(child: Text('未能获取笔记本参数')),
+      );
+    }
+    return Scaffold(
       appBar: AppBar(title: Text('repo_page_title_edit'.trParams({'repoName': repo.body.name}))),
       body: RepoEditor(repoItem: repo),
-      // ),
     );
   }
 }

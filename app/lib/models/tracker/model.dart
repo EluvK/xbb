@@ -9,6 +9,7 @@ import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/permission.dart' show FeaturePermission;
 import 'package:xbb/models/tracker/db.dart';
 import 'package:xbb/utils/utils.dart';
@@ -57,8 +58,7 @@ Future<void> onReadySyncTracker({
   try {
     await runSyncTaskWithStatus(
       [
-        () => trackerController.syncAll(batchSize: 100),
-        () => recordController.syncAll(batchSize: 100),
+        () => SyncWorker.instance.triggerSync(),
         () => recordController.rebuildLocal(),
         () => trackerController.rebuildLocal(),
       ],
@@ -136,7 +136,7 @@ sealed class TrackerConfig with _$TrackerConfig {
   factory TrackerConfig.fromJson(Map<String, dynamic> json) => _$TrackerConfigFromJson(json);
 }
 
-@Repository(collectionName: 'tracker', tableName: 'record', db: TrackerDB)
+@Repository(collectionName: 'tracker', tableName: 'tracker_record', db: TrackerDB)
 @Freezed()
 abstract class TrackerRecord with _$TrackerRecord {
   @JsonSerializable(fieldRename: FieldRename.snake)

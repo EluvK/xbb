@@ -158,20 +158,20 @@ class ClipboardHistoryEntryController extends GetxController {
   }
 
   void addData(ClipboardHistoryEntry newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = ClipboardHistoryEntryDataItem.localNew(owner, newData);
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, ClipboardHistoryEntry updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -179,14 +179,15 @@ class ClipboardHistoryEntryController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    ClipboardHistoryEntryRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -194,7 +195,36 @@ class ClipboardHistoryEntryController extends GetxController {
     if (currentClipboardHistoryEntryId.value == id) {
       currentClipboardHistoryEntryId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(ClipboardHistoryEntryDataItem item) async {
+    try {
+      final db = await LocalStoreClipboardHistoryEntry.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreClipboardHistoryEntry.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist clipboard_history_entry item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreClipboardHistoryEntry.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreClipboardHistoryEntry.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete clipboard_history_entry item $id: $e');
+    }
   }
 }

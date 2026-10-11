@@ -152,20 +152,20 @@ class ChatAssistantController extends GetxController {
   }
 
   void addData(ChatAssistant newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = ChatAssistantDataItem.localNew(owner, newData);
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, ChatAssistant updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -173,14 +173,15 @@ class ChatAssistantController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    ChatAssistantRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -188,8 +189,37 @@ class ChatAssistantController extends GetxController {
     if (currentChatAssistantId.value == id) {
       currentChatAssistantId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(ChatAssistantDataItem item) async {
+    try {
+      final db = await LocalStoreChatAssistant.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreChatAssistant.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist chat_assistant item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreChatAssistant.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreChatAssistant.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete chat_assistant item $id: $e');
+    }
   }
 }
 
@@ -342,20 +372,20 @@ class ChatConversationController extends GetxController {
   }
 
   void addData(ChatConversation newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = ChatConversationDataItem.localNew(owner, newData);
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, ChatConversation updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -363,14 +393,15 @@ class ChatConversationController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    ChatConversationRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -378,8 +409,37 @@ class ChatConversationController extends GetxController {
     if (currentChatConversationId.value == id) {
       currentChatConversationId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(ChatConversationDataItem item) async {
+    try {
+      final db = await LocalStoreChatConversation.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreChatConversation.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist chat_conversation item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreChatConversation.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreChatConversation.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete chat_conversation item $id: $e');
+    }
   }
 }
 
@@ -534,24 +594,24 @@ class ChatMessageController extends GetxController {
   }
 
   void addData(ChatMessage newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = ChatMessageDataItem.localNew(
       owner,
       newData,
       parentId: newData.conversationId,
     );
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, ChatMessage updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -559,14 +619,15 @@ class ChatMessageController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    ChatMessageRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -574,7 +635,36 @@ class ChatMessageController extends GetxController {
     if (currentChatMessageId.value == id) {
       currentChatMessageId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(ChatMessageDataItem item) async {
+    try {
+      final db = await LocalStoreChatMessage.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreChatMessage.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist chat_message item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreChatMessage.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreChatMessage.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete chat_message item $id: $e');
+    }
   }
 }

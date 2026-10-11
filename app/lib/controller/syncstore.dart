@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:path/path.dart' show join;
+import 'package:sqflite/sqflite.dart' show databaseFactory;
 import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/sync/v2/sync_v2.dart';
@@ -12,12 +14,28 @@ import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/controller/user.dart' show reInitUserManagerController;
-import 'package:xbb/models/clipboard/model.dart' show onReadySyncClipboard, reInitClipboardSync;
-import 'package:xbb/models/notes/model.dart' show onReadySyncAll, reInitNotesSync;
-import 'package:xbb/models/task/model.dart' show onReadySyncTask, reInitTaskSync;
-import 'package:xbb/models/tracker/model.dart' show onReadySyncTracker, reInitTrackerSync;
-import 'package:xbb/models/checkin/model.dart' show onReadySyncCheckin, reInitCheckinSync;
+import 'package:xbb/models/clipboard/model.dart' show reInitClipboardSync, ClipboardHistoryEntryController;
+import 'package:xbb/models/notes/model.dart' show reInitNotesSync, RepoController, PostController, CommentController;
+import 'package:xbb/models/task/model.dart' show reInitTaskSync, CheckListController;
+import 'package:xbb/models/tracker/model.dart' show reInitTrackerSync, TrackerController, TrackerRecordController;
+import 'package:xbb/models/checkin/model.dart' show reInitCheckinSync, CheckinEventController, CheckinRecordController;
+import 'package:xbb/models/chat/model.dart' show ChatAssistantController, ChatConversationController, ChatMessageController;
 import 'package:xbb/utils/utils.dart' show FlushLevel, flushBar, successSimpleFlushBar;
+
+void refreshAllLocalControllers() {
+  if (Get.isRegistered<RepoController>()) unawaited(Get.find<RepoController>().rebuildLocal());
+  if (Get.isRegistered<PostController>()) unawaited(Get.find<PostController>().rebuildLocal());
+  if (Get.isRegistered<CommentController>()) unawaited(Get.find<CommentController>().rebuildLocal());
+  if (Get.isRegistered<CheckListController>()) unawaited(Get.find<CheckListController>().rebuildLocal());
+  if (Get.isRegistered<CheckinEventController>()) unawaited(Get.find<CheckinEventController>().rebuildLocal());
+  if (Get.isRegistered<CheckinRecordController>()) unawaited(Get.find<CheckinRecordController>().rebuildLocal());
+  if (Get.isRegistered<TrackerController>()) unawaited(Get.find<TrackerController>().rebuildLocal());
+  if (Get.isRegistered<TrackerRecordController>()) unawaited(Get.find<TrackerRecordController>().rebuildLocal());
+  if (Get.isRegistered<ChatAssistantController>()) unawaited(Get.find<ChatAssistantController>().rebuildLocal());
+  if (Get.isRegistered<ChatConversationController>()) unawaited(Get.find<ChatConversationController>().rebuildLocal());
+  if (Get.isRegistered<ChatMessageController>()) unawaited(Get.find<ChatMessageController>().rebuildLocal());
+  if (Get.isRegistered<ClipboardHistoryEntryController>()) unawaited(Get.find<ClipboardHistoryEntryController>().rebuildLocal());
+}
 
 /// ALERT: any page that call this should make sure use the new created controller.
 Future<void> reInitSyncStoreController() async {
@@ -40,7 +58,6 @@ Future<void> reInitSyncStoreController() async {
 }
 
 Future<void> onReadySyncStartup() async {
-  final settingController = Get.find<SettingController>();
   final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
   final latency = await ssClient.pingLatencyMs();
   if (latency < 0) {
@@ -52,46 +69,8 @@ Future<void> onReadySyncStartup() async {
   }
 
   try {
-    if (settingController.notesEnabled) {
-      await onReadySyncAll(
-        showCompletionToast: false,
-        skipHealthCheck: true,
-        showErrorToast: false,
-        rethrowOnError: true,
-      );
-    }
-    if (settingController.trackerEnabled) {
-      await onReadySyncTracker(
-        showCompletionToast: false,
-        skipHealthCheck: true,
-        showErrorToast: false,
-        rethrowOnError: true,
-      );
-    }
-    if (settingController.taskEnabled) {
-      await onReadySyncTask(
-        showCompletionToast: false,
-        skipHealthCheck: true,
-        showErrorToast: false,
-        rethrowOnError: true,
-      );
-    }
-    if (settingController.clipboardBackupEnabled) {
-      await onReadySyncClipboard(
-        showCompletionToast: false,
-        skipHealthCheck: true,
-        showErrorToast: false,
-        rethrowOnError: true,
-      );
-    }
-    if (settingController.checkinEnabled) {
-      await onReadySyncCheckin(
-        showCompletionToast: false,
-        skipHealthCheck: true,
-        showErrorToast: false,
-        rethrowOnError: true,
-      );
-    }
+    await SyncWorker.instance.triggerSync();
+    refreshAllLocalControllers();
     _showStartupToast(() {
       successSimpleFlushBar("启动同步完成");
     });
@@ -144,13 +123,33 @@ class SyncStoreControl extends GetxController {
     if (userId.isNotEmpty && client.value != null) {
       try {
         final db = await LocalFirstDB.getDb(userId: userId);
+        try {
+          final basePath = await databaseFactory.getDatabasesPath();
+          final legacyDirPath = join(basePath, userId);
+          final migratedCount = await LegacyDataMigrator.migrateLegacyFilesToTargetDb(
+            targetDb: db,
+            legacyDirPath: legacyDirPath,
+          );
+          if (migratedCount > 0) {
+            print('[LegacyDataMigrator] Migrated $migratedCount legacy items to outbox.');
+          }
+        } catch (migErr) {
+          print('[LegacyDataMigrator] Migration warning: $migErr');
+        }
+
         SyncWorker.configure(
           dio: client.value!.dio,
           db: db,
           onUpgradeRequired: (msg) {
             _showUpgradeDialog(msg);
           },
-        ).start();
+        );
+        SyncWorker.instance.onPullCompleted = (resp) {
+          if (resp.changes.isNotEmpty) {
+            refreshAllLocalControllers();
+          }
+        };
+        SyncWorker.instance.start();
       } catch (e) {
         print('Failed to start SyncWorker: $e');
       }

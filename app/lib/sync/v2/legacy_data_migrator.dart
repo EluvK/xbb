@@ -25,6 +25,12 @@ class LegacyDataMigrator {
     'chat_assistant',
     'chat_conversation',
     'chat_message',
+    'record',
+    'event',
+    'assistant',
+    'conversation',
+    'message',
+    'entry',
     // 兼容历史带 c_ 前缀命名
     'c_repo',
     'c_post',
@@ -39,16 +45,37 @@ class LegacyDataMigrator {
     'c_chat_assistant',
     'c_chat_conversation',
     'c_chat_message',
+    'c_record',
+    'c_event',
+    'c_assistant',
+    'c_conversation',
+    'c_message',
+    'c_entry',
   ];
 
   /// 将表名规范化为业务实体标准表名（去除 c_ 前缀并将 task 映射为 check_list 等）
-  static String normalizeTableName(String rawName) {
+  static String normalizeTableName(String rawName, {String? dbFileName}) {
     var name = rawName;
     if (name.startsWith('c_')) {
       name = name.substring(2);
     }
     if (name == 'task') {
-      name = 'check_list';
+      return 'check_list';
+    }
+    if (dbFileName == 'checkin.db') {
+      if (name == 'event') return 'checkin_event';
+      if (name == 'record') return 'checkin_record';
+    }
+    if (dbFileName == 'tracker.db') {
+      if (name == 'record') return 'tracker_record';
+    }
+    if (dbFileName == 'chat.db') {
+      if (name == 'assistant') return 'chat_assistant';
+      if (name == 'conversation') return 'chat_conversation';
+      if (name == 'message') return 'chat_message';
+    }
+    if (dbFileName == 'clipboard.db') {
+      if (name == 'entry') return 'clipboard_history_entry';
     }
     return name;
   }
@@ -182,7 +209,7 @@ class LegacyDataMigrator {
           for (final rawTable in defaultLegacyTables) {
             if (!await tableExists(legacyDb, rawTable)) continue;
 
-            final normalizedTable = normalizeTableName(rawTable);
+            final normalizedTable = normalizeTableName(rawTable, dbFileName: fileName);
             // 确保目标库存在该表
             await targetTxn.execute(LocalFirstDB.buildEntityTableSql(normalizedTable));
 

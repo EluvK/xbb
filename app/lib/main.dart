@@ -87,6 +87,7 @@ class MyApp extends StatelessWidget {
 
     var app = MaterialApp(
       navigatorKey: AppNavigator.navigatorKey,
+      navigatorObservers: [AppNavigator.observer],
       scrollBehavior: const MaterialScrollBehavior().copyWith(dragDevices: PointerDeviceKind.values.toSet()),
       initialRoute: initialRoute,
       locale: locale,

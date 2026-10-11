@@ -10,6 +10,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/checkin/db.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -49,8 +50,7 @@ Future<void> onReadySyncCheckin({
   try {
     await runSyncTaskWithStatus(
       [
-        () => eventController.syncAll(batchSize: 100),
-        () => recordController.syncAll(batchSize: 100),
+        () => SyncWorker.instance.triggerSync(),
         () => recordController.rebuildLocal(),
         () => eventController.rebuildLocal(),
       ],
@@ -87,7 +87,7 @@ Future<void> reInit<T extends GetxController>(
   }
 }
 
-@Repository(collectionName: 'checkin', tableName: 'event', db: CheckinDB)
+@Repository(collectionName: 'checkin', tableName: 'checkin_event', db: CheckinDB)
 @freezed
 abstract class CheckinEvent with _$CheckinEvent {
   @JsonSerializable(fieldRename: FieldRename.snake)
@@ -97,7 +97,7 @@ abstract class CheckinEvent with _$CheckinEvent {
   factory CheckinEvent.fromJson(Map<String, dynamic> json) => _$CheckinEventFromJson(json);
 }
 
-@Repository(collectionName: 'checkin', tableName: 'record', db: CheckinDB)
+@Repository(collectionName: 'checkin', tableName: 'checkin_record', db: CheckinDB)
 @freezed
 abstract class CheckinRecord with _$CheckinRecord {
   @JsonSerializable(fieldRename: FieldRename.snake)

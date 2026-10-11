@@ -151,20 +151,20 @@ class CheckListController extends GetxController {
   }
 
   void addData(CheckList newData) {
-    // generate a local uuid before successfully created on server
     final owner = client.currentUserId();
     final newItem = CheckListDataItem.localNew(owner, newData);
-    // it's a temporary memory data, not even in local db yet.
     _items.add(newItem);
     _replaceLocal(newItem.id, newItem);
+    unawaited(_persistItem(newItem));
   }
 
   void updateData(String id, CheckList updatedData) {
-    final item = _items.firstWhere((item) => item.id == id);
-    // todo maybe rewrite this update body method...
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     final updatedItem = item.updatedBody(updatedData);
     _items[_items.indexOf(item)] = updatedItem;
     _replaceLocal(updatedItem.id, updatedItem);
+    unawaited(_persistItem(updatedItem));
   }
 
   void onUpdateLocalField(
@@ -172,14 +172,15 @@ class CheckListController extends GetxController {
     ColorTag? colorTag,
     SyncStatus? syncStatus,
   }) {
-    final item = _items.firstWhere((item) => item.id == id);
+    final item = _items.firstWhereOrNull((item) => item.id == id);
+    if (item == null) return;
     if (colorTag != null) {
       item.colorTag = colorTag;
     }
     if (syncStatus != null) {
       item.syncStatus = syncStatus;
     }
-    CheckListRepository().updateToLocalDb(item);
+    unawaited(_persistItem(item));
   }
 
   void deleteData(String id, {bool deleteFromServer = false}) {
@@ -187,7 +188,36 @@ class CheckListController extends GetxController {
     if (currentCheckListId.value == id) {
       currentCheckListId.value = null;
     }
-    final status = _items.firstWhereOrNull((item) => item.id == id)?.syncStatus;
-    /* deleted */
+    unawaited(_deleteItem(id));
+  }
+
+  Future<void> _persistItem(CheckListDataItem item) async {
+    try {
+      final db = await LocalStoreCheckList.getDb();
+      final row = item.toJson((r) => json.encode(r.toJson()));
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: LocalStoreCheckList.tableName,
+        entityId: item.id,
+        entityRow: row,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to persist check_list item ${item.id}: $e');
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    try {
+      final db = await LocalStoreCheckList.getDb();
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: LocalStoreCheckList.tableName,
+        entityId: id,
+      );
+      SyncWorker.instance.triggerSync();
+    } catch (e) {
+      print('Failed to delete check_list item $id: $e');
+    }
   }
 }

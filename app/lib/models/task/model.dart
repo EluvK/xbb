@@ -10,6 +10,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
 import 'package:xbb/controller/task_widget.dart';
+import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/task/db.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -47,7 +48,7 @@ Future<void> onReadySyncTask({
 
   try {
     await runSyncTaskWithStatus(
-      [() => checkListController.syncAll(batchSize: 100), () => checkListController.rebuildLocal()],
+      [() => SyncWorker.instance.triggerSync(), () => checkListController.rebuildLocal()],
       from: 0.0,
       to: 100.0,
     );

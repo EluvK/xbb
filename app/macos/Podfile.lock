@@ -1,6 +1,4 @@
 PODS:
-  - cryptography_flutter (0.0.1):
-    - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - sqflite_darwin (0.0.4):
     - Flutter
@@ -9,14 +7,11 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
-  - cryptography_flutter (from `Flutter/ephemeral/.symlinks/plugins/cryptography_flutter/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - sqflite_darwin (from `Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin`)
   - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
 
 EXTERNAL SOURCES:
-  cryptography_flutter:
-    :path: Flutter/ephemeral/.symlinks/plugins/cryptography_flutter/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
   sqflite_darwin:
@@ -25,7 +20,6 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
 
 SPEC CHECKSUMS:
-  cryptography_flutter: be2b3e0e31603521b6a1c2bea232a88a2488a91c
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd

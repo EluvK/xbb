@@ -5,10 +5,13 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'outbox_dao.dart';
 import 'outbox_item.dart';
 import 'sync_meta_dao.dart';
+import 'uuid_service.dart';
 
 /// Local-First 统一数据库管理器与事务封装
 class LocalFirstDB {
   static final Map<String, Database> _dbCache = {};
+  static Database? mockDb;
+  static void setMockDb(Database? db) => mockDb = db;
 
   /// 核心业务表清单
   static const List<String> coreEntityTables = [
@@ -65,6 +68,15 @@ class LocalFirstDB {
     for (final table in coreEntityTables) {
       await db.execute(buildEntityTableSql(table));
     }
+
+    // 5. 创建 ACL 权限表
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS acl (
+        data_id TEXT PRIMARY KEY,
+        data_collection TEXT NOT NULL,
+        permissions TEXT NOT NULL
+      );
+    ''');
   }
 
   /// 针对特定用户打开或复用本地 Local-First 数据库
@@ -73,6 +85,9 @@ class LocalFirstDB {
     DatabaseFactory? customFactory,
     String? customPath,
   }) async {
+    if (mockDb != null) {
+      return mockDb!;
+    }
     if (_dbCache.containsKey(userId)) {
       final cached = _dbCache[userId]!;
       if (cached.isOpen) return cached;
@@ -166,6 +181,51 @@ class LocalFirstDB {
       // 2. 插入 Outbox DELETE 变更
       await OutboxDao.enqueue(txn, outboxItem);
     });
+  }
+
+  /// 通用辅助：将本地业务行实体保存并入队 Outbox PUT 变更
+  static Future<void> persistPutRaw({
+    required Database db,
+    required String tableName,
+    required String entityId,
+    required Map<String, dynamic> entityRow,
+  }) async {
+    final bodyStr = entityRow['body'] as String? ?? '{}';
+    final outbox = OutboxItem.put(
+      id: UuidService.v7(),
+      tableName: tableName,
+      entityId: entityId,
+      data: bodyStr,
+      baseVersion: 1,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    await saveEntityWithOutbox(
+      db: db,
+      tableName: tableName,
+      entityRow: entityRow,
+      outboxItem: outbox,
+    );
+  }
+
+  /// 通用辅助：从本地删除业务实体并入队 Outbox DELETE 变更
+  static Future<void> persistDeleteRaw({
+    required Database db,
+    required String tableName,
+    required String entityId,
+  }) async {
+    final outbox = OutboxItem.delete(
+      id: UuidService.v7(),
+      tableName: tableName,
+      entityId: entityId,
+      baseVersion: 1,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    await deleteEntityWithOutbox(
+      db: db,
+      tableName: tableName,
+      entityId: entityId,
+      outboxItem: outbox,
+    );
   }
 
   /// 关闭指定或全部数据库连接（常用于测试或登出）

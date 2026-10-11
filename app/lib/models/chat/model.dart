@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import 'package:xbb/core/core.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/chat/db.dart';
 
 part 'model.g.dart';
@@ -42,7 +44,7 @@ abstract class ChatAssistantModelConfig with _$ChatAssistantModelConfig {
   factory ChatAssistantModelConfig.fromJson(Map<String, dynamic> json) => _$ChatAssistantModelConfigFromJson(json);
 }
 
-@Repository(collectionName: 'chat', tableName: 'assistant', db: ChatDB)
+@Repository(collectionName: 'chat', tableName: 'chat_assistant', db: ChatDB)
 @freezed
 abstract class ChatAssistant with _$ChatAssistant {
   @JsonSerializable(fieldRename: FieldRename.snake)
@@ -58,7 +60,7 @@ abstract class ChatAssistant with _$ChatAssistant {
   factory ChatAssistant.fromJson(Map<String, dynamic> json) => _$ChatAssistantFromJson(json);
 }
 
-@Repository(collectionName: 'chat', tableName: 'conversation', db: ChatDB)
+@Repository(collectionName: 'chat', tableName: 'chat_conversation', db: ChatDB)
 @freezed
 abstract class ChatConversation with _$ChatConversation {
   @JsonSerializable(fieldRename: FieldRename.snake)
@@ -76,7 +78,7 @@ abstract class ChatConversation with _$ChatConversation {
   }
 }
 
-@Repository(collectionName: 'chat', tableName: 'message', db: ChatDB, parentIdField: 'conversationId')
+@Repository(collectionName: 'chat', tableName: 'chat_message', db: ChatDB, parentIdField: 'conversationId')
 @freezed
 abstract class ChatMessage with _$ChatMessage {
   @JsonSerializable(fieldRename: FieldRename.snake)

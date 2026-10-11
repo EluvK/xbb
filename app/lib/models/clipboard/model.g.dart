@@ -29,7 +29,7 @@ Map<String, dynamic> _$ClipboardHistoryEntryToJson(
 // **************************************************************************
 
 extension LocalStoreClipboardHistoryEntry on ClipboardHistoryEntry {
-  static String get tableName => 'entry';
+  static String get tableName => 'clipboard_history_entry';
 
   static String get onCreateTableClipboardHistoryEntrySQL =>
       """

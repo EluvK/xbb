@@ -44,7 +44,7 @@ Map<String, dynamic> _$CheckinRecordToJson(_CheckinRecord instance) =>
 // **************************************************************************
 
 extension LocalStoreCheckinEvent on CheckinEvent {
-  static String get tableName => 'event';
+  static String get tableName => 'checkin_event';
 
   static String get onCreateTableCheckinEventSQL =>
       """
@@ -171,7 +171,7 @@ class CheckinEventRepository {
 }
 
 extension LocalStoreCheckinRecord on CheckinRecord {
-  static String get tableName => 'record';
+  static String get tableName => 'checkin_record';
 
   static String get onCreateTableCheckinRecordSQL =>
       """

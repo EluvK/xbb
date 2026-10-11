@@ -123,7 +123,7 @@ const _$ChatMessageRoleEnumMap = {
 // **************************************************************************
 
 extension LocalStoreChatAssistant on ChatAssistant {
-  static String get tableName => 'assistant';
+  static String get tableName => 'chat_assistant';
 
   static String get onCreateTableChatAssistantSQL =>
       """
@@ -252,7 +252,7 @@ class ChatAssistantRepository {
 }
 
 extension LocalStoreChatConversation on ChatConversation {
-  static String get tableName => 'conversation';
+  static String get tableName => 'chat_conversation';
 
   static String get onCreateTableChatConversationSQL =>
       """
@@ -383,7 +383,7 @@ class ChatConversationRepository {
 }
 
 extension LocalStoreChatMessage on ChatMessage {
-  static String get tableName => 'message';
+  static String get tableName => 'chat_message';
 
   static String get onCreateTableChatMessageSQL =>
       """

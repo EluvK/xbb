@@ -9,6 +9,7 @@ import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/syncstore.dart';
+import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/clipboard/db.dart';
 import 'package:xbb/utils/utils.dart';
 
@@ -50,7 +51,7 @@ Future<void> onReadySyncClipboard({
 
   try {
     await runSyncTaskWithStatus(
-      [() => controller.syncAll(batchSize: 100), () => controller.rebuildLocal()],
+      [() => SyncWorker.instance.triggerSync(), () => controller.rebuildLocal()],
       from: 0.0,
       to: 100.0,
     );
@@ -70,7 +71,7 @@ Future<void> onReadySyncClipboard({
 
 @Repository(
   collectionName: 'clipboard_history',
-  tableName: 'entry',
+  tableName: 'clipboard_history_entry',
   db: ClipboardDB,
   toSyncJsonMethod: 'toSyncJson',
   fromRemoteJsonFactory: 'fromRemoteJson',

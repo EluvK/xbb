@@ -218,7 +218,7 @@ class TrackerRepository {
 }
 
 extension LocalStoreTrackerRecord on TrackerRecord {
-  static String get tableName => 'record';
+  static String get tableName => 'tracker_record';
 
   static String get onCreateTableTrackerRecordSQL =>
       """
