@@ -226,7 +226,7 @@
   3. 实现颜色插值算法：`Color.lerp(Colors.green, Colors.red, progress)`，并在 UI 渲染状态指示器。
 - **验收标准**: 无记录时显示“从未记录”；有记录时准确显示“X 天前”与剩余周期；超时时显示红色警报。
 
-### TASK-3.3: 恢复 Anniversary 节点推算与 Markdown 心情撰写
+### TASK-3.3: 恢复 Anniversary 节点推算与 Markdown 心情撰写 [x]
 - **依赖**: TASK-3.1
 - **功能对齐**:
   - 计算距基准日天数，支持每年重复、每 100 天节点提醒、T 计时。

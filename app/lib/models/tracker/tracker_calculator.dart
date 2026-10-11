@@ -53,6 +53,7 @@ class AnniversaryProgressResult {
   final int passedDaysSinceBase;
   final int daysUntilNext;
   final int nextMilestoneTarget;
+  final bool isTargetToday;
   final String titleText;
   final String subtitleText;
 
@@ -60,6 +61,7 @@ class AnniversaryProgressResult {
     required this.passedDaysSinceBase,
     required this.daysUntilNext,
     required this.nextMilestoneTarget,
+    required this.isTargetToday,
     required this.titleText,
     required this.subtitleText,
   });
@@ -264,26 +266,45 @@ class TrackerCalculator {
       }
       final daysUntilNext = nextAnniversary.difference(today).inDays;
       final yearsCount = nextAnniversary.year - base.year;
+      final isToday = daysUntilNext == 0;
 
-      final title = daysUntilNext == 0 ? '今天是周年纪念日！' : '距下个周年还有 $daysUntilNext 天';
+      final title = isToday ? '今天是周年纪念日！🎉' : '距下个周年还有 $daysUntilNext 天';
       final subtitle = '已度过 $passedDaysSinceBase 天 (第 $yearsCount 周年)';
       return AnniversaryProgressResult(
         passedDaysSinceBase: passedDaysSinceBase,
         daysUntilNext: daysUntilNext,
         nextMilestoneTarget: yearsCount,
+        isTargetToday: isToday,
         titleText: title,
         subtitleText: subtitle,
       );
     } else if (config.remindType == 'per_100_days') {
       final safePassed = math.max(0, passedDaysSinceBase);
-      final nextMilestone = ((safePassed / 100).floor() + 1) * 100;
-      final daysUntilNext = nextMilestone - safePassed;
+      final isHundredExact = safePassed > 0 && safePassed % 100 == 0;
+      final int nextMilestone;
+      final int daysUntilNext;
+      final bool isToday;
+
+      if (isHundredExact) {
+        nextMilestone = safePassed;
+        daysUntilNext = 0;
+        isToday = true;
+      } else {
+        nextMilestone = ((safePassed / 100).floor() + 1) * 100;
+        daysUntilNext = nextMilestone - safePassed;
+        isToday = false;
+      }
+
+      final title = isToday
+          ? '今天是 $nextMilestone 天整百纪念日！🎉'
+          : '下一个节点: $nextMilestone 天，还有 $daysUntilNext 天';
 
       return AnniversaryProgressResult(
         passedDaysSinceBase: passedDaysSinceBase,
         daysUntilNext: daysUntilNext,
         nextMilestoneTarget: nextMilestone,
-        titleText: '下一个节点: $nextMilestone 天，还有 $daysUntilNext 天',
+        isTargetToday: isToday,
+        titleText: title,
         subtitleText: '已走过 $passedDaysSinceBase 天',
       );
     } else {
@@ -295,6 +316,7 @@ class TrackerCalculator {
         passedDaysSinceBase: passedDaysSinceBase,
         daysUntilNext: isPast ? 0 : -passedDaysSinceBase,
         nextMilestoneTarget: 0,
+        isTargetToday: passedDaysSinceBase == 0,
         titleText: title,
         subtitleText: '基准日: $baseDateStr',
       );

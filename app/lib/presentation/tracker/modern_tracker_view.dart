@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/tracker/model.dart';
 import 'package:xbb/models/tracker/tracker_calculator.dart';
@@ -72,6 +74,9 @@ class ModernTrackerView extends ConsumerWidget {
     String selectedType = 'milestone';
     String goalType = 'number';
     String progressMode = 'accumulate';
+    String remindType = 'per_year';
+    DateTime selectedBaseDate = DateTime.now();
+    bool isLunar = false;
 
     showDialog(
       context: context,
@@ -88,7 +93,7 @@ class ModernTrackerView extends ConsumerWidget {
                 TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述 (可选)', isDense: true)),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedType,
+                  initialValue: selectedType,
                   decoration: const InputDecoration(labelText: '类型', isDense: true),
                   items: const [
                     DropdownMenuItem(value: 'milestone', child: Text('阶段里程碑 (Milestone)')),
@@ -100,7 +105,7 @@ class ModernTrackerView extends ConsumerWidget {
                 if (selectedType == 'milestone') ...[
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: goalType,
+                    initialValue: goalType,
                     decoration: const InputDecoration(labelText: '目标类型', isDense: true),
                     items: const [
                       DropdownMenuItem(value: 'number', child: Text('数值 (Number)')),
@@ -111,7 +116,7 @@ class ModernTrackerView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: progressMode,
+                    initialValue: progressMode,
                     decoration: const InputDecoration(labelText: '计算模式', isDense: true),
                     items: const [
                       DropdownMenuItem(value: 'accumulate', child: Text('累计求和 (Accumulate)')),
@@ -140,6 +145,42 @@ class ModernTrackerView extends ConsumerWidget {
                       isDense: true,
                     ),
                   ),
+                ] else if (selectedType == 'anniversary') ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: remindType,
+                    decoration: const InputDecoration(labelText: '提醒与推算类型', isDense: true),
+                    items: const [
+                      DropdownMenuItem(value: 'per_year', child: Text('每年重复 (按周年推算)')),
+                      DropdownMenuItem(value: 'per_100_days', child: Text('每百天节点 (100/200/500天)')),
+                      DropdownMenuItem(value: 't_minus', child: Text('倒计时 / 正计时')),
+                    ],
+                    onChanged: (v) => setState(() => remindType = v ?? 'per_year'),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('基准日期', style: TextStyle(fontSize: 14)),
+                    subtitle: Text(DateFormat('yyyy-MM-dd').format(selectedBaseDate)),
+                    trailing: const Icon(Icons.calendar_month, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedBaseDate,
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() => selectedBaseDate = picked);
+                      }
+                    },
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('农历纪念日', style: TextStyle(fontSize: 14)),
+                    value: isLunar,
+                    onChanged: (v) => setState(() => isLunar = v),
+                  ),
                 ],
               ],
             ),
@@ -158,9 +199,9 @@ class ModernTrackerView extends ConsumerWidget {
                     );
                   } else if (selectedType == 'anniversary') {
                     config = TrackerConfig.anniversary(
-                      baseDate: DateTime.now(),
-                      isLunar: false,
-                      remindType: 'per_year',
+                      baseDate: selectedBaseDate,
+                      isLunar: isLunar,
+                      remindType: remindType,
                     );
                   } else {
                     final p = int.tryParse(periodCtrl.text.trim()) ?? 1;
@@ -409,22 +450,91 @@ class ModernTrackerCard extends ConsumerWidget {
         );
       },
       anniversary: (baseDate, isLunar, remindType) {
-        final now = DateTime.now();
-        final diffDays = now.difference(baseDate).inDays.abs();
-        final isPast = now.isAfter(baseDate);
-        return Row(
+        final anniversaryResult = TrackerCalculator.calculateAnniversary(
+          config: config as AnniversaryTrackerConfig,
+        );
+
+        TrackerRecord? latestNote;
+        for (final r in records) {
+          if (r.content != null && r.content!.trim().isNotEmpty) {
+            latestNote = r;
+            break;
+          }
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.cake_outlined, size: 16, color: Colors.pinkAccent),
-            const SizedBox(width: 8),
-            Text(
-              isPast ? '已过去 $diffDays 天' : '还剩 $diffDays 天',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.pinkAccent,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.cake_rounded,
+                      size: 18,
+                      color: anniversaryResult.isTargetToday ? Colors.pink : Colors.pinkAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      anniversaryResult.titleText,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: Colors.pinkAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    ModernBadge(label: isLunar ? '农历' : '公历'),
+                    const SizedBox(width: 4),
+                    ModernBadge(
+                      label: remindType == 'per_year'
+                          ? '每年重复'
+                          : (remindType == 'per_100_days' ? '百天节点' : '倒计时'),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            ModernBadge(label: isLunar ? '农历' : '公历'),
+            const SizedBox(height: 6),
+            Text(
+              anniversaryResult.subtitleText,
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            if (latestNote != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.edit_note, size: 14, color: theme.colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          '最新心情',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    SimpleMarkdownRenderer(data: latestNote.content!),
+                  ],
+                ),
+              ),
+            ],
           ],
         );
       },
@@ -475,6 +585,92 @@ class ModernTrackerCard extends ConsumerWidget {
     String userId,
     TrackerConfig config,
   ) {
+    final theme = Theme.of(context);
+
+    if (config is AnniversaryTrackerConfig) {
+      bool isPreview = false;
+      final contentCtrl = TextEditingController();
+
+      showDialog(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('纪念日心情打卡'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('记录内容 (Markdown)', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment(value: false, icon: Icon(Icons.edit, size: 14), label: Text('撰写')),
+                          ButtonSegment(value: true, icon: Icon(Icons.preview, size: 14), label: Text('实时预览')),
+                        ],
+                        selected: {isPreview},
+                        onSelectionChanged: (set) => setDialogState(() => isPreview = set.first),
+                        style: const ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (!isPreview)
+                    TextField(
+                      controller: contentCtrl,
+                      minLines: 4,
+                      maxLines: 8,
+                      decoration: InputDecoration(
+                        hintText: '支持 Markdown，记录当下发生了什么、你的感受或想法...',
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(minHeight: 120),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+                      ),
+                      child: contentCtrl.text.trim().isEmpty
+                          ? Text('暂无预览内容，请在撰写模式下输入', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+                          : SimpleMarkdownRenderer(data: contentCtrl.text),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+              FilledButton(
+                onPressed: () {
+                  ref.read(trackerRepositoryProvider).addRecord(
+                        trackerId: trackerId,
+                        value: null,
+                        content: contentCtrl.text.trim().isEmpty ? null : contentCtrl.text.trim(),
+                        currentUserId: userId,
+                      );
+                  Navigator.pop(ctx);
+                },
+                child: const Text('保存'),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
     final valCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
 
