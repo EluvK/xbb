@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:syncstore_client/syncstore_client.dart';
@@ -7,6 +8,7 @@ import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/tracker/model.dart';
 import 'package:xbb/models/tracker/tracker_calculator.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
+import 'package:xbb/presentation/tracker/tracker_history_sheet.dart';
 import 'package:xbb/presentation/tracker/tracker_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
@@ -46,16 +48,89 @@ class ModernTrackerView extends ConsumerWidget {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            itemCount: trackers.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-            itemBuilder: (context, index) {
-              final tracker = trackers[index];
-              return ModernTrackerCard(
-                key: ValueKey('tracker-${tracker.id}'),
-                tracker: tracker,
-                userId: userId,
+          // 按分类成组聚合
+          final Map<String, List<DataItem<Tracker>>> groupedTrackers = {};
+          for (final t in trackers) {
+            final cat = t.body.category.trim().isEmpty ? '默认' : t.body.category.trim();
+            groupedTrackers.putIfAbsent(cat, () => []).add(t);
+          }
+          final sortedCategories = groupedTrackers.keys.toList()..sort();
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth;
+              final int columns;
+              if (maxWidth < 640) {
+                columns = 1;
+              } else if (maxWidth < 1024) {
+                columns = 2;
+              } else {
+                columns = 3;
+              }
+
+              const spacing = AppSpacing.md;
+              const pagePadding = AppSpacing.md;
+              final availableWidth = maxWidth - (pagePadding * 2);
+              final cardWidth = (availableWidth - (columns - 1) * spacing) / columns;
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(pagePadding),
+                itemCount: sortedCategories.length,
+                itemBuilder: (context, catIndex) {
+                  final category = sortedCategories[catIndex];
+                  final items = groupedTrackers[category]!;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              category,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '(${items.length})',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: items.map((tracker) {
+                          return SizedBox(
+                            width: cardWidth,
+                            child: ModernTrackerCard(
+                              key: ValueKey('tracker-${tracker.id}'),
+                              tracker: tracker,
+                              userId: userId,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                  );
+                },
               );
             },
           );
@@ -69,6 +144,7 @@ class ModernTrackerView extends ConsumerWidget {
   void _showCreateTrackerDialog(BuildContext context, WidgetRef ref, String userId) {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
+    final categoryCtrl = TextEditingController(text: '默认');
     final targetValCtrl = TextEditingController(text: '100');
     final periodCtrl = TextEditingController(text: '1');
     String selectedType = 'milestone';
@@ -91,6 +167,8 @@ class ModernTrackerView extends ConsumerWidget {
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '名称', isDense: true)),
                 const SizedBox(height: 12),
                 TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述 (可选)', isDense: true)),
+                const SizedBox(height: 12),
+                TextField(controller: categoryCtrl, decoration: const InputDecoration(labelText: '分类 (如 学习、健身、生活)', isDense: true)),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedType,
@@ -219,7 +297,7 @@ class ModernTrackerView extends ConsumerWidget {
                     body: Tracker(
                       name: nameCtrl.text.trim(),
                       description: descCtrl.text.trim(),
-                      category: '默认',
+                      category: categoryCtrl.text.trim().isEmpty ? '默认' : categoryCtrl.text.trim(),
                       type: selectedType,
                       config: config,
                     ),
@@ -255,51 +333,279 @@ class ModernTrackerCard extends ConsumerWidget {
     final recordsAsync = ref.watch(trackerRecordsProvider(tracker.id));
     final records = recordsAsync.valueOrNull?.map((e) => e.body).toList() ?? <TrackerRecord>[];
 
-    return ModernCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(_getIconForType(body.type), color: theme.colorScheme.primary, size: 20),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    body.name,
-                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => TrackerHistorySheet.show(context, tracker: tracker, userId: userId),
+      onDoubleTap: () => _handleQuickCheckin(context, ref, tracker, records, userId),
+      child: ModernCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(_getIconForType(body.type), color: theme.colorScheme.primary, size: 20),
+                      const SizedBox(width: AppSpacing.sm),
+                      Flexible(
+                        child: Text(
+                          body.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+                ModernBadge(label: _getTypeLabel(body.type)),
+              ],
+            ),
+            if (body.description.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                body.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-              ModernBadge(label: _getTypeLabel(body.type)),
             ],
-          ),
-          if (body.description.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              body.description,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(height: AppSpacing.md),
+            _buildConfigDetail(context, body.config, records),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.history_rounded, size: 18),
+                      tooltip: '历史明细流水',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => TrackerHistorySheet.show(context, tracker: tracker, userId: userId),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      tooltip: '编辑追踪器',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => _showEditTrackerDialog(context, ref, tracker),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('打卡'),
+                      onPressed: () => _showRecordDialog(context, ref, tracker.id, userId, body.config),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      tooltip: '删除追踪器',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => _confirmDeleteTracker(context, ref, tracker),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
-          _buildConfigDetail(context, body.config, records),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('记录打卡'),
-                onPressed: () => _showRecordDialog(context, ref, tracker.id, userId, body.config),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18),
-                onPressed: () => ref.read(trackerRepositoryProvider).deleteTracker(tracker.id),
-              ),
-            ],
+        ),
+      ),
+    );
+  }
+
+  void _handleQuickCheckin(
+    BuildContext context,
+    WidgetRef ref,
+    DataItem<Tracker> item,
+    List<TrackerRecord> records,
+    String userId,
+  ) {
+    HapticFeedback.mediumImpact();
+    final config = item.body.config;
+    final repo = ref.read(trackerRepositoryProvider);
+
+    if (config is EventTrackerConfig) {
+      repo.addRecord(
+        trackerId: item.id,
+        value: null,
+        content: null,
+        currentUserId: userId,
+      );
+      _showQuickFeedback(context, item.body.name);
+    } else if (config is MilestoneTrackerConfig) {
+      if (config.goalType == 'boolean') {
+        repo.addRecord(
+          trackerId: item.id,
+          value: 'true',
+          content: null,
+          currentUserId: userId,
+        );
+        _showQuickFeedback(context, item.body.name);
+      } else {
+        // 如果有历史记录，默认复用最新一次的值快捷打卡
+        final latest = records.isNotEmpty ? records.first.value : null;
+        if (latest != null && latest.isNotEmpty) {
+          repo.addRecord(
+            trackerId: item.id,
+            value: latest,
+            content: null,
+            currentUserId: userId,
+          );
+          _showQuickFeedback(context, '${item.body.name} (+$latest)');
+        } else {
+          // 无历史记录则直接呼出录入对话框
+          _showRecordDialog(context, ref, item.id, userId, config);
+        }
+      }
+    } else {
+      _showRecordDialog(context, ref, item.id, userId, config);
+    }
+  }
+
+  void _showQuickFeedback(BuildContext context, String title) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.bolt, color: Colors.amber, size: 18),
+            const SizedBox(width: 8),
+            Text('已为 “$title” 快捷打卡成功'),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _confirmDeleteTracker(BuildContext context, WidgetRef ref, DataItem<Tracker> item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('删除追踪器 “${item.body.name}”？'),
+        content: const Text('该操作将级联删除该追踪器及其所有历史打卡记录，无法恢复。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              ref.read(trackerRepositoryProvider).deleteTracker(item.id);
+              Navigator.pop(ctx);
+            },
+            child: const Text('确认删除'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditTrackerDialog(BuildContext context, WidgetRef ref, DataItem<Tracker> item) {
+    final body = item.body;
+    final nameCtrl = TextEditingController(text: body.name);
+    final descCtrl = TextEditingController(text: body.description);
+    final categoryCtrl = TextEditingController(text: body.category);
+    final config = body.config;
+
+    final targetValCtrl = TextEditingController(
+      text: config is MilestoneTrackerConfig ? config.targetValue : '100',
+    );
+    final periodCtrl = TextEditingController(
+      text: config is EventTrackerConfig ? config.periodDays.toString() : '1',
+    );
+    String progressMode = config is MilestoneTrackerConfig ? config.progressMode : 'accumulate';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('编辑追踪器'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '名称', isDense: true)),
+                const SizedBox(height: 12),
+                TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述 (可选)', isDense: true)),
+                const SizedBox(height: 12),
+                TextField(controller: categoryCtrl, decoration: const InputDecoration(labelText: '分类', isDense: true)),
+                if (config is MilestoneTrackerConfig && config.goalType != 'boolean') ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: targetValCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: config.goalType == 'time' ? '目标时长 (分钟)' : '目标数值',
+                      isDense: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: progressMode,
+                    decoration: const InputDecoration(labelText: '计算模式', isDense: true),
+                    items: const [
+                      DropdownMenuItem(value: 'accumulate', child: Text('累计求和 (Accumulate)')),
+                      DropdownMenuItem(value: 'latest', child: Text('最新一次值 (Latest)')),
+                    ],
+                    onChanged: (v) => setState(() => progressMode = v ?? 'accumulate'),
+                  ),
+                ] else if (config is EventTrackerConfig) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: periodCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: '周期天数 (0 为自由打卡)',
+                      isDense: true,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+            FilledButton(
+              onPressed: () {
+                if (nameCtrl.text.trim().isNotEmpty) {
+                  TrackerConfig updatedConfig = config;
+                  if (config is MilestoneTrackerConfig) {
+                    updatedConfig = config.copyWith(
+                      targetValue: targetValCtrl.text.trim().isEmpty ? config.targetValue : targetValCtrl.text.trim(),
+                      progressMode: progressMode,
+                    );
+                  } else if (config is EventTrackerConfig) {
+                    final p = int.tryParse(periodCtrl.text.trim()) ?? config.periodDays;
+                    updatedConfig = config.copyWith(periodDays: p);
+                  }
+
+                  final updatedItem = DataItem<Tracker>(
+                    item.id,
+                    item.createdAt,
+                    DateTime.now(),
+                    item.owner,
+                    null,
+                    null,
+                    body: body.copyWith(
+                      name: nameCtrl.text.trim(),
+                      description: descCtrl.text.trim(),
+                      category: categoryCtrl.text.trim().isEmpty ? '默认' : categoryCtrl.text.trim(),
+                      config: updatedConfig,
+                    ),
+                  );
+                  ref.read(trackerRepositoryProvider).updateTracker(updatedItem);
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('保存'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -676,9 +982,11 @@ class ModernTrackerCard extends ConsumerWidget {
 
     String labelText = '数值/状态 (可选)';
     TextInputType keyboardType = TextInputType.text;
+    final bool isTimeMilestone = config is MilestoneTrackerConfig && config.goalType == 'time';
+
     if (config is MilestoneTrackerConfig) {
       if (config.goalType == 'time') {
-        labelText = '本次时长 (分钟数，如 30)';
+        labelText = '本次时长 (分钟数)';
         keyboardType = TextInputType.number;
       } else if (config.goalType == 'number') {
         labelText = '本次数值 (如 10.5)';
@@ -690,38 +998,75 @@ class ModernTrackerCard extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('添加记录'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: valCtrl,
-              keyboardType: keyboardType,
-              decoration: InputDecoration(labelText: labelText, isDense: true),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: noteCtrl,
-              decoration: const InputDecoration(labelText: '备注 (可选)', isDense: true),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('添加打卡记录'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isTimeMilestone) ...[
+                const Text('快捷时长选项:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ActionChip(
+                      label: const Text('+15m'),
+                      avatar: const Icon(Icons.timer_outlined, size: 14),
+                      onPressed: () {
+                        final cur = int.tryParse(valCtrl.text.trim()) ?? 0;
+                        setDialogState(() => valCtrl.text = (cur + 15).toString());
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('+30m'),
+                      avatar: const Icon(Icons.timer_outlined, size: 14),
+                      onPressed: () {
+                        final cur = int.tryParse(valCtrl.text.trim()) ?? 0;
+                        setDialogState(() => valCtrl.text = (cur + 30).toString());
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('+1h (60m)'),
+                      avatar: const Icon(Icons.timer_outlined, size: 14),
+                      onPressed: () {
+                        final cur = int.tryParse(valCtrl.text.trim()) ?? 0;
+                        setDialogState(() => valCtrl.text = (cur + 60).toString());
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: valCtrl,
+                keyboardType: keyboardType,
+                decoration: InputDecoration(labelText: labelText, isDense: true),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: noteCtrl,
+                decoration: const InputDecoration(labelText: '备注/笔记 (可选)', isDense: true),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+            FilledButton(
+              onPressed: () {
+                ref.read(trackerRepositoryProvider).addRecord(
+                      trackerId: trackerId,
+                      value: valCtrl.text.trim().isEmpty ? null : valCtrl.text.trim(),
+                      content: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
+                      currentUserId: userId,
+                    );
+                Navigator.pop(ctx);
+              },
+              child: const Text('保存'),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () {
-              ref.read(trackerRepositoryProvider).addRecord(
-                    trackerId: trackerId,
-                    value: valCtrl.text.trim().isEmpty ? null : valCtrl.text.trim(),
-                    content: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
-                    currentUserId: userId,
-                  );
-              Navigator.pop(ctx);
-            },
-            child: const Text('保存'),
-          ),
-        ],
       ),
     );
   }
