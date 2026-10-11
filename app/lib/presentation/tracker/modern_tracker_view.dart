@@ -266,16 +266,98 @@ class ModernTrackerCard extends ConsumerWidget {
   Widget _buildConfigDetail(BuildContext context, TrackerConfig config, List<TrackerRecord> records) {
     final theme = Theme.of(context);
     return config.when(
-      event: (periodDays) => Row(
-        children: [
-          Icon(Icons.repeat, size: 16, color: theme.colorScheme.primary),
-          const SizedBox(width: 6),
-          Text(
-            periodDays > 0 ? '周期: 每 $periodDays 天一次' : '周期: 自由打卡',
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
-      ),
+      event: (periodDays) {
+        final eventResult = TrackerCalculator.calculateEvent(
+          config: config as EventTrackerConfig,
+          records: records,
+        );
+
+        if (periodDays <= 0) {
+          return Row(
+            children: [
+              Icon(Icons.repeat, size: 16, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                '自由周期 • ${eventResult.statusText}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: eventResult.lastRecordTime == null ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      eventResult.isOverdue ? Icons.warning_amber_rounded : Icons.timer_outlined,
+                      size: 16,
+                      color: eventResult.statusColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      eventResult.lastRecordTime == null ? '从未记录' : '${eventResult.passedDays} 天前已打卡',
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: eventResult.statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: eventResult.statusColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    eventResult.statusText,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: eventResult.statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            LinearProgressIndicator(
+              value: eventResult.progress,
+              color: eventResult.statusColor,
+              backgroundColor: eventResult.statusColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '周期: 每 $periodDays 天一次',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                if (eventResult.isOverdue)
+                  Text(
+                    '⚠️ 超时报警: 已逾期 ${eventResult.overdueDays} 天',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                else
+                  Text(
+                    '剩余 ${eventResult.remainingDays} 天',
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
       milestone: (goalType, targetValue, progressMode) {
         final milestoneResult = TrackerCalculator.calculateMilestone(
           config: config as MilestoneTrackerConfig,
