@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/clipboard/clipboard_batch_action_bar.dart';
 import 'package:xbb/presentation/clipboard/clipboard_date_group_view.dart';
+import 'package:xbb/presentation/clipboard/clipboard_overview_card.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
@@ -56,6 +57,11 @@ class ModernClipboardView extends ConsumerWidget {
               hintText: '搜索剪贴板文本...',
               onChanged: (v) => ref.read(clipboardSearchQueryProvider.notifier).state = v,
             ),
+          ),
+          // 概览统计卡片
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+            child: ClipboardOverviewCard(),
           ),
           // 列表内容（按日期分组并支持折叠/展开）
           Expanded(

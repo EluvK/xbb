@@ -170,3 +170,31 @@ class SelectedClipboardIdsNotifier extends StateNotifier<Set<String>> {
     state = failedIds.toSet();
   }
 }
+
+class ClipboardOverviewStats {
+  final int total;
+  final int localOnly;
+  final int synced;
+
+  const ClipboardOverviewStats({
+    required this.total,
+    required this.localOnly,
+    required this.synced,
+  });
+}
+
+final clipboardOverviewStatsProvider = Provider<ClipboardOverviewStats>((ref) {
+  final entriesAsync = ref.watch(clipboardEntriesStreamProvider);
+  return entriesAsync.when(
+    data: (items) {
+      final total = items.length;
+      final localOnly = items.where((e) => e.body.localOnly).length;
+      final synced = total - localOnly;
+      return ClipboardOverviewStats(total: total, localOnly: localOnly, synced: synced);
+    },
+    loading: () => const ClipboardOverviewStats(total: 0, localOnly: 0, synced: 0),
+    error: (_, __) => const ClipboardOverviewStats(total: 0, localOnly: 0, synced: 0),
+  );
+});
+
+final editingClipboardIdProvider = StateProvider<String?>((ref) => null);

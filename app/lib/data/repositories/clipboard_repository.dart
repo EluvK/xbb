@@ -138,6 +138,52 @@ class ClipboardRepository {
     await Clipboard.setData(ClipboardData(text: text));
   }
 
+  /// 原位修改剪贴板文本（遵循 ADR-0002 规则：localOnly 仅本地更新，非 localOnly 入队 Outbox）
+  Future<bool> updateEntryText(String id, String newText) async {
+    final rows = await db.query('clipboard_history_entry', where: 'id = ?', whereArgs: [id], limit: 1);
+    if (rows.isEmpty) return false;
+
+    final row = rows.first;
+    final bodyStr = row['body'] as String? ?? '{}';
+    ClipboardHistoryEntry entry;
+    try {
+      entry = ClipboardHistoryEntry.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+    } catch (_) {
+      return false;
+    }
+
+    if (entry.data == newText) {
+      return false; // 无变动
+    }
+
+    final updatedEntry = entry.copyWith(data: newText);
+    final updatedRow = <String, dynamic>{
+      'id': id,
+      'created_at': row['created_at'],
+      'updated_at': DateTime.now().toIso8601String(),
+      'owner': row['owner'],
+      'parent_id': row['parent_id'],
+      'sync_status': row['sync_status'],
+      'color_tag': row['color_tag'],
+      'body': jsonEncode(updatedEntry.toJson()),
+    };
+
+    if (entry.localOnly) {
+      await db.update('clipboard_history_entry', updatedRow, where: 'id = ?', whereArgs: [id]);
+    } else {
+      await LocalFirstDB.persistPutRaw(
+        db: db,
+        tableName: 'clipboard_history_entry',
+        entityId: id,
+        entityRow: updatedRow,
+      );
+      SyncWorker.instance.notifyLocalWrite();
+    }
+
+    changeNotifier.notify('clipboard_history_entry');
+    return true;
+  }
+
   /// 批量备份上云（ADR-0002: 跳过已同步项，仅未同步项入队 Outbox，失败项记录保留）
   Future<ClipboardSyncBatchResult> syncSelectedToCloud(List<DataItem<ClipboardHistoryEntry>> items) async {
     int syncedCount = 0;

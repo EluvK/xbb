@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/clipboard/model.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
@@ -178,8 +179,10 @@ class ClipboardEntryCard extends ConsumerWidget {
     final timeStr = entry.capturedAt?.toLocal().toString().split('.').first ?? '';
     final selectedIds = ref.watch(selectedClipboardIdsProvider);
     final selected = isSelected ?? selectedIds.contains(item.id as String);
+    final editingId = ref.watch(editingClipboardIdProvider);
+    final isEditing = editingId == item.id;
 
-    return ModernCard(
+    final widget = ModernCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,46 +222,141 @@ class ClipboardEntryCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           Padding(
             padding: const EdgeInsets.only(left: 32.0),
-            child: Text(
-              entry.data,
-              style: theme.textTheme.bodyMedium,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: isEditing
+                ? _ClipboardInlineEditor(item: item as DataItem<ClipboardHistoryEntry>)
+                : InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    onTap: () {
+                      ref.read(editingClipboardIdProvider.notifier).state = item.id as String;
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Text(
+                        entry.data,
+                        style: theme.textTheme.bodyMedium,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (entry.localOnly)
+          if (!isEditing) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
                 TextButton.icon(
-                  icon: const Icon(Icons.cloud_upload_outlined, size: 16),
-                  label: const Text('备份上云'),
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('编辑'),
                   onPressed: () {
-                    ref.read(clipboardRepositoryProvider).syncToCloud(item);
+                    ref.read(editingClipboardIdProvider.notifier).state = item.id as String;
+                  },
+                ),
+                if (entry.localOnly)
+                  TextButton.icon(
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 16),
+                    label: const Text('备份上云'),
+                    onPressed: () {
+                      ref.read(clipboardRepositoryProvider).syncToCloud(item);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已确认并入队同步')),
+                      );
+                    },
+                  ),
+                TextButton.icon(
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('复制'),
+                  onPressed: () {
+                    ref.read(clipboardRepositoryProvider).copyToClipboard(entry.data);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已确认并入队同步')),
+                      const SnackBar(content: Text('已复制到系统剪贴板')),
                     );
                   },
                 ),
-              TextButton.icon(
-                icon: const Icon(Icons.copy, size: 16),
-                label: const Text('复制'),
-                onPressed: () {
-                  ref.read(clipboardRepositoryProvider).copyToClipboard(entry.data);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('已复制到系统剪贴板')),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18),
-                onPressed: () => ref.read(clipboardRepositoryProvider).delete(item.id as String),
-              ),
-            ],
-          ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  onPressed: () => ref.read(clipboardRepositoryProvider).delete(item.id as String),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
+    );
+    return widget;
+  }
+}
+
+class _ClipboardInlineEditor extends ConsumerStatefulWidget {
+  final DataItem<ClipboardHistoryEntry> item;
+
+  const _ClipboardInlineEditor({required this.item});
+
+  @override
+  ConsumerState<_ClipboardInlineEditor> createState() => _ClipboardInlineEditorState();
+}
+
+class _ClipboardInlineEditorState extends ConsumerState<_ClipboardInlineEditor> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.item.body.data);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    final newText = _controller.text;
+    final messenger = ScaffoldMessenger.of(context);
+    final repo = ref.read(clipboardRepositoryProvider);
+    final changed = await repo.updateEntryText(widget.item.id, newText);
+
+    messenger.showSnackBar(
+      SnackBar(content: Text(changed ? '剪贴板文本已更新' : '未检测到修改')),
+    );
+    ref.read(editingClipboardIdProvider.notifier).state = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _controller,
+          minLines: 2,
+          maxLines: 8,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            isDense: true,
+            hintText: '编辑剪贴板文本...',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            OutlinedButton(
+              onPressed: () {
+                ref.read(editingClipboardIdProvider.notifier).state = null;
+              },
+              child: const Text('取消'),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            FilledButton.icon(
+              icon: const Icon(Icons.check, size: 16),
+              label: const Text('保存'),
+              onPressed: _handleSave,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
