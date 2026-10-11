@@ -38,6 +38,60 @@ class NotesRepository {
     });
   }
 
+  /// 监听当前用户自建的笔记本 (我的小本本)
+  Stream<List<DataItem<Repo>>> watchMyRepos(String userId) {
+    return changeNotifier.watchTable('repo').asyncMap((_) async {
+      final rows = await db.query(
+        'repo',
+        where: 'owner = ?',
+        whereArgs: [userId],
+        orderBy: 'created_at DESC',
+      );
+      final now = DateTime.now();
+      return rows.map((r) {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final repo = Repo.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        return DataItem<Repo>(
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
+          body: repo,
+          syncStatus: SyncStatus.synced,
+        );
+      }).toList();
+    });
+  }
+
+  /// 监听订阅他人的笔记本 (订阅小本本)
+  Stream<List<DataItem<Repo>>> watchSubscribedRepos(String userId) {
+    return changeNotifier.watchTable('repo').asyncMap((_) async {
+      final rows = await db.query(
+        'repo',
+        where: 'owner != ?',
+        whereArgs: [userId],
+        orderBy: 'created_at DESC',
+      );
+      final now = DateTime.now();
+      return rows.map((r) {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final repo = Repo.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        return DataItem<Repo>(
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
+          body: repo,
+          syncStatus: SyncStatus.synced,
+        );
+      }).toList();
+    });
+  }
+
   /// 监听特定笔记本下的所有文章 (Post)
   Stream<List<DataItem<Post>>> watchPostsByRepo(String? repoId) {
     return changeNotifier.watchTable('post').asyncMap((_) async {

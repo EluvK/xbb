@@ -7,6 +7,7 @@ import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/presentation/notes/comment_widgets.dart';
 import 'package:xbb/presentation/notes/notes_providers.dart';
 import 'package:xbb/presentation/notes/repo_acl_dialog.dart';
+import 'package:xbb/presentation/notes/repo_quick_switcher.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
@@ -25,6 +26,8 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   bool _isEditing = false;
   String _searchKeyword = '';
   DataItem<Comment>? _replyToComment;
+  bool _myReposExpanded = true;
+  bool _subscribedReposExpanded = true;
 
   @override
   void dispose() {
@@ -120,7 +123,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
           if (isDesktop)
             SizedBox(
               width: 220,
-              child: _buildRepoSidebar(reposAsync, selectedRepoId, userId),
+              child: _buildRepoSidebar(selectedRepoId, userId),
             ),
           if (isDesktop) const VerticalDivider(width: 1),
 
@@ -145,11 +148,13 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   }
 
   Widget _buildRepoSidebar(
-    AsyncValue<List<DataItem<Repo>>> reposAsync,
     String? selectedRepoId,
     String userId,
   ) {
     final theme = Theme.of(context);
+    final myReposAsync = ref.watch(myReposStreamProvider);
+    final subscribedReposAsync = ref.watch(subscribedReposStreamProvider);
+
     return Container(
       color: theme.colorScheme.surfaceContainerLowest,
       child: Column(
@@ -174,67 +179,151 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
           ),
           const Divider(height: 1),
           Expanded(
-            child: reposAsync.when(
-              data: (repos) {
-                if (repos.isEmpty) {
-                  return const Center(child: Text('无笔记本', style: TextStyle(color: Colors.grey)));
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
-                  itemCount: repos.length,
-                  itemBuilder: (context, index) {
-                    final repo = repos[index];
-                    final isSelected = repo.id == selectedRepoId;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: ModernCard(
-                        selected: isSelected,
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                        onTap: () {
-                          ref.read(selectedRepoIdProvider.notifier).state = repo.id;
-                          ref.read(selectedPostIdProvider.notifier).state = null;
-                        },
-                        child: Row(
-                          children: [
-                            Icon(Icons.folder_outlined, size: 18, color: theme.colorScheme.primary),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                repo.body.name,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.share_outlined, size: 16),
-                              tooltip: '协作与分享',
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                              onPressed: () {
-                                RepoAclDialog.show(
-                                  context,
-                                  repoId: repo.id,
-                                  repoName: repo.body.name,
-                                  ownerId: repo.owner,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('错误: $e')),
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+              children: [
+                // 卡片 1: 我的小本本
+                _buildAccordionSection(
+                  title: '我的小本本',
+                  icon: Icons.folder_outlined,
+                  color: theme.colorScheme.primary,
+                  isExpanded: _myReposExpanded,
+                  onToggle: () => setState(() => _myReposExpanded = !_myReposExpanded),
+                  asyncData: myReposAsync,
+                  selectedRepoId: selectedRepoId,
+                  emptyText: '暂无自建笔记本',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // 卡片 2: 订阅的小本本
+                _buildAccordionSection(
+                  title: '订阅的小本本',
+                  icon: Icons.share_outlined,
+                  color: theme.colorScheme.secondary,
+                  isExpanded: _subscribedReposExpanded,
+                  onToggle: () => setState(() => _subscribedReposExpanded = !_subscribedReposExpanded),
+                  asyncData: subscribedReposAsync,
+                  selectedRepoId: selectedRepoId,
+                  emptyText: '暂无订阅笔记本',
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAccordionSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required AsyncValue<List<DataItem<Repo>>> asyncData,
+    required String? selectedRepoId,
+    required String emptyText,
+  }) {
+    final theme = Theme.of(context);
+    final count = asyncData.value?.length ?? 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          onTap: onToggle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6.0),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: color),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    '$title ($count)',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  size: 16,
+                  color: theme.colorScheme.outline,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isExpanded)
+          asyncData.when(
+            data: (repos) {
+              if (repos.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  child: Text(emptyText, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                );
+              }
+              return Column(
+                children: repos.map((repo) {
+                  final isSelected = repo.id == selectedRepoId;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: ModernCard(
+                      selected: isSelected,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                      onTap: () {
+                        ref.read(selectedRepoIdProvider.notifier).state = repo.id;
+                        ref.read(selectedPostIdProvider.notifier).state = null;
+                      },
+                      child: Row(
+                        children: [
+                          Icon(icon, size: 16, color: color),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              repo.body.name,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.share_outlined, size: 15),
+                            tooltip: '协作与分享',
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+                            onPressed: () {
+                              RepoAclDialog.show(
+                                context,
+                                repoId: repo.id,
+                                repoName: repo.body.name,
+                                ownerId: repo.owner,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+            ),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('加载失败: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+            ),
+          ),
+      ],
     );
   }
 
@@ -249,20 +338,24 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
       children: [
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: ModernSearchField(
-                  controller: _searchController,
-                  hintText: '搜索文章...',
-                  onChanged: (v) => setState(() => _searchKeyword = v.trim().toLowerCase()),
-                ),
+              Row(
+                children: [
+                  const RepoQuickSwitcher(),
+                  const Spacer(),
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.add, size: 18),
+                    tooltip: '新建文章',
+                    onPressed: selectedRepoId == null ? null : () => _createNewPost(selectedRepoId, userId),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              IconButton.filledTonal(
-                icon: const Icon(Icons.add, size: 18),
-                tooltip: '新建文章',
-                onPressed: selectedRepoId == null ? null : () => _createNewPost(selectedRepoId, userId),
+              const SizedBox(height: AppSpacing.sm),
+              ModernSearchField(
+                controller: _searchController,
+                hintText: '搜索文章...',
+                onChanged: (v) => setState(() => _searchKeyword = v.trim().toLowerCase()),
               ),
             ],
           ),

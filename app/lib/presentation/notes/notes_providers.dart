@@ -3,6 +3,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/data/database_providers.dart';
 import 'package:xbb/data/repositories/notes_repository.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/presentation/providers/auth_provider.dart';
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {
   final db = ref.watch(databaseProvider);
@@ -13,6 +14,18 @@ final notesRepositoryProvider = Provider<NotesRepository>((ref) {
 final reposStreamProvider = StreamProvider<List<DataItem<Repo>>>((ref) {
   final repo = ref.watch(notesRepositoryProvider);
   return repo.watchRepos();
+});
+
+final myReposStreamProvider = StreamProvider<List<DataItem<Repo>>>((ref) {
+  final repo = ref.watch(notesRepositoryProvider);
+  final userId = ref.watch(authProvider).userId;
+  return repo.watchMyRepos(userId);
+});
+
+final subscribedReposStreamProvider = StreamProvider<List<DataItem<Repo>>>((ref) {
+  final repo = ref.watch(notesRepositoryProvider);
+  final userId = ref.watch(authProvider).userId;
+  return repo.watchSubscribedRepos(userId);
 });
 
 final selectedRepoIdProvider = StateProvider<String?>((ref) {
