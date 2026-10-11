@@ -1,407 +1,461 @@
-# xbb Monorepo & 新一代通用同步架构演进执行蓝图 (TODO.md)
+# XBB 全功能复原与现代化架构演进执行蓝图 (TODO.md)
 
-本文档是整个系统重构的权威执行规范。目标是将当前仓库改造为 Monorepo、从零构建业务无关的新一代 Rust 同步服务端（基于 ChangeLog 变更流）、并在客户端全面重构为 Local-First 架构（彻底解耦业务关系、淘汰 GetX、平滑数据迁移）。
-
----
-
-## 第一部分：原子化执行任务清单（Agent 任务分派序列）
-
-每个任务项均设计为自包含任务，可独立派发给 Subagent 执行，请严格按先后依赖顺序推进。
-
-### 阶段一：Monorepo 目录划分与环境重组
-
-- [x] **TASK-1.1: 仓库根目录重构与 Flutter App 迁移**
-  - **依赖**: 无
-  - **工作内容**:
-    1. 在根目录下新建 `app/` 目录。
-    2. 将除 `TODO.md`、`.git/`、`.gitignore` 外的所有客户端相关文件/目录（包括 `lib/`, `packages/`, `android/`, `macos/`, `windows/`, `assets/`, `pubspec.*`, `analysis_options.yaml` 等）迁移到 `app/` 目录下。
-    3. 修复 `app/` 内部相对路径依赖（检查 `pubspec.yaml` 中各内部 package 引用）。
-  - **验收标准**: 在 `app/` 目录下执行 `flutter pub get` 与 `flutter test`（若有）通过，无文件丢失。
-
-- [x] **TASK-1.2: 初始化全新 Rust 服务端工程**
-  - **依赖**: TASK-1.1
-  - **工作内容**:
-    1. 在根目录下新建 `server/` 目录，初始化 Cargo 项目（使用 Salvo 或 Axum，推荐 Salvo 与现有技术栈对齐，集成 tokio, sqlx/rusqlite, serde, tracing, jsonwebtoken）。
-    2. 配置根目录 `.gitignore`，纳入 `server/target/` 及 `server/data/`。
-  - **验收标准**: 在 `server/` 目录下执行 `cargo check` 无错误。
+本文档是系统全功能恢复与现代化架构演进的权威执行规范。目标是在已建成的 Local-First 存储层、Rust ChangeLog 服务端与响应式仓储架构之上，**首先修复底座网络、账号认证与权限管理（解决 App 默认离线与假登录问题），进而 100% 恢复各业务模块丢失的功能与高级交互，彻底切除任何演示 Mock 假数据**，并使其全面适配现代 Flutter 架构（Riverpod 2.x、Stream 响应式驱动、go_router 声明式路由与 Modern Design Tokens）。
 
 ---
 
-### 阶段二：全新 Rust 服务端核心实现（业务无关变更流引擎）
+## 总体设计原则
 
-- [x] **TASK-2.1: 存储层表结构与基础数据库连接**
-  - **依赖**: TASK-1.2
-  - **工作内容**:
-    1. 在 `server/src/storage/` 建立 SQLite 连接池（启用 WAL 模式）。
-    2. 初始化三张核心数据表：
-       - `entities`: 存储当前业务实体最新快照 (`table_name`, `id`, `owner_id`, `data`, `version`, `updated_at`)。
-       - `change_log`: 单调自增变更流水 (`seq AUTOINCREMENT`, `table_name`, `entity_id`, `owner_id`, `op`, `data`, `created_at`)。
-       - `acls`: 细粒度实体授权 (`table_name`, `entity_id`, `user_id`, `permission`)。
-  - **验收标准**: 单元测试验证表自动建表成功，支持高并发读写。
-
-- [x] **TASK-2.2: 基础鉴权与旧版更新通道兼容路由**
-  - **依赖**: TASK-2.1
-  - **工作内容**:
-    1. 实现极简标准的 Bearer JWT 认证中间件，提取 `user_id`（移除 HPKE）。
-    2. **旧版客户端升级通道保持兼容**：挂载 `/fs/public/{app}/version` 与 `/fs/public/{app}/CHANGELOG` 静态文件服务。
-    3. **老接口优雅拦截**：对所有匹配 `/data/*`、`/batch-data/*` 的旧路径，一律返回 HTTP 426 (Upgrade Required)，附带清晰 JSON 升级提示。
-  - **验收标准**: curl 测试 `/fs/public/...` 正常返回，访问 `/data/...` 返回 426。
-
-- [x] **TASK-2.3: 实现提交变更接口 `POST /sync/v1/push`**
-  - **依赖**: TASK-2.1, TASK-2.2
-  - **工作内容**:
-    1. 解析 `PushRequest`（包含 `client_id`, `mutations: [{ table, id, op, data, base_version }]`）。
-    2. 实现**写策略守卫（Policy Guard）**拦截管线：校验用户对目标资源的写入权限。
-    3. 实现**乐观锁版本仲裁（CAS）**：
-       - 若 `base_version` 与服务端当前 `version` 一致：更新 `entities`（`version + 1`），并在同一事务写入 `change_log`，生成单调递增 `seq`。
-       - 若版本不一致：标记为 `CONFLICT`，返回服务端当前最新快照。
-  - **验收标准**: 编写集成测试，覆盖单次提交、批量提交、并发版本冲突（CAS 拦截）场景。
-
-- [x] **TASK-2.4: 实现增量拉取接口 `GET /sync/v1/pull`**
-  - **依赖**: TASK-2.3
-  - **工作内容**:
-    1. 接收 `checkpoint`（即 `since_seq`）与 `limit`（默认 200，上限 1000）。
-    2. 实现**读投影过滤（Projection Filter）**：在数据库层面高效过滤：
-       `seq > checkpoint AND (owner_id = user_id OR EXISTS(SELECT 1 FROM acls ...))`。
-    3. 原生支持下发软删除（`op = DELETE`）墓碑记录。
-  - **验收标准**: 集成测试验证增量查询分页、多用户数据隔离、删除记录正常下发。
-
-- [x] **TASK-2.5: 实现动态 ACL 授权转化为变更事件机制**
-  - **依赖**: TASK-2.4
-  - **工作内容**:
-    1. 实现 ACL 变更接口（`POST /sync/v1/acl/grant` 和 `revoke`）。
-    2. **晚期授权解决机制**：在授权给新用户时，事务内往 `acls` 插入记录的同时，向 `change_log` 追加一条带有实体最新快照的全新 `PUT` 事件（生成当前最新 `seq`）。
-    3. 撤权时追加一条 `DELETE` 投影事件。
-  - **验收标准**: 单元测试模拟“用户 B 先同步完、A 之后授权 B、B 再次增量 Pull 能够无缝拉到历史数据”。
-
-- [x] **TASK-2.6: 编写存量数据迁移工具（`migrate_legacy`）**
-  - **依赖**: TASK-2.5
-  - **工作内容**:
-    1. 在 `server/src/bin/migrate_legacy.rs` 编写离线数据迁移 CLI。
-    2. 读取老版本各个 SQLite 数据库中的 `c_{collection}` 与 `__acls`。
-    3. 转换并批量插入到新库的 `entities`，并按时间生成连续自增的初始 `change_log`（`seq = 1..N`）。
-  - **验收标准**: 跑测试数据库迁移，迁移后验证 `entities` 和 `change_log` 完整且一致。
+1. **真实在线与真实鉴权底座**：坚决切除任何写死假数据（包括 `login.dart` 里的 300ms 假登录、Tracker 的 0.35 进度、Chat 的 600ms 延时假回复）。网络层必须真实绑定 BaseURL、Bearer JWT 鉴权头并驱动 SyncWorker。
+2. **零 Mock 假数据原则**：所有业务功能必须依托本地 SQLite 真实持久化、真实算法计算与真实网络同步。
+3. **全功能对齐与现代化超越 (Feature Parity & Beyond)**：每个模块不仅要恢复 commit `7fde2e4`（TODO.md 引入前）的全部能力，且在交互与 UI 上需遵循现代 Design Tokens 体系规范。
+4. **分层清晰解耦**：
+   - **Data 层**：继承 `BaseLocalFirstRepository`，封装本地 SQLite CRUD、Outbox 变更日志与变更事件通知。
+   - **Provider 层**：通过 Riverpod `StreamProvider` / `NotifierProvider` 暴露细粒度响应式状态，避免大范围无谓重建。
+   - **Presentation 层**：纯声明式 UI，支持移动端/桌面端响应式自适应布局。
 
 ---
 
-### 阶段三：客户端 Local-First 核心与平滑迁移层
+## 阶段规划概览
 
-- [x] **TASK-3.1: 客户端彻底清理老旧网络与生成器依赖**
-  - **依赖**: TASK-1.1
-  - **工作内容**:
-    1. 移除 `packages/syncstore_client` 中的 `HpkeInterceptor` 与 `ConcurrentChunkInterceptor`。
-    2. 移除客户端对 RFC 9180 HPKE 手写实现的依赖。
-    3. 简化网络客户端为标准 Dio，只挂载标准 Bearer JWT 拦截器。
-  - **验收标准**: `app/` 编译成功，无 HPKE 及分片相关残留。
-
-- [x] **TASK-3.2: 建立本地 Local-First 数据库与 Outbox 表结构**
-  - **依赖**: TASK-3.1
-  - **工作内容**:
-    1. 引入/确认本地 SQLite 支持（推荐使用 Drift 或继续扩展 sqflite 体系）。
-    2. 建立本地 `outbox` 待发变更队列表：
-       `id, table_name, entity_id, op, data, base_version, created_at`。
-    3. 建立本地元数据状态表 `sync_meta`：记录 `last_seq`（同步检查点游标）。
-    4. 引入纯 Dart 的 `uuid` v7 生成器，客户端新增数据本地直接生成权威 UUIDv7。
-  - **验收标准**: 本地写入测试：事务内同时插入业务表与 `outbox`。
-
-- [x] **TASK-3.3: 实现老客户端数据自愈平滑迁移（One-time Bootstrap）**
-  - **依赖**: TASK-3.2
-  - **工作内容**:
-    1. 编写客户端首次升级检测逻辑（通过版本号或 DB flag 判定）。
-    2. 扫描本地所有旧业务表：
-       - 将所有 `sync_status IN ('pending', 'failed')` 的记录转换为 `outbox` 中的待发 `PUT` 记录。
-       - 已同步/归档记录完整保留在本地表中，不作删除。
-       - 将 `sync_meta.last_seq` 置为 0。
-  - **验收标准**: 单元测试模拟存量 `failed` 数据在升级后成功进入 `outbox`，且本地业务数据 0 丢失。
-
-- [x] **TASK-3.4: 实现全局单例 `SyncWorker`**
-  - **依赖**: TASK-3.2, TASK-2.4
-  - **工作内容**:
-    1. 编写后台守护 `SyncWorker`（支持定时轮询、网络恢复唤醒、本地写入唤醒）：
-       - Push 流程：读取 `outbox`，调用 `/sync/v1/push`，成功后从 `outbox` 批量清除已确认 ID。
-       - Pull 流程：带上 `last_seq` 调用 `/sync/v1/pull`，本地事务内批量回放 `changes` 到本地业务表，并推进 `last_seq`。
-    2. 优雅处理 `426 Upgrade Required` 响应（弹窗引导用户升级）。
-  - **验收标准**: 端到端测试客户端离线写入出队、连网后 Push 成功、Pull 拉回其他端变更。
+- [ ] **阶段零：核心网络底座、账号鉴权与在线同步接入 (Foundation, Auth & Sync)**
+- [ ] **阶段一：个人笔记与知识库 (Notes) 全功能复原**
+- [ ] **阶段二：待办清单 (Task) 全功能复原与交互强化**
+- [ ] **阶段三：目标与指标追踪 (Tracker) 真实计算与多维展现**
+- [ ] **阶段四：习惯打卡 (Checkin) 过滤、备注与多维统计复原**
+- [ ] **阶段五：剪贴板历史 (Clipboard) 分组管理与系统集成**
+- [ ] **阶段六：全局外壳、系统设置与权限中心 (Shell & Settings)**
+- [ ] **阶段七：AI 对话助手 (Chat) 真实客户端重塑与多助手体系**
 
 ---
 
-### 阶段四：业务解耦与彻底剥离 GetX
+## 阶段零：核心网络底座、账号鉴权与在线同步接入 (Foundation, Auth & Sync)
 
-- [x] **TASK-4.1: 解除父子关系对网络层的依赖**
-  - **依赖**: TASK-3.2
-  - **工作内容**:
-    1. 改造笔记（Repo/Post/Comment）、聊天（Conversation/Message）的查询逻辑。
-    2. 将原有的 `syncChildren`、`by_parent_ids` 网络请求彻底删除，改为纯本地 SQL 查询：
-       `SELECT * FROM post WHERE repo_id = ? ORDER BY created_at DESC`。
-  - **验收标准**: 断网状态下，在笔记本之间切换，笔记列表依旧瞬间渲染呈现。
+### TASK-0.1: 修复 `SyncWorker` 真实依赖装配与网络连接管道
+- **依赖**: 无
+- **问题现状**:
+  - `main.dart` 仅执行 `SyncWorker.instance.start()`，既未注入 `dio` 也未注入 `db`，其内部 `_runSyncCycle` 执行时因 `dio == null || db == null` 直接静默 return，导致完全没有同步动作！
+- **工作内容**:
+  1. 在 `main.dart` 或全局初始化阶段，配置单例 Dio 实例（注入基础服务地址 `syncStoreUrl`、超时配置、Bearer JWT 拦截器）。
+  2. 调用 `SyncWorker.configure(dio: dio, db: db, clientId: clientId, ...)` 传入有效实例。
+  3. 当网络地址或用户 Token 发生变更时，提供动态 `updateDependencies` 机制。
+- **验收标准**: 在控制台可见定时轮询发起的真实 HTTP Push/Pull 请求日志；断网/连网时状态能够正确转为 syncing / idle / error。
 
-- [x] **TASK-4.2: 废除 `sync_generator` 中越界的 Controller 代码生成**
-  - **依赖**: TASK-4.1
-  - **工作内容**:
-    1. 移除 `sync_generator` 中生成 `GetxController`、`_SyncEngine` 以及 ACL 同步扩展的代码。
-    2. 移除对业务模型上 `withAcls` 等特化注解参数的依赖。
-  - **验收标准**: 运行 build_runner 仅生成纯净的模型映射与数据表定义。
+### TASK-0.2: 重构真实的账号认证体系与本地持久化 (Auth Pipeline)
+- **依赖**: TASK-0.1
+- **问题现状**:
+  - `login.dart` 中使用 `Future.delayed(300ms)` 伪造登录，硬编码返回假 Token `token-$username`；且 `setLogin` 根本没有写入本地 Storage，应用冷启动时永远被重置为离线的 `default` 假用户。
+- **工作内容**:
+  1. 对接 Rust 服务端真实的登录与注册接口（`POST /api/v1/auth/login` 与 `register`）。
+  2. 登录成功后将用户信息（`id`, `username`, `email` 等）与权威 JWT Token 持久化写入 `GetStorage`。
+  3. 启动时从 Storage 恢复认证状态，更新 `authProvider`，并动态初始化该用户专属的 SQLite 数据库与 SyncWorker 鉴权头。
+  4. 实现完整登出逻辑：清理敏感 Token、重置同步守护进程、切回本地访客库或重定向至登录页。
+- **验收标准**: 输入真实账号密码登录成功后，冷启动 App 依然保持登录状态；登出后 Token 正确销毁。
 
-- [x] **TASK-4.3: 逐模块重构与彻底淘汰 GetX**
-  - **依赖**: TASK-4.2
-  - **工作内容**:
-    将各业务模块的 Controller 改造为轻量状态管理（推荐统一的无侵入方案，例如 Riverpod / 响应式 SQLite Query Stream）：
-    1. 重构 Task 模块。
-    2. 重构 Checkin 模块。
-    3. 重构 Notes 模块。
-    4. 重构 Tracker & Clipboard 模块。
-    5. 重构 Chat 模块。
-    6. 彻底移除 `Get.put`, `Get.find`, `GetxController` 依赖，从 `pubspec.yaml` 中彻底卸载 `get` 库。
-  - **验收标准**: 全局搜索代码库，零 `import 'package:get/...'` 引用，全模块运行正常。
+### TASK-0.3: 恢复多账号快速登录 (Quick Login) 与服务可用性探测
+- **依赖**: TASK-0.2
+- **功能对齐**:
+  - 恢复登录界面的多账号凭据卡片列表（点击头像即自动填入或一键登录）。
+  - 恢复自动探测服务器在线状态（Service Available / Checking / Not Available，支持每 30s 自动轮询与实时 Ping 测速）。
+  - 恢复密码显隐切换与“记住密码”勾选。
+- **工作内容**:
+  1. 重构快速登录凭据管理器 `QuickLoginManager`，在本地加密/安全存储多个用户的登录快照。
+  2. 在 `LoginPage` 呈现历史已登录账号列表；支持长按或点击删除历史凭据。
+  3. 登录页顶部展示当前配置服务器的健康检测小圆点，并支持直接点击修改服务器地址。
+- **验收标准**: 保存多个账号后，可在登录页一键切换头像直接登录；离线时显示“服务不可用”。
 
----
+### TASK-0.4: 重构个人资料管理 (Profile: 昵称、密码、头像与好友列表)
+- **依赖**: TASK-0.3
+- **功能对齐**:
+  - 恢复完整的资料修改能力：修改昵称、修改密码、预设/网络头像选择。
+  - 恢复好友资料卡片 (`Friend Profiles`)。
+- **工作内容**:
+  1. 重构独立的 `ProfileView`，支持异步读取与提交自身资料修改请求到服务端。
+  2. 提供预设矢量头像选择器及自定义网络图片 URL 输入预览。
+  3. 展示好友/协同用户列表及公开资料卡片。
+- **验收标准**: 修改昵称和头像后，顶栏头像和用户名称立即刷新，且云端持久化成功。
 
-## 第二部分：技术落地实现标准规范（Implementation Guide）
+### TASK-0.5: 重构细粒度权限控制核心 (ACL Core & AclEditor 组件)
+- **依赖**: TASK-0.4
+- **功能对齐**:
+  - 恢复统一的权限管理核心组件 `AclEditor`，支持为实体（知识库 Repo、追踪器 Tracker 等）添加协作者、移除协作者、配置权限等级（Spy 只读、Subscribe 订阅评论、Share 读写更新、Full Access 全部权限）。
+- **工作内容**:
+  1. 在数据层完善 ACL 变更模型并与 Rust 服务端 `/sync/v1/acl/grant` 与 `revoke` 对接。
+  2. 抽象并现代化 `AclEditor` 通用弹窗/抽屉组件，支持从好友列表一键选择成员并勾选权限矩阵。
+- **验收标准**: 在 UI 上添加协作者并分配权限后，服务端与本地 ACL 均生成合法权限变更事件。
 
-### 1. 协议规范定义 (Protocol Spec)
-
-所有的请求均携带标准 HTTP Header: `Authorization: Bearer <jwt_token>`。
-
-#### (1) `POST /sync/v1/push`
-* **Request**:
-  ```json
-  {
-    "client_id": "device-uuid-xxxx",
-    "mutations": [
-      {
-        "table": "post",
-        "id": "018f2d50-xxxx-7xxx-axxx-xxxxxxxxxxxx",
-        "op": "PUT",
-        "data": { "repo_id": "r-01", "title": "标题", "content": "内容" },
-        "base_version": 1,
-        "client_timestamp": 1728550000000
-      },
-      {
-        "table": "post",
-        "id": "018f2d50-yyyy-7xxx-bxxx-xxxxxxxxxxxx",
-        "op": "DELETE",
-        "base_version": 3,
-        "client_timestamp": 1728550001000
-      }
-    ]
-  }
-  ```
-* **Response (200 OK)**:
-  ```json
-  {
-    "applied_ids": ["018f2d50-xxxx-7xxx-axxx-xxxxxxxxxxxx"],
-    "conflicts": [
-      {
-        "id": "018f2d50-yyyy-7xxx-bxxx-xxxxxxxxxxxx",
-        "reason": "VERSION_MISMATCH",
-        "server_version": 4,
-        "current_data": { "repo_id": "r-01", "title": "远程更新后的标题" }
-      }
-    ]
-  }
-  ```
-
-#### (2) `GET /sync/v1/pull?checkpoint=100&limit=200`
-* **Response (200 OK)**:
-  ```json
-  {
-    "checkpoint": 105,
-    "has_more": false,
-    "changes": [
-      {
-        "seq": 101,
-        "table": "post",
-        "id": "018f2d50-xxxx-7xxx-axxx-xxxxxxxxxxxx",
-        "op": "PUT",
-        "data": { "repo_id": "r-01", "title": "标题", "content": "内容" },
-        "version": 2
-      },
-      {
-        "seq": 102,
-        "table": "post",
-        "id": "018f2d50-zzzz-7xxx-cxxx-xxxxxxxxxxxx",
-        "op": "DELETE",
-        "version": 4
-      }
-    ]
-  }
-  ```
+### TASK-0.6: 声明式路由守卫与鉴权状态生命周期
+- **依赖**: TASK-0.2
+- **问题现状**:
+  - `app_router.dart` 的 `initialLocation: '/'` 直接进入主页，完全没有路由拦截或登录保护。
+- **工作内容**:
+  1. 在 `go_router` 中挂载 `redirect` 守卫监听 `authProvider`。
+  2. 当处于登录过期或未登录且需要同步的状态时，优雅重定向至 `/login`。
+  3. 拦截网络层的 HTTP 401（未授权）与 426（需强制升级），分别引导重新登录或弹出升级公告。
+- **验收标准**: 未登录且开启在线模式时正确引导至登录页；登录成功后自动返回原目标路由。
 
 ---
 
-### 2. 服务端核心 SQL DDL 规范
+## 阶段一：个人笔记与知识库 (Notes) 全功能复原
 
-```sql
--- 开启 WAL 模式以提升并发写日志性能
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = NORMAL;
+### TASK-1.1: 恢复与升级评论系统 (Comment System)
+- **依赖**: 阶段零
+- **功能对齐**:
+  - 恢复 `Comment` 实体的本地存储与数据流，恢复多级评论、发表评论、@回复指定评论、取消回复、删除评论。
+- **工作内容**:
+  1. 在 `app/lib/data/repositories/notes_repository.dart` 中建立 `CommentRepository`（或扩展 `NotesRepository`），支持 `watchComments(String postId)`、`addComment(...)`、`deleteComment(...)`。
+  2. 建立 `commentsStreamProvider(postId)`，通过本地 Stream 实时驱动评论流。
+  3. 在 `app/lib/presentation/notes/` 构建现代化 `CommentListWidget` 与 `CommentInputWidget`：
+     - 支持显示评论者、时间、正文。
+     - 支持点击“回复”激活带有 `@xxx` 标签的回复输入模式，支持取消回复。
+     - 支持评论折叠展开及删除确认。
+  4. 嵌入正文阅读视图底部。
+- **验收标准**: 单元测试验证评论增删查；UI 能够发表新评论、嵌套回复，并在断网状态下立即可见并入队 Outbox。
 
--- 实体主数据（当前版本快照）
-CREATE TABLE IF NOT EXISTS entities (
-    table_name TEXT NOT NULL,
-    id TEXT NOT NULL,
-    owner_id TEXT NOT NULL,
-    data TEXT NOT NULL,           -- JSON 字符串
-    version INTEGER NOT NULL DEFAULT 1,
-    updated_at INTEGER NOT NULL,
-    PRIMARY KEY (table_name, id)
-);
+### TASK-1.2: 恢复小本本权限与协作 (ACL & Sharing)
+- **依赖**: TASK-1.1, TASK-0.5
+- **功能对齐**:
+  - 恢复为 Repo 配置成员访问权限（Spy 只读、Subscribe 阅读与评论、Share 读写、Full Access 全部权限）。
+  - 恢复生成分享链接（Shared Link）。
+- **工作内容**:
+  1. 在 `notes_repository.dart` 中实现知识库 ACL 变更的本地记录与同步事务。
+  2. 在笔记详情/笔记本侧边栏提供 `RepoAclDialog`（复用 `AclEditor`）：展示当前成员列表、权限选择下拉框、添加成员输入框及移除成员操作。
+  3. 提供一键复制分享链接按钮，支持解析与生成标准分享口令/URL。
+- **验收标准**: UI 可修改成员角色并保存；Outbox 正确产生 ACL 变更事件。
 
-CREATE INDEX IF NOT EXISTS idx_entities_owner ON entities (owner_id);
+### TASK-1.3: 恢复“我的小本本”与“订阅小本本”双视图及快速切库器
+- **依赖**: TASK-1.2
+- **功能对齐**:
+  - 恢复区分自建仓库与订阅仓库，支持分别折叠与统计。
+  - 恢复移动端/桌面端顶栏快速切库下拉组件 (`RepoQuickSwitcher`)。
+- **工作内容**:
+  1. 在 `NotesRepository` 中增加区分 `isOwner(userId)` 的过滤流，分别暴露 `myReposStreamProvider` 与 `subscribedReposStreamProvider`。
+  2. 桌面端/移动端顶栏实现现代轻量 `RepoQuickSwitcher` 组件：点击弹出下拉菜单，展示仓库名称与颜色标签，选中后即时切换当前活跃仓库。
+  3. 笔记本侧边栏支持“我的仓库”与“订阅的仓库”两组手风琴折叠卡片。
+- **验收标准**: 切换不同仓库时文章列表瞬时刷新；切库器在移动端 AppBar 和桌面 Header 均正常工作。
 
--- 单调自增变更流日志
-CREATE TABLE IF NOT EXISTS change_log (
-    seq INTEGER PRIMARY KEY AUTOINCREMENT,
-    table_name TEXT NOT NULL,
-    entity_id TEXT NOT NULL,
-    owner_id TEXT NOT NULL,
-    op TEXT NOT NULL,              -- 'PUT' | 'DELETE'
-    data TEXT,                    -- op = 'DELETE' 时为空
-    version INTEGER NOT NULL,
-    created_at INTEGER NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_change_log_seq_owner ON change_log (seq, owner_id);
-
--- 细粒度权限表
-CREATE TABLE IF NOT EXISTS acls (
-    table_name TEXT NOT NULL,
-    entity_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
-    permission TEXT NOT NULL,     -- 'READ' | 'WRITE'
-    PRIMARY KEY (table_name, entity_id, user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_acls_user ON acls (user_id, table_name, entity_id);
-```
-
----
-
-### 3. 动态 ACL 晚期授权处理规范
-
-当用户 A 将某一实体（如 `post-1`）授权给用户 B 时，服务端处理逻辑严格如下：
-
-```rust
-pub async fn grant_permission(
-    tx: &mut Transaction,
-    table_name: &str,
-    entity_id: &str,
-    grantee_id: &str,
-    perm: &str,
-) -> Result<()> {
-    // 1. 插入 acls 授权表
-    sqlx::query("INSERT OR REPLACE INTO acls (table_name, entity_id, user_id, permission) VALUES (?, ?, ?, ?)")
-        .bind(table_name).bind(entity_id).bind(grantee_id).bind(perm)
-        .execute(&mut **tx).await?;
-
-    // 2. 获取当前实体最新快照
-    let entity = sqlx::query_as::<_, EntityRow>("SELECT * FROM entities WHERE table_name = ? AND id = ?")
-        .bind(table_name).bind(entity_id)
-        .fetch_one(&mut **tx).await?;
-
-    // 3. 核心：在 change_log 末尾追加一条全新带快照的 PUT 事件！
-    // 这保证了即便被授权者 checkpoint 已经很高，该新增事件的 seq 一定更大，下次 pull 必定能被拉取到。
-    sqlx::query(
-        "INSERT INTO change_log (table_name, entity_id, owner_id, op, data, version, created_at) \
-         VALUES (?, ?, ?, 'PUT', ?, ?, ?)"
-    )
-    .bind(table_name)
-    .bind(entity_id)
-    .bind(&entity.owner_id)
-    .bind(&entity.data)
-    .bind(entity.version)
-    .bind(chrono::Utc::now().timestamp_millis())
-    .execute(&mut **tx).await?;
-
-    Ok(())
-}
-```
+### TASK-1.4: 升级全功能 Markdown 渲染与专业编辑工具栏
+- **依赖**: TASK-1.3
+- **功能对齐**:
+  - 恢复代码高亮、行号、一键复制代码块。
+  - 恢复 LaTeX 数学公式渲染（`katex` / `latex` 支持）。
+  - 恢复 Markdown 快捷编辑工具栏（标题、加粗、斜体、引用、代码块、列表、表格、插入链接）。
+  - 恢复颜色标签（Color Tag）分类绑定与标记。
+- **工作内容**:
+  1. 整合/升级 `markdown_renderer.dart`，接入代码块高亮复制与 LaTeX 公式渲染引擎。
+  2. 在 `ModernNotesView` 的编辑模式下引入顶部/悬浮编辑工具栏，支持对光标所选文本快速包裹 Markdown 语法。
+  3. 为 Repo 和 Post 增加颜色标签挑选与徽标展示。
+- **验收标准**: 渲染器成功渲染含复杂代码与 LaTeX 公式的笔记；编辑工具栏点击即可插入对应标记。
 
 ---
 
-### 4. 客户端数据自愈与 Outbox 模式规范
+## 阶段二：待办清单 (Task) 全功能复原与交互强化
 
-#### 本地 Outbox 表结构
-```sql
-CREATE TABLE IF NOT EXISTS outbox (
-    id TEXT PRIMARY KEY,          -- 本地变更事件 UUID
-    table_name TEXT NOT NULL,
-    entity_id TEXT NOT NULL,
-    op TEXT NOT NULL,             -- 'PUT' | 'DELETE'
-    data TEXT,
-    base_version INTEGER NOT NULL DEFAULT 1,
-    created_at INTEGER NOT NULL
-);
+### TASK-2.1: 恢复任务原位就地编辑 (Inline Editing) 与防失焦机制
+- **依赖**: 阶段零
+- **功能对齐**:
+  - 允许直接点击已有任务文本进行就地编辑。
+  - 具备编辑状态锁定，防止列表在编辑途中因定时刷新或排序改变而跳动失焦。
+- **工作内容**:
+  1. 在 `ModernTaskView` 中重构任务项组件为支持展示/就地编辑双状态的 `InlineTaskTile`。
+  2. 维护 `editingTaskId` 状态；当进入编辑态时，冻结当次列表的重排渲染，直至提交或失去焦点。
+  3. 回车即保存，支持键盘快捷导航与取消。
+- **验收标准**: 点击任意任务可直接修改内容；打字时光标不失焦，保存后数据库与 UI 立即同步。
 
-CREATE TABLE IF NOT EXISTS sync_meta (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
--- 存一条 ('last_seq', '0')
-```
+### TASK-2.2: 恢复归档分段分页加载与历史管理
+- **依赖**: TASK-2.1
+- **功能对齐**:
+  - 任务归档支持保留活跃未完成任务，并将已完成任务生成历史段落（CheckList Segment）。
+  - 归档列表支持分页加载更多（`Load more history`）。
+  - 支持单段历史独立展开/折叠，支持单段历史一键删除（带二次确认）。
+- **工作内容**:
+  1. 在 `TaskRepository` 中完善归档历史分页查询接口 `watchArchivedSegments({int page, int pageSize})` 与 `deleteArchivedSegment(String listId)`。
+  2. 构建现代化 `TaskHistorySheet` / `TaskHistoryView`：
+     - 每个归档段展示归档时间、所含任务数。
+     - 支持展开查看每项的具体完成状态。
+     - 提供“加载更多历史”触发器与单段删除按钮。
+- **验收标准**: 多次归档后可按时间段分页查看；删除历史段时本地数据与 Outbox 同步删除。
 
-#### 升级自愈迁移逻辑伪代码 (Dart)
-```dart
-Future<void> migrateLegacyClientDataIfNeeded(Database db) async {
-  final hasMigrated = await db.rawQuery("SELECT value FROM sync_meta WHERE key = 'legacy_migrated'");
-  if (hasMigrated.isNotEmpty) return;
+### TASK-2.3: 恢复任务详情模式与活跃概览统计卡片
+- **依赖**: TASK-2.2
+- **功能对齐**:
+  - 恢复任务详情展示模式（显示任务 ID、序号、完成时间戳、更新时间戳）。
+  - 恢复工作区概览卡片（总数、已完成数、未完成数、圆形/条形完成率进度）。
+- **工作内容**:
+  1. 在顶栏增加“详情模式”切换按钮，开启后各任务条目展示细粒度元数据。
+  2. 在工作区顶部实现响应式 `TaskOverviewCard`，展示当前活跃清单的完成率与数量统计。
+- **验收标准**: 勾选任务时概览卡片进度条与百分比平滑更新；详情模式可正确显示各项完成时间。
 
-  await db.transaction((txn) async {
-    // 遍历所有老业务表 (例如 notes, posts, tasks, trackers 等)
-    for (final table in ['c_repo', 'c_post', 'c_comment', 'c_task', 'c_tracker']) {
-      final rows = await txn.rawQuery("SELECT * FROM $table WHERE sync_status IN ('pending', 'failed')");
-      for (final row in rows) {
-        await txn.insert('outbox', {
-          'id': const Uuid().v4(),
-          'table_name': table.replaceFirst('c_', ''),
-          'entity_id': row['id'],
-          'op': 'PUT',
-          'data': row['body'],
-          'base_version': 1,
-          'created_at': DateTime.now().millisecondsSinceEpoch,
-        });
-      }
-    }
-    await txn.insert('sync_meta', {'key': 'last_seq', 'value': '0'});
-    await txn.insert('sync_meta', {'key': 'legacy_migrated', 'value': 'true'});
-  });
-}
-```
+### TASK-2.4: 重新对接系统桌面小部件 (HomeWidget Bridge)
+- **依赖**: TASK-2.3
+- **功能对齐**:
+  - 数据变动时自动刷新 Android/iOS 桌面小部件的展示数据。
+- **工作内容**:
+  1. 梳理原 `TaskWidgetController` 与平台原生 `HomeWidget` 的通道接口。
+  2. 在 `TaskRepository` 每次发生写入时，通过事件通知或监听触发桌面小部件数据更新。
+  3. 在设置中保留“添加到桌面小部件”的系统引导。
+- **验收标准**: 在 App 内新增/完成任务后，桌面小部件能够同步更新。
 
 ---
 
-### 5. 旧版本兼容与割接路由规范
+## 阶段三：目标与指标追踪 (Tracker) 真实计算与多维展现
 
-新 Rust 服务端路由组织规范：
+### TASK-3.1: 彻底切除 Mock 并恢复 Milestone 真实统计计算
+- **依赖**: 阶段零
+- **功能对齐**:
+  - 移除 `value: 0.35` 等一切硬编码伪代码。
+  - 真正按 `goalType`（时长 hours/minutes 或数值 Number）与 `progressMode`（累计 Accumulate 或最新值 Latest Value）聚合全部关联记录计算真实进度。
+- **工作内容**:
+  1. 在 `TrackerRepository` 中完善对记录表按 `tracker_id` 的关联聚合查询。
+  2. 编写精确计算引擎：
+     - `Accumulate`：遍历所有 records 求和 `value`。
+     - `Latest Value`：取按时间戳倒序最新一条记录的 `value`。
+     - 根据 `targetValue` 计算精确完成比例（0.0 ~ 1.0+）。
+  3. UI 进度条绑定真实计算值，并展示“当前值 / 目标值”。
+- **验收标准**: 单元测试覆盖累计与最新值模式；新增记录后进度条与数值即时按真实数据推进。
 
-```rust
-pub fn create_app_router() -> Router {
-    Router::new()
-        // 1. 公开的 App 更新通道（与老客户端完全一致，保证老 App 能检测更新并下载）
-        .push(Router::with_path("fs/public/{app}/version").get(handlers::app_version))
-        .push(Router::with_path("fs/public/{app}/CHANGELOG").get(handlers::app_changelog))
-        .push(Router::with_path("fs/public/{app}/download").get(handlers::app_download))
+### TASK-3.2: 恢复 Event 周期倒计时与红绿渐变超时报警
+- **依赖**: TASK-3.1
+- **功能对齐**:
+  - 根据最近一次记录时间计算“距今已过天数”。
+  - 周期天数大于 0 时，显示剩余天数与动态渐变进度条（安全绿 -> 临近黄 -> 超时红）。
+  - 超时时醒目提示逾期天数。
+- **工作内容**:
+  1. 查询该 Tracker 最近一条记录的发生时间戳。
+  2. 动态计算 `passedDays = now.difference(lastTime).inDays` 与剩余进度。
+  3. 实现颜色插值算法：`Color.lerp(Colors.green, Colors.red, progress)`，并在 UI 渲染状态指示器。
+- **验收标准**: 无记录时显示“从未记录”；有记录时准确显示“X 天前”与剩余周期；超时时显示红色警报。
 
-        // 2. 新一代日志流同步接口
-        .push(
-            Router::with_path("sync/v1")
-                .hoop(auth_middleware)
-                .push(Router::with_path("push").post(handlers::sync_push))
-                .push(Router::with_path("pull").get(handlers::sync_pull))
-                .push(Router::with_path("acl/grant").post(handlers::acl_grant))
-                .push(Router::with_path("acl/revoke").post(handlers::acl_revoke))
-        )
+### TASK-3.3: 恢复 Anniversary 节点推算与 Markdown 心情撰写
+- **依赖**: TASK-3.1
+- **功能对齐**:
+  - 计算距基准日天数，支持每年重复、每 100 天节点提醒、T 计时。
+  - 自动推算下一个节点（例如“下一个节点: 500 天，还有 12 天”）。
+  - 支持在添加纪念日记录时撰写 Markdown 内容并实时预览。
+- **工作内容**:
+  1. 在 `TrackerCalculator` 中实现每年/百天节点的周期推算算法。
+  2. 在纪念日记录对话框中集成 Markdown 撰写与实时预览 Tab 切换。
+  3. 卡片中醒目呈现下一个重要纪念节点的倒计时。
+- **验收标准**: 基准日推算出的下个百天与周年天数完全准确；纪念日记录支持图文富文本展示。
 
-        // 3. 针对旧客户端同步接口的统一优雅拦截 (返回 426)
-        .push(Router::with_path("data/{**rest}").get(deprecated_handler).post(deprecated_handler).delete(deprecated_handler))
-        .push(Router::with_path("batch-data/{**rest}").post(deprecated_handler))
-}
+### TASK-3.4: 恢复快捷录入、手势、历史明细流水与 Bento 矩阵排版
+- **依赖**: TASK-3.2, TASK-3.3
+- **功能对齐**:
+  - 恢复快捷时长按钮（15m, 30m, 1h）。
+  - 恢复双击卡片快速打卡手势。
+  - 恢复“查看历史流水明细”、“编辑历史记录”、“编辑已有追踪器”。
+  - 恢复响应式自适应 Bento 分类多列矩阵网格布局。
+- **工作内容**:
+  1. 在记录录入面板中增加快捷时长胶囊按钮。
+  2. 卡片支持双击即触发快捷打卡并伴随触感反馈。
+  3. 实现追踪器详情页/侧滑板：列出历史全部 records 流水，支持单条记录的编辑与删除。
+  4. 实现追踪器本身配置的编辑对话框（修改名称、周期、目标值等）。
+  5. 采用响应式网格布局，大屏自适应多列卡片排版。
+- **验收标准**: 双击即快速打卡；可查阅并修改历史打卡流水；大屏端呈现整齐的自适应网格。
 
-async fn deprecated_handler(res: &mut Response) {
-    res.status_code(StatusCode::UPGRADE_REQUIRED);
-    res.render(Json(serde_json::json!({
-        "code": "CLIENT_UPGRADE_REQUIRED",
-        "message": "当前客户端同步协议已废弃，请升级到最新应用版本。"
-    })));
-}
-```
+---
+
+## 阶段四：习惯打卡 (Checkin) 过滤、备注与多维统计复原
+
+### TASK-4.1: 恢复事件横向过滤栏 (EventListBar) 与月度统计
+- **依赖**: 阶段零
+- **功能对齐**:
+  - 日历上方提供横向滚动的事件标签栏，支持单选/多选/全选事件过滤日历点。
+  - 每个事件标签显示“本月完成 X 次”动态统计数据。
+- **工作内容**:
+  1. 在 `CheckinRepository` 中增加当月打卡记录汇总接口 `getMonthlyCheckinCounts(year, month)`。
+  2. 实现响应式 `EventFilterBar` 组件：
+     - 支持勾选/取消勾选不同事件。
+     - 徽标动态展示当月完成次数。
+  3. 日历视图只渲染当前选中事件的打卡点。
+- **验收标准**: 切换过滤项后日历打卡点即时联动；当月打卡次数随打卡动作即时增加。
+
+### TASK-4.2: 恢复专属多色日历点与打卡文字备注 (Note)
+- **依赖**: TASK-4.1
+- **功能对齐**:
+  - 日历单元格按照事件自定义的专属色彩渲染对应彩点（同一天多个事件打卡则展示多个不同颜色的彩点）。
+  - 每次打卡支持添加与修改文字备注 (Note)，可微调记录发生的具体时间。
+- **工作内容**:
+  1. 升级日历的 `markerBuilder`，根据当天打卡的不同事件提取其 `colorValue` 渲染多色彩点阵列。
+  2. 在打卡操作面板中增加备注输入框（如“今日跑步 5 公里，状态良好”）与时间选择器。
+  3. 打卡记录卡片展示备注文字并提供编辑按钮。
+- **验收标准**: 日历中不同事件呈现各自真实颜色；打卡记录完整持久化备注信息并可重新编辑。
+
+### TASK-4.3: 恢复防误触二次确认与核心业务校验规则
+- **依赖**: TASK-4.2
+- **功能对齐**:
+  - 撤销打卡时弹出确认对话框（`Undo check-in for @name?`），杜绝误触。
+  - 严格校验：禁止补打事件创建日期之前的历史日期；禁止预打未来日期。
+- **工作内容**:
+  1. 在点击已打卡项时触发确认 Dialog，只有用户明确确认后才执行 `undoCheckin`。
+  2. 校验逻辑下沉至 `CheckinRepository`：若选中日期早于 `event.createdAt` 的本地日，阻止提交并弹出友好的防呆提示。
+- **验收标准**: 尝试补打创建前日期被安全拦截；撤销打卡必须二次确认，点取消不影响数据。
+
+### TASK-4.4: 完善事件管理（编辑/颜色挑选/级联删除）与桌面插件
+- **依赖**: TASK-4.3
+- **功能对齐**:
+  - 支持修改已有事件的名称、描述与专属颜色。
+  - 支持删除事件（级联清理所有历史打卡记录并弹出危险警告二次确认）。
+  - 对接 Android 桌面打卡组件。
+- **工作内容**:
+  1. 构建 `EditCheckinEventDialog`，集成颜色挑选器与表单校验。
+  2. 在 `CheckinRepository` 中实现级联删除事务：同一事务内删除事件及所有关联 records，并在 Outbox 记录对应的 DELETE 事件。
+  3. 对接 `CheckinWidgetBridge` 保持桌面打卡小部件数据新鲜。
+- **验收标准**: 修改事件颜色后日历点颜色同步改变；删除事件后关联打卡记录彻底清理。
+
+---
+
+## 阶段五：剪贴板历史 (Clipboard) 分组管理与系统集成
+
+### TASK-5.1: 恢复按日期自动分组与按天折叠/展开
+- **依赖**: 阶段零
+- **功能对齐**:
+  - 自动按“今天”、“昨天”以及具体日期分组展示剪贴板记录。
+  - 每个日期分组头部支持独立展开/折叠。
+- **工作内容**:
+  1. 在 `filteredClipboardEntriesProvider` 输出结果后按 `capturedAt` 的本地日期进行聚合分组。
+  2. 构建 `ClipboardDateGroupView`：
+     - 分组头部展示日期名称（如“今天”、“昨天”、“2026-10-10”）与记录数量。
+     - 支持点击折叠/展开当前日期列表。
+- **验收标准**: 剪贴板历史呈现清晰的日期层级；折叠某天后其下方条目平滑收起。
+
+### TASK-5.2: 恢复多选模式与批量云端同步/批量删除
+- **依赖**: TASK-5.1
+- **功能对齐**:
+  - 支持进入多选模式：勾选单条、一键全选当天、一键取消当天。
+  - 底部操作栏提供**“批量备份上云”**（跳过已同步项，失败项保留选中以供重试）与**“批量删除”**。
+- **工作内容**:
+  1. 引入 `selectedClipboardIdsProvider` 状态集。
+  2. 在每个分组头部提供“全选当天”快捷按钮。
+  3. 底部悬浮/常驻批量操作栏，展示当前已选数量、提供批量同步与批量删除按钮。
+  4. 在 `ClipboardRepository` 中实现批量更新与批量入队 Outbox 事务。
+- **验收标准**: 点击“全选当天”后当天所有条目被勾选；点击“批量备份上云”后所选本地条目批量转为同步态。
+
+### TASK-5.3: 恢复卡片原位就地编辑与统计概览卡片
+- **依赖**: TASK-5.2
+- **功能对齐**:
+  - 点击卡片文本可原位修改内容并保存。
+  - 顶部展示剪贴板统计概览卡片（总数、仅本地未同步数、已同步数）。
+- **工作内容**:
+  1. 实现剪贴板条目的编辑对话框或原位编辑态，保存后更新本地 DB 与变更队列。
+  2. 在列表顶部构建现代 `ClipboardOverviewCard`，展示三项核心数据计数。
+- **验收标准**: 原地修改文本后保存成功，再次复制出的是修改后的最新文本；概览卡片计数准确。
+
+### TASK-5.4: 重新打通桌面平台后台监听与系统托盘驻留
+- **依赖**: TASK-5.3
+- **功能对齐**:
+  - Windows/macOS 平台支持托盘驻留与后台剪贴板监听开关。
+- **工作内容**:
+  1. 梳理桌面系统级依赖，重构剪贴板监听守护逻辑。
+  2. 在设置中提供“启用后台剪贴板监听”开关，受开关控制是否在后台捕获系统剪贴板。
+- **验收标准**: 开启开关后复制系统文本可在 App 内自动新增记录；关闭后不再捕获。
+
+---
+
+## 阶段六：全局外壳、系统设置与权限中心 (Shell & Settings)
+
+### TASK-6.1: 恢复多语言国际化支持 (i18n)
+- **依赖**: 阶段零
+- **功能对齐**:
+  - 恢复中英文双语实时无缝切换。
+  - 消除 `Modern*View` 中的硬编码中文，全部抽离为规范翻译键。
+- **工作内容**:
+  1. 规范 `lib/utils/translation.dart`，补齐所有新旧视图的翻译词条。
+  2. 在设置中心增加“语言切换”选择器（跟随系统 / 中文 / 英文）。
+  3. 确保切换语言时全局界面即时生效。
+- **验收标准**: 切换英文后，导航栏、设置、待办、打卡等全部文案瞬间切为规范英文。
+
+### TASK-6.2: 恢复服务器配置与网络实时 Ping 测速
+- **依赖**: TASK-6.1
+- **功能对齐**:
+  - 支持自定义 SyncStore Base URL，并保存输入历史记录。
+  - 支持网络延迟实时 Ping 测速，并在界面显示 ms 毫秒数。
+  - 支持一键重置默认服务器地址。
+- **工作内容**:
+  1. 在 `SettingsProvider` 中纳入 `syncStoreUrl` 与 URL 历史记录持久化。
+  2. 移植/重构 `PingLatencyInline` 组件，向配置的 Base URL 发送探测请求并计算往返时延。
+  3. 设置页提供地址输入框、重置默认按钮与测速指示器。
+- **验收标准**: 输入新服务器地址可成功保存；点击测速能够真实显示网络延迟或离线提示。
+
+### TASK-6.3: 恢复默认启动页配置与桌面插件添加中心
+- **依赖**: TASK-6.2
+- **功能对齐**:
+  - 允许用户指定打开 App 默认展示哪个功能模块（待办、打卡、笔记、追踪、剪贴板等）。
+  - 设置中心提供添加待办桌面插件与打卡桌面插件的指引和快捷操作。
+- **工作内容**:
+  1. 在设置中增加“启动页面”下拉选择，保存至本地配置；App 启动时按此设置激活默认 Tab。
+  2. 提供“添加桌面小部件”交互卡片，触发系统小部件添加请求及图文帮助提示。
+- **验收标准**: 修改默认启动页为“待办”后，冷启动 App 直接进入待办页面。
+
+### TASK-6.4: 恢复软件在线检测更新与移动端手势导航升级
+- **依赖**: TASK-6.3
+- **功能对齐**:
+  - 恢复软件启动时自动检查更新与手动点击检查更新，支持下载新版本。
+  - 融合老版本的 `pie_menu` 交互理念，升级移动端底部导航栏手势。
+- **工作内容**:
+  1. 对接服务端的 `/fs/public/{app}/version` 静态服务，实现检查更新与更新弹窗。
+  2. 为移动端导航栏引入长按手势与快速轮转机制，提升单手操作效率。
+- **验收标准**: 点击“检查更新”能正常拉取版本号对比；移动端手势导航顺滑自然。
+
+---
+
+## 阶段七：AI 对话助手 (Chat) 真实客户端重塑与多助手体系
+
+### TASK-7.1: 彻底切除 Mock 并接入真实 LLM 流式通信引擎
+- **依赖**: 阶段零
+- **功能对齐**:
+  - 彻底删除 `Future.delayed(600ms)` 等假数据代码。
+  - 接入 `deepseek_client` 或标准 OpenAI 兼容协议，支持真流式生成（SSE / Stream）。
+  - 支持生成打断 (Cancel) 与最后一轮生成失败一键重试 (Retry)。
+- **工作内容**:
+  1. 在 `client/chat/` 下建立健壮的 LLM 通信客户端，封装基于 Dio / HTTP 的流式请求管道。
+  2. 在 `ChatRepository` 中实现真实流式下发：逐 chunk 追加流式内容到响应式流中，完成后持久化完整回复。
+  3. 支持取消当前流并标记消息为 `cancelled`；最后一条失败/取消消息提供“重试”按钮。
+- **验收标准**: 发送消息后，AI 气泡逐字真实流式吐出；点击“停止”可立即打断；断网报错后点击“重试”可再次发起。
+
+### TASK-7.2: 重建完整的多助手体系 (Assistants System)
+- **依赖**: TASK-7.1
+- **功能对齐**:
+  - 区分**系统内置模板助手**与**用户自定义助手**。
+  - 支持新建助手、复制助手副本、编辑提示词、删除自定义助手。
+  - 助手级别支持独立配置：名称、描述、System Prompt、模型覆盖配置（覆盖 Provider、Base URL、Model、Temperature、Thinking 开关、Reasoning Effort 强度）。
+- **工作内容**:
+  1. 完善 `ChatAssistant` 模型在本地数据库的 CRUD 仓储接口。
+  2. 构建 `AssistantManagementView` / `AssistantPickerSheet`：
+     - 展示“我的助手”与“推荐模板”。
+     - 提供助手编辑表单（系统提示词、温度、思维链等）。
+     - 支持复制已有助手为新副本。
+  3. 创建会话时支持选择绑定的助手，会话将继承该助手的专属提示词与配置。
+- **验收标准**: 用户可创建带有专属 Prompt 的自定义助手并开启新会话，AI 会话严格遵循该助手的设定。
+
+### TASK-7.3: 重建模型配置中心与动态模型列表拉取
+- **依赖**: TASK-7.2
+- **功能对齐**:
+  - 支持全局配置 Provider、Base URL、API Key、默认模型、默认温度。
+  - 支持动态请求模型接口（`GET /models`）拉取服务商支持的全部模型列表，并提供下拉选择。
+- **工作内容**:
+  1. 在设置中心和对话页面嵌入 `ChatLlmSettingsSheet` / `ChatLlmSettingsCard`。
+  2. 实现“更新模型可选项”功能：通过用户填写的 Base URL 和 API Key 发起网络探测，将返回的模型 ID 列表填入下拉框供用户选择。
+  3. 支持恢复默认配置与表单校验。
+- **验收标准**: 填写有效的 API Key 后点击“拉取模型”，下拉框成功列出服务商的所有可用模型并可选取。
+
+### TASK-7.4: 升级深度思维链折叠气泡与 Token 消耗统计
+- **依赖**: TASK-7.3
+- **功能对齐**:
+  - 针对 DeepSeek-R1 等推理模型，完善思考过程 (Reasoning Process) 的手风琴折叠展开与耗时展示。
+  - 统计并展示每轮对话消耗的 Token 数量。
+- **工作内容**:
+  1. 优化流式解析器，分离 `<think>` 标签或专用 reasoning 字段与正文内容。
+  2. 思考中状态展示流式转动动画，完成后自动折叠或保持展开，展示思考用时。
+  3. 气泡底部展示消息状态（流式中、已完成、失败、已取消）及 Token 数量。
+- **验收标准**: 对话 DeepSeek-R1 时，思考过程与正式回答完美隔离展示；消息状态与 Token 数精准呈现。
+
+---
+
+## 阶段验收与质量标准
+
+1. **真实在线与有效鉴权**：App 必须能通过真实的登录/注册获取 JWT 并持久化，SyncWorker 正确连接服务端完成端到端双向数据流。
+2. **零功能回退 (No Regression)**：每个阶段实施完成后，必须对比老版本功能清单，确保该模块包含的所有细节、状态与交互均无任何缺失。
+3. **零 Mock 残留 (Zero Mock Code)**：全局搜索代码库，不得存在用于演示的写死数值（如 `login.dart` 的延时 300ms、Tracker 的 `0.35` 进度、Chat 的 `Future.delayed` 假回复等）。
+4. **架构规范对齐**：全面遵守 `AGENTS.md`，状态管理严禁回潮使用 GetX，一律采用 Riverpod 2.x、Stream 及 BaseLocalFirstRepository。
+5. **编译与测试全绿**：全工程在 `app/` 目录下执行 `flutter analyze` 零警告，所有单元测试与集成测试全量通过。
