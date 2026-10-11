@@ -148,6 +148,7 @@ class CheckinRepository {
     required DateTime targetDate,
     required String currentUserId,
     String? note,
+    DateTime? recordTime,
   }) async {
     final today = DateTime.now();
     final todayKey = formatLocalDayKey(today);
@@ -169,17 +170,18 @@ class CheckinRepository {
     }
 
     final newId = UuidService.v7();
+    final actualTime = recordTime ?? DateTime.now();
     final record = CheckinRecord(
       eventId: eventId,
-      createdAtUtc: DateTime.now().toUtc(),
+      createdAtUtc: actualTime.toUtc(),
       localDayKey: targetDayKey,
-      timezoneOffsetMinutes: targetDate.timeZoneOffset.inMinutes,
+      timezoneOffsetMinutes: actualTime.timeZoneOffset.inMinutes,
       note: note,
     );
 
     final row = <String, dynamic>{
       'id': newId,
-      'created_at': DateTime.now().toIso8601String(),
+      'created_at': actualTime.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
       'owner': currentUserId,
       'parent_id': eventId,
@@ -198,6 +200,38 @@ class CheckinRepository {
     SyncWorker.instance.notifyLocalWrite();
     CheckinWidgetBridge.scheduleRefresh();
     return true;
+  }
+
+  /// 修改已有打卡记录的发生时间与备注
+  Future<void> updateRecordDetails({
+    required String recordId,
+    required DateTime recordTime,
+    String? note,
+  }) async {
+    final rows = await db.query('checkin_record', where: 'id = ?', whereArgs: [recordId]);
+    if (rows.isEmpty) return;
+    final row = rows.first;
+    final bodyStr = row['body'] as String? ?? '{}';
+    final oldRecord = CheckinRecord.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+    final updatedRecord = oldRecord.copyWith(
+      createdAtUtc: recordTime.toUtc(),
+      timezoneOffsetMinutes: recordTime.timeZoneOffset.inMinutes,
+      note: note,
+    );
+    final updatedRow = Map<String, dynamic>.from(row);
+    updatedRow['updated_at'] = DateTime.now().toIso8601String();
+    updatedRow['created_at'] = recordTime.toIso8601String();
+    updatedRow['body'] = jsonEncode(updatedRecord.toJson());
+
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'checkin_record',
+      entityId: recordId,
+      entityRow: updatedRow,
+    );
+    changeNotifier.notify('checkin_record');
+    SyncWorker.instance.notifyLocalWrite();
+    CheckinWidgetBridge.scheduleRefresh();
   }
 
   /// 撤销打卡记录

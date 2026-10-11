@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/data/repositories/checkin_repository.dart';
+import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/presentation/checkin/checkin_providers.dart';
 import 'package:xbb/presentation/checkin/event_filter_bar.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
@@ -112,19 +114,41 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                       calendarBuilders: CalendarBuilders(
                         markerBuilder: (context, date, _) {
                           final dayKey = CheckinRepository.formatLocalDayKey(date);
-                          final hasCheckin = records.any(
+                          final dayRecords = records.where(
                             (r) => r.body.localDayKey == dayKey && effectiveFilterIds.contains(r.body.eventId),
-                          );
-                          if (!hasCheckin) return null;
+                          ).toList();
+                          if (dayRecords.isEmpty) return null;
+
+                          // 提取不同打卡事件的专属颜色渲染多色彩点阵列
+                          final matchedColors = <int>[];
+                          final seenEventIds = <String>{};
+                          for (final r in dayRecords) {
+                            if (seenEventIds.add(r.body.eventId)) {
+                              for (final e in events) {
+                                if (e.id == r.body.eventId) {
+                                  matchedColors.add(e.body.colorValue);
+                                  break;
+                                }
+                              }
+                            }
+                          }
+                          if (matchedColors.isEmpty) return null;
+
                           return Positioned(
                             bottom: 4,
-                            child: Container(
-                              width: 5,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                shape: BoxShape.circle,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: matchedColors.map((colorVal) {
+                                return Container(
+                                  width: 5,
+                                  height: 5,
+                                  margin: const EdgeInsets.symmetric(horizontal: 0.8),
+                                  decoration: BoxDecoration(
+                                    color: Color(colorVal),
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           );
                         },
@@ -178,13 +202,20 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                       (context, index) {
                         final eventItem = displayedEvents[index];
                         final event = eventItem.body;
-                        final isChecked = checkedEventIds.contains(eventItem.id);
+                        final recordItem = records.cast<DataItem<CheckinRecord>?>().firstWhere(
+                              (r) => r?.body.eventId == eventItem.id && r?.body.localDayKey == selectedKey,
+                              orElse: () => null,
+                            );
+                        final isChecked = recordItem != null;
                         final color = Color(event.colorValue);
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: ModernCard(
                             selected: isChecked,
+                            onLongPress: isFuture || isChecked
+                                ? null
+                                : () => _showCheckinWithNoteDialog(context, eventItem.id, event.name),
                             onTap: isFuture
                                 ? null
                                 : () async {
@@ -202,6 +233,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                                     }
                                   },
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Container(
                                   width: 14,
@@ -229,12 +261,57 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                                             color: theme.colorScheme.onSurfaceVariant,
                                           ),
                                         ),
+                                      if (isChecked &&
+                                          recordItem.body.note != null &&
+                                          recordItem.body.note!.trim().isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 6),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: color.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.notes_rounded, size: 13, color: color),
+                                                const SizedBox(width: 4),
+                                                Flexible(
+                                                  child: Text(
+                                                    recordItem.body.note!,
+                                                    style: theme.textTheme.bodySmall?.copyWith(
+                                                      color: theme.colorScheme.onSurface,
+                                                      fontSize: 12,
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
-                                if (isChecked)
-                                  const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24)
-                                else
+                                if (isChecked) ...[
+                                  Text(
+                                    _formatTime(recordItem.body.createdAtUtc),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined, size: 18),
+                                    tooltip: '编辑打卡记录',
+                                    visualDensity: VisualDensity.compact,
+                                    onPressed: () => _showEditRecordDialog(context, recordItem, event.name),
+                                  ),
+                                  const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
+                                ] else
                                   Icon(
                                     Icons.radio_button_unchecked,
                                     color: theme.colorScheme.outlineVariant,
@@ -254,6 +331,182 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('加载失败: $e')),
+      ),
+    );
+  }
+
+  String _formatTime(DateTime utcTime) {
+    final local = utcTime.toLocal();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  void _showEditRecordDialog(
+    BuildContext context,
+    DataItem<CheckinRecord> recordItem,
+    String eventName,
+  ) {
+    DateTime recordDateTime = recordItem.body.createdAtUtc.toLocal();
+    final noteCtrl = TextEditingController(text: recordItem.body.note ?? '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final timeStr =
+              '${recordDateTime.hour.toString().padLeft(2, '0')}:${recordDateTime.minute.toString().padLeft(2, '0')}';
+          return AlertDialog(
+            title: Text('编辑记录 · $eventName'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.schedule),
+                  title: const Text('打卡时间'),
+                  trailing: OutlinedButton(
+                    onPressed: () async {
+                      final pickedTime = await showTimePicker(
+                        context: ctx,
+                        initialTime: TimeOfDay.fromDateTime(recordDateTime),
+                      );
+                      if (pickedTime != null) {
+                        setDialogState(() {
+                          recordDateTime = DateTime(
+                            recordDateTime.year,
+                            recordDateTime.month,
+                            recordDateTime.day,
+                            pickedTime.hour,
+                            pickedTime.minute,
+                          );
+                        });
+                      }
+                    },
+                    child: Text(timeStr),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '打卡备注',
+                    hintText: '写点今天的感受或备注...',
+                    isDense: true,
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final text = noteCtrl.text.trim();
+                  await ref.read(checkinRepositoryProvider).updateRecordDetails(
+                        recordId: recordItem.id,
+                        recordTime: recordDateTime,
+                        note: text.isEmpty ? null : text,
+                      );
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                },
+                child: const Text('保存'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showCheckinWithNoteDialog(
+    BuildContext context,
+    String eventId,
+    String eventName,
+  ) {
+    DateTime recordDateTime = DateTime.now();
+    final noteCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final timeStr =
+              '${recordDateTime.hour.toString().padLeft(2, '0')}:${recordDateTime.minute.toString().padLeft(2, '0')}';
+          return AlertDialog(
+            title: Text('打卡 · $eventName'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.schedule),
+                  title: const Text('记录时间'),
+                  trailing: OutlinedButton(
+                    onPressed: () async {
+                      final pickedTime = await showTimePicker(
+                        context: ctx,
+                        initialTime: TimeOfDay.fromDateTime(recordDateTime),
+                      );
+                      if (pickedTime != null) {
+                        setDialogState(() {
+                          recordDateTime = DateTime(
+                            _selectedDay.year,
+                            _selectedDay.month,
+                            _selectedDay.day,
+                            pickedTime.hour,
+                            pickedTime.minute,
+                          );
+                        });
+                      }
+                    },
+                    child: Text(timeStr),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: const InputDecoration(
+                    labelText: '文字备注 (可选)',
+                    hintText: '今日跑步 5 公里，状态良好...',
+                    isDense: true,
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final userId = ref.read(authProvider).userId;
+                  final text = noteCtrl.text.trim();
+                  await ref.read(checkinRepositoryProvider).checkin(
+                        eventId: eventId,
+                        targetDate: _selectedDay,
+                        currentUserId: userId,
+                        note: text.isEmpty ? null : text,
+                        recordTime: recordDateTime,
+                      );
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                },
+                child: const Text('打卡'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
