@@ -4,6 +4,7 @@ import 'package:markdown_widget/markdown_widget.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/presentation/notes/comment_widgets.dart';
 import 'package:xbb/presentation/notes/notes_providers.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
@@ -22,6 +23,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   final TextEditingController _contentController = TextEditingController();
   bool _isEditing = false;
   String _searchKeyword = '';
+  DataItem<Comment>? _replyToComment;
 
   @override
   void dispose() {
@@ -29,6 +31,35 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitComment(
+    String content,
+    String? parentId,
+    String postId,
+    String userId,
+  ) async {
+    final newId = UuidService.v7();
+    final now = DateTime.now();
+    final commentItem = DataItem<Comment>(
+      newId,
+      now,
+      now,
+      userId,
+      postId,
+      null,
+      body: Comment(
+        content: content,
+        postId: postId,
+        parentId: parentId,
+      ),
+      syncStatus: SyncStatus.pending,
+    );
+    await ref.read(notesRepositoryProvider).addComment(commentItem);
+  }
+
+  void _deleteComment(String commentId) {
+    ref.read(notesRepositoryProvider).deleteComment(commentId);
   }
 
   void _saveCurrentPost(DataItem<Post> post) {
@@ -248,7 +279,10 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                       ref.read(selectedPostIdProvider.notifier).state = post.id;
                       _titleController.text = post.body.title;
                       _contentController.text = post.body.content;
-                      setState(() => _isEditing = false);
+                      setState(() {
+                        _isEditing = false;
+                        _replyToComment = null;
+                      });
                     },
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,9 +393,69 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                     ),
                   ),
                 )
-              : Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: MarkdownWidget(data: post.body.content),
+              : Consumer(
+                  builder: (context, ref, _) {
+                    final commentsAsync = ref.watch(commentsStreamProvider(post.id));
+                    final userId = ref.watch(authProvider).userId;
+
+                    return ListView(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      children: [
+                        MarkdownWidget(
+                          data: post.body.content,
+                          shrinkWrap: true,
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        const Divider(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          child: Row(
+                            children: [
+                              Icon(Icons.comment_outlined, size: 18, color: theme.colorScheme.primary),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                '评论与讨论',
+                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const Spacer(),
+                              commentsAsync.maybeWhen(
+                                data: (comments) => Text(
+                                  '${comments.length} 条评论',
+                                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
+                                ),
+                                orElse: () => const SizedBox.shrink(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        commentsAsync.when(
+                          data: (comments) => CommentListWidget(
+                            postId: post.id,
+                            comments: comments,
+                            currentUserId: userId,
+                            onReply: (comment) => setState(() => _replyToComment = comment),
+                            onDelete: (commentId) => _deleteComment(commentId),
+                          ),
+                          loading: () => const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(AppSpacing.md),
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          error: (e, _) => Center(child: Text('加载评论失败: $e')),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        CommentInputWidget(
+                          replyToComment: _replyToComment,
+                          onCancelReply: () => setState(() => _replyToComment = null),
+                          onSubmit: (content, parentId) async {
+                            await _submitComment(content, parentId, post.id, userId);
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                      ],
+                    );
+                  },
                 ),
         );
       },

@@ -37,3 +37,14 @@ final currentPostStreamProvider = StreamProvider<DataItem<Post>?>((ref) {
   final postId = ref.watch(selectedPostIdProvider);
   return repo.watchPostById(postId);
 });
+
+final commentRepositoryProvider = Provider<NotesCommentRepository>((ref) {
+  final notesRepo = ref.watch(notesRepositoryProvider);
+  return NotesCommentRepository(notesRepo);
+});
+
+final commentsStreamProvider =
+    StreamProvider.family<List<DataItem<Comment>>, String>((ref, postId) {
+  final repo = ref.watch(notesRepositoryProvider);
+  return repo.watchComments(postId);
+});

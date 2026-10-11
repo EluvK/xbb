@@ -160,4 +160,82 @@ class NotesRepository {
     changeNotifier.notify('repo');
     SyncWorker.instance.notifyLocalWrite();
   }
+
+  /// 监听特定文章下的所有评论 (Comment)
+  Stream<List<DataItem<Comment>>> watchComments(String? postId) {
+    return changeNotifier.watchTable('comment').asyncMap((_) async {
+      if (postId == null || postId.isEmpty) return <DataItem<Comment>>[];
+      final rows = await db.query(
+        'comment',
+        where: 'parent_id = ?',
+        whereArgs: [postId],
+        orderBy: 'created_at ASC',
+      );
+      final now = DateTime.now();
+      return rows.map((r) {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final comment = Comment.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        return DataItem<Comment>(
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+          r['owner'] as String? ?? 'default',
+          postId,
+          null,
+          body: comment,
+          syncStatus: SyncStatus.synced,
+        );
+      }).toList();
+    });
+  }
+
+  /// 保存/发表评论 (Comment)
+  Future<void> addComment(DataItem<Comment> item) async {
+    final nowIso = DateTime.now().toIso8601String();
+    final row = <String, dynamic>{
+      'id': item.id,
+      'created_at': nowIso,
+      'updated_at': nowIso,
+      'owner': item.owner,
+      'parent_id': item.body.postId,
+      'sync_status': 'pending',
+      'color_tag': 'default',
+      'body': jsonEncode(item.body.toJson()),
+    };
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'comment',
+      entityId: item.id,
+      entityRow: row,
+    );
+    changeNotifier.notify('comment');
+    SyncWorker.instance.notifyLocalWrite();
+  }
+
+  /// 删除评论 (Comment)
+  Future<void> deleteComment(String id) async {
+    await LocalFirstDB.persistDeleteRaw(
+      db: db,
+      tableName: 'comment',
+      entityId: id,
+    );
+    changeNotifier.notify('comment');
+    SyncWorker.instance.notifyLocalWrite();
+  }
+}
+
+/// 独立的评论仓储抽象，便于特定模块注入与解耦
+class NotesCommentRepository {
+  final NotesRepository _notesRepo;
+
+  NotesCommentRepository(this._notesRepo);
+
+  Stream<List<DataItem<Comment>>> watchComments(String? postId) =>
+      _notesRepo.watchComments(postId);
+
+  Future<void> addComment(DataItem<Comment> item) =>
+      _notesRepo.addComment(item);
+
+  Future<void> deleteComment(String id) =>
+      _notesRepo.deleteComment(id);
 }
