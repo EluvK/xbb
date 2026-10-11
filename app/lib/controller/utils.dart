@@ -1,4 +1,6 @@
+import 'package:xbb/core/update/app_update_service.dart';
+
 /// 检查更新辅助
 Future<void> checkUpdate({bool forceCheck = false}) async {
-  // 现代架构下通过服务端 /fs/public/xbb/version 检查
+  await AppUpdateService.check();
 }

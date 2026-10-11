@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pie_menu/pie_menu.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/chat/modern_chat_view.dart';
@@ -71,7 +72,7 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 800;
 
-    return Scaffold(
+    final shellScaffold = Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: isDesktop
           ? Row(
@@ -212,22 +213,46 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
             ),
       bottomNavigationBar: isDesktop
           ? null
-          : NavigationBar(
-              selectedIndex: tabs.indexOf(_currentTab).clamp(0, tabs.length - 1),
-              onDestinationSelected: (idx) {
-                if (idx >= 0 && idx < tabs.length) {
-                  setState(() => _currentTab = tabs[idx]);
-                }
-              },
-              destinations: [
+          : PieMenu(
+              theme: PieTheme(
+                overlayColor: Colors.black38,
+                pointerColor: theme.colorScheme.primary.withAlpha(120),
+                buttonTheme: PieButtonTheme(
+                  backgroundColor: theme.colorScheme.surface,
+                  iconColor: theme.colorScheme.onSurface,
+                ),
+                buttonThemeHovered: PieButtonTheme(
+                  backgroundColor: theme.colorScheme.primary,
+                  iconColor: Colors.white,
+                ),
+              ),
+              actions: [
                 for (final tab in tabs)
-                  NavigationDestination(
-                    icon: Icon(_getIconForTab(tab)),
-                    label: _getTitleForTab(tab),
+                  PieAction(
+                    tooltip: Text(_getTitleForTab(tab)),
+                    onSelect: () => setState(() => _currentTab = tab),
+                    child: Icon(_getIconForTab(tab)),
                   ),
               ],
+              child: NavigationBar(
+                selectedIndex: tabs.indexOf(_currentTab).clamp(0, tabs.length - 1),
+                onDestinationSelected: (idx) {
+                  if (idx >= 0 && idx < tabs.length) {
+                    setState(() => _currentTab = tabs[idx]);
+                  }
+                },
+                destinations: [
+                  for (final tab in tabs)
+                    NavigationDestination(
+                      icon: Icon(_getIconForTab(tab)),
+                      label: _getTitleForTab(tab),
+                    ),
+                ],
+              ),
             ),
     );
+
+    return isDesktop ? shellScaffold : PieCanvas(child: shellScaffold);
   }
 
   Widget _buildCurrentTabView() {

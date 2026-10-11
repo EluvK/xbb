@@ -6,6 +6,7 @@ import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/core/theme/tokens.dart';
+import 'package:xbb/core/update/app_update_service.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/server_health_provider.dart';
 import 'package:xbb/presentation/providers/settings_provider.dart';
@@ -382,6 +383,10 @@ class ModernSettingsView extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+
+          // 版本信息与软件在线更新 (TASK-6.4)
+          const _AppVersionUpdateCard(),
         ],
       ),
     );
@@ -570,6 +575,76 @@ class _SyncStoreServerCardState extends ConsumerState<_SyncStoreServerCard> {
                 icon: const Icon(Icons.restart_alt, size: 16),
                 label: Text('syncstore_server_reset'.tr),
                 onPressed: _handleReset,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 版本信息与软件在线更新卡片 (TASK-6.4)
+class _AppVersionUpdateCard extends ConsumerWidget {
+  const _AppVersionUpdateCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final updateState = ref.watch(appUpdateProvider);
+    final hasUpdate = updateState.info?.hasUpdate ?? false;
+
+    return ModernCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'app_version_card_title'.tr,
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              ModernBadge(
+                label: 'v${AppUpdateService.currentVersion}',
+                color: hasUpdate ? Colors.orange : Colors.green,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            hasUpdate ? 'new_version_available'.tr : 'already_latest_version'.tr,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                icon: updateState.isChecking
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.system_update_alt_rounded, size: 16),
+                label: Text(
+                  updateState.isChecking
+                      ? 'checking_update'.tr
+                      : (hasUpdate ? 'download_update_btn'.tr : 'check_update'.tr),
+                ),
+                onPressed: updateState.isChecking
+                    ? null
+                    : () {
+                        if (hasUpdate && updateState.info != null) {
+                          AppUpdateService.showUpdateDialog(context, updateState.info!);
+                        } else {
+                          ref.read(appUpdateProvider.notifier).checkUpdate(
+                            context: context,
+                            isManual: true,
+                          );
+                        }
+                      },
               ),
             ],
           ),

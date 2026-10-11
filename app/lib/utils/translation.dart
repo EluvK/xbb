@@ -56,6 +56,42 @@ class _TranslationHelper {
     },
 
     // --- Components: Common & Settings (通用与设置) ---
+    "app_version_card_title": {
+      "en_US": "Version & Updates",
+      "zh_CN": "版本信息与软件更新",
+    },
+    "current_version_label": {
+      "en_US": "Current Version: @version",
+      "zh_CN": "当前版本：@version",
+    },
+    "latest_version_label": {
+      "en_US": "Latest Version: @version",
+      "zh_CN": "最新版本：@version",
+    },
+    "new_version_available": {
+      "en_US": "New Version Available",
+      "zh_CN": "发现新版本",
+    },
+    "already_latest_version": {
+      "en_US": "You are on the latest version.",
+      "zh_CN": "当前已是最新版本，无需更新。",
+    },
+    "checking_update": {
+      "en_US": "Checking for updates...",
+      "zh_CN": "正在检查更新...",
+    },
+    "update_dialog_title": {
+      "en_US": "Update to @version",
+      "zh_CN": "发现新版本 @version",
+    },
+    "download_update_btn": {
+      "en_US": "Download Update",
+      "zh_CN": "立即下载更新",
+    },
+    "remind_later": {
+      "en_US": "Later",
+      "zh_CN": "稍后再说",
+    },
     "syncstore_server_title": {
       "en_US": "SyncStore Server",
       "zh_CN": "SyncStore 同步服务器",
