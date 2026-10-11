@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/data/repositories/checkin_repository.dart';
 import 'package:xbb/presentation/checkin/checkin_providers.dart';
+import 'package:xbb/presentation/checkin/event_filter_bar.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
@@ -23,6 +24,9 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
     final theme = Theme.of(context);
     final eventsAsync = ref.watch(checkinEventsStreamProvider);
     final recordsAsync = ref.watch(checkinRecordsStreamProvider);
+    final monthlyCounts = ref.watch(checkinMonthlyCountsStreamProvider).value ?? {};
+    final selectedFilterIds = ref.watch(checkinFilteredEventIdsProvider);
+    final effectiveFilterIds = ref.watch(effectiveFilteredEventIdsProvider);
     final userId = ref.watch(authProvider).userId;
 
     final selectedKey = CheckinRepository.formatLocalDayKey(_selectedDay);
@@ -52,9 +56,25 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
               .where((r) => r.body.localDayKey == selectedKey)
               .map((r) => r.body.eventId)
               .toSet();
+          final displayedEvents = events.where((e) => effectiveFilterIds.contains(e.id)).toList();
 
           return CustomScrollView(
             slivers: [
+              // 顶部事件横向过滤栏 (EventFilterBar)
+              if (events.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    child: EventFilterBar(
+                      events: events,
+                      monthlyCounts: monthlyCounts,
+                      selectedEventIds: selectedFilterIds,
+                      onFilterChanged: (newSet) {
+                        ref.read(checkinFilteredEventIdsProvider.notifier).state = newSet;
+                      },
+                    ),
+                  ),
+                ),
               // 顶部现代日历卡片
               SliverToBoxAdapter(
                 child: Padding(
@@ -81,11 +101,20 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                           _selectedDay = selectedDay;
                           _focusedDay = focusedDay;
                         });
+                        ref.read(checkinFocusedDayProvider.notifier).state = focusedDay;
+                      },
+                      onPageChanged: (focusedDay) {
+                        setState(() {
+                          _focusedDay = focusedDay;
+                        });
+                        ref.read(checkinFocusedDayProvider.notifier).state = focusedDay;
                       },
                       calendarBuilders: CalendarBuilders(
                         markerBuilder: (context, date, _) {
                           final dayKey = CheckinRepository.formatLocalDayKey(date);
-                          final hasCheckin = records.any((r) => r.body.localDayKey == dayKey);
+                          final hasCheckin = records.any(
+                            (r) => r.body.localDayKey == dayKey && effectiveFilterIds.contains(r.body.eventId),
+                          );
                           if (!hasCheckin) return null;
                           return Positioned(
                             bottom: 4,
@@ -147,7 +176,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final eventItem = events[index];
+                        final eventItem = displayedEvents[index];
                         final event = eventItem.body;
                         final isChecked = checkedEventIds.contains(eventItem.id);
                         final color = Color(event.colorValue);
@@ -216,7 +245,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                           ),
                         );
                       },
-                      childCount: events.length,
+                      childCount: displayedEvents.length,
                     ),
                   ),
                 ),

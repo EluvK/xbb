@@ -4,6 +4,8 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/models/checkin/model.dart';
+import 'package:xbb/sync/v2/local_first_db.dart';
+import 'package:xbb/sync/v2/sync_worker.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 
 class CheckinRepository {
@@ -67,6 +69,37 @@ class CheckinRepository {
     });
   }
 
+  /// 查询指定年月的打卡记录统计（每个事件完成次数）
+  Future<Map<String, int>> getMonthlyCheckinCounts(int year, int month) async {
+    final monthPrefix = '$year-${month.toString().padLeft(2, '0')}';
+    final rows = await db.query(
+      'checkin_record',
+      columns: ['parent_id', 'body'],
+      where: "body LIKE ?",
+      whereArgs: ['%"local_day_key":"$monthPrefix%'],
+    );
+    final counts = <String, int>{};
+    for (final r in rows) {
+      String? eventId = r['parent_id'] as String?;
+      if (eventId == null || eventId.isEmpty) {
+        try {
+          final bodyStr = r['body'] as String? ?? '{}';
+          final map = jsonDecode(bodyStr) as Map<String, dynamic>;
+          eventId = map['event_id'] as String?;
+        } catch (_) {}
+      }
+      if (eventId != null && eventId.isNotEmpty) {
+        counts[eventId] = (counts[eventId] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  /// 响应式监听指定年月的打卡统计
+  Stream<Map<String, int>> watchMonthlyCheckinCounts(int year, int month) {
+    return changeNotifier.watchTable('checkin_record').asyncMap((_) => getMonthlyCheckinCounts(year, month));
+  }
+
   /// 创建打卡事件
   Future<void> createEvent({
     required String name,
@@ -86,15 +119,26 @@ class CheckinRepository {
       'color_tag': 'default',
       'body': jsonEncode(event.toJson()),
     };
-    await db.insert('checkin_event', row, conflictAlgorithm: ConflictAlgorithm.replace);
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'checkin_event',
+      entityId: newId,
+      entityRow: row,
+    );
     changeNotifier.notify('checkin_event');
+    SyncWorker.instance.notifyLocalWrite();
     CheckinWidgetBridge.scheduleRefresh();
   }
 
   /// 删除打卡事件
   Future<void> deleteEvent(String id) async {
-    await db.delete('checkin_event', where: 'id = ?', whereArgs: [id]);
+    await LocalFirstDB.persistDeleteRaw(
+      db: db,
+      tableName: 'checkin_event',
+      entityId: id,
+    );
     changeNotifier.notify('checkin_event');
+    SyncWorker.instance.notifyLocalWrite();
     CheckinWidgetBridge.scheduleRefresh();
   }
 
@@ -144,8 +188,14 @@ class CheckinRepository {
       'body': jsonEncode(record.toJson()),
     };
 
-    await db.insert('checkin_record', row, conflictAlgorithm: ConflictAlgorithm.replace);
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'checkin_record',
+      entityId: newId,
+      entityRow: row,
+    );
     changeNotifier.notify('checkin_record');
+    SyncWorker.instance.notifyLocalWrite();
     CheckinWidgetBridge.scheduleRefresh();
     return true;
   }
@@ -161,9 +211,15 @@ class CheckinRepository {
       whereArgs: ['%"event_id":"$eventId"%"local_day_key":"$dayKey"%'],
     );
     for (final r in existing) {
-      await db.delete('checkin_record', where: 'id = ?', whereArgs: [r['id']]);
+      final id = r['id'] as String;
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: 'checkin_record',
+        entityId: id,
+      );
     }
     changeNotifier.notify('checkin_record');
+    SyncWorker.instance.notifyLocalWrite();
     CheckinWidgetBridge.scheduleRefresh();
   }
 }
