@@ -212,15 +212,17 @@ class NotesRepository {
 
   /// 更新笔记本的颜色标签
   Future<void> updateRepoColorTag(String repoId, ColorTag colorTag) async {
+    final rows = await db.query('repo', where: 'id = ?', whereArgs: [repoId]);
+    if (rows.isEmpty) return;
+    final row = Map<String, dynamic>.from(rows.first);
     final nowIso = DateTime.now().toIso8601String();
-    await db.update(
-      'repo',
-      {
-        'color_tag': colorTag != ColorTag.none ? colorTag.name : 'default',
-        'updated_at': nowIso,
-      },
-      where: 'id = ?',
-      whereArgs: [repoId],
+    row['color_tag'] = colorTag != ColorTag.none ? colorTag.name : 'default';
+    row['updated_at'] = nowIso;
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'repo',
+      entityId: repoId,
+      entityRow: row,
     );
     changeNotifier.notify('repo');
     SyncWorker.instance.notifyLocalWrite();
@@ -228,15 +230,17 @@ class NotesRepository {
 
   /// 更新文章的颜色标签
   Future<void> updatePostColorTag(String postId, ColorTag colorTag) async {
+    final rows = await db.query('post', where: 'id = ?', whereArgs: [postId]);
+    if (rows.isEmpty) return;
+    final row = Map<String, dynamic>.from(rows.first);
     final nowIso = DateTime.now().toIso8601String();
-    await db.update(
-      'post',
-      {
-        'color_tag': colorTag != ColorTag.none ? colorTag.name : 'default',
-        'updated_at': nowIso,
-      },
-      where: 'id = ?',
-      whereArgs: [postId],
+    row['color_tag'] = colorTag != ColorTag.none ? colorTag.name : 'default';
+    row['updated_at'] = nowIso;
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'post',
+      entityId: postId,
+      entityRow: row,
     );
     changeNotifier.notify('post');
     SyncWorker.instance.notifyLocalWrite();

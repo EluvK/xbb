@@ -22,15 +22,22 @@ void main() async {
   // 初始化多用户物理隔离 SQLite 数据库 (ADR-0001)
   final box = GetStorage(GET_STORAGE_FILE_KEY);
   final userInfo = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INFO_KEY);
-  final userId = userInfo != null ? (userInfo['id'] as String? ?? 'default') : 'default';
-  final db = await LocalFirstDB.getDb(userId: userId);
+  final rawUserId = userInfo != null ? (userInfo['id'] as String? ?? '') : '';
+  final token = box.read<String>(TOKEN_ACCESS_KEY) ?? box.read<String>('user_token');
+  final bool isLoggedIn = rawUserId.isNotEmpty && rawUserId != 'default' && token != null && token.isNotEmpty;
+  final String userId = isLoggedIn ? rawUserId : '';
+
+  // 已登录加载专属数据库，未登录使用纯内存隔离数据库以彻底杜绝访客磁盘脏数据
+  final db = isLoggedIn
+      ? await LocalFirstDB.getDb(userId: userId)
+      : await LocalFirstDB.openInMemory();
+  setActiveDatabase(db);
 
   // 初始化 ApiClient 与配置后台单例 SyncWorker 守护进程 (TASK-0.1)
   final syncSetting = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY);
   final syncStoreUrl = syncSetting != null
       ? (syncSetting['base_url'] as String? ?? 'http://127.0.0.1:10101')
       : 'http://127.0.0.1:10101';
-  final token = box.read<String>(TOKEN_ACCESS_KEY) ?? box.read<String>('user_token');
   var clientId = box.read<String>('device_client_id');
   if (clientId == null || clientId.isEmpty) {
     clientId = UuidService.v4();
@@ -39,7 +46,7 @@ void main() async {
 
   ApiClient.instance.configure(
     baseUrl: syncStoreUrl,
-    token: token,
+    token: isLoggedIn ? token : null,
   );
 
   SyncWorker.configure(
@@ -47,12 +54,13 @@ void main() async {
     db: db,
     clientId: clientId,
   );
-  // 仅在已持有有效 Token 时启动远端守护同步，离线/访客模式保持就绪不主动触发 401
-  if (token != null && token.isNotEmpty && userId != 'default') {
+  if (isLoggedIn) {
     SyncWorker.instance.start();
   }
 
-  ClipboardTrayService.instance.configure(userId: userId);
+  if (isLoggedIn) {
+    ClipboardTrayService.instance.configure(userId: userId);
+  }
 
   await initializeDateFormatting('zh');
   await initializeDateFormatting('en');

@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:xbb/core/network/api_client.dart';
 import 'local_first_db.dart';
 import 'outbox_dao.dart';
+import 'outbox_item.dart';
 import 'sync_meta_dao.dart';
 import 'sync_models.dart';
 import 'uuid_service.dart';
@@ -183,13 +184,28 @@ class SyncWorker {
     final pending = await OutboxDao.getPending(db, limit: 100);
     if (pending.isEmpty) return null;
 
-    final mutations = pending.map((item) {
+    // 按 (tableName, entityId) 分组折叠：保留最后一条变更作为权威状态，并记录其初始 baseVersion
+    final Map<String, OutboxItem> coalescedMap = {};
+    final Map<String, int> entityFirstBaseVersion = {};
+    final Map<String, List<String>> entityToOutboxIds = {};
+
+    for (final item in pending) {
+      final key = '${item.tableName}:${item.entityId}';
+      entityFirstBaseVersion.putIfAbsent(key, () => item.baseVersion);
+      coalescedMap[key] = item;
+      entityToOutboxIds.putIfAbsent(item.entityId, () => []).add(item.id);
+    }
+
+    final mutations = coalescedMap.entries.map((entry) {
+      final item = entry.value;
+      // 提交时 baseVersion 采用该实体在本批次发生首次改动时的 baseVersion，消除批内中间版本冲突
+      final initialBaseVersion = entityFirstBaseVersion[entry.key] ?? item.baseVersion;
       return SyncMutation(
         table: item.tableName,
         id: item.entityId,
         op: item.op,
         data: item.parsedData ?? item.data,
-        baseVersion: item.baseVersion,
+        baseVersion: initialBaseVersion,
         clientTimestamp: item.createdAt,
       );
     }).toList();
@@ -232,15 +248,19 @@ class SyncWorker {
       }
     }
 
-    final outboxIdsToDelete = pending
-        .where((m) =>
-            appliedEntityIds.contains(m.entityId) ||
-            conflictEntityIds.contains(m.entityId))
-        .map((m) => m.id)
-        .toList();
+    // 收集所有已应用或冲突实体的全部关联 outbox 记录 ID 批量清除
+    final Set<String> outboxIdsToDelete = {};
+    for (final entityId in appliedEntityIds) {
+      final ids = entityToOutboxIds[entityId];
+      if (ids != null) outboxIdsToDelete.addAll(ids);
+    }
+    for (final entityId in conflictEntityIds) {
+      final ids = entityToOutboxIds[entityId];
+      if (ids != null) outboxIdsToDelete.addAll(ids);
+    }
 
     if (outboxIdsToDelete.isNotEmpty) {
-      await OutboxDao.deleteByIds(db, outboxIdsToDelete);
+      await OutboxDao.deleteByIds(db, outboxIdsToDelete.toList());
     }
 
     onPushCompleted?.call(pushResp);

@@ -48,8 +48,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final GetStorage box;
   final DatabaseChangeNotifier dbChangeNotifier;
   final AuthService authService;
+  final Ref? ref;
 
-  AuthNotifier(this.box, this.dbChangeNotifier, [AuthService? service])
+  AuthNotifier(this.box, this.dbChangeNotifier, [AuthService? service, this.ref])
       : authService = service ?? AuthService(),
         super(const AuthState()) {
     _loadFromStorage();
@@ -129,10 +130,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // 2. 更新网络层 Bearer JWT 拦截器
     ApiClient.instance.updateToken(token);
 
-    // 3. 动态初始化该用户专属的 SQLite 数据库并绑定到 SyncWorker
+    // 3. 动态初始化该用户专属的 SQLite 数据库并绑定到 SyncWorker 及 Riverpod DatabaseProvider
     final db = await LocalFirstDB.getDb(userId: user.id);
+    setActiveDatabase(db);
     SyncWorker.instance.updateDependencies(db: db);
+    SyncWorker.instance.start();
     SyncWorker.instance.triggerSync();
+    if (ref != null) {
+      ref!.read(activeDatabaseStateProvider.notifier).state = db;
+    }
 
     // 4. 广播所有本地业务表刷新
     dbChangeNotifier.notifyAll([
@@ -156,7 +162,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  /// 完整登出：清理敏感 Token、重置同步守护进程、切回访客模式
+  /// 完整登出：清理敏感 Token、停止同步守护进程、重置状态
   Future<void> logout() async {
     // 1. 清除本地持久化 Token 与用户信息
     await box.remove(STORAGE_SETTING_USER_INFO_KEY);
@@ -166,9 +172,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // 2. 清除网络层 Token
     ApiClient.instance.updateToken(null);
 
-    // 3. 动态切回本地访客库 'default'
-    final db = await LocalFirstDB.getDb(userId: 'default');
-    SyncWorker.instance.updateDependencies(db: db);
+    // 3. 停止同步守护并断开数据库依赖
+    SyncWorker.instance.stop();
+    SyncWorker.instance.updateDependencies(db: null);
+    setActiveDatabase(null);
+    if (ref != null) {
+      ref!.read(activeDatabaseStateProvider.notifier).state = null;
+    }
 
     // 4. 广播业务表刷新
     dbChangeNotifier.notifyAll([
@@ -182,7 +192,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     ]);
 
     // 5. 更新状态
-    state = const AuthState(userId: 'default', isLoggedIn: false);
+    state = const AuthState();
   }
 
   /// 更新用户个人资料并持久化
@@ -204,5 +214,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
   final notifier = ref.watch(dbChangeNotifierProvider);
-  return AuthNotifier(box, notifier);
+  return AuthNotifier(box, notifier, null, ref);
 });

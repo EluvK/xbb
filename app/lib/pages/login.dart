@@ -434,30 +434,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         : Text(_isRegisterMode ? '立即注册并进入' : '登录 / 进入工作区'),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                                setState(() {
-                                  _isRegisterMode = !_isRegisterMode;
-                                  _errorMessage = null;
-                                });
-                              },
-                        child: Text(_isRegisterMode ? '已有账号？返回登录' : '没有账号？立即注册'),
-                      ),
-                      TextButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                                ref.read(authProvider.notifier).logout();
-                                context.go('/');
-                              },
-                        child: const Text('离线直接体验'),
-                      ),
-                    ],
+                  Center(
+                    child: TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              setState(() {
+                                _isRegisterMode = !_isRegisterMode;
+                                _errorMessage = null;
+                              });
+                            },
+                      child: Text(_isRegisterMode ? '已有账号？返回登录' : '没有账号？立即注册'),
+                    ),
                   ),
                 ],
               ),

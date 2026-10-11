@@ -54,7 +54,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: auth.isLoggedIn ? '/' : '/login',
     debugLogDiagnostics: false,
     redirect: (context, state) {
       return appRouterRedirect(
