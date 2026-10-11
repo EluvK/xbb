@@ -77,6 +77,7 @@ void main() {
         description: 'GRE 50 个',
         colorValue: Colors.indigo.value,
         currentUserId: 'user-001',
+        createdAt: DateTime(2026, 10, 1),
       );
       final events = await checkinRepo.watchEvents().first;
       final eventId = events.first.id;

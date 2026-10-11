@@ -41,12 +41,14 @@ void main() {
         description: '每天早上 3 公里',
         colorValue: Colors.blue.value,
         currentUserId: 'user-001',
+        createdAt: DateTime(2026, 9, 1),
       );
       await checkinRepo.createEvent(
         name: '阅读',
         description: '每天睡前半小时',
         colorValue: Colors.amber.value,
         currentUserId: 'user-001',
+        createdAt: DateTime(2026, 9, 1),
       );
 
       final events = await checkinRepo.watchEvents().first;
@@ -97,6 +99,7 @@ void main() {
         description: '深呼吸',
         colorValue: Colors.teal.value,
         currentUserId: 'user-001',
+        createdAt: DateTime(2026, 9, 1),
       );
       final events = await checkinRepo.watchEvents().first;
       final eventId = events.first.id;

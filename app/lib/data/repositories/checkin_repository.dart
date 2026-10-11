@@ -106,13 +106,15 @@ class CheckinRepository {
     required String description,
     required int colorValue,
     required String currentUserId,
+    DateTime? createdAt,
   }) async {
     final newId = UuidService.v7();
     final event = CheckinEvent(name: name, description: description, colorValue: colorValue);
+    final eventTime = createdAt ?? DateTime.now();
     final row = <String, dynamic>{
       'id': newId,
-      'created_at': DateTime.now().toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'created_at': eventTime.toIso8601String(),
+      'updated_at': eventTime.toIso8601String(),
       'owner': currentUserId,
       'parent_id': null,
       'sync_status': 'pending',
@@ -157,6 +159,26 @@ class CheckinRepository {
     // ADR-0003: 严禁未来预打卡
     if (targetDayKey.compareTo(todayKey) > 0) {
       throw ArgumentError('严禁未来预打卡 (ADR-0003)');
+    }
+
+    // 严格校验：禁止补打事件创建日期之前的历史日期
+    final eventRows = await db.query(
+      'checkin_event',
+      columns: ['created_at'],
+      where: 'id = ?',
+      whereArgs: [eventId],
+    );
+    if (eventRows.isNotEmpty) {
+      final createdAtStr = eventRows.first['created_at'] as String?;
+      if (createdAtStr != null && createdAtStr.isNotEmpty) {
+        final eventCreatedDate = DateTime.tryParse(createdAtStr)?.toLocal();
+        if (eventCreatedDate != null) {
+          final eventCreatedDayKey = formatLocalDayKey(eventCreatedDate);
+          if (targetDayKey.compareTo(eventCreatedDayKey) < 0) {
+            throw ArgumentError('不能补打事件创建前的日期 (checkin_past_date_forbidden)');
+          }
+        }
+      }
     }
 
     // 检查是否已在该日期打卡

@@ -215,23 +215,37 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                             selected: isChecked,
                             onLongPress: isFuture || isChecked
                                 ? null
-                                : () => _showCheckinWithNoteDialog(context, eventItem.id, event.name),
-                            onTap: isFuture
-                                ? null
-                                : () async {
-                                    if (isChecked) {
-                                      await ref.read(checkinRepositoryProvider).undoCheckin(
-                                            eventId: eventItem.id,
-                                            dayKey: selectedKey,
-                                          );
-                                    } else {
-                                      await ref.read(checkinRepositoryProvider).checkin(
-                                            eventId: eventItem.id,
-                                            targetDate: _selectedDay,
-                                            currentUserId: userId,
-                                          );
-                                    }
-                                  },
+                                : () => _showCheckinWithNoteDialog(context, eventItem, event.name),
+                            onTap: () async {
+                              if (isFuture) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('不能预打未来的日期'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (isChecked) {
+                                _confirmUndoCheckin(context, eventItem.id, selectedKey, event.name);
+                              } else {
+                                final eventCreatedDayKey = CheckinRepository.formatLocalDayKey(eventItem.createdAt);
+                                if (selectedKey.compareTo(eventCreatedDayKey) < 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('不能补打事件创建前的日期'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                await ref.read(checkinRepositoryProvider).checkin(
+                                      eventId: eventItem.id,
+                                      targetDate: _selectedDay,
+                                      currentUserId: userId,
+                                    );
+                              }
+                            },
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
@@ -425,11 +439,58 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
     );
   }
 
-  void _showCheckinWithNoteDialog(
+  void _confirmUndoCheckin(
     BuildContext context,
     String eventId,
+    String dayKey,
     String eventName,
   ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('撤销打卡'),
+        content: Text('确认撤销「$eventName」的打卡记录吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await ref.read(checkinRepositoryProvider).undoCheckin(
+                    eventId: eventId,
+                    dayKey: dayKey,
+                  );
+            },
+            child: const Text('撤销'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCheckinWithNoteDialog(
+    BuildContext context,
+    DataItem<CheckinEvent> eventItem,
+    String eventName,
+  ) {
+    final eventCreatedDayKey = CheckinRepository.formatLocalDayKey(eventItem.createdAt);
+    final selectedKey = CheckinRepository.formatLocalDayKey(_selectedDay);
+    if (selectedKey.compareTo(eventCreatedDayKey) < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('不能补打事件创建前的日期'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     DateTime recordDateTime = DateTime.now();
     final noteCtrl = TextEditingController();
 
@@ -492,7 +553,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                   final userId = ref.read(authProvider).userId;
                   final text = noteCtrl.text.trim();
                   await ref.read(checkinRepositoryProvider).checkin(
-                        eventId: eventId,
+                        eventId: eventItem.id,
                         targetDate: _selectedDay,
                         currentUserId: userId,
                         note: text.isEmpty ? null : text,
