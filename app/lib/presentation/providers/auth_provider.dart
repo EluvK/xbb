@@ -3,8 +3,6 @@ import 'package:get_storage/get_storage.dart';
 import 'package:xbb/constant.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/data/database_providers.dart';
-import 'package:xbb/sync/v2/local_first_db.dart';
-import 'package:xbb/sync/v2/sync_worker.dart';
 
 class AuthState {
   final String userId;

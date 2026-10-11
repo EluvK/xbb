@@ -5,7 +5,6 @@ import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
-import 'package:xbb/core/core.dart';
 
 /// 纯净的全局应用配置状态
 class AppSettingsState {

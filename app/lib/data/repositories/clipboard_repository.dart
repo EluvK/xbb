@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/data/base_repository.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/models/clipboard/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';

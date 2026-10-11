@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/data/repositories/checkin_repository.dart';
-import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/presentation/checkin/checkin_providers.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';

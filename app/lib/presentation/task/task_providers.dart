@@ -3,7 +3,6 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/data/database_providers.dart';
 import 'package:xbb/data/repositories/task_repository.dart';
 import 'package:xbb/models/task/model.dart';
-import 'package:xbb/presentation/providers/auth_provider.dart';
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   final db = ref.watch(databaseProvider);
