@@ -50,6 +50,11 @@ class TaskRepository {
 
   /// 监听所有已归档的 CheckList
   Stream<List<DataItem<CheckList>>> watchArchivedCheckLists() {
+    return watchArchivedSegmentsCumulative(limit: -1);
+  }
+
+  /// 分页监听归档历史段落 (支持 page / pageSize)
+  Stream<List<DataItem<CheckList>>> watchArchivedSegments({int page = 1, int pageSize = 10}) {
     return changeNotifier.watchTable('check_list').asyncMap((_) async {
       final rows = await db.query(
         'check_list',
@@ -76,8 +81,72 @@ class TaskRepository {
           }
         } catch (_) {}
       }
-      return list;
+      final start = ((page - 1) * pageSize).clamp(0, list.length);
+      final end = (start + pageSize).clamp(0, list.length);
+      return list.sublist(start, end);
     });
+  }
+
+  /// 累加监听归档历史段落（支持“加载更多”视图，按指定 limit 截取）
+  Stream<List<DataItem<CheckList>>> watchArchivedSegmentsCumulative({int limit = 10}) {
+    return changeNotifier.watchTable('check_list').asyncMap((_) async {
+      final rows = await db.query(
+        'check_list',
+        orderBy: 'created_at DESC',
+      );
+      final list = <DataItem<CheckList>>[];
+      final now = DateTime.now();
+      for (final r in rows) {
+        final bodyStr = r['body'] as String? ?? '{}';
+        try {
+          final bodyJson = jsonDecode(bodyStr) as Map<String, dynamic>;
+          final checkList = CheckList.fromJson(bodyJson);
+          if (checkList.archived) {
+            list.add(DataItem<CheckList>(
+              r['id'] as String,
+              DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+              DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+              r['owner'] as String? ?? 'default',
+              null,
+              null,
+              body: checkList,
+              syncStatus: SyncStatus.synced,
+            ));
+          }
+        } catch (_) {}
+      }
+      if (limit <= 0 || limit >= list.length) {
+        return list;
+      }
+      return list.sublist(0, limit);
+    });
+  }
+
+  /// 获取归档历史段落总数
+  Future<int> getArchivedSegmentsTotalCount() async {
+    final rows = await db.query('check_list');
+    var count = 0;
+    for (final r in rows) {
+      final bodyStr = r['body'] as String? ?? '{}';
+      try {
+        final bodyJson = jsonDecode(bodyStr) as Map<String, dynamic>;
+        if (bodyJson['archived'] == true) {
+          count++;
+        }
+      } catch (_) {}
+    }
+    return count;
+  }
+
+  /// 删除指定归档历史段落，在本地数据库与 Outbox 同步删除
+  Future<void> deleteArchivedSegment(String listId) async {
+    await LocalFirstDB.persistDeleteRaw(
+      db: db,
+      tableName: 'check_list',
+      entityId: listId,
+    );
+    changeNotifier.notify('check_list');
+    SyncWorker.instance.notifyLocalWrite();
   }
 
   /// 获取或新建活动 CheckList
@@ -248,44 +317,55 @@ class TaskRepository {
     await TaskWidgetBridge.refreshFromLocalState();
   }
 
-  /// 归档当前清单并初始化新清单
+  /// 归档当前清单已完成任务并初始化/保留活跃清单
   Future<void> archiveActiveCheckList(String currentUserId) async {
     final active = await getOrCreateActiveCheckList(currentUserId);
     final items = decodeTaskItems(active.body.tasks);
     if (items.isEmpty) return;
 
-    final archived = active.body.copyWith(
-      archived: true,
-      archivedAt: DateTime.now(),
-    );
-    await saveCheckList(DataItem<CheckList>(
-      active.id,
-      active.createdAt,
-      DateTime.now(),
-      active.owner,
-      active.parentId,
-      active.unique,
-      body: archived,
-      syncStatus: SyncStatus.pending,
-    ));
+    final completed = items.where((t) => t.done).toList();
+    if (completed.isEmpty) return;
+    final remaining = items.where((t) => !t.done).toList();
 
-    final pendingItems = items.where((i) => !i.done).map((i) => i.copyWith(lastModifiedAt: DateTime.now())).toList();
-    final newId = UuidService.v7();
+    // 1. 生成已完成任务的历史段落
+    final archivedId = UuidService.v7();
     final now = DateTime.now();
-    final newItem = DataItem<CheckList>(
-      newId,
+    final archivedItem = DataItem<CheckList>(
+      archivedId,
       now,
       now,
       currentUserId,
       null,
       null,
       body: CheckList(
-        tasks: encodeTaskItems(pendingItems),
-        archived: false,
+        tasks: encodeTaskItems(completed),
+        archived: true,
+        archivedAt: now,
       ),
       syncStatus: SyncStatus.pending,
     );
-    await saveCheckList(newItem);
+    await saveCheckList(archivedItem);
+
+    // 2. 活跃工作区保留未完成任务并重置序号
+    final normalizedRemaining = [
+      for (var i = 0; i < remaining.length; i++)
+        remaining[i].copyWith(sortOrder: i, lastModifiedAt: now),
+    ];
+    final updatedActive = active.body.copyWith(
+      tasks: encodeTaskItems(normalizedRemaining),
+      archived: false,
+      archivedAt: null,
+    );
+    await saveCheckList(DataItem<CheckList>(
+      active.id,
+      active.createdAt,
+      now,
+      active.owner,
+      active.parentId,
+      active.unique,
+      body: updatedActive,
+      syncStatus: SyncStatus.pending,
+    ));
     await TaskWidgetBridge.refreshFromLocalState();
   }
 }

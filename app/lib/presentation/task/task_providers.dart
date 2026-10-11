@@ -31,3 +31,8 @@ final archivedCheckListsProvider = StreamProvider<List<DataItem<CheckList>>>((re
   final repo = ref.watch(taskRepositoryProvider);
   return repo.watchArchivedCheckLists();
 });
+
+final archivedSegmentsCumulativeProvider = StreamProvider.family<List<DataItem<CheckList>>, int>((ref, limit) {
+  final repo = ref.watch(taskRepositoryProvider);
+  return repo.watchArchivedSegmentsCumulative(limit: limit);
+});

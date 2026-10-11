@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/task/model.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
+import 'package:xbb/presentation/task/task_history_view.dart';
 import 'package:xbb/presentation/task/task_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
@@ -93,7 +94,6 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
     final theme = Theme.of(context);
     final tasks = ref.watch(activeTaskItemsProvider);
     final orderedTasks = _getOrderedTasks(tasks);
-    final archivedAsync = ref.watch(archivedCheckListsProvider);
     final userId = ref.watch(authProvider).userId;
 
     final doneCount = tasks.where((t) => t.done).length;
@@ -137,7 +137,7 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
         ],
       ),
       body: _showArchived
-          ? _buildArchivedView(archivedAsync)
+          ? const TaskHistoryView()
           : Column(
               children: [
                 // 顶部输入条与进度
@@ -222,68 +222,6 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
                 ),
               ],
             ),
-    );
-  }
-
-  Widget _buildArchivedView(AsyncValue<List<dynamic>> archivedAsync) {
-    return archivedAsync.when(
-      data: (list) {
-        if (list.isEmpty) {
-          return const ModernEmptyState(
-            icon: Icons.archive_outlined,
-            title: '无归档记录',
-            subtitle: '当活动清单包含完成任务并点击归档后，将展示在此处',
-          );
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          itemCount: list.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-          itemBuilder: (context, index) {
-            final item = list[index];
-            final tasks = decodeTaskItems(item.body.tasks);
-            return ModernCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '归档时间: ${item.body.archivedAt?.toLocal().toString().split('.').first ?? "未知"}',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      ModernBadge(label: '${tasks.length} 项任务'),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  for (final t in tasks)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: Row(
-                        children: [
-                          Icon(t.done ? Icons.check_circle : Icons.circle_outlined, size: 14, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              t.content,
-                              style: TextStyle(
-                                decoration: t.done ? TextDecoration.lineThrough : null,
-                                color: t.done ? Colors.grey : null,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('加载失败: $e')),
     );
   }
 }
