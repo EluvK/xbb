@@ -1,22 +1,11 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:xbb/core/core.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sync_annotation/sync_annotation.dart';
 import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/controller/setting.dart';
-import 'package:xbb/controller/syncstore.dart';
-import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/notes/db.dart';
 import 'package:xbb/models/permission.dart';
-import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
-part 'controllers.dart';
 
 enum NotesFeatureRequires implements FeaturePermission {
   updateRepo(ACLMask.updateOnly),
@@ -33,81 +22,6 @@ enum NotesFeatureRequires implements FeaturePermission {
   final int requiredAclMask;
 
   const NotesFeatureRequires(this.requiredAclMask);
-}
-
-Future<void> reInitNotesSync(SyncStoreClient client) async {
-  await reInit<RepoController>(() => RepoController(client), (c) => c.ensureInitialization());
-  await reInit<PostController>(() => PostController(client), (c) => c.ensureInitialization());
-  await reInit<CommentController>(() => CommentController(client), (c) => c.ensureInitialization());
-
-  final RepoController repoController = Get.find<RepoController>();
-  final SettingController settingController = Get.find<SettingController>();
-  if (settingController.notesLastOpenedRepoId != null) {
-    repoController.onSelectRepo(settingController.notesLastOpenedRepoId!);
-  }
-}
-
-Future<void> onReadySyncAll({
-  bool showCompletionToast = true,
-  bool skipHealthCheck = false,
-  bool showErrorToast = true,
-  bool rethrowOnError = false,
-}) async {
-  final repoController = Get.find<RepoController>();
-  final postController = Get.find<PostController>();
-  final commentController = Get.find<CommentController>();
-  if (!skipHealthCheck) {
-    final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
-    final latency = await ssClient.pingLatencyMs();
-    if (latency < 0) {
-      print('SyncStore health check failed, skipping initial sync.');
-      if (showErrorToast) {
-        flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
-      }
-      if (rethrowOnError) {
-        throw Exception('SyncStore health check failed for notes initial sync');
-      }
-      return;
-    }
-  }
-  try {
-    await runSyncTaskWithStatus(
-      [
-        () => SyncWorker.instance.triggerSync(),
-        () => repoController.rebuildLocal(),
-        () => postController.rebuildLocal(),
-        () => commentController.rebuildLocal(),
-      ],
-      from: 0.0,
-      to: 100.0,
-    );
-    if (showCompletionToast) {
-      successSimpleFlushBar("同步完成");
-    }
-  } catch (e) {
-    print('Error during initial sync: $e');
-    if (showErrorToast) {
-      flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
-    }
-    if (rethrowOnError) {
-      rethrow;
-    }
-  } finally {}
-}
-
-Future<void> reInit<T extends GetxController>(
-  FutureOr<T> Function() creator,
-  FutureOr<void> Function(T controller)? initializer,
-) async {
-  if (Get.isRegistered<T>()) {
-    await Get.delete<T>(force: true);
-  }
-  final controller = await Get.putAsync<T>(() async {
-    return await creator();
-  }, permanent: true);
-  if (initializer != null) {
-    await initializer(controller);
-  }
 }
 
 @Repository(collectionName: 'xbb', tableName: 'repo', db: NotesDB)

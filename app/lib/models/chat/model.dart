@@ -1,18 +1,9 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:xbb/core/core.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sync_annotation/sync_annotation.dart';
-import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/chat/db.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
-part 'controllers.dart';
 
 enum ChatMessageRole { system, user, assistant }
 
@@ -72,10 +63,6 @@ abstract class ChatConversation with _$ChatConversation {
   }) = _ChatConversation;
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) => _$ChatConversationFromJson(json);
-
-  static ChatConversation fromRemoteJson(Map<String, dynamic> json) {
-    return ChatConversation.fromJson(json);
-  }
 }
 
 @Repository(collectionName: 'chat', tableName: 'chat_message', db: ChatDB, parentIdField: 'conversationId')

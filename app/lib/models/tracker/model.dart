@@ -1,98 +1,9 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:xbb/core/core.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sync_annotation/sync_annotation.dart';
-import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/controller/setting.dart';
-import 'package:xbb/controller/syncstore.dart';
-import 'package:xbb/sync/v2/sync_v2.dart';
-import 'package:xbb/models/permission.dart' show FeaturePermission;
 import 'package:xbb/models/tracker/db.dart';
-import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
-part 'controllers.dart';
-
-enum TrackerFeatureRequires implements FeaturePermission {
-  update(ACLMask.updateOnly),
-  fullAccess(ACLMask.fullAccess);
-
-  @override
-  final int requiredAclMask;
-
-  const TrackerFeatureRequires(this.requiredAclMask);
-}
-
-Future<void> reInitTrackerSync(SyncStoreClient client) async {
-  await reInit<TrackerController>(() => TrackerController(client), (c) => c.ensureInitialization());
-  await reInit<TrackerRecordController>(() => TrackerRecordController(client), (c) => c.ensureInitialization());
-}
-
-Future<void> onReadySyncTracker({
-  bool showCompletionToast = true,
-  bool skipHealthCheck = false,
-  bool showErrorToast = true,
-  bool rethrowOnError = false,
-}) async {
-  final trackerController = Get.find<TrackerController>();
-  final recordController = Get.find<TrackerRecordController>();
-  if (!skipHealthCheck) {
-    final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
-    final latency = await ssClient.pingLatencyMs();
-    if (latency < 0) {
-      print('SyncStore health check failed, skipping initial sync.');
-      if (showErrorToast) {
-        flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，同步已跳过");
-      }
-      if (rethrowOnError) {
-        throw Exception('SyncStore health check failed for tracker initial sync');
-      }
-      return;
-    }
-  }
-  try {
-    await runSyncTaskWithStatus(
-      [
-        () => SyncWorker.instance.triggerSync(),
-        () => recordController.rebuildLocal(),
-        () => trackerController.rebuildLocal(),
-      ],
-      from: 0.0,
-      to: 100.0,
-    );
-    if (showCompletionToast) {
-      successSimpleFlushBar("Tracker 同步完成");
-    }
-  } catch (e) {
-    print('Error during initial sync: $e');
-    if (showErrorToast) {
-      flushBar(FlushLevel.WARNING, "同步错误", "初始同步过程中发生错误: $e");
-    }
-    if (rethrowOnError) {
-      rethrow;
-    }
-  }
-}
-
-Future<void> reInit<T extends GetxController>(
-  FutureOr<T> Function() creator,
-  FutureOr<void> Function(T controller)? initializer,
-) async {
-  if (Get.isRegistered<T>()) {
-    await Get.delete<T>(force: true);
-  }
-  final controller = await Get.putAsync<T>(() async {
-    return await creator();
-  }, permanent: true);
-  if (initializer != null) {
-    await initializer(controller);
-  }
-}
 
 @Repository(collectionName: 'tracker', tableName: 'tracker', db: TrackerDB)
 @Freezed()
@@ -111,26 +22,23 @@ abstract class Tracker with _$Tracker {
 
 @Freezed(unionKey: 'type')
 sealed class TrackerConfig with _$TrackerConfig {
-  // Event (周期性事件/习惯)
   @JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
   const factory TrackerConfig.event({
-    required int periodDays, // 每 X 天, set to 0 for no cycle
+    required int periodDays,
   }) = EventTrackerConfig;
 
-  // Milestone (阶段性目标)
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory TrackerConfig.milestone({
-    required String goalType, // 'time' / 'number' / 'boolean'
-    required String targetValue, // 统一存为 String，例如 "3600", "50.0", "true"
-    @Default('accumulate') String progressMode, // 'accumulate' / 'latest'
+    required String goalType,
+    required String targetValue,
+    @Default('accumulate') String progressMode,
   }) = MilestoneTrackerConfig;
 
-  // Anniversary (时间节点)
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory TrackerConfig.anniversary({
     required DateTime baseDate,
     required bool isLunar,
-    required String remindType, // per_year / per_100_days / t_minus
+    required String remindType,
   }) = AnniversaryTrackerConfig;
 
   factory TrackerConfig.fromJson(Map<String, dynamic> json) => _$TrackerConfigFromJson(json);
@@ -143,48 +51,9 @@ abstract class TrackerRecord with _$TrackerRecord {
   const factory TrackerRecord({
     required String trackerId,
     required DateTime timestamp,
-    String? value, // 统一存为 String，例如 "3600", "50.0", "true"
-    String? content, // 笔记/感悟
+    String? value,
+    String? content,
   }) = _TrackerRecord;
-
-  factory TrackerRecord.forEvent({required String trackerId, required DateTime timestamp, String? content}) {
-    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: null, content: content);
-  }
-
-  factory TrackerRecord.forMilestoneBoolean({
-    required String trackerId,
-    required DateTime timestamp,
-    required bool done,
-    String? content,
-  }) {
-    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: done ? 'true' : 'false', content: content);
-  }
-
-  factory TrackerRecord.forMilestoneNumber({
-    required String trackerId,
-    required DateTime timestamp,
-    required String number,
-    String? content,
-  }) {
-    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: number, content: content);
-  }
-
-  factory TrackerRecord.forMilestoneTime({
-    required String trackerId,
-    required DateTime timestamp,
-    required int minutes,
-    String? content,
-  }) {
-    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: minutes.toString(), content: content);
-  }
-
-  factory TrackerRecord.forAnniversary({
-    required String trackerId,
-    required DateTime timestamp,
-    required String content,
-  }) {
-    return TrackerRecord(trackerId: trackerId, timestamp: timestamp, value: null, content: content);
-  }
 
   factory TrackerRecord.fromJson(Map<String, dynamic> json) => _$TrackerRecordFromJson(json);
 }

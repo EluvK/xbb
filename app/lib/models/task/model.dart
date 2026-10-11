@@ -1,87 +1,10 @@
 import 'dart:convert';
-import 'dart:async';
-
-import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:xbb/core/core.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sync_annotation/sync_annotation.dart';
-import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/controller/setting.dart';
-import 'package:xbb/controller/syncstore.dart';
-import 'package:xbb/controller/task_widget.dart';
-import 'package:xbb/sync/v2/sync_v2.dart';
 import 'package:xbb/models/task/db.dart';
-import 'package:xbb/utils/utils.dart';
 
 part 'model.g.dart';
 part 'model.freezed.dart';
-part 'controllers.dart';
-
-Future<void> reInitTaskSync(SyncStoreClient client) async {
-  await reInit<CheckListController>(() => CheckListController(client), (c) => c.ensureInitialization());
-  await TaskWidgetBridge.refreshFromLocalState();
-}
-
-Future<void> onReadySyncTask({
-  bool showCompletionToast = true,
-  bool skipHealthCheck = false,
-  bool showErrorToast = true,
-  bool rethrowOnError = false,
-}) async {
-  final checkListController = Get.find<CheckListController>();
-  if (!skipHealthCheck) {
-    final SyncStoreClient ssClient = Get.find<SyncStoreControl>().syncStoreClient;
-    final latency = await ssClient.pingLatencyMs();
-    if (latency < 0) {
-      print('SyncStore health check failed, skipping task initial sync.');
-      if (showErrorToast) {
-        flushBar(FlushLevel.WARNING, "同步服务异常", "无法连接到同步服务，Task 同步已跳过");
-      }
-      await TaskWidgetBridge.refreshFromLocalState();
-      if (rethrowOnError) {
-        throw Exception('SyncStore health check failed for task initial sync');
-      }
-      return;
-    }
-  }
-
-  try {
-    await runSyncTaskWithStatus(
-      [() => SyncWorker.instance.triggerSync(), () => checkListController.rebuildLocal()],
-      from: 0.0,
-      to: 100.0,
-    );
-    if (showCompletionToast) {
-      successSimpleFlushBar("Task 同步完成");
-    }
-  } catch (e) {
-    print('Error during task initial sync: $e');
-    if (showErrorToast) {
-      flushBar(FlushLevel.WARNING, "同步错误", "Task 初始同步过程中发生错误: $e");
-    }
-    if (rethrowOnError) {
-      rethrow;
-    }
-  } finally {
-    await TaskWidgetBridge.refreshFromLocalState();
-  }
-}
-
-Future<void> reInit<T extends GetxController>(
-  FutureOr<T> Function() creator,
-  FutureOr<void> Function(T controller)? initializer,
-) async {
-  if (Get.isRegistered<T>()) {
-    await Get.delete<T>(force: true);
-  }
-  final controller = await Get.putAsync<T>(() async {
-    return await creator();
-  }, permanent: true);
-  if (initializer != null) {
-    await initializer(controller);
-  }
-}
 
 @Repository(collectionName: 'task', tableName: 'check_list', db: TaskDB)
 @freezed
@@ -119,7 +42,6 @@ List<TaskItem> decodeTaskItems(String tasksPayload) {
       final rawMap = Map<String, dynamic>.from(decoded[i] as Map);
       final hasSortOrder = rawMap.containsKey('sort_order') || rawMap.containsKey('sortOrder');
       final parsed = TaskItem.fromJson(rawMap);
-      // Legacy payloads may not have sort_order; keep current array order as stable fallback.
       items.add(hasSortOrder ? parsed : parsed.copyWith(sortOrder: i));
     }
     return items;
@@ -145,11 +67,5 @@ List<TaskItem> sortTaskItems(List<TaskItem> tasks) {
 bool isCheckListStateValid(CheckList checkList) {
   if (checkList.archived && checkList.archivedAt == null) return false;
   if (!checkList.archived && checkList.archivedAt != null) return false;
-  return true;
-}
-
-bool isTaskItemStateValid(TaskItem taskItem) {
-  if (taskItem.done && taskItem.doneAt == null) return false;
-  if (!taskItem.done && taskItem.doneAt != null) return false;
   return true;
 }
