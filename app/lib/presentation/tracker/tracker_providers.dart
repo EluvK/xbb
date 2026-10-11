@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/data/database_providers.dart';
 import 'package:xbb/data/repositories/tracker_repository.dart';
-import 'package:xbb/models/tracker/model.dart';
+import 'package:xbb/models/tracker/model.dart' hide TrackerRepository;
 
 final trackerRepositoryProvider = Provider<TrackerRepository>((ref) {
   final db = ref.watch(databaseProvider);

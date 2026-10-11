@@ -29,12 +29,14 @@ class ClipboardRepository {
         final bodyStr = r['body'] as String? ?? '{}';
         final entry = ClipboardHistoryEntry.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<ClipboardHistoryEntry>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
           body: entry,
-          createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-          updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
-          syncStatus: entry.localOnly ? SyncStatus.localOnly : SyncStatus.synced,
+          syncStatus: entry.localOnly ? SyncStatus.hidden : SyncStatus.synced,
         );
       }).toList();
     });

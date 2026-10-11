@@ -32,8 +32,8 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   }
 
   void _saveCurrentPost(DataItem<Post> post) {
-    final updated = post.copyWith(
-      body: post.body.copyWith(
+    final updated = post.updatedBody(
+      post.body.copyWith(
         title: _titleController.text.trim().isEmpty ? '无标题' : _titleController.text.trim(),
         content: _contentController.text,
       ),
@@ -44,10 +44,14 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
 
   void _createNewPost(String repoId, String userId) {
     final newId = UuidService.v7();
+    final now = DateTime.now();
     final newPost = DataItem<Post>(
-      id: newId,
-      owner: userId,
-      parentId: repoId,
+      newId,
+      now,
+      now,
+      userId,
+      repoId,
+      null,
       body: Post(
         title: '新建笔记',
         category: '默认',
@@ -378,9 +382,14 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
           FilledButton(
             onPressed: () {
               if (ctrl.text.trim().isNotEmpty) {
+                final now = DateTime.now();
                 final newRepo = DataItem<Repo>(
-                  id: UuidService.v7(),
-                  owner: userId,
+                  UuidService.v7(),
+                  now,
+                  now,
+                  userId,
+                  null,
+                  null,
                   body: Repo(name: ctrl.text.trim(), status: 'active'),
                   syncStatus: SyncStatus.pending,
                 );

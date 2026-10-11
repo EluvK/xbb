@@ -25,11 +25,13 @@ class TrackerRepository {
         final bodyStr = r['body'] as String? ?? '{}';
         final tracker = Tracker.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<Tracker>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
           body: tracker,
-          createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-          updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
           syncStatus: SyncStatus.synced,
         );
       }).toList();
@@ -50,12 +52,13 @@ class TrackerRepository {
         final bodyStr = r['body'] as String? ?? '{}';
         final record = TrackerRecord.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<TrackerRecord>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
-          parentId: trackerId,
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
+          r['owner'] as String? ?? 'default',
+          trackerId,
+          null,
           body: record,
-          createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-          updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
           syncStatus: SyncStatus.synced,
         );
       }).toList();

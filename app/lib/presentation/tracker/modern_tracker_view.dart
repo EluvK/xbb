@@ -281,9 +281,14 @@ class ModernTrackerView extends ConsumerWidget {
                     config = const TrackerConfig.event(periodDays: 1);
                   }
 
+                  final now = DateTime.now();
                   final newTracker = DataItem<Tracker>(
-                    id: UuidService.v7(),
-                    owner: userId,
+                    UuidService.v7(),
+                    now,
+                    now,
+                    userId,
+                    null,
+                    null,
                     body: Tracker(
                       name: nameCtrl.text.trim(),
                       description: descCtrl.text.trim(),

@@ -10,12 +10,11 @@ import 'package:xbb/utils/text_input.dart';
 enum ChatLLMProvider { deepSeek }
 
 bool initFirstTime() {
-  var settingController = Get.find<SettingController>();
-  if (settingController.userId.isNotEmpty && settingController.userName.isNotEmpty) {
-    print('already done first init before');
+  final box = GetStorage(GET_STORAGE_FILE_KEY);
+  final user = box.read<Map<String, dynamic>?>(STORAGE_SETTING_USER_INFO_KEY);
+  if (user != null && (user['id'] as String? ?? '').isNotEmpty) {
     return false;
   }
-  print('first init');
   return true;
 }
 
@@ -30,20 +29,9 @@ Future<void> runSyncTaskWithStatus(List<dynamic> tasks, {double from = 0.0, doub
     throw ArgumentError("任务格式不支持");
   }).toList();
 
-  double totalWeight = normalizedTasks.fold(0, (sum, item) => sum + item.weight);
-  double currentCompletedWeight = 0;
-  print('total weight: $totalWeight');
-
-  final settingController = Get.find<SettingController>();
-
   for (var task in normalizedTasks) {
     await task.action();
-    currentCompletedWeight += task.weight;
-    int progress = ((currentCompletedWeight / totalWeight) * (to - from) + from).toInt();
-    settingController.updateUserInterfaceHistoryCache(notesSyncProgress: progress);
-    print('当前同步进度: $progress%');
   }
-  settingController.updateUserInterfaceHistoryCache(notesSyncProgress: to.toInt());
 }
 
 class AppHomeStartupTabIndex {

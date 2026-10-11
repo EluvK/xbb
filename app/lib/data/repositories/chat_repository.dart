@@ -25,8 +25,12 @@ class ChatRepository {
         final bodyStr = r['body'] as String? ?? '{}';
         final assistant = ChatAssistant.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<ChatAssistant>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
           body: assistant,
           syncStatus: SyncStatus.synced,
         );
@@ -42,8 +46,12 @@ class ChatRepository {
         final bodyStr = r['body'] as String? ?? '{}';
         final conv = ChatConversation.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<ChatConversation>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
           body: conv,
           syncStatus: SyncStatus.synced,
         );
@@ -65,9 +73,12 @@ class ChatRepository {
         final bodyStr = r['body'] as String? ?? '{}';
         final msg = ChatMessage.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<ChatMessage>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
-          parentId: conversationId,
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
+          r['owner'] as String? ?? 'default',
+          conversationId,
+          null,
           body: msg,
           syncStatus: SyncStatus.synced,
         );

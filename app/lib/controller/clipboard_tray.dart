@@ -1,192 +1,134 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:xbb/core/core.dart';
-import 'package:syncstore_client/syncstore_client.dart' show DataItem;
+import 'package:syncstore_client/syncstore_client.dart' show DataItem, SyncStatus;
 import 'package:uuid/uuid.dart';
-import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/clipboard/model.dart';
+import 'package:xbb/sync/v2/local_first_db.dart';
+import 'package:xbb/sync/v2/outbox_item.dart';
 import 'package:xbb/utils/utils.dart';
 
-class ClipboardTrayController extends GetxController {
+/// 纯净的 Windows 托盘与剪贴板后台监听服务（ADR-0002 约束）
+class ClipboardTrayService extends ChangeNotifier {
+  static final ClipboardTrayService instance = ClipboardTrayService._();
+  ClipboardTrayService._();
+
   static const MethodChannel _channel = MethodChannel('com.eluvk.xbb/clipboard_tray');
   static const Duration _dedupWindow = Duration(seconds: 30);
   static const int _dedupRecentCount = 8;
 
-  final RxBool featureEnabled = false.obs;
-  final RxBool listeningEnabled = false.obs;
-  final RxnString lastCollectedTime = RxnString();
+  bool _featureEnabled = false;
+  bool _listeningEnabled = false;
+  String? _lastCollectedTime;
 
-  bool _initialized = false;
+  bool get featureEnabled => _featureEnabled;
+  bool get listeningEnabled => _listeningEnabled;
+  String? get lastCollectedTime => _lastCollectedTime;
 
-  @override
-  Future<void> onInit() async {
-    super.onInit();
-    final settingController = Get.find<SettingController>();
-    featureEnabled.value = settingController.clipboardBackupEnabled;
-    listeningEnabled.value = settingController.clipboardListeningEnabled;
-
+  Future<void> init({bool featureEnabled = true, bool listeningEnabled = true}) async {
+    _featureEnabled = featureEnabled;
+    _listeningEnabled = listeningEnabled;
     _channel.setMethodCallHandler(_onMethodCall);
     await _syncNativeTrayStatus();
-    _initialized = true;
-  }
-
-  @override
-  Future<void> ensureInitialization() async {
-    while (!_initialized) {
-      await onInit();
-    }
   }
 
   Future<void> setFeatureEnabled(bool enabled) async {
-    featureEnabled.value = enabled;
+    _featureEnabled = enabled;
     if (!enabled) {
-      listeningEnabled.value = false;
+      _listeningEnabled = false;
     }
-
-    final settingController = Get.find<SettingController>();
-    settingController.updateAppFeaturesManagement(
-      enableClipboardBackup: enabled,
-      enableClipboardListening: listeningEnabled.value,
-    );
-
+    notifyListeners();
     await _syncNativeTrayStatus();
   }
 
   Future<void> setListeningEnabled(bool enabled) async {
-    if (!featureEnabled.value && enabled) {
-      featureEnabled.value = true;
+    if (!_featureEnabled && enabled) {
+      _featureEnabled = true;
     }
-    listeningEnabled.value = featureEnabled.value && enabled;
-
-    final settingController = Get.find<SettingController>();
-    settingController.updateAppFeaturesManagement(
-      enableClipboardBackup: featureEnabled.value,
-      enableClipboardListening: listeningEnabled.value,
-    );
-
+    _listeningEnabled = _featureEnabled && enabled;
+    notifyListeners();
     await _syncNativeTrayStatus();
   }
 
   Future<void> _syncNativeTrayStatus() async {
     try {
-      await _channel.invokeMethod('setListeningEnabled', featureEnabled.value && listeningEnabled.value);
-      final payload = <String, dynamic>{'listeningEnabled': featureEnabled.value && listeningEnabled.value};
-      final ts = lastCollectedTime.value;
-      if (ts != null && ts.isNotEmpty) {
-        payload['lastCollectedTime'] = ts;
+      await _channel.invokeMethod('setListeningEnabled', _featureEnabled && _listeningEnabled);
+      final payload = <String, dynamic>{
+        'listeningEnabled': _featureEnabled && _listeningEnabled,
+      };
+      if (_lastCollectedTime != null && _lastCollectedTime!.isNotEmpty) {
+        payload['lastCollectedTime'] = _lastCollectedTime;
       }
       await _channel.invokeMethod('updateTrayStatus', payload);
     } on MissingPluginException {
-      // Platform implementation unavailable on non-Windows targets.
+      // 非 Windows 平台静默忽略
     } on PlatformException catch (e) {
-      print('[ClipboardTray] sync status failed: $e');
-    } catch (e) {
-      print('[ClipboardTray] unexpected sync error: $e');
+      debugPrint('Sync clipboard tray status failed: $e');
     }
   }
 
-  Future<void> _onMethodCall(MethodCall call) async {
+  Future<dynamic> _onMethodCall(MethodCall call) async {
     switch (call.method) {
-      case 'onTrayToggleListening':
-        final args = call.arguments;
-        bool enabled = false;
-        if (args is Map) {
-          final value = args['enabled'];
-          if (value is bool) {
-            enabled = value;
+      case 'onClipboardDataCollected':
+        final text = call.arguments['text'] as String?;
+        final timeStr = call.arguments['time'] as String?;
+        if (text != null && text.isNotEmpty) {
+          DateTime time = DateTime.now();
+          if (timeStr != null && timeStr.isNotEmpty) {
+            time = DateTime.tryParse(timeStr) ?? DateTime.now();
           }
+          await _onNewTextCollected(text, time);
         }
-        await setListeningEnabled(enabled);
-        return;
-      case 'onTrayShowMainWindow':
-        return;
-      case 'onTrayExitApp':
-        return;
-      case 'onClipboardTextChanged':
-        await _onClipboardTextChanged(call.arguments);
-        return;
+        return true;
+      case 'onTrayMenuExit':
+        await SystemNavigator.pop();
+        return true;
       default:
-        return;
+        return null;
     }
   }
 
-  Future<void> _onClipboardTextChanged(dynamic args) async {
-    if (!featureEnabled.value || !listeningEnabled.value) {
-      return;
-    }
-
-    String? text;
-    int? timestampMs;
-    if (args is Map) {
-      final rawText = args['text'];
-      if (rawText is String) {
-        text = rawText;
-      }
-      final rawTs = args['timestampMs'];
-      if (rawTs is int) {
-        timestampMs = rawTs;
-      } else if (rawTs is num) {
-        timestampMs = rawTs.toInt();
-      }
-    }
-    if (text == null || text.isEmpty) {
-      return;
-    }
-
-    final dt = timestampMs != null
-        ? DateTime.fromMillisecondsSinceEpoch(timestampMs, isUtc: true)
-        : DateTime.now().toUtc();
-
-    final shouldSkip = await _shouldSkipDuplicate(text, dt);
-    if (shouldSkip) {
-      return;
-    }
-
-    final owner = Get.find<SettingController>().userId;
+  Future<void> _onNewTextCollected(String text, DateTime dt) async {
     final entry = ClipboardHistoryEntry(data: text, capturedAt: dt, localOnly: true);
     final id = const Uuid().v4();
-    final item = DataItem<ClipboardHistoryEntry>(id, dt, dt, owner, null, null, body: entry);
+    final item = DataItem<ClipboardHistoryEntry>(
+      id,
+      dt,
+      dt,
+      'default',
+      null,
+      null,
+      body: entry,
+      syncStatus: SyncStatus.hidden,
+    );
 
-    await ClipboardHistoryEntryRepository().addToLocalDb(item);
-    if (Get.isRegistered<ClipboardHistoryEntryController>()) {
-      await Get.find<ClipboardHistoryEntryController>().rebuildLocal();
-    }
-    lastCollectedTime.value = detailedDateStr(dt);
+    try {
+      final db = await LocalFirstDB.getDb(userId: 'default');
+      await LocalFirstDB.saveEntityWithOutbox(
+        db: db,
+        tableName: 'clipboard_history_entry',
+        entityRow: {
+          'id': id,
+          'created_at': dt.toIso8601String(),
+          'updated_at': dt.toIso8601String(),
+          'owner': 'default',
+          'parent_id': null,
+          'sync_status': 'hidden',
+          'color_tag': 'none',
+          'body': entry.toJson().toString(),
+        },
+        outboxItem: OutboxItem.put(
+          id: id,
+          tableName: 'clipboard_history_entry',
+          entityId: id,
+          data: entry.toJson().toString(),
+          baseVersion: 1,
+          createdAt: dt.millisecondsSinceEpoch,
+        ),
+      );
+    } catch (_) {}
+
+    _lastCollectedTime = detailedDateStr(dt);
+    notifyListeners();
     await _syncNativeTrayStatus();
-  }
-
-  Future<bool> _shouldSkipDuplicate(String incoming, DateTime incomingAtUtc) async {
-    List<ClipboardHistoryEntryDataItem> items;
-    if (Get.isRegistered<ClipboardHistoryEntryController>()) {
-      final controller = Get.find<ClipboardHistoryEntryController>();
-      items = controller.getClipboardHistoryEntryDetails(selector: (item) => item);
-    } else {
-      items = await ClipboardHistoryEntryRepository().listFromLocalDb();
-    }
-
-    if (items.isEmpty) {
-      return false;
-    }
-
-    items.sort((a, b) => _effectiveItemTime(b).compareTo(_effectiveItemTime(a)));
-    final latest = items.first;
-    if (latest.body.data == incoming) {
-      return true;
-    }
-
-    final recent = items.take(_dedupRecentCount);
-    for (final item in recent) {
-      if (item.body.data != incoming) {
-        continue;
-      }
-      final delta = incomingAtUtc.difference(_effectiveItemTime(item)).abs();
-      if (delta <= _dedupWindow) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  DateTime _effectiveItemTime(ClipboardHistoryEntryDataItem item) {
-    return item.body.capturedAt ?? item.createdAt;
   }
 }
