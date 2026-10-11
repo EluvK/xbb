@@ -318,7 +318,8 @@ class _ModernChatViewState extends ConsumerState<ModernChatView> {
                 msg.text,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
               )
-            : MarkdownWidget(
+            else
+              MarkdownWidget(
                 data: msg.text,
                 shrinkWrap: true,
               ),

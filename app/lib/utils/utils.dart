@@ -38,7 +38,7 @@ Future<void> openUrl(String url) async {
 }
 
 bool isMobile() {
-  return GetPlatform.isMobile || Get.width < 600;
+  return AppPlatform.isMobile;
 }
 
 String sharedLink(String owner, String id) {
@@ -116,21 +116,7 @@ void flushBar(
       icon = Icons.error_outline;
       break;
   }
-  if (Get.context == null) {
-    // 当前context可能为null，尤其是在main函数中调用时，因此需要确保在有有效context的情况下调用flushBar
-    print('FlushBar attempted to show without a valid context. Title: $title, Message: $message');
-    return;
-  }
-  Flushbar(
-    title: title,
-    message: message,
-    duration: duration,
-    icon: Icon(icon, size: 28, color: color),
-    margin: const EdgeInsets.all(12.0),
-    borderRadius: BorderRadius.circular(8.0),
-    leftBarIndicatorColor: color,
-    flushbarPosition: upperPosition ? FlushbarPosition.TOP : FlushbarPosition.BOTTOM,
-  ).show(Get.context!);
+  print('[$level] $title: $message');
 }
 
 Future<bool?> showBackCheckDialog(BuildContext context) {

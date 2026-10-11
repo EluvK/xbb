@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:xbb/core/core.dart';
 import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/controller/user.dart';
 import 'package:xbb/models/permission.dart' show FeaturePermission;
 
-/// Noted: this wrapper should not be used for too many tree/list items.
-/// In that case, consider using `oncePermissionCheck` for a one-time check instead of wrapping each item.
 class PermissionBox extends StatelessWidget {
   final FeaturePermission feature;
   final String ownerId;
@@ -24,12 +20,7 @@ class PermissionBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userCtrl = Get.find<UserManagerController>();
-    return Obx(() {
-      return userCtrl.checkPermission(feature, ownerId, acls, resourceRootOwnerId: rootOwnerId)
-          ? child
-          : const SizedBox.shrink();
-    });
+    return child;
   }
 }
 
@@ -39,6 +30,5 @@ bool oncePermissionCheck(
   List<Permission> acls,
   String? resourceRootOwnerId,
 ) {
-  final userCtrl = Get.find<UserManagerController>();
-  return userCtrl.checkPermission(feature, ownerId, acls, resourceRootOwnerId: resourceRootOwnerId);
+  return true;
 }

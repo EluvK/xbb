@@ -1,24 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:xbb/core/core.dart';
-import 'package:xbb/components/notes/post_editor.dart';
-import 'package:xbb/components/notes/repo_editor.dart';
-import 'package:xbb/models/notes/model.dart';
-import 'package:xbb/utils/utils.dart';
+import 'package:xbb/presentation/notes/modern_notes_view.dart';
 
-PopScope withPopAlert(BuildContext context, Scaffold child) {
-  return PopScope(
-    canPop: false,
-    onPopInvokedWithResult: (bool didPop, Object? result) async {
-      if (didPop) {
-        return;
-      }
-      final bool shouldPop = await showBackCheckDialog(context) ?? false;
-      if (context.mounted && shouldPop) {
-        Navigator.pop(context);
-      }
-    },
-    child: child,
-  );
+class EditRepoPage extends StatelessWidget {
+  const EditRepoPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ModernNotesView();
+  }
 }
 
 class EditPostPage extends StatelessWidget {
@@ -26,45 +15,6 @@ class EditPostPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final postController = Get.find<PostController>();
-    final args = Get.arguments;
-    final PostDataItem? post = args?[0];
-
-    if (post == null) {
-      return withPopAlert(
-        context,
-        Scaffold(
-          appBar: AppBar(title: Text('post_page_title_new'.tr)),
-          body: const PostEditor(postItem: null),
-        ),
-      );
-    }
-    return withPopAlert(
-      context,
-      Scaffold(
-        appBar: AppBar(title: Text('post_page_title_edit'.trParams({'postName': post.body.title}))),
-        body: PostEditor(postItem: post),
-      ),
-    );
-  }
-}
-
-class EditRepoPage extends StatelessWidget {
-  const EditRepoPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final args = Get.arguments;
-    final RepoDataItem? repo = (args != null && args is List && args.isNotEmpty) ? args[0] : null;
-    if (repo == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('错误')),
-        body: const Center(child: Text('未能获取笔记本参数')),
-      );
-    }
-    return Scaffold(
-      appBar: AppBar(title: Text('repo_page_title_edit'.trParams({'repoName': repo.body.name}))),
-      body: RepoEditor(repoItem: repo),
-    );
+    return const ModernNotesView();
   }
 }

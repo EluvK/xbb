@@ -1,56 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:xbb/core/core.dart';
-import 'package:xbb/components/common/permission.dart';
-import 'package:xbb/components/notes/post_viewer.dart';
-import 'package:xbb/controller/utils.dart';
-import 'package:xbb/models/notes/model.dart';
-import 'package:xbb/sync/v2/sync_worker.dart';
+import 'package:xbb/presentation/notes/modern_notes_view.dart';
 
 class ViewPostPage extends StatelessWidget {
   const ViewPostPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final args = Get.arguments;
-    if (args == null || args is! List || args.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('错误')),
-        body: const Center(child: Text('未能获取笔记参数')),
-      );
-    }
-    final PostDataItem post = args[0];
-    final RepoController repoController = Get.find<RepoController>();
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('post_page_title_view'.trParams({"postName": post.body.title})),
-        actions: [
-          debugOnlyWidget(
-            IconButton(
-              onPressed: () async {
-                try {
-                  await SyncWorker.instance.triggerSync();
-                } catch (_) {}
-                CommentController commentController = Get.find<CommentController>();
-                await commentController.rebuildLocal();
-              },
-              icon: const Icon(Icons.sync),
-            ),
-          ),
-          PermissionBox(
-            feature: NotesFeatureRequires.updatePost,
-            ownerId: post.owner,
-            rootOwnerId: repoController.getRepo(post.body.repoId)?.owner,
-            acls: repoController.getAclCached(post.body.repoId),
-            child: IconButton(
-              onPressed: () {
-                Get.toNamed('/notes/edit-post', arguments: [post]);
-              },
-              icon: const Icon(Icons.edit),
-            ),
-          ),
-        ],
-      ),
-      body: PostViewer(postItem: post),
-    );
+    return const ModernNotesView();
   }
 }

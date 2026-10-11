@@ -4,9 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:xbb/core/core.dart';
-import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/task/model.dart';
+import 'package:xbb/sync/v2/local_first_db.dart';
 
 const String taskWidgetStateReady = 'ready';
 const String taskWidgetStateEmpty = 'empty';
@@ -94,50 +93,45 @@ class TaskWidgetBridge {
     await _channel.invokeMethod<void>('updateSnapshot', {'snapshot': jsonEncode(snapshot.toJson())});
   }
 
-  /// 返回 true 表示系统支持并已弹出添加对话框，false 表示不支持（需引导用户手动添加）
   static Future<bool> requestPinWidget() async {
     if (!_isSupportedPlatform) return false;
     return await _channel.invokeMethod<bool>('requestPinWidget') ?? false;
   }
 
   static Future<TaskWidgetSnapshot> _buildSnapshot() async {
-    final SettingController settingController = Get.find<SettingController>();
-    if (settingController.userId.isEmpty) {
-      return TaskWidgetSnapshot.requiresLogin();
-    }
+    try {
+      final db = await LocalFirstDB.getDb(userId: 'default');
+      final rows = await db.query('check_list', orderBy: 'created_at DESC');
+      CheckList? activeCheckList;
+      for (final r in rows) {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final checkList = CheckList.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        if (!checkList.archived) {
+          activeCheckList = checkList;
+          break;
+        }
+      }
 
-    final items = await _loadCheckLists();
-    final activeCandidates = items.where((item) => item.body.archived == false).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    if (activeCandidates.isEmpty) {
+      if (activeCheckList == null) {
+        return TaskWidgetSnapshot.empty(totalCount: 0);
+      }
+
+      final tasks = sortTaskItems(decodeTaskItems(activeCheckList.tasks));
+      final unfinished = tasks.where((t) => !t.done && t.content.trim().isNotEmpty).toList();
+      if (unfinished.isEmpty) {
+        return TaskWidgetSnapshot.empty(totalCount: tasks.length);
+      }
+
+      return TaskWidgetSnapshot(
+        state: taskWidgetStateReady,
+        totalCount: tasks.length,
+        unfinishedCount: unfinished.length,
+        generatedAt: DateTime.now().toUtc(),
+        items: unfinished.map((t) => TaskWidgetSnapshotItem(id: t.id, content: t.content.trim())).toList(),
+      );
+    } catch (_) {
       return TaskWidgetSnapshot.empty(totalCount: 0);
     }
-
-    final activeCheckList = activeCandidates.first.body;
-    final tasks = sortTaskItems(decodeTaskItems(activeCheckList.tasks));
-    final unfinished = tasks
-        .where((task) => task.done == false && task.content.trim().isNotEmpty)
-        .toList(growable: false);
-    if (unfinished.isEmpty) {
-      return TaskWidgetSnapshot.empty(totalCount: tasks.length);
-    }
-
-    return TaskWidgetSnapshot(
-      state: taskWidgetStateReady,
-      totalCount: tasks.length,
-      unfinishedCount: unfinished.length,
-      generatedAt: DateTime.now().toUtc(),
-      items: unfinished.map((task) => TaskWidgetSnapshotItem(id: task.id, content: task.content.trim())).toList(),
-    );
-  }
-
-  static Future<List<CheckListDataItem>> _loadCheckLists() async {
-    if (Get.isRegistered<CheckListController>()) {
-      final controller = Get.find<CheckListController>();
-      await controller.ensureInitialization();
-      return controller.getCheckListDetails(selector: (item) => item);
-    }
-    return CheckListRepository().listFromLocalDb();
   }
 
   static bool get _isSupportedPlatform => !kIsWeb && Platform.isAndroid;

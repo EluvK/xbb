@@ -5,43 +5,27 @@ import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/data/base_repository.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/models/task/model.dart';
+import 'package:xbb/sync/v2/local_first_db.dart';
+import 'package:xbb/sync/v2/sync_worker.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 
-class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
+class TaskRepository {
+  final Database db;
+  final DatabaseChangeNotifier changeNotifier;
+
   TaskRepository({
-    required super.db,
-    required super.changeNotifier,
-  }) : super(tableName: 'check_list');
-
-  @override
-  String getId(DataItem<CheckList> entity) => entity.id;
-
-  @override
-  String getOwner(DataItem<CheckList> entity) => entity.owner;
-
-  @override
-  String serialize(DataItem<CheckList> entity) {
-    return jsonEncode(entity.body.toJson());
-  }
-
-  @override
-  DataItem<CheckList> deserialize(Map<String, dynamic> json) {
-    final body = CheckList.fromJson(json);
-    return DataItem<CheckList>(
-      id: '',
-      owner: '',
-      body: body,
-      syncStatus: SyncStatus.synced,
-    );
-  }
+    required this.db,
+    required this.changeNotifier,
+  });
 
   /// 监听当前活动的 CheckList
   Stream<DataItem<CheckList>?> watchActiveCheckList() {
-    return changeNotifier.watchTable(tableName).asyncMap((_) async {
+    return changeNotifier.watchTable('check_list').asyncMap((_) async {
       final rows = await db.query(
-        tableName,
+        'check_list',
         orderBy: 'created_at DESC',
       );
+      final now = DateTime.now();
       for (final r in rows) {
         final bodyStr = r['body'] as String? ?? '{}';
         try {
@@ -49,11 +33,13 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
           final checkList = CheckList.fromJson(bodyJson);
           if (!checkList.archived) {
             return DataItem<CheckList>(
-              id: r['id'] as String,
-              owner: r['owner'] as String? ?? 'default',
+              r['id'] as String,
+              DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+              DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+              r['owner'] as String? ?? 'default',
+              null,
+              null,
               body: checkList,
-              createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-              updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
               syncStatus: SyncStatus.synced,
             );
           }
@@ -65,12 +51,13 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
 
   /// 监听所有已归档的 CheckList
   Stream<List<DataItem<CheckList>>> watchArchivedCheckLists() {
-    return changeNotifier.watchTable(tableName).asyncMap((_) async {
+    return changeNotifier.watchTable('check_list').asyncMap((_) async {
       final rows = await db.query(
-        tableName,
+        'check_list',
         orderBy: 'created_at DESC',
       );
       final list = <DataItem<CheckList>>[];
+      final now = DateTime.now();
       for (final r in rows) {
         final bodyStr = r['body'] as String? ?? '{}';
         try {
@@ -78,11 +65,13 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
           final checkList = CheckList.fromJson(bodyJson);
           if (checkList.archived) {
             list.add(DataItem<CheckList>(
-              id: r['id'] as String,
-              owner: r['owner'] as String? ?? 'default',
+              r['id'] as String,
+              DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+              DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+              r['owner'] as String? ?? 'default',
+              null,
+              null,
               body: checkList,
-              createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-              updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
               syncStatus: SyncStatus.synced,
             ));
           }
@@ -94,7 +83,8 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
 
   /// 获取或新建活动 CheckList
   Future<DataItem<CheckList>> getOrCreateActiveCheckList(String currentUserId) async {
-    final rows = await db.query(tableName, orderBy: 'created_at DESC');
+    final rows = await db.query('check_list', orderBy: 'created_at DESC');
+    final now = DateTime.now();
     for (final r in rows) {
       final bodyStr = r['body'] as String? ?? '{}';
       try {
@@ -102,8 +92,12 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
         final checkList = CheckList.fromJson(bodyJson);
         if (!checkList.archived) {
           return DataItem<CheckList>(
-            id: r['id'] as String,
-            owner: r['owner'] as String? ?? currentUserId,
+            r['id'] as String,
+            DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+            DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+            r['owner'] as String? ?? currentUserId,
+            null,
+            null,
             body: checkList,
             syncStatus: SyncStatus.synced,
           );
@@ -111,17 +105,42 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
       } catch (_) {}
     }
 
-    // 创建新的活动 CheckList
     final newId = UuidService.v7();
     final newCheckList = CheckList(tasks: '[]', archived: false);
     final newItem = DataItem<CheckList>(
-      id: newId,
-      owner: currentUserId,
+      newId,
+      now,
+      now,
+      currentUserId,
+      null,
+      null,
       body: newCheckList,
       syncStatus: SyncStatus.pending,
     );
-    await save(newItem);
+    await saveCheckList(newItem);
     return newItem;
+  }
+
+  Future<void> saveCheckList(DataItem<CheckList> item) async {
+    final nowIso = DateTime.now().toIso8601String();
+    final row = <String, dynamic>{
+      'id': item.id,
+      'created_at': nowIso,
+      'updated_at': nowIso,
+      'owner': item.owner,
+      'parent_id': null,
+      'sync_status': 'pending',
+      'color_tag': 'default',
+      'body': jsonEncode(item.body.toJson()),
+    };
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'check_list',
+      entityId: item.id,
+      entityRow: row,
+    );
+    changeNotifier.notify('check_list');
+    SyncWorker.instance.notifyLocalWrite();
   }
 
   /// 添加任务项
@@ -138,7 +157,16 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
     );
     final updatedList = List<TaskItem>.from(items)..add(newItem);
     final updatedCheckList = active.body.copyWith(tasks: encodeTaskItems(updatedList));
-    await save(active.copyWith(body: updatedCheckList));
+    await saveCheckList(DataItem<CheckList>(
+      active.id,
+      active.createdAt,
+      DateTime.now(),
+      active.owner,
+      active.parentId,
+      active.unique,
+      body: updatedCheckList,
+      syncStatus: SyncStatus.pending,
+    ));
     await TaskWidgetBridge.refreshFromLocalState();
   }
 
@@ -158,7 +186,16 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
     );
     final updatedList = List<TaskItem>.from(items)..[index] = updatedTarget;
     final updatedCheckList = active.body.copyWith(tasks: encodeTaskItems(updatedList));
-    await save(active.copyWith(body: updatedCheckList));
+    await saveCheckList(DataItem<CheckList>(
+      active.id,
+      active.createdAt,
+      DateTime.now(),
+      active.owner,
+      active.parentId,
+      active.unique,
+      body: updatedCheckList,
+      syncStatus: SyncStatus.pending,
+    ));
     await TaskWidgetBridge.refreshFromLocalState();
   }
 
@@ -168,7 +205,16 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
     final items = decodeTaskItems(active.body.tasks);
     final updatedList = items.where((i) => i.id != taskId).toList();
     final updatedCheckList = active.body.copyWith(tasks: encodeTaskItems(updatedList));
-    await save(active.copyWith(body: updatedCheckList));
+    await saveCheckList(DataItem<CheckList>(
+      active.id,
+      active.createdAt,
+      DateTime.now(),
+      active.owner,
+      active.parentId,
+      active.unique,
+      body: updatedCheckList,
+      syncStatus: SyncStatus.pending,
+    ));
     await TaskWidgetBridge.refreshFromLocalState();
   }
 
@@ -178,26 +224,38 @@ class TaskRepository extends BaseLocalFirstRepository<DataItem<CheckList>> {
     final items = decodeTaskItems(active.body.tasks);
     if (items.isEmpty) return;
 
-    // 1. 将当前清单标记为已归档
     final archived = active.body.copyWith(
       archived: true,
       archivedAt: DateTime.now(),
     );
-    await save(active.copyWith(body: archived));
+    await saveCheckList(DataItem<CheckList>(
+      active.id,
+      active.createdAt,
+      DateTime.now(),
+      active.owner,
+      active.parentId,
+      active.unique,
+      body: archived,
+      syncStatus: SyncStatus.pending,
+    ));
 
-    // 2. 将未完成的任务结转到新活动清单中
     final pendingItems = items.where((i) => !i.done).map((i) => i.copyWith(lastModifiedAt: DateTime.now())).toList();
     final newId = UuidService.v7();
+    final now = DateTime.now();
     final newItem = DataItem<CheckList>(
-      id: newId,
-      owner: currentUserId,
+      newId,
+      now,
+      now,
+      currentUserId,
+      null,
+      null,
       body: CheckList(
         tasks: encodeTaskItems(pendingItems),
         archived: false,
       ),
       syncStatus: SyncStatus.pending,
     );
-    await save(newItem);
+    await saveCheckList(newItem);
     await TaskWidgetBridge.refreshFromLocalState();
   }
 }

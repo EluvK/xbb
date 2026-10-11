@@ -4,9 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:xbb/core/core.dart';
-import 'package:xbb/controller/setting.dart';
 import 'package:xbb/models/checkin/model.dart';
+import 'package:xbb/sync/v2/local_first_db.dart';
 
 const String checkinWidgetStateReady = 'ready';
 const String checkinWidgetStateEmpty = 'empty';
@@ -109,11 +108,6 @@ class CheckinWidgetBridge {
     await _channel.invokeMethod<void>('updateSnapshot', {'snapshot': jsonEncode(snapshot.toJson())});
   }
 
-  static Future<bool> requestPinWidget() async {
-    if (!_isSupportedPlatform) return false;
-    return await _channel.invokeMethod<bool>('requestPinWidget') ?? false;
-  }
-
   static String _formatDayKey(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
@@ -123,47 +117,57 @@ class CheckinWidgetBridge {
   }
 
   static Future<CheckinWidgetSnapshot> _buildSnapshot() async {
-    final SettingController settingController = Get.find<SettingController>();
-    if (settingController.userId.isEmpty) {
-      return CheckinWidgetSnapshot.requiresLogin();
-    }
+    try {
+      final db = await LocalFirstDB.getDb(userId: 'default');
+      final eventRows = await db.query('checkin_event', orderBy: 'created_at ASC');
+      if (eventRows.isEmpty) {
+        return CheckinWidgetSnapshot.empty();
+      }
 
-    final events = await CheckinEventRepository().listFromLocalDb();
-    if (events.isEmpty) {
+      final todayKey = _formatDayKey(DateTime.now());
+      final recordRows = await db.query('checkin_record', orderBy: 'created_at DESC');
+      final todayRecords = <CheckinRecord>[];
+      for (final r in recordRows) {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final rec = CheckinRecord.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        if (rec.localDayKey == todayKey) {
+          todayRecords.add(rec);
+        }
+      }
+
+      final items = <CheckinWidgetSnapshotItem>[];
+      for (final r in eventRows) {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final ev = CheckinEvent.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        final id = r['id'] as String;
+        CheckinRecord? matched;
+        for (final rec in todayRecords) {
+          if (rec.eventId == id) {
+            matched = rec;
+            break;
+          }
+        }
+        final isChecked = matched != null;
+        items.add(CheckinWidgetSnapshotItem(
+          id: id,
+          eventName: ev.name,
+          eventColor: ev.colorValue,
+          isChecked: isChecked,
+          checkinTime: isChecked ? _fmtTime(matched.createdAtUtc) : '',
+        ));
+      }
+
+      final checkedCount = items.where((i) => i.isChecked).length;
+      return CheckinWidgetSnapshot(
+        state: checkinWidgetStateReady,
+        eventCount: items.length,
+        checkedCount: checkedCount,
+        items: items,
+        generatedAt: DateTime.now().toUtc(),
+      );
+    } catch (_) {
       return CheckinWidgetSnapshot.empty();
     }
-
-    final todayKey = _formatDayKey(DateTime.now());
-    final records = await CheckinRecordRepository().listFromLocalDb();
-    final todayRecords = records.where((r) => r.body.localDayKey == todayKey).toList();
-
-    final items = events.map((event) {
-      final record = todayRecords.firstWhereOrNull(
-        (r) => r.body.eventId == event.id,
-      );
-      final isChecked = record != null;
-      return CheckinWidgetSnapshotItem(
-        id: event.id,
-        eventName: event.body.name,
-        eventColor: event.body.colorValue,
-        isChecked: isChecked,
-        checkinTime: isChecked ? _fmtTime(record.body.createdAtUtc) : '',
-      );
-    }).toList()
-      ..sort((a, b) {
-        if (a.isChecked != b.isChecked) return a.isChecked ? 1 : -1;
-        return a.eventName.compareTo(b.eventName);
-      });
-
-    final checkedCount = items.where((item) => item.isChecked).length;
-
-    return CheckinWidgetSnapshot(
-      state: checkinWidgetStateReady,
-      eventCount: items.length,
-      checkedCount: checkedCount,
-      generatedAt: DateTime.now().toUtc(),
-      items: items,
-    );
   }
 
   static bool get _isSupportedPlatform => !kIsWeb && Platform.isAndroid;

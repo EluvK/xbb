@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/controller/checkin_widget.dart';
-import 'package:xbb/data/base_repository.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
@@ -31,9 +30,14 @@ class CheckinRepository {
       return rows.map((r) {
         final bodyStr = r['body'] as String? ?? '{}';
         final event = CheckinEvent.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        final now = DateTime.now();
         return DataItem<CheckinEvent>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
           body: event,
           syncStatus: SyncStatus.synced,
         );
@@ -48,9 +52,14 @@ class CheckinRepository {
       return rows.map((r) {
         final bodyStr = r['body'] as String? ?? '{}';
         final record = CheckinRecord.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        final now = DateTime.now();
         return DataItem<CheckinRecord>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+          r['owner'] as String? ?? 'default',
+          record.eventId,
+          null,
           body: record,
           syncStatus: SyncStatus.synced,
         );

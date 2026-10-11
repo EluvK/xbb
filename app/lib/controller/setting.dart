@@ -56,12 +56,10 @@ class AppHomeStartupTabIndex {
   static const int settings = 6;
 }
 
-class SettingController extends GetxController {
+class SettingController extends ChangeNotifier {
   final box = GetStorage(GET_STORAGE_FILE_KEY);
 
-  @override
   void onReady() {
-    super.onReady();
     onLateInit();
   }
 
@@ -71,7 +69,6 @@ class SettingController extends GetxController {
     checkUpdate();
   }
 
-  @override
   Future onInit() async {
     print('new setting controller onInit');
 
@@ -110,13 +107,10 @@ class SettingController extends GetxController {
     if (chatLlm != null) {
       chatLLMSetting.value = ChatLLMSetting.fromJson(chatLlm);
     }
-    super.onInit();
-
     _initialized = true;
   }
 
   bool _initialized = false;
-  @override
   Future<void> ensureInitialization() async {
     while (!_initialized) {
       await onInit();

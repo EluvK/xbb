@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:syncstore_client/syncstore_client.dart';
-import 'package:xbb/data/base_repository.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
 import 'package:xbb/sync/v2/sync_worker.dart';
-import 'package:xbb/sync/v2/uuid_service.dart';
 
 class NotesRepository {
   final Database db;
@@ -21,15 +19,18 @@ class NotesRepository {
   Stream<List<DataItem<Repo>>> watchRepos() {
     return changeNotifier.watchTable('repo').asyncMap((_) async {
       final rows = await db.query('repo', orderBy: 'created_at DESC');
+      final now = DateTime.now();
       return rows.map((r) {
         final bodyStr = r['body'] as String? ?? '{}';
         final repo = Repo.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<Repo>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+          r['owner'] as String? ?? 'default',
+          null,
+          null,
           body: repo,
-          createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-          updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
           syncStatus: SyncStatus.synced,
         );
       }).toList();
@@ -46,16 +47,18 @@ class NotesRepository {
         whereArgs: [repoId],
         orderBy: 'created_at DESC',
       );
+      final now = DateTime.now();
       return rows.map((r) {
         final bodyStr = r['body'] as String? ?? '{}';
         final post = Post.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
         return DataItem<Post>(
-          id: r['id'] as String,
-          owner: r['owner'] as String? ?? 'default',
-          parentId: repoId,
+          r['id'] as String,
+          DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+          DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+          r['owner'] as String? ?? 'default',
+          repoId,
+          null,
           body: post,
-          createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-          updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
           syncStatus: SyncStatus.synced,
         );
       }).toList();
@@ -76,13 +79,15 @@ class NotesRepository {
       final r = rows.first;
       final bodyStr = r['body'] as String? ?? '{}';
       final post = Post.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+      final now = DateTime.now();
       return DataItem<Post>(
-        id: r['id'] as String,
-        owner: r['owner'] as String? ?? 'default',
-        parentId: r['parent_id'] as String?,
+        r['id'] as String,
+        DateTime.tryParse(r['created_at'] as String? ?? '') ?? now,
+        DateTime.tryParse(r['updated_at'] as String? ?? '') ?? now,
+        r['owner'] as String? ?? 'default',
+        r['parent_id'] as String?,
+        null,
         body: post,
-        createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-        updatedAt: DateTime.tryParse(r['updated_at'] as String? ?? '') ?? DateTime.now(),
         syncStatus: SyncStatus.synced,
       );
     });

@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:sync_annotation/sync_annotation.dart';
+import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/models/task/db.dart';
 
 part 'model.g.dart';

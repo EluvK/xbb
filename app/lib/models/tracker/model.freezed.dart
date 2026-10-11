@@ -605,9 +605,7 @@ class MilestoneTrackerConfig with DiagnosticableTreeMixin implements TrackerConf
   factory MilestoneTrackerConfig.fromJson(Map<String, dynamic> json) => _$MilestoneTrackerConfigFromJson(json);
 
  final  String goalType;
-// 'time' / 'number' / 'boolean'
  final  String targetValue;
-// 统一存为 String，例如 "3600", "50.0", "true"
 @JsonKey() final  String progressMode;
 
 @JsonKey(name: 'type')
@@ -769,8 +767,7 @@ as String,
 /// @nodoc
 mixin _$TrackerRecord implements DiagnosticableTreeMixin {
 
- String get trackerId; DateTime get timestamp; String? get value;// 统一存为 String，例如 "3600", "50.0", "true"
- String? get content;
+ String get trackerId; DateTime get timestamp; String? get value; String? get content;
 /// Create a copy of TrackerRecord
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -979,7 +976,6 @@ class _TrackerRecord with DiagnosticableTreeMixin implements TrackerRecord {
 @override final  String trackerId;
 @override final  DateTime timestamp;
 @override final  String? value;
-// 统一存为 String，例如 "3600", "50.0", "true"
 @override final  String? content;
 
 /// Create a copy of TrackerRecord
