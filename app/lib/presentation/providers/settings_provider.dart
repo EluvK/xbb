@@ -2,6 +2,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/core/core.dart';
@@ -26,7 +27,7 @@ class AppSettingsState {
     this.scheme = FlexScheme.blumineBlue,
     this.locale = const Locale('zh', 'CN'),
     this.fontScale = 1.0,
-    this.colorTag = ColorTag.cyan,
+    this.colorTag = ColorTag.none,
     this.taskEnabled = true,
     this.notesEnabled = true,
     this.trackerEnabled = true,
@@ -82,28 +83,17 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     ThemeMode mode = ThemeMode.system;
     Locale loc = const Locale('zh', 'CN');
     double scale = 1.0;
-    ColorTag tag = ColorTag.cyan;
+    ColorTag tag = ColorTag.none;
     int tab = 0;
 
     if (app != null) {
       final parsed = AppSetting.fromJson(app);
-      switch (parsed.themeMode) {
-        case AppThemeMode.light:
-          mode = ThemeMode.light;
-          break;
-        case AppThemeMode.dark:
-          mode = ThemeMode.dark;
-          break;
-        default:
-          mode = ThemeMode.system;
+      mode = parsed.themeMode is ThemeMode ? parsed.themeMode : ThemeMode.system;
+      if (parsed.locale != null) {
+        loc = parsed.locale as Locale;
       }
-      if (parsed.locale.isNotEmpty) {
-        final parts = parsed.locale.split('_');
-        loc = Locale(parts.first, parts.length > 1 ? parts[1] : '');
-      }
-      scale = parsed.fontScale;
-      tag = parsed.colorTag;
-      tab = parsed.homeStartupTabIndex;
+      scale = (parsed.fontScale as num?)?.toDouble() ?? 1.0;
+      tag = parsed.colorTag is ColorTag ? parsed.colorTag : ColorTag.none;
     }
 
     bool task = true;
@@ -121,6 +111,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       checkin = f.enableCheckin;
       chat = f.enableChat;
       clip = f.enableClipboardBackup;
+      tab = f.homeStartupTabIndex;
     }
 
     state = state.copyWith(
