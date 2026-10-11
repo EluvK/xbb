@@ -201,12 +201,38 @@ pub async fn handle_pull(
                 AND acls.entity_id = change_log.entity_id
                 AND acls.user_id = ?
             )
+            OR (
+              change_log.table_name IN ('post', 'comment')
+              AND EXISTS (
+                SELECT 1 FROM acls
+                WHERE acls.table_name = 'repo'
+                  AND acls.user_id = ?
+                  AND (
+                    acls.entity_id = json_extract(change_log.data, '$.repo_id')
+                    OR acls.entity_id = json_extract(change_log.data, '$.repoId')
+                  )
+              )
+            )
+            OR (
+              change_log.table_name = 'tracker_record'
+              AND EXISTS (
+                SELECT 1 FROM acls
+                WHERE acls.table_name = 'tracker'
+                  AND acls.user_id = ?
+                  AND (
+                    acls.entity_id = json_extract(change_log.data, '$.tracker_id')
+                    OR acls.entity_id = json_extract(change_log.data, '$.trackerId')
+                  )
+              )
+            )
           )
         ORDER BY seq ASC
         LIMIT ?
         "#,
     )
     .bind(checkpoint)
+    .bind(user_id)
+    .bind(user_id)
     .bind(user_id)
     .bind(user_id)
     .bind(fetch_limit)
@@ -233,6 +259,8 @@ pub async fn handle_pull(
             op: rec.op.clone(),
             data,
             version: rec.version,
+            owner_id: Some(rec.owner_id.clone()),
+            created_at: Some(rec.created_at),
         });
     }
 

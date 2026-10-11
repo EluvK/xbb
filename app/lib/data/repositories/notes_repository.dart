@@ -383,6 +383,31 @@ class NotesRepository {
     }
     return null;
   }
+
+  /// 通过分享口令 / URL 订阅他人知识库
+  Future<void> subscribeRepoByShareLink(String link, {String? repoName}) async {
+    final parsed = parseShareLink(link);
+    if (parsed == null) {
+      throw Exception('无效的分享口令或链接');
+    }
+    final existing = await db.query('repo', where: 'id = ?', whereArgs: [parsed.repoId], limit: 1);
+    if (existing.isNotEmpty) {
+      return; // 已经存在
+    }
+    final now = DateTime.now();
+    final newRepo = DataItem<Repo>(
+      parsed.repoId,
+      now,
+      now,
+      parsed.ownerId,
+      null,
+      null,
+      body: Repo(name: repoName ?? '订阅小本本', status: 'active'),
+      syncStatus: SyncStatus.synced,
+    );
+    await saveRepo(newRepo);
+    SyncWorker.instance.triggerSync();
+  }
 }
 
 /// 独立的评论仓储抽象，便于特定模块注入与解耦

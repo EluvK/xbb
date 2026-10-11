@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:xbb/core/network/api_client.dart';
 import 'local_first_db.dart';
 import 'outbox_dao.dart';
 import 'sync_meta_dao.dart';
@@ -206,6 +208,30 @@ class SyncWorker {
     final appliedEntityIds = pushResp.appliedIds.toSet();
     final conflictEntityIds = pushResp.conflicts.map((c) => c.id).toSet();
 
+    // 对于 CAS 版本冲突，使用服务端返回的权威最新数据就地对齐本地
+    for (final conflict in pushResp.conflicts) {
+      if (conflict.serverVersion != null && conflict.currentData != null) {
+        final matches = pending.where((m) => m.entityId == conflict.id);
+        for (final m in matches) {
+          try {
+            final curDataStr = conflict.currentData is String
+                ? conflict.currentData as String
+                : jsonEncode(conflict.currentData);
+            await db.update(
+              m.tableName,
+              {
+                'body': curDataStr,
+                'version': conflict.serverVersion,
+                'sync_status': 'synced',
+              },
+              where: 'id = ?',
+              whereArgs: [conflict.id],
+            );
+          } catch (_) {}
+        }
+      }
+    }
+
     final outboxIdsToDelete = pending
         .where((m) =>
             appliedEntityIds.contains(m.entityId) ||
@@ -279,17 +305,31 @@ class SyncWorker {
       final dataStr = change.dataAsString ?? '{}';
 
       String? parentId;
+      String? remoteOwner = change.ownerId;
+      String? remoteCreatedAt;
+      String? colorTag;
       final parsed = change.parsedData;
       if (parsed is Map) {
         parentId = (parsed['repo_id'] ??
-                parsed['post_id'] ??
-                parsed['conversation_id'] ??
-                parsed['parent_id'] ??
                 parsed['repoId'] ??
+                parsed['post_id'] ??
                 parsed['postId'] ??
+                parsed['event_id'] ??
+                parsed['eventId'] ??
+                parsed['tracker_id'] ??
+                parsed['trackerId'] ??
+                parsed['conversation_id'] ??
                 parsed['conversationId'] ??
+                parsed['parent_id'] ??
                 parsed['parentId'])
             ?.toString();
+        remoteOwner ??= parsed['owner']?.toString();
+        remoteCreatedAt = parsed['created_at']?.toString() ?? parsed['createdAt']?.toString();
+        colorTag = parsed['color_tag']?.toString() ?? parsed['colorTag']?.toString();
+      }
+
+      if (remoteCreatedAt == null && change.createdAt != null && change.createdAt! > 0) {
+        remoteCreatedAt = DateTime.fromMillisecondsSinceEpoch(change.createdAt!).toUtc().toIso8601String();
       }
 
       final exists = await txn.query(
@@ -303,10 +343,17 @@ class SyncWorker {
         final updateMap = <String, dynamic>{
           'body': dataStr,
           'sync_status': 'synced',
+          'version': change.version,
           'updated_at': nowStr,
         };
         if (parentId != null) {
           updateMap['parent_id'] = parentId;
+        }
+        if (remoteOwner != null && remoteOwner.isNotEmpty) {
+          updateMap['owner'] = remoteOwner;
+        }
+        if (colorTag != null && colorTag.isNotEmpty) {
+          updateMap['color_tag'] = colorTag;
         }
         await txn.update(
           table,
@@ -319,13 +366,14 @@ class SyncWorker {
           table,
           {
             'id': entityId,
-            'created_at': nowStr,
+            'created_at': remoteCreatedAt ?? nowStr,
             'updated_at': nowStr,
-            'owner': 'remote',
+            'owner': remoteOwner ?? 'remote',
             'parent_id': parentId,
             'unique': null,
             'sync_status': 'synced',
-            'color_tag': 'none',
+            'color_tag': colorTag ?? 'none',
+            'version': change.version,
             'body': dataStr,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,

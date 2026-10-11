@@ -10,6 +10,7 @@ import 'package:xbb/models/tracker/tracker_calculator.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/tracker/tracker_history_sheet.dart';
 import 'package:xbb/presentation/tracker/tracker_providers.dart';
+import 'package:xbb/presentation/widgets/acl_editor.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 import 'package:xbb/utils/translation.dart';
@@ -386,6 +387,18 @@ class ModernTrackerCard extends ConsumerWidget {
                       tooltip: '历史明细流水',
                       visualDensity: VisualDensity.compact,
                       onPressed: () => TrackerHistorySheet.show(context, tracker: tracker, userId: userId),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.share_outlined, size: 18),
+                      tooltip: '协同权限与成员',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => AclEditor.show(
+                        context,
+                        table: 'tracker',
+                        entityId: tracker.id,
+                        entityTitle: tracker.body.name,
+                        ownerId: tracker.owner,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 18),

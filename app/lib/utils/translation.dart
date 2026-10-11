@@ -458,6 +458,30 @@ class _TranslationHelper {
       "en_US": "Subscribed Repositories",
       "zh_CN": "订阅的仓库",
     },
+    "subscribe_repo_btn": {
+      "en_US": "Subscribe Repo",
+      "zh_CN": "口令订阅",
+    },
+    "subscribe_repo_dialog_title": {
+      "en_US": "Subscribe Repository",
+      "zh_CN": "订阅小本本",
+    },
+    "subscribe_repo_dialog_hint": {
+      "en_US": "Paste share link (e.g. xbb-share://owner/repoId)",
+      "zh_CN": "粘贴分享链接口令 (如 xbb-share://owner/repoId)",
+    },
+    "subscribe_repo_success": {
+      "en_US": "Subscribed successfully",
+      "zh_CN": "订阅成功",
+    },
+    "notes_category_title": {
+      "en_US": "Category",
+      "zh_CN": "分类",
+    },
+    "notes_category_hint": {
+      "en_US": "Enter or select category",
+      "zh_CN": "输入或选择分类",
+    },
     "reply": {
       "en_US": "Reply",
       "zh_CN": "回复",

@@ -114,6 +114,8 @@ class SyncChangeItem {
   final String op; // 'PUT' | 'DELETE'
   final dynamic data;
   final int version;
+  final String? ownerId;
+  final int? createdAt;
 
   const SyncChangeItem({
     required this.seq,
@@ -122,6 +124,8 @@ class SyncChangeItem {
     required this.op,
     this.data,
     required this.version,
+    this.ownerId,
+    this.createdAt,
   });
 
   factory SyncChangeItem.fromJson(Map<String, dynamic> json) {
@@ -132,6 +136,8 @@ class SyncChangeItem {
       op: json['op'] as String,
       data: json['data'],
       version: (json['version'] as num?)?.toInt() ?? 1,
+      ownerId: json['owner_id'] as String?,
+      createdAt: (json['created_at'] as num?)?.toInt(),
     );
   }
 

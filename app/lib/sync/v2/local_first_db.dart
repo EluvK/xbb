@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart';
@@ -41,6 +42,7 @@ class LocalFirstDB {
         "unique" TEXT,
         sync_status TEXT NOT NULL,
         color_tag TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
         body TEXT NOT NULL
       );
     ''';
@@ -64,9 +66,12 @@ class LocalFirstDB {
       }
     }
 
-    // 4. 创建已知核心业务实体表
+    // 4. 创建已知核心业务实体表，并平滑迁移补齐 version 列
     for (final table in coreEntityTables) {
       await db.execute(buildEntityTableSql(table));
+      try {
+        await db.execute('ALTER TABLE $table ADD COLUMN version INTEGER NOT NULL DEFAULT 1');
+      } catch (_) {}
     }
 
     // 5. 创建 ACL 权限表
@@ -191,18 +196,48 @@ class LocalFirstDB {
     required Map<String, dynamic> entityRow,
   }) async {
     final bodyStr = entityRow['body'] as String? ?? '{}';
+    String payloadData = bodyStr;
+    final colorTag = entityRow['color_tag']?.toString();
+    if (colorTag != null && colorTag.isNotEmpty && colorTag != 'none' && colorTag != 'default') {
+      try {
+        final decoded = jsonDecode(bodyStr);
+        if (decoded is Map<String, dynamic>) {
+          decoded['color_tag'] = colorTag;
+          payloadData = jsonEncode(decoded);
+        }
+      } catch (_) {}
+    }
+
+    // 读取实体当前的真实版本，避免硬编码 1 导致 CAS 冲突
+    int currentVersion = 1;
+    try {
+      final existing = await db.query(
+        tableName,
+        columns: ['version'],
+        where: 'id = ?',
+        whereArgs: [entityId],
+        limit: 1,
+      );
+      if (existing.isNotEmpty) {
+        currentVersion = (existing.first['version'] as num?)?.toInt() ?? 1;
+      }
+    } catch (_) {}
+
+    final rowToSave = Map<String, dynamic>.from(entityRow);
+    rowToSave['version'] = currentVersion;
+
     final outbox = OutboxItem.put(
       id: UuidService.v7(),
       tableName: tableName,
       entityId: entityId,
-      data: bodyStr,
-      baseVersion: 1,
+      data: payloadData,
+      baseVersion: currentVersion,
       createdAt: DateTime.now().millisecondsSinceEpoch,
     );
     await saveEntityWithOutbox(
       db: db,
       tableName: tableName,
-      entityRow: entityRow,
+      entityRow: rowToSave,
       outboxItem: outbox,
     );
   }
@@ -213,11 +248,25 @@ class LocalFirstDB {
     required String tableName,
     required String entityId,
   }) async {
+    int currentVersion = 1;
+    try {
+      final existing = await db.query(
+        tableName,
+        columns: ['version'],
+        where: 'id = ?',
+        whereArgs: [entityId],
+        limit: 1,
+      );
+      if (existing.isNotEmpty) {
+        currentVersion = (existing.first['version'] as num?)?.toInt() ?? 1;
+      }
+    } catch (_) {}
+
     final outbox = OutboxItem.delete(
       id: UuidService.v7(),
       tableName: tableName,
       entityId: entityId,
-      baseVersion: 1,
+      baseVersion: currentVersion,
       createdAt: DateTime.now().millisecondsSinceEpoch,
     );
     await deleteEntityWithOutbox(

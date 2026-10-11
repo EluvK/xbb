@@ -25,17 +25,20 @@ class ModernNotesView extends ConsumerStatefulWidget {
 class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   bool _isEditing = false;
   String _searchKeyword = '';
   DataItem<Comment>? _replyToComment;
   bool _myReposExpanded = true;
   bool _subscribedReposExpanded = true;
+  final Map<String, bool> _expandedCategories = {};
 
   @override
   void dispose() {
     _searchController.dispose();
     _titleController.dispose();
+    _categoryController.dispose();
     _contentController.dispose();
     super.dispose();
   }
@@ -73,6 +76,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     final updated = post.updatedBody(
       post.body.copyWith(
         title: _titleController.text.trim().isEmpty ? 'notes_untitled'.tr : _titleController.text.trim(),
+        category: _categoryController.text.trim().isEmpty ? 'notes_default_category'.tr : _categoryController.text.trim(),
         content: _contentController.text,
       ),
     );
@@ -83,6 +87,9 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   void _createNewPost(String repoId, String userId) {
     final newId = UuidService.v7();
     final now = DateTime.now();
+    final defaultCat = _categoryController.text.trim().isNotEmpty
+        ? _categoryController.text.trim()
+        : 'notes_default_category'.tr;
     final newPost = DataItem<Post>(
       newId,
       now,
@@ -92,7 +99,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
       null,
       body: Post(
         title: 'notes_new_note_title'.tr,
-        category: 'notes_default_category'.tr,
+        category: defaultCat,
         content: 'notes_new_note_content'.tr,
         repoId: repoId,
       ),
@@ -101,6 +108,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     ref.read(notesRepositoryProvider).savePost(newPost);
     ref.read(selectedPostIdProvider.notifier).state = newId;
     _titleController.text = 'notes_new_note_title'.tr;
+    _categoryController.text = defaultCat;
     _contentController.text = 'notes_new_note_content'.tr;
     setState(() => _isEditing = true);
   }
@@ -108,7 +116,6 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final reposAsync = ref.watch(reposStreamProvider);
     final postsAsync = ref.watch(postsStreamProvider);
     final currentPostAsync = ref.watch(currentPostStreamProvider);
     final selectedRepoId = ref.watch(selectedRepoIdProvider);
@@ -172,10 +179,20 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   'home_bar_title_notes'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.add, size: 20),
-                  tooltip: 'new_repo'.tr,
-                  onPressed: () => _showCreateRepoDialog(userId),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.link, size: 20),
+                      tooltip: 'subscribe_repo_btn'.tr,
+                      onPressed: () => _showSubscribeRepoDialog(userId),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add, size: 20),
+                      tooltip: 'new_repo'.tr,
+                      onPressed: () => _showCreateRepoDialog(userId),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -373,7 +390,12 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
             data: (posts) {
               final filtered = _searchKeyword.isEmpty
                   ? posts
-                  : posts.where((p) => p.body.title.toLowerCase().contains(_searchKeyword)).toList();
+                  : posts.where((p) {
+                      final kw = _searchKeyword;
+                      return p.body.title.toLowerCase().contains(kw) ||
+                          p.body.content.toLowerCase().contains(kw) ||
+                          p.body.category.toLowerCase().contains(kw);
+                    }).toList();
 
               if (filtered.isEmpty) {
                 return const ModernEmptyState(
@@ -382,50 +404,113 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   subtitle: '点击上方 “+” 开始写下新文章',
                 );
               }
-              return ListView.separated(
+
+              // 按 Category 分类分组
+              final Map<String, List<DataItem<Post>>> groupedByCategory = {};
+              for (final post in filtered) {
+                final cat = post.body.category.trim().isEmpty ? 'notes_default_category'.tr : post.body.category.trim();
+                groupedByCategory.putIfAbsent(cat, () => []).add(post);
+              }
+
+              final categories = groupedByCategory.keys.toList();
+
+              return ListView.builder(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                itemCount: filtered.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
-                itemBuilder: (context, index) {
-                  final post = filtered[index];
-                  final isSelected = post.id == selectedPostId;
-                  return ModernCard(
-                    selected: isSelected,
-                    onTap: () {
-                      ref.read(selectedPostIdProvider.notifier).state = post.id;
-                      _titleController.text = post.body.title;
-                      _contentController.text = post.body.content;
-                      setState(() {
-                        _isEditing = false;
-                        _replyToComment = null;
-                      });
-                    },
+                itemCount: categories.length,
+                itemBuilder: (context, catIndex) {
+                  final category = categories[catIndex];
+                  final categoryPosts = groupedByCategory[category]!;
+                  final isExpanded = _expandedCategories[category] ?? true;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Row(
-                          children: [
-                            if (post.colorTag != ColorTag.none) ...[
-                              Icon(Icons.brightness_1_rounded, color: post.colorTag.toColor(), size: 10),
-                              const SizedBox(width: AppSpacing.xs),
-                            ],
-                            Expanded(
-                              child: Text(
-                                post.body.title,
-                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                        // 分类折叠栏头部
+                        InkWell(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          onTap: () {
+                            setState(() {
+                              _expandedCategories[category] = !isExpanded;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 6.0),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.folder_outlined,
+                                  size: 15,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                Expanded(
+                                  child: Text(
+                                    '$category (${categoryPosts.length})',
+                                    style: theme.textTheme.labelMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                                  size: 16,
+                                  color: theme.colorScheme.outline,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          post.body.content.replaceAll(RegExp(r'[#*`\n]'), ' '),
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        if (isExpanded)
+                          ...categoryPosts.map((post) {
+                            final isSelected = post.id == selectedPostId;
+                            return Padding(
+                              padding: const EdgeInsets.only(top: AppSpacing.xs),
+                              child: ModernCard(
+                                selected: isSelected,
+                                onTap: () {
+                                  ref.read(selectedPostIdProvider.notifier).state = post.id;
+                                  _titleController.text = post.body.title;
+                                  _categoryController.text = post.body.category;
+                                  _contentController.text = post.body.content;
+                                  setState(() {
+                                    _isEditing = false;
+                                    _replyToComment = null;
+                                  });
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        if (post.colorTag != ColorTag.none) ...[
+                                          Icon(Icons.brightness_1_rounded, color: post.colorTag.toColor(), size: 10),
+                                          const SizedBox(width: AppSpacing.xs),
+                                        ],
+                                        Expanded(
+                                          child: Text(
+                                            post.body.title,
+                                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      post.body.content.replaceAll(RegExp(r'[#*`\n]'), ' '),
+                                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
                       ],
                     ),
                   );
@@ -530,6 +615,27 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.folder_outlined, size: 16, color: theme.colorScheme.primary),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: TextField(
+                              controller: _categoryController,
+                              style: theme.textTheme.bodySmall,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                border: InputBorder.none,
+                                hintText: 'notes_category_hint'.tr,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.md,
                         vertical: AppSpacing.xs,
@@ -564,6 +670,23 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                     return ListView(
                       padding: const EdgeInsets.all(AppSpacing.lg),
                       children: [
+                        if (post.body.category.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                            child: Row(
+                              children: [
+                                Icon(Icons.folder_outlined, size: 14, color: theme.colorScheme.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  post.body.category,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         SimpleMarkdownRenderer(
                           data: post.body.content,
                         ),
@@ -623,6 +746,49 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('错误: $e')),
+    );
+  }
+
+  void _showSubscribeRepoDialog(String userId) {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('subscribe_repo_dialog_title'.tr),
+        content: TextField(
+          controller: ctrl,
+          decoration: InputDecoration(
+            labelText: 'subscribe_repo_dialog_hint'.tr,
+            hintText: 'xbb-share://ownerId/repoId',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('cancel'.tr)),
+          FilledButton(
+            onPressed: () async {
+              final link = ctrl.text.trim();
+              if (link.isNotEmpty) {
+                try {
+                  await ref.read(notesRepositoryProvider).subscribeRepoByShareLink(link);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('subscribe_repo_success'.tr)),
+                    );
+                  }
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+                    );
+                  }
+                }
+              }
+            },
+            child: Text('confirm'.tr),
+          ),
+        ],
+      ),
     );
   }
 

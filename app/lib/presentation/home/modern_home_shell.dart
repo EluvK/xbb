@@ -190,27 +190,7 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
                 Expanded(child: _buildCurrentTabView()),
               ],
             )
-          : Scaffold(
-              backgroundColor: theme.colorScheme.surface,
-              appBar: AppBar(
-                title: Text(_getTitleForTab(_currentTab), style: const TextStyle(fontWeight: FontWeight.bold)),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.md),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () => context.push('/profile'),
-                      child: UserAvatarWidget(
-                        avatar: auth.avatar,
-                        fallbackName: auth.nickname.isNotEmpty ? auth.nickname : auth.username,
-                        radius: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              body: _buildCurrentTabView(),
-            ),
+          : _buildCurrentTabView(),
       bottomNavigationBar: isDesktop
           ? null
           : PieMenu(

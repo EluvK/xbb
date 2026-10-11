@@ -47,7 +47,10 @@ void main() async {
     db: db,
     clientId: clientId,
   );
-  SyncWorker.instance.start();
+  // 仅在已持有有效 Token 时启动远端守护同步，离线/访客模式保持就绪不主动触发 401
+  if (token != null && token.isNotEmpty && userId != 'default') {
+    SyncWorker.instance.start();
+  }
 
   ClipboardTrayService.instance.configure(userId: userId);
 
@@ -97,12 +100,8 @@ class ModernXbbApp extends ConsumerWidget {
       ),
       builder: (context, child) {
         final mediaQueryData = MediaQuery.of(context);
-        final scale = mediaQueryData.textScaler.clamp(
-          minScaleFactor: settings.fontScale,
-          maxScaleFactor: settings.fontScale + 0.1,
-        );
         return MediaQuery(
-          data: mediaQueryData.copyWith(textScaler: scale),
+          data: mediaQueryData.copyWith(textScaler: TextScaler.linear(settings.fontScale)),
           child: child ?? const SizedBox.shrink(),
         );
       },

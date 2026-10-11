@@ -216,9 +216,11 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: ModernCard(
                             selected: isChecked,
-                            onLongPress: isFuture || isChecked
+                            onLongPress: isFuture
                                 ? null
-                                : () => _showCheckinWithNoteDialog(context, eventItem, event.name),
+                                : (isChecked
+                                    ? () => _showEditRecordDialog(context, recordItem, event.name)
+                                    : () => _showCheckinWithNoteDialog(context, eventItem, event.name)),
                             onTap: () async {
                               if (isFuture) {
                                 ScaffoldMessenger.of(context).showSnackBar(

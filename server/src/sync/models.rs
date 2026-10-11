@@ -52,6 +52,10 @@ pub struct ChangeItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<serde_json::Value>,
     pub version: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub owner_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
