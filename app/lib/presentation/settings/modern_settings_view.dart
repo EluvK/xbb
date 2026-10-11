@@ -205,6 +205,39 @@ class ModernSettingsView extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
+          // 桌面系统托盘与剪贴板监听 (Desktop Tray & Clipboard)
+          ModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('桌面系统托盘与剪贴板', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    ModernBadge(
+                      label: settings.clipboardListeningEnabled ? '正在监听' : '已暂停',
+                      color: settings.clipboardListeningEnabled ? Colors.teal : Colors.grey,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  '在后台持续监听系统剪贴板并支持窗口最小化至系统托盘。捕获的历史文本严格遵循 ADR-0002 本地优先隐私规范，默认仅写入本地 SQLite，绝不自动上传云端。',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('启用后台剪贴板监听'),
+                  subtitle: const Text('复制系统文本时自动捕获到本地历史'),
+                  value: settings.clipboardListeningEnabled,
+                  onChanged: (v) => ref.read(appSettingsProvider.notifier).setClipboardListeningEnabled(v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
           // 桌面小部件 (Desktop / Home Widget)
           ModernCard(
             child: Column(

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/constant.dart';
+import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/controller/setting.dart';
 
 /// 纯净的全局应用配置状态
@@ -19,6 +20,7 @@ class AppSettingsState {
   final bool checkinEnabled;
   final bool chatEnabled;
   final bool clipboardEnabled;
+  final bool clipboardListeningEnabled;
   final int startupTabIndex;
 
   const AppSettingsState({
@@ -33,6 +35,7 @@ class AppSettingsState {
     this.checkinEnabled = true,
     this.chatEnabled = true,
     this.clipboardEnabled = true,
+    this.clipboardListeningEnabled = false,
     this.startupTabIndex = 0,
   });
 
@@ -48,6 +51,7 @@ class AppSettingsState {
     bool? checkinEnabled,
     bool? chatEnabled,
     bool? clipboardEnabled,
+    bool? clipboardListeningEnabled,
     int? startupTabIndex,
   }) {
     return AppSettingsState(
@@ -62,6 +66,7 @@ class AppSettingsState {
       checkinEnabled: checkinEnabled ?? this.checkinEnabled,
       chatEnabled: chatEnabled ?? this.chatEnabled,
       clipboardEnabled: clipboardEnabled ?? this.clipboardEnabled,
+      clipboardListeningEnabled: clipboardListeningEnabled ?? this.clipboardListeningEnabled,
       startupTabIndex: startupTabIndex ?? this.startupTabIndex,
     );
   }
@@ -101,6 +106,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     bool checkin = true;
     bool chat = true;
     bool clip = true;
+    bool clipListen = false;
 
     if (feature != null) {
       final f = AppFeaturesManagement.fromJson(feature);
@@ -110,6 +116,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       checkin = f.enableCheckin;
       chat = f.enableChat;
       clip = f.enableClipboardBackup;
+      clipListen = f.enableClipboardListening;
       tab = f.homeStartupTabIndex;
     }
 
@@ -125,6 +132,13 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       checkinEnabled: checkin,
       chatEnabled: chat,
       clipboardEnabled: clip,
+      clipboardListeningEnabled: clipListen,
+    );
+
+    // 同步初始化托盘与后台监听服务
+    ClipboardTrayService.instance.init(
+      featureEnabled: clip,
+      listeningEnabled: clipListen,
     );
   }
 
@@ -144,6 +158,17 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     state = state.copyWith(colorTag: tag);
   }
 
+  void setClipboardListeningEnabled(bool enabled) {
+    state = state.copyWith(clipboardListeningEnabled: enabled);
+    final featureMap = Map<String, dynamic>.from(
+      box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY) ?? {},
+    );
+    featureMap['enable_clipboard_listening'] = enabled;
+    box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, featureMap);
+
+    ClipboardTrayService.instance.setListeningEnabled(enabled);
+  }
+
   void toggleFeature({
     bool? task,
     bool? notes,
@@ -160,6 +185,10 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       chatEnabled: chat,
       clipboardEnabled: clipboard,
     );
+
+    if (clipboard != null) {
+      ClipboardTrayService.instance.setFeatureEnabled(clipboard);
+    }
   }
 }
 

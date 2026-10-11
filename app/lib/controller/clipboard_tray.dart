@@ -1,30 +1,36 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:syncstore_client/syncstore_client.dart' show DataItem, SyncStatus;
-import 'package:uuid/uuid.dart';
+import 'package:xbb/data/repositories/clipboard_repository.dart';
 import 'package:xbb/models/clipboard/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
-import 'package:xbb/sync/v2/outbox_item.dart';
-import 'package:xbb/utils/utils.dart';
+import 'package:xbb/sync/v2/uuid_service.dart';
 
-/// 纯净的 Windows 托盘与剪贴板后台监听服务（ADR-0002 约束）
+/// 纯净的 Windows/macOS 托盘与剪贴板后台监听服务（ADR-0002 约束）
 class ClipboardTrayService extends ChangeNotifier {
   static final ClipboardTrayService instance = ClipboardTrayService._();
   ClipboardTrayService._();
 
   static const MethodChannel _channel = MethodChannel('com.eluvk.xbb/clipboard_tray');
-  static const Duration _dedupWindow = Duration(seconds: 30);
-  static const int _dedupRecentCount = 8;
 
-  bool _featureEnabled = false;
+  bool _featureEnabled = true;
   bool _listeningEnabled = false;
   String? _lastCollectedTime;
+  ClipboardRepository? _repository;
+  String _currentUserId = 'default';
 
   bool get featureEnabled => _featureEnabled;
   bool get listeningEnabled => _listeningEnabled;
+  bool get isListeningActive => _featureEnabled && _listeningEnabled;
   String? get lastCollectedTime => _lastCollectedTime;
 
-  Future<void> init({bool featureEnabled = true, bool listeningEnabled = true}) async {
+  /// 配置关联的 Repository 与当前用户 ID
+  void configure({ClipboardRepository? repository, String userId = 'default'}) {
+    _repository = repository;
+    _currentUserId = userId;
+  }
+
+  Future<void> init({bool featureEnabled = true, bool listeningEnabled = false}) async {
     _featureEnabled = featureEnabled;
     _listeningEnabled = listeningEnabled;
     _channel.setMethodCallHandler(_onMethodCall);
@@ -51,16 +57,16 @@ class ClipboardTrayService extends ChangeNotifier {
 
   Future<void> _syncNativeTrayStatus() async {
     try {
-      await _channel.invokeMethod('setListeningEnabled', _featureEnabled && _listeningEnabled);
+      await _channel.invokeMethod('setListeningEnabled', isListeningActive);
       final payload = <String, dynamic>{
-        'listeningEnabled': _featureEnabled && _listeningEnabled,
+        'listeningEnabled': isListeningActive,
       };
       if (_lastCollectedTime != null && _lastCollectedTime!.isNotEmpty) {
         payload['lastCollectedTime'] = _lastCollectedTime;
       }
       await _channel.invokeMethod('updateTrayStatus', payload);
     } on MissingPluginException {
-      // 非 Windows 平台静默忽略
+      // 桌面平台在没有接入对应实现时静默忽略
     } on PlatformException catch (e) {
       debugPrint('Sync clipboard tray status failed: $e');
     }
@@ -76,7 +82,7 @@ class ClipboardTrayService extends ChangeNotifier {
           if (timeStr != null && timeStr.isNotEmpty) {
             time = DateTime.tryParse(timeStr) ?? DateTime.now();
           }
-          await _onNewTextCollected(text, time);
+          await handleCollectedText(text, time);
         }
         return true;
       case 'onTrayMenuExit':
@@ -87,48 +93,69 @@ class ClipboardTrayService extends ChangeNotifier {
     }
   }
 
-  Future<void> _onNewTextCollected(String text, DateTime dt) async {
-    final entry = ClipboardHistoryEntry(data: text, capturedAt: dt, localOnly: true);
-    final id = const Uuid().v4();
-    final item = DataItem<ClipboardHistoryEntry>(
-      id,
-      dt,
-      dt,
-      'default',
-      null,
-      null,
-      body: entry,
-      syncStatus: SyncStatus.hidden,
-    );
+  /// 核心捕获入口（受 isListeningActive 开关控制，关闭后不再捕获）
+  Future<bool> handleCollectedText(String text, [DateTime? time]) async {
+    if (!isListeningActive) {
+      // 开关关闭，直接忽略
+      return false;
+    }
 
-    try {
-      final db = await LocalFirstDB.getDb(userId: 'default');
-      await LocalFirstDB.saveEntityWithOutbox(
-        db: db,
-        tableName: 'clipboard_history_entry',
-        entityRow: {
-          'id': id,
-          'created_at': dt.toIso8601String(),
-          'updated_at': dt.toIso8601String(),
-          'owner': 'default',
-          'parent_id': null,
-          'sync_status': 'hidden',
-          'color_tag': 'none',
-          'body': entry.toJson().toString(),
-        },
-        outboxItem: OutboxItem.put(
-          id: id,
-          tableName: 'clipboard_history_entry',
-          entityId: id,
-          data: entry.toJson().toString(),
-          baseVersion: 1,
-          createdAt: dt.millisecondsSinceEpoch,
-        ),
-      );
-    } catch (_) {}
+    final dt = time ?? DateTime.now();
+    bool inserted = false;
 
-    _lastCollectedTime = detailedDateStr(dt);
+    if (_repository != null) {
+      inserted = await _repository!.capture(text, _currentUserId);
+    } else {
+      // 本地兜底持久化（严禁入队 Outbox，严格遵守 ADR-0002 约束）
+      try {
+        final db = await LocalFirstDB.getDb(userId: _currentUserId);
+        // 查重：避免连续重复录入相同文本
+        final recent = await db.query(
+          'clipboard_history_entry',
+          orderBy: 'created_at DESC',
+          limit: 1,
+        );
+        if (recent.isNotEmpty) {
+          final lastBodyStr = recent.first['body'] as String? ?? '{}';
+          try {
+            final last = ClipboardHistoryEntry.fromJson(jsonDecode(lastBodyStr) as Map<String, dynamic>);
+            if (last.data == text) return false;
+          } catch (_) {}
+        }
+
+        final newId = UuidService.v7();
+        final entry = ClipboardHistoryEntry(
+          data: text,
+          capturedAt: dt,
+          localOnly: true,
+        );
+        await db.insert(
+          'clipboard_history_entry',
+          {
+            'id': newId,
+            'created_at': dt.toIso8601String(),
+            'updated_at': dt.toIso8601String(),
+            'owner': _currentUserId,
+            'parent_id': null,
+            'sync_status': 'local_only',
+            'color_tag': 'default',
+            'body': jsonEncode(entry.toJson()),
+          },
+        );
+        inserted = true;
+      } catch (e) {
+        debugPrint('Fallback capture clipboard entry failed: $e');
+        return false;
+      }
+    }
+
+    if (!inserted) {
+      return false;
+    }
+
+    _lastCollectedTime = dt.toLocal().toString().split('.').first;
     notifyListeners();
     await _syncNativeTrayStatus();
+    return true;
   }
 }

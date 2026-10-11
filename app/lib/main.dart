@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:xbb/constant.dart';
+import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/core/network/api_client.dart';
 import 'package:xbb/core/router/app_router.dart';
 import 'package:xbb/core/theme/app_theme.dart';
@@ -46,6 +47,8 @@ void main() async {
     clientId: clientId,
   );
   SyncWorker.instance.start();
+
+  ClipboardTrayService.instance.configure(userId: userId);
 
   await initializeDateFormatting('zh');
 

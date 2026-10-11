@@ -68,8 +68,8 @@ class ClipboardRepository {
   }
 
   /// 捕获新文本（ADR-0002: 强制 localOnly = true，禁止自动入队 Outbox 双写）
-  Future<void> capture(String text, String currentUserId) async {
-    if (text.trim().isEmpty) return;
+  Future<bool> capture(String text, String currentUserId) async {
+    if (text.trim().isEmpty) return false;
 
     // 查重：避免连续重复录入相同文本
     final recent = await db.query(
@@ -81,7 +81,7 @@ class ClipboardRepository {
       final lastBodyStr = recent.first['body'] as String? ?? '{}';
       try {
         final last = ClipboardHistoryEntry.fromJson(jsonDecode(lastBodyStr) as Map<String, dynamic>);
-        if (last.data == text) return;
+        if (last.data == text) return false;
       } catch (_) {}
     }
 
@@ -106,6 +106,7 @@ class ClipboardRepository {
     // 仅写入本地库，严禁生成 Outbox 项
     await db.insert('clipboard_history_entry', row, conflictAlgorithm: ConflictAlgorithm.replace);
     changeNotifier.notify('clipboard_history_entry');
+    return true;
   }
 
   /// 用户显式确认上云（ADR-0002: 仅显式确认后才入队 Outbox）
