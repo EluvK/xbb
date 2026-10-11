@@ -198,6 +198,37 @@ class TaskRepository {
     await TaskWidgetBridge.refreshFromLocalState();
   }
 
+  /// 更新单项任务内容
+  Future<void> updateTaskContent(String taskId, String newContent, String currentUserId) async {
+    final trimmed = newContent.trim();
+    if (trimmed.isEmpty) return;
+    final active = await getOrCreateActiveCheckList(currentUserId);
+    final items = decodeTaskItems(active.body.tasks);
+    final index = items.indexWhere((i) => i.id == taskId);
+    if (index == -1) return;
+
+    final target = items[index];
+    if (target.content == trimmed) return;
+
+    final updatedTarget = target.copyWith(
+      content: trimmed,
+      lastModifiedAt: DateTime.now(),
+    );
+    final updatedList = List<TaskItem>.from(items)..[index] = updatedTarget;
+    final updatedCheckList = active.body.copyWith(tasks: encodeTaskItems(updatedList));
+    await saveCheckList(DataItem<CheckList>(
+      active.id,
+      active.createdAt,
+      DateTime.now(),
+      active.owner,
+      active.parentId,
+      active.unique,
+      body: updatedCheckList,
+      syncStatus: SyncStatus.pending,
+    ));
+    await TaskWidgetBridge.refreshFromLocalState();
+  }
+
   /// 删除单项任务
   Future<void> deleteTask(String taskId, String currentUserId) async {
     final active = await getOrCreateActiveCheckList(currentUserId);
