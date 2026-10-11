@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
 
@@ -99,9 +100,13 @@ class CheckinWidgetBridge {
     });
   }
 
-  static Future<void> refreshFromLocalState() async {
+  static Future<void> refreshFromLocalState({Database? currentDb}) async {
     if (!_isSupportedPlatform) return;
-    await _publishSnapshot(await _buildSnapshot());
+    await _publishSnapshot(await _buildSnapshot(currentDb: currentDb));
+  }
+
+  static Future<CheckinWidgetSnapshot> buildSnapshotForTesting({Database? currentDb}) async {
+    return _buildSnapshot(currentDb: currentDb);
   }
 
   static Future<void> _publishSnapshot(CheckinWidgetSnapshot snapshot) async {
@@ -116,9 +121,9 @@ class CheckinWidgetBridge {
     return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
-  static Future<CheckinWidgetSnapshot> _buildSnapshot() async {
+  static Future<CheckinWidgetSnapshot> _buildSnapshot({Database? currentDb}) async {
     try {
-      final db = await LocalFirstDB.getDb(userId: 'default');
+      final db = currentDb ?? await LocalFirstDB.getDb(userId: 'default');
       final eventRows = await db.query('checkin_event', orderBy: 'created_at ASC');
       if (eventRows.isEmpty) {
         return CheckinWidgetSnapshot.empty();

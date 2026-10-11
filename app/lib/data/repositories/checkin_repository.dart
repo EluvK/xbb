@@ -132,13 +132,59 @@ class CheckinRepository {
     CheckinWidgetBridge.scheduleRefresh();
   }
 
-  /// 删除打卡事件
+  /// 修改已有打卡事件
+  Future<void> updateEvent({
+    required String eventId,
+    required String name,
+    required String description,
+    required int colorValue,
+    required String currentUserId,
+  }) async {
+    final rows = await db.query('checkin_event', where: 'id = ?', whereArgs: [eventId]);
+    if (rows.isEmpty) return;
+    final row = rows.first;
+    final now = DateTime.now().toIso8601String();
+    final event = CheckinEvent(name: name, description: description, colorValue: colorValue);
+    final updatedRow = Map<String, dynamic>.from(row);
+    updatedRow['updated_at'] = now;
+    updatedRow['body'] = jsonEncode(event.toJson());
+
+    await LocalFirstDB.persistPutRaw(
+      db: db,
+      tableName: 'checkin_event',
+      entityId: eventId,
+      entityRow: updatedRow,
+    );
+    changeNotifier.notify('checkin_event');
+    SyncWorker.instance.notifyLocalWrite();
+    CheckinWidgetBridge.scheduleRefresh();
+  }
+
+  /// 删除打卡事件（级联删除所有关联的 CheckinRecord，并在 Outbox 产生对应的 DELETE 记录）
   Future<void> deleteEvent(String id) async {
+    // 1. 级联删除关联的所有 records
+    final records = await db.query(
+      'checkin_record',
+      columns: ['id'],
+      where: 'parent_id = ? OR body LIKE ?',
+      whereArgs: [id, '%"event_id":"$id"%'],
+    );
+    for (final r in records) {
+      final recId = r['id'] as String;
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: 'checkin_record',
+        entityId: recId,
+      );
+    }
+
+    // 2. 删除事件本身
     await LocalFirstDB.persistDeleteRaw(
       db: db,
       tableName: 'checkin_event',
       entityId: id,
     );
+    changeNotifier.notify('checkin_record');
     changeNotifier.notify('checkin_event');
     SyncWorker.instance.notifyLocalWrite();
     CheckinWidgetBridge.scheduleRefresh();

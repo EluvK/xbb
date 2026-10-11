@@ -6,6 +6,7 @@ import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/data/repositories/checkin_repository.dart';
 import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/presentation/checkin/checkin_providers.dart';
+import 'package:xbb/presentation/checkin/edit_checkin_event_dialog.dart';
 import 'package:xbb/presentation/checkin/event_filter_bar.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
@@ -46,7 +47,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
           IconButton(
             tooltip: '新建打卡项目',
             icon: const Icon(Icons.add),
-            onPressed: () => _showCreateEventDialog(context),
+            onPressed: () => EditCheckinEventDialog.show(context),
           ),
           const SizedBox(width: AppSpacing.sm),
         ],
@@ -74,6 +75,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                       onFilterChanged: (newSet) {
                         ref.read(checkinFilteredEventIdsProvider.notifier).state = newSet;
                       },
+                      onEditEvent: (ev) => EditCheckinEventDialog.show(context, eventItem: ev),
                     ),
                   ),
                 ),
@@ -331,6 +333,28 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                                     color: theme.colorScheme.outlineVariant,
                                     size: 24,
                                   ),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, size: 18),
+                                  tooltip: '更多操作',
+                                  padding: EdgeInsets.zero,
+                                  onSelected: (val) {
+                                    if (val == 'edit_event') {
+                                      EditCheckinEventDialog.show(context, eventItem: eventItem);
+                                    }
+                                  },
+                                  itemBuilder: (ctx) => [
+                                    const PopupMenuItem(
+                                      value: 'edit_event',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.tune_rounded, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('编辑习惯项目'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
@@ -568,51 +592,6 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  void _showCreateEventDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    int selectedColor = Colors.teal.value;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('新建习惯项目'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: '习惯名称', isDense: true),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descCtrl,
-              decoration: const InputDecoration(labelText: '描述或目标 (可选)', isDense: true),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () {
-              if (nameCtrl.text.trim().isNotEmpty) {
-                final userId = ref.read(authProvider).userId;
-                ref.read(checkinRepositoryProvider).createEvent(
-                      name: nameCtrl.text.trim(),
-                      description: descCtrl.text.trim(),
-                      colorValue: selectedColor,
-                      currentUserId: userId,
-                    );
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('创建'),
-          ),
-        ],
       ),
     );
   }
