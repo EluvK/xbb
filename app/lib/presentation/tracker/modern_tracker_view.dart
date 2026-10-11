@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/components/notes/markdown_renderer.dart';
@@ -75,11 +76,40 @@ class ModernTrackerView extends ConsumerWidget {
               final availableWidth = maxWidth - (pagePadding * 2);
               final cardWidth = (availableWidth - (columns - 1) * spacing) / columns;
 
+              final milestoneCount = trackers.where((t) => t.body.type == 'milestone').length;
+              final eventCount = trackers.where((t) => t.body.type == 'event').length;
+              final anniversaryCount = trackers.where((t) => t.body.type == 'anniversary').length;
+
               return ListView.builder(
                 padding: const EdgeInsets.all(pagePadding),
-                itemCount: sortedCategories.length,
+                itemCount: sortedCategories.length + 1,
                 itemBuilder: (context, catIndex) {
-                  final category = sortedCategories[catIndex];
+                  if (catIndex == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: ModernCard(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                        child: Row(
+                          children: [
+                            Icon(Icons.insights_rounded, color: theme.colorScheme.primary, size: 20),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text('目标与指标概览简报', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                            const Spacer(),
+                            Wrap(
+                              spacing: 6,
+                              children: [
+                                ModernBadge(label: '里程碑 $milestoneCount', color: theme.colorScheme.primary),
+                                ModernBadge(label: '习惯周期 $eventCount', color: Colors.indigo),
+                                ModernBadge(label: '纪念日 $anniversaryCount', color: Colors.deepPurple),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  final category = sortedCategories[catIndex - 1];
                   final items = groupedTrackers[category]!;
 
                   return Column(
@@ -384,9 +414,15 @@ class ModernTrackerCard extends ConsumerWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.history_rounded, size: 18),
-                      tooltip: '历史明细流水',
+                      tooltip: '快速历史明细',
                       visualDensity: VisualDensity.compact,
                       onPressed: () => TrackerHistorySheet.show(context, tracker: tracker, userId: userId),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.fullscreen_rounded, size: 19),
+                      tooltip: '全屏深度分析',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => context.push('/tracker/view-tracker', extra: tracker),
                     ),
                     IconButton(
                       icon: const Icon(Icons.share_outlined, size: 18),

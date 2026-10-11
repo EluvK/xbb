@@ -300,6 +300,39 @@ class TaskRepository {
     await TaskWidgetBridge.refreshFromLocalState();
   }
 
+  /// 拖拽调整任务排序并更新权重
+  Future<void> reorderTasks(int oldIndex, int newIndex, String currentUserId) async {
+    final active = await getOrCreateActiveCheckList(currentUserId);
+    final items = sortTaskItems(decodeTaskItems(active.body.tasks));
+    if (oldIndex < 0 || oldIndex >= items.length) return;
+    if (newIndex < 0 || newIndex > items.length) return;
+
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final movedItem = items.removeAt(oldIndex);
+    items.insert(newIndex, movedItem);
+
+    final now = DateTime.now();
+    final updatedList = <TaskItem>[];
+    for (var i = 0; i < items.length; i++) {
+      updatedList.add(items[i].copyWith(sortOrder: i, lastModifiedAt: now));
+    }
+
+    final updatedCheckList = active.body.copyWith(tasks: encodeTaskItems(updatedList));
+    await saveCheckList(DataItem<CheckList>(
+      active.id,
+      active.createdAt,
+      now,
+      active.owner,
+      active.parentId,
+      active.unique,
+      body: updatedCheckList,
+      syncStatus: SyncStatus.pending,
+    ));
+    await TaskWidgetBridge.refreshFromLocalState();
+  }
+
   /// 删除单项任务
   Future<void> deleteTask(String taskId, String currentUserId) async {
     final active = await getOrCreateActiveCheckList(currentUserId);

@@ -32,6 +32,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   DataItem<Comment>? _replyToComment;
   bool _myReposExpanded = true;
   bool _subscribedReposExpanded = true;
+  bool _isAllCategoriesExpanded = true;
   final Map<String, bool> _expandedCategories = {};
 
   @override
@@ -47,8 +48,10 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     String content,
     String? parentId,
     String postId,
-    String userId,
-  ) async {
+    String userId, {
+    int? paragraphIndex,
+    String? paragraphHash,
+  }) async {
     final newId = UuidService.v7();
     final now = DateTime.now();
     final commentItem = DataItem<Comment>(
@@ -62,6 +65,8 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
         content: content,
         postId: postId,
         parentId: parentId,
+        paragraphIndex: paragraphIndex,
+        paragraphHash: paragraphHash,
       ),
       syncStatus: SyncStatus.pending,
     );
@@ -376,10 +381,32 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              ModernSearchField(
-                controller: _searchController,
-                hintText: '搜索文章...',
-                onChanged: (v) => setState(() => _searchKeyword = v.trim().toLowerCase()),
+              Row(
+                children: [
+                  Expanded(
+                    child: ModernSearchField(
+                      controller: _searchController,
+                      hintText: '搜索文章...',
+                      onChanged: (v) => setState(() => _searchKeyword = v.trim().toLowerCase()),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(_isAllCategoriesExpanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded, size: 20),
+                    tooltip: _isAllCategoriesExpanded ? '全部收起' : '全部展开',
+                    onPressed: () {
+                      final posts = postsAsync.value ?? [];
+                      final categories = posts.map((p) => p.body.category.trim().isEmpty ? 'notes_default_category'.tr : p.body.category.trim()).toSet();
+                      setState(() {
+                        _isAllCategoriesExpanded = !_isAllCategoriesExpanded;
+                        for (final cat in categories) {
+                          _expandedCategories[cat] = _isAllCategoriesExpanded;
+                        }
+                      });
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -421,6 +448,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   final category = categories[catIndex];
                   final categoryPosts = groupedByCategory[category]!;
                   final isExpanded = _expandedCategories[category] ?? true;
+                  final hasUnread = categoryPosts.any((p) => p.syncStatus != SyncStatus.archived);
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -446,14 +474,47 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                                 ),
                                 const SizedBox(width: AppSpacing.xs),
                                 Expanded(
-                                  child: Text(
-                                    '$category (${categoryPosts.length})',
-                                    style: theme.textTheme.labelMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.primary,
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          '$category (${categoryPosts.length})',
+                                          style: theme.textTheme.labelMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (hasUnread) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.primary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
+                                if (hasUnread)
+                                  IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    iconSize: 16,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                                    tooltip: '全部标为已读',
+                                    icon: const Icon(Icons.mark_email_read_outlined),
+                                    onPressed: () {
+                                      ref.read(notesRepositoryProvider).markPostsAsArchived(categoryPosts.map((p) => p.id).toList());
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('已将【$category】下的文章全部标为已读'), duration: const Duration(seconds: 1)),
+                                      );
+                                    },
+                                  ),
                                 Icon(
                                   isExpanded ? Icons.expand_less : Icons.expand_more,
                                   size: 16,
@@ -466,10 +527,47 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                         if (isExpanded)
                           ...categoryPosts.map((post) {
                             final isSelected = post.id == selectedPostId;
+                            final isPostUnread = post.syncStatus != SyncStatus.archived;
                             return Padding(
                               padding: const EdgeInsets.only(top: AppSpacing.xs),
                               child: ModernCard(
                                 selected: isSelected,
+                                onLongPress: () {
+                                  final previewText = post.body.content.length <= 300
+                                      ? post.body.content
+                                      : '${post.body.content.substring(0, 300)}...';
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: Row(
+                                        children: [
+                                          Icon(Icons.preview_rounded, size: 20, color: theme.colorScheme.primary),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              post.body.title,
+                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      content: SingleChildScrollView(
+                                        child: Text(previewText, style: const TextStyle(fontSize: 13, height: 1.5)),
+                                      ),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('关闭')),
+                                        FilledButton(
+                                          onPressed: () {
+                                            Navigator.pop(ctx);
+                                            ref.read(selectedPostIdProvider.notifier).state = post.id;
+                                          },
+                                          child: const Text('打开阅读'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                                 onTap: () {
                                   ref.read(selectedPostIdProvider.notifier).state = post.id;
                                   _titleController.text = post.body.title;
@@ -497,6 +595,17 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
+                                        if (isPostUnread) ...[
+                                          const SizedBox(width: 4),
+                                          Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: BoxDecoration(
+                                              color: theme.colorScheme.primary,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                     const SizedBox(height: 4),
@@ -687,39 +796,23 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                               ],
                             ),
                           ),
-                        SimpleMarkdownRenderer(
-                          data: post.body.content,
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        const Divider(),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          child: Row(
-                            children: [
-                              Icon(Icons.comment_outlined, size: 18, color: theme.colorScheme.primary),
-                              const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                '评论与讨论',
-                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const Spacer(),
-                              commentsAsync.maybeWhen(
-                                data: (comments) => Text(
-                                  '${comments.length} 条评论',
-                                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
-                                ),
-                                orElse: () => const SizedBox.shrink(),
-                              ),
-                            ],
-                          ),
-                        ),
                         commentsAsync.when(
-                          data: (comments) => CommentListWidget(
+                          data: (comments) => MarkdownWithComments(
+                            data: post.body.content,
                             postId: post.id,
+                            repoOwnedId: post.owner,
                             comments: comments,
                             currentUserId: userId,
-                            onReply: (comment) => setState(() => _replyToComment = comment),
-                            onDelete: (commentId) => _deleteComment(commentId),
+                            onAddComment: (content, parentId, {paragraphIndex, paragraphHash}) => _submitComment(
+                              content,
+                              parentId,
+                              post.id,
+                              userId,
+                              paragraphIndex: paragraphIndex,
+                              paragraphHash: paragraphHash,
+                            ),
+                            onReplyComment: (comment) => setState(() => _replyToComment = comment),
+                            onDeleteComment: (commentId) => _deleteComment(commentId),
                           ),
                           loading: () => const Center(
                             child: Padding(

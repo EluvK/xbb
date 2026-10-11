@@ -214,30 +214,38 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
                           title: 'task_empty_title'.tr,
                           subtitle: 'task_empty_desc'.tr,
                         )
-                      : ListView.separated(
+                      : ReorderableListView.builder(
                           padding: const EdgeInsets.all(AppSpacing.md),
                           itemCount: orderedTasks.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+                          buildDefaultDragHandles: false,
+                          onReorder: (oldIndex, newIndex) {
+                            if (_editingTaskId != null) return;
+                            ref.read(taskRepositoryProvider).reorderTasks(oldIndex, newIndex, userId);
+                          },
                           itemBuilder: (context, index) {
                             final task = orderedTasks[index];
                             final isEditing = _editingTaskId == task.id;
-                            return InlineTaskTile(
+                            return Padding(
                               key: ValueKey('task-${task.id}'),
-                              task: task,
-                              isEditing: isEditing,
-                              onTapEdit: () => _startEditing(task, orderedTasks),
-                              onSubmitted: (newContent) => _submitEditing(task.id, newContent, userId),
-                              onCancel: _cancelEditing,
-                              onToggleDone: (val) {
-                                ref.read(taskRepositoryProvider).toggleTaskDone(task.id, userId);
-                              },
-                              onDelete: () {
-                                if (_editingTaskId == task.id) {
-                                  _cancelEditing();
-                                }
-                                ref.read(taskRepositoryProvider).deleteTask(task.id, userId);
-                              },
-                              showDetails: _showDetails,
+                              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                              child: InlineTaskTile(
+                                task: task,
+                                isEditing: isEditing,
+                                dragIndex: _editingTaskId == null ? index : null,
+                                onTapEdit: () => _startEditing(task, orderedTasks),
+                                onSubmitted: (newContent) => _submitEditing(task.id, newContent, userId),
+                                onCancel: _cancelEditing,
+                                onToggleDone: (val) {
+                                  ref.read(taskRepositoryProvider).toggleTaskDone(task.id, userId);
+                                },
+                                onDelete: () {
+                                  if (_editingTaskId == task.id) {
+                                    _cancelEditing();
+                                  }
+                                  ref.read(taskRepositoryProvider).deleteTask(task.id, userId);
+                                },
+                                showDetails: _showDetails,
+                              ),
                             );
                           },
                         ),
@@ -258,6 +266,7 @@ class InlineTaskTile extends StatefulWidget {
   final ValueChanged<bool> onToggleDone;
   final VoidCallback onDelete;
   final bool showDetails;
+  final int? dragIndex;
 
   const InlineTaskTile({
     super.key,
@@ -269,6 +278,7 @@ class InlineTaskTile extends StatefulWidget {
     required this.onToggleDone,
     required this.onDelete,
     this.showDetails = false,
+    this.dragIndex,
   });
 
   @override
@@ -413,6 +423,21 @@ class _InlineTaskTileState extends State<InlineTaskTile> {
                   icon: Icon(Icons.delete_outline, size: 18, color: theme.colorScheme.error.withAlpha(160)),
                   onPressed: widget.onDelete,
                 ),
+                if (widget.dragIndex != null)
+                  ReorderableDragStartListener(
+                    index: widget.dragIndex!,
+                    child: Tooltip(
+                      message: '拖拽排序',
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 2, right: 4),
+                        child: Icon(
+                          Icons.drag_indicator_rounded,
+                          size: 18,
+                          color: theme.colorScheme.onSurfaceVariant.withAlpha(140),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ],
           ),

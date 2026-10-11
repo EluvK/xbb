@@ -246,6 +246,27 @@ class NotesRepository {
     SyncWorker.instance.notifyLocalWrite();
   }
 
+  /// 批量将文章标记为已读/归档状态 (mark_all_as_read)
+  Future<void> markPostsAsArchived(List<String> postIds) async {
+    if (postIds.isEmpty) return;
+    for (final id in postIds) {
+      await db.update(
+        'post',
+        {'sync_status': 'archived'},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      await db.update(
+        'comment',
+        {'sync_status': 'archived'},
+        where: 'post_id = ?',
+        whereArgs: [id],
+      );
+    }
+    changeNotifier.notify('post');
+    changeNotifier.notify('comment');
+  }
+
   /// 删除文章
   Future<void> deletePost(String id) async {
     await LocalFirstDB.persistDeleteRaw(

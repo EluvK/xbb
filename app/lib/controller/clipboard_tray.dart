@@ -74,17 +74,40 @@ class ClipboardTrayService extends ChangeNotifier {
 
   Future<dynamic> _onMethodCall(MethodCall call) async {
     switch (call.method) {
+      case 'onClipboardTextChanged':
       case 'onClipboardDataCollected':
-        final text = call.arguments['text'] as String?;
-        final timeStr = call.arguments['time'] as String?;
-        if (text != null && text.isNotEmpty) {
-          DateTime time = DateTime.now();
-          if (timeStr != null && timeStr.isNotEmpty) {
-            time = DateTime.tryParse(timeStr) ?? DateTime.now();
+        final args = call.arguments;
+        String? text;
+        DateTime? time;
+        if (args is Map) {
+          text = args['text'] as String?;
+          final rawTs = args['timestampMs'];
+          if (rawTs is int) {
+            time = DateTime.fromMillisecondsSinceEpoch(rawTs);
+          } else if (rawTs is num) {
+            time = DateTime.fromMillisecondsSinceEpoch(rawTs.toInt());
+          } else if (args['time'] is String) {
+            time = DateTime.tryParse(args['time'] as String);
           }
-          await handleCollectedText(text, time);
+        }
+        if (text != null && text.isNotEmpty) {
+          await handleCollectedText(text, time ?? DateTime.now());
         }
         return true;
+      case 'onTrayToggleListening':
+        final args = call.arguments;
+        bool enabled = !_listeningEnabled;
+        if (args is Map && args['enabled'] is bool) {
+          enabled = args['enabled'] as bool;
+        } else if (args is bool) {
+          enabled = args;
+        }
+        await setListeningEnabled(enabled);
+        return true;
+      case 'onTrayShowMainWindow':
+        // 原生窗口处理，Dart 端确认收到
+        return true;
+      case 'onTrayExitApp':
       case 'onTrayMenuExit':
         await SystemNavigator.pop();
         return true;
