@@ -6,6 +6,8 @@ import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/core/network/api_client.dart';
+import 'package:xbb/sync/v2/sync_worker.dart';
 import 'package:xbb/utils/translation.dart';
 
 /// 纯净的全局应用配置状态
@@ -16,6 +18,8 @@ class AppSettingsState {
   final Locale locale;
   final double fontScale;
   final ColorTag colorTag;
+  final String syncStoreUrl;
+  final List<String> syncStoreUrlHistory;
   final bool taskEnabled;
   final bool notesEnabled;
   final bool trackerEnabled;
@@ -32,6 +36,8 @@ class AppSettingsState {
     this.locale = const Locale('zh', 'CN'),
     this.fontScale = 1.0,
     this.colorTag = ColorTag.none,
+    this.syncStoreUrl = 'http://127.0.0.1:10101',
+    this.syncStoreUrlHistory = const ['http://127.0.0.1:10101'],
     this.taskEnabled = true,
     this.notesEnabled = true,
     this.trackerEnabled = true,
@@ -49,6 +55,8 @@ class AppSettingsState {
     Locale? locale,
     double? fontScale,
     ColorTag? colorTag,
+    String? syncStoreUrl,
+    List<String>? syncStoreUrlHistory,
     bool? taskEnabled,
     bool? notesEnabled,
     bool? trackerEnabled,
@@ -65,6 +73,8 @@ class AppSettingsState {
       locale: locale ?? this.locale,
       fontScale: fontScale ?? this.fontScale,
       colorTag: colorTag ?? this.colorTag,
+      syncStoreUrl: syncStoreUrl ?? this.syncStoreUrl,
+      syncStoreUrlHistory: syncStoreUrlHistory ?? this.syncStoreUrlHistory,
       taskEnabled: taskEnabled ?? this.taskEnabled,
       notesEnabled: notesEnabled ?? this.notesEnabled,
       trackerEnabled: trackerEnabled ?? this.trackerEnabled,
@@ -153,12 +163,25 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       tab = f.homeStartupTabIndex;
     }
 
+    final syncSetting = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY);
+    String syncUrl = 'http://127.0.0.1:10101';
+    List<String> urlHistory = ['http://127.0.0.1:10101'];
+    if (syncSetting != null) {
+      syncUrl = syncSetting['base_url'] as String? ?? 'http://127.0.0.1:10101';
+      final rawHist = syncSetting['url_history'] as List<dynamic>?;
+      if (rawHist != null && rawHist.isNotEmpty) {
+        urlHistory = rawHist.map((e) => e.toString()).toList();
+      }
+    }
+
     state = state.copyWith(
       themeMode: mode,
       languageCode: langCode,
       locale: loc,
       fontScale: scale,
       colorTag: tag,
+      syncStoreUrl: syncUrl,
+      syncStoreUrlHistory: urlHistory,
       startupTabIndex: tab,
       taskEnabled: task,
       notesEnabled: notes,
@@ -174,6 +197,42 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       featureEnabled: clip,
       listeningEnabled: clipListen,
     );
+  }
+
+  Future<void> updateSyncStoreUrl(String newUrl) async {
+    final normalized = ApiClient.normalizeBaseUrl(newUrl);
+    final history = List<String>.from(state.syncStoreUrlHistory);
+    history.remove(normalized);
+    history.insert(0, normalized);
+    if (history.length > 10) history.removeLast();
+
+    state = state.copyWith(
+      syncStoreUrl: normalized,
+      syncStoreUrlHistory: history,
+    );
+
+    final rawSetting = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY) ?? {};
+    final updatedMap = Map<String, dynamic>.from(rawSetting)
+      ..['base_url'] = normalized
+      ..['url_history'] = history;
+    await box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, updatedMap);
+
+    ApiClient.instance.updateBaseUrl(normalized);
+    SyncWorker.instance.updateDependencies(dio: ApiClient.instance.dio);
+  }
+
+  Future<void> resetDefaultSyncStoreUrl() async {
+    const defaultUrl = 'http://127.0.0.1:10101';
+    await updateSyncStoreUrl(defaultUrl);
+  }
+
+  Future<void> removeSyncStoreUrlHistory(String url) async {
+    final history = List<String>.from(state.syncStoreUrlHistory)..remove(url);
+    state = state.copyWith(syncStoreUrlHistory: history);
+
+    final rawSetting = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY) ?? {};
+    final updatedMap = Map<String, dynamic>.from(rawSetting)..['url_history'] = history;
+    await box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, updatedMap);
   }
 
   void _persistAppSetting() {

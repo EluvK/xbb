@@ -171,6 +171,9 @@ void main() {
       await tester.pump();
 
       expect(find.text('正在监听'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
     });
   });
 }

@@ -66,6 +66,7 @@ class ServerHealthNotifier extends StateNotifier<ServerHealthStatus> {
 
   /// 探测服务在线状态并测速
   Future<void> checkHealth() async {
+    if (!mounted) return;
     state = state.copyWith(state: ServerHealthState.checking);
     final stopwatch = Stopwatch()..start();
 
@@ -79,6 +80,7 @@ class ServerHealthNotifier extends StateNotifier<ServerHealthStatus> {
       );
       stopwatch.stop();
 
+      if (!mounted) return;
       if (response.statusCode == 200) {
         state = ServerHealthStatus(
           state: ServerHealthState.available,
@@ -97,6 +99,7 @@ class ServerHealthNotifier extends StateNotifier<ServerHealthStatus> {
       }
     } catch (e) {
       stopwatch.stop();
+      if (!mounted) return;
       state = ServerHealthStatus(
         state: ServerHealthState.unavailable,
         latencyMs: -1,
@@ -121,12 +124,13 @@ class ServerHealthNotifier extends StateNotifier<ServerHealthStatus> {
     SyncWorker.instance.updateDependencies(dio: ApiClient.instance.dio);
 
     // 更新状态并立即触发 Ping 探测
+    if (!mounted) return;
     state = state.copyWith(baseUrl: normalized);
     await checkHealth();
   }
 }
 
-final serverHealthProvider = StateNotifierProvider<ServerHealthNotifier, ServerHealthStatus>((ref) {
+final serverHealthProvider = StateNotifierProvider.autoDispose<ServerHealthNotifier, ServerHealthStatus>((ref) {
   final dio = ApiClient.instance.dio;
   final box = GetStorage(GET_STORAGE_FILE_KEY);
   return ServerHealthNotifier(dio, box);

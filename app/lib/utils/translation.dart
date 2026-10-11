@@ -56,6 +56,46 @@ class _TranslationHelper {
     },
 
     // --- Components: Common & Settings (通用与设置) ---
+    "syncstore_server_title": {
+      "en_US": "SyncStore Server",
+      "zh_CN": "SyncStore 同步服务器",
+    },
+    "syncstore_server_desc": {
+      "en_US": "Configures the Base URL for remote sync and real-time latency ping probing.",
+      "zh_CN": "配置 Local-First 远端同步服务地址，支持实时网络延迟测速。",
+    },
+    "syncstore_server_saved": {
+      "en_US": "Server URL updated successfully",
+      "zh_CN": "服务器地址已更新并重新连接",
+    },
+    "syncstore_server_reset": {
+      "en_US": "Reset Default",
+      "zh_CN": "重置默认",
+    },
+    "syncstore_server_reset_done": {
+      "en_US": "Reset to default server URL",
+      "zh_CN": "已重置为默认服务器地址",
+    },
+    "syncstore_server_history": {
+      "en_US": "URL History",
+      "zh_CN": "历史地址",
+    },
+    "syncstore_server_empty_history": {
+      "en_US": "No URL history yet",
+      "zh_CN": "暂无历史地址",
+    },
+    "server_status_available": {
+      "en_US": "Available",
+      "zh_CN": "服务可用",
+    },
+    "server_status_checking": {
+      "en_US": "Testing...",
+      "zh_CN": "正在测速...",
+    },
+    "server_status_unavailable": {
+      "en_US": "Unavailable / Offline",
+      "zh_CN": "服务不可用 / 离线",
+    },
     "settings_center": {
       "en_US": "Settings",
       "zh_CN": "设置中心",

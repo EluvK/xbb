@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
+import 'package:xbb/presentation/providers/server_health_provider.dart';
 import 'package:xbb/presentation/providers/settings_provider.dart';
 import 'package:xbb/presentation/providers/sync_provider.dart';
 import 'package:xbb/presentation/widgets/avatar_helper.dart';
@@ -68,6 +70,10 @@ class ModernSettingsView extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+
+          // SyncStore 同步服务器与实时测速 (TASK-6.2)
+          const _SyncStoreServerCard(),
           const SizedBox(height: AppSpacing.md),
 
           // 云端同步服务
@@ -310,6 +316,197 @@ class ModernSettingsView extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// SyncStore 同步服务器地址配置与实时 Ping 测速卡片 (TASK-6.2)
+class _SyncStoreServerCard extends ConsumerStatefulWidget {
+  const _SyncStoreServerCard();
+
+  @override
+  ConsumerState<_SyncStoreServerCard> createState() => _SyncStoreServerCardState();
+}
+
+class _SyncStoreServerCardState extends ConsumerState<_SyncStoreServerCard> {
+  late final TextEditingController _urlController;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final currentUrl = ref.read(appSettingsProvider).syncStoreUrl;
+    _urlController = TextEditingController(text: currentUrl);
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    final text = _urlController.text.trim();
+    if (text.isEmpty) return;
+
+    await ref.read(appSettingsProvider.notifier).updateSyncStoreUrl(text);
+    await ref.read(serverHealthProvider.notifier).updateServerUrl(text);
+    setState(() => _isEditing = false);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('syncstore_server_saved'.tr)),
+      );
+    }
+  }
+
+  Future<void> _handleReset() async {
+    await ref.read(appSettingsProvider.notifier).resetDefaultSyncStoreUrl();
+    await ref.read(serverHealthProvider.notifier).updateServerUrl('http://127.0.0.1:10101');
+    _urlController.text = 'http://127.0.0.1:10101';
+    setState(() => _isEditing = false);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('syncstore_server_reset_done'.tr)),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final settings = ref.watch(appSettingsProvider);
+    final health = ref.watch(serverHealthProvider);
+
+    // 当外部 url 变更且非正在手动编辑时同步控制器文本
+    if (!_isEditing && _urlController.text != settings.syncStoreUrl) {
+      _urlController.text = settings.syncStoreUrl;
+    }
+
+    final isChecking = health.state == ServerHealthState.checking;
+    final isAvailable = health.state == ServerHealthState.available;
+
+    return ModernCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'syncstore_server_title'.tr,
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              PingLatencyInline(
+                isLoading: isChecking,
+                latencyMs: isAvailable ? health.latencyMs : -1,
+                onRefresh: () => ref.read(serverHealthProvider.notifier).checkHealth(),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'syncstore_server_desc'.tr,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // URL 输入框与保存按钮
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _urlController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.cloud_outlined, size: 20),
+                    hintText: 'http://127.0.0.1:10101',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+                    border: OutlineInputBorder(borderRadius: AppRadius.roundedSm),
+                  ),
+                  onChanged: (_) {
+                    if (!_isEditing) setState(() => _isEditing = true);
+                  },
+                  onSubmitted: (_) => _handleSave(),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              FilledButton(
+                onPressed: _handleSave,
+                child: Text('save'.tr),
+              ),
+            ],
+          ),
+
+          // 历史地址选择 Chips (如果有)
+          if (settings.syncStoreUrlHistory.length > 1) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final url in settings.syncStoreUrlHistory)
+                  ActionChip(
+                    avatar: Icon(
+                      url == settings.syncStoreUrl ? Icons.check_circle : Icons.history,
+                      size: 14,
+                      color: url == settings.syncStoreUrl ? theme.colorScheme.primary : null,
+                    ),
+                    label: Text(
+                      url,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: url == settings.syncStoreUrl ? theme.colorScheme.primary : null,
+                      ),
+                    ),
+                    onPressed: () {
+                      _urlController.text = url;
+                      _handleSave();
+                    },
+                  ),
+              ],
+            ),
+          ],
+
+          const SizedBox(height: AppSpacing.sm),
+          // 底部操作区：一键重置默认服务器
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isChecking
+                          ? Colors.amber
+                          : (isAvailable ? Colors.green : Colors.red),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isChecking
+                        ? 'server_status_checking'.tr
+                        : (isAvailable
+                            ? '${'server_status_available'.tr} (${health.latencyMs} ms)'
+                            : 'server_status_unavailable'.tr),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isAvailable ? Colors.green : (isChecking ? Colors.amber : Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.restart_alt, size: 16),
+                label: Text('syncstore_server_reset'.tr),
+                onPressed: _handleReset,
+              ),
+            ],
           ),
         ],
       ),
