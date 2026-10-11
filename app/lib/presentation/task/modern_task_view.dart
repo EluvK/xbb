@@ -5,6 +5,7 @@ import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/task/model.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/task/task_history_view.dart';
+import 'package:xbb/presentation/task/task_overview_card.dart';
 import 'package:xbb/presentation/task/task_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
@@ -19,6 +20,8 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _showArchived = false;
+  bool _showDetails = false;
+  bool _isOverviewCollapsed = false;
 
   // 任务原位就地编辑与防失焦锁定状态
   String? _editingTaskId;
@@ -112,6 +115,12 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
             icon: Icon(_showArchived ? Icons.checklist_rounded : Icons.archive_outlined),
             onPressed: () => setState(() => _showArchived = !_showArchived),
           ),
+          if (!_showArchived)
+            IconButton(
+              tooltip: _showDetails ? '隐藏任务详情' : '显示任务详情',
+              icon: Icon(_showDetails ? Icons.visibility_rounded : Icons.visibility_outlined),
+              onPressed: () => setState(() => _showDetails = !_showDetails),
+            ),
           if (!_showArchived && doneCount > 0)
             IconButton(
               tooltip: '归档已完成任务',
@@ -140,7 +149,7 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
           ? const TaskHistoryView()
           : Column(
               children: [
-                // 顶部输入条与进度
+                // 顶部输入条与快速添加
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                   child: Row(
@@ -185,6 +194,17 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
                     ],
                   ),
                 ),
+                // 活跃任务概览统计卡片
+                if (totalCount > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                    child: TaskOverviewCard(
+                      totalCount: totalCount,
+                      doneCount: doneCount,
+                      isCollapsed: _isOverviewCollapsed,
+                      onToggleCollapse: () => setState(() => _isOverviewCollapsed = !_isOverviewCollapsed),
+                    ),
+                  ),
                 // 任务列表
                 Expanded(
                   child: orderedTasks.isEmpty
@@ -216,6 +236,7 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
                                 }
                                 ref.read(taskRepositoryProvider).deleteTask(task.id, userId);
                               },
+                              showDetails: _showDetails,
                             );
                           },
                         ),
