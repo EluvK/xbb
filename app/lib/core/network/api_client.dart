@@ -16,6 +16,12 @@ class ApiClient {
   String _baseUrl = 'http://127.0.0.1:10101';
   String? _token;
 
+  /// HTTP 401 未授权回调（用于引导重新登录）
+  void Function()? onUnauthorized;
+
+  /// HTTP 426 强制升级回调（用于展示升级公告）
+  void Function(String message)? onUpgradeRequired;
+
   Dio get dio => _dio;
   String get baseUrl => _baseUrl;
   String? get token => _token;
@@ -115,6 +121,19 @@ class ApiClient {
           );
           // ignore: avoid_print
           print('[SyncHTTP] <-- ERROR $status ${err.requestOptions.method} $fullUri (${err.message})');
+
+          // 全局状态生命周期拦截
+          if (status == 401) {
+            onUnauthorized?.call();
+          } else if (status == 426) {
+            String upgradeMessage = '当前客户端同步协议已废弃，请升级到最新应用版本。';
+            final data = err.response?.data;
+            if (data is Map && data['message'] != null) {
+              upgradeMessage = data['message'].toString();
+            }
+            onUpgradeRequired?.call(upgradeMessage);
+          }
+
           handler.next(err);
         },
       ),

@@ -96,7 +96,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
 
       if (mounted) {
-        context.go('/');
+        final from = GoRouterState.of(context).uri.queryParameters['from'];
+        context.go((from != null && from.isNotEmpty && from != '/login') ? from : '/');
       }
     } catch (e) {
       setState(() {
