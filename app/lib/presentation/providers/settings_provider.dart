@@ -6,11 +6,13 @@ import 'package:syncstore_client/syncstore_client.dart' show ColorTag;
 import 'package:xbb/constant.dart';
 import 'package:xbb/controller/clipboard_tray.dart';
 import 'package:xbb/controller/setting.dart';
+import 'package:xbb/utils/translation.dart';
 
 /// 纯净的全局应用配置状态
 class AppSettingsState {
   final ThemeMode themeMode;
   final FlexScheme scheme;
+  final String languageCode; // 'system', 'zh', 'en'
   final Locale locale;
   final double fontScale;
   final ColorTag colorTag;
@@ -26,6 +28,7 @@ class AppSettingsState {
   const AppSettingsState({
     this.themeMode = ThemeMode.system,
     this.scheme = FlexScheme.blumineBlue,
+    this.languageCode = 'zh',
     this.locale = const Locale('zh', 'CN'),
     this.fontScale = 1.0,
     this.colorTag = ColorTag.none,
@@ -42,6 +45,7 @@ class AppSettingsState {
   AppSettingsState copyWith({
     ThemeMode? themeMode,
     FlexScheme? scheme,
+    String? languageCode,
     Locale? locale,
     double? fontScale,
     ColorTag? colorTag,
@@ -57,6 +61,7 @@ class AppSettingsState {
     return AppSettingsState(
       themeMode: themeMode ?? this.themeMode,
       scheme: scheme ?? this.scheme,
+      languageCode: languageCode ?? this.languageCode,
       locale: locale ?? this.locale,
       fontScale: fontScale ?? this.fontScale,
       colorTag: colorTag ?? this.colorTag,
@@ -85,6 +90,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     final feature = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY);
 
     ThemeMode mode = ThemeMode.system;
+    String langCode = 'zh';
     Locale loc = const Locale('zh', 'CN');
     double scale = 1.0;
     ColorTag tag = ColorTag.none;
@@ -93,12 +99,39 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     if (app != null) {
       final parsed = AppSetting.fromJson(app);
       mode = parsed.themeMode is ThemeMode ? parsed.themeMode : ThemeMode.system;
-      if (parsed.locale != null) {
-        loc = parsed.locale as Locale;
+      final rawLocale = app['locale'] as String?;
+      if (rawLocale != null && rawLocale.isNotEmpty) {
+        if (rawLocale == 'system' || rawLocale == 'zh' || rawLocale == 'en') {
+          langCode = rawLocale;
+        } else if (rawLocale.startsWith('zh')) {
+          langCode = 'zh';
+        } else if (rawLocale.startsWith('en')) {
+          langCode = 'en';
+        }
       }
       scale = (parsed.fontScale as num?)?.toDouble() ?? 1.0;
       tag = parsed.colorTag is ColorTag ? parsed.colorTag : ColorTag.none;
     }
+
+    String translationLocale = 'zh_CN';
+    if (langCode == 'en') {
+      loc = const Locale('en', 'US');
+      translationLocale = 'en_US';
+    } else if (langCode == 'system') {
+      final sys = WidgetsBinding.instance.platformDispatcher.locale;
+      if (sys.languageCode == 'en') {
+        loc = const Locale('en', 'US');
+        translationLocale = 'en_US';
+      } else {
+        loc = const Locale('zh', 'CN');
+        translationLocale = 'zh_CN';
+      }
+    } else {
+      langCode = 'zh';
+      loc = const Locale('zh', 'CN');
+      translationLocale = 'zh_CN';
+    }
+    Translation.setLocale(translationLocale);
 
     bool task = true;
     bool notes = true;
@@ -122,6 +155,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
 
     state = state.copyWith(
       themeMode: mode,
+      languageCode: langCode,
       locale: loc,
       fontScale: scale,
       colorTag: tag,
@@ -142,20 +176,59 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     );
   }
 
+  void _persistAppSetting() {
+    final appMap = Map<String, dynamic>.from(
+      box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_SETTINGS_KEY) ?? {},
+    );
+    appMap['theme_mode'] = state.themeMode.toString();
+    appMap['font_scale'] = state.fontScale;
+    appMap['locale'] = state.languageCode;
+    appMap['color_tag'] = state.colorTag.toString();
+    box.write(STORAGE_SETTING_APP_SETTINGS_KEY, appMap);
+  }
+
   void setThemeMode(ThemeMode mode) {
     state = state.copyWith(themeMode: mode);
+    _persistAppSetting();
+  }
+
+  void setLanguageCode(String code) {
+    Locale effectiveLocale;
+    String translationLocale;
+    if (code == 'zh') {
+      effectiveLocale = const Locale('zh', 'CN');
+      translationLocale = 'zh_CN';
+    } else if (code == 'en') {
+      effectiveLocale = const Locale('en', 'US');
+      translationLocale = 'en_US';
+    } else {
+      code = 'system';
+      final sys = WidgetsBinding.instance.platformDispatcher.locale;
+      if (sys.languageCode == 'en') {
+        effectiveLocale = const Locale('en', 'US');
+        translationLocale = 'en_US';
+      } else {
+        effectiveLocale = const Locale('zh', 'CN');
+        translationLocale = 'zh_CN';
+      }
+    }
+    Translation.setLocale(translationLocale);
+    state = state.copyWith(languageCode: code, locale: effectiveLocale);
+    _persistAppSetting();
   }
 
   void setLocale(Locale loc) {
-    state = state.copyWith(locale: loc);
+    setLanguageCode(loc.languageCode);
   }
 
   void setFontScale(double scale) {
     state = state.copyWith(fontScale: scale);
+    _persistAppSetting();
   }
 
   void setColorTag(ColorTag tag) {
     state = state.copyWith(colorTag: tag);
+    _persistAppSetting();
   }
 
   void setClipboardListeningEnabled(bool enabled) {

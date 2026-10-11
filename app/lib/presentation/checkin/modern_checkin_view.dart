@@ -10,6 +10,7 @@ import 'package:xbb/presentation/checkin/edit_checkin_event_dialog.dart';
 import 'package:xbb/presentation/checkin/event_filter_bar.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
+import 'package:xbb/utils/translation.dart';
 
 class ModernCheckinView extends ConsumerStatefulWidget {
   const ModernCheckinView({super.key});
@@ -40,12 +41,12 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          '习惯打卡',
+          'checkin_appbar_title'.tr,
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            tooltip: '新建打卡项目',
+            tooltip: 'checkin_add_tooltip'.tr,
             icon: const Icon(Icons.add),
             onPressed: () => EditCheckinEventDialog.show(context),
           ),
@@ -92,9 +93,9 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                       currentDay: DateTime.now(),
                       selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                       calendarFormat: CalendarFormat.twoWeeks,
-                      availableCalendarFormats: const {
-                        CalendarFormat.twoWeeks: '两周',
-                        CalendarFormat.month: '月',
+                      availableCalendarFormats: {
+                        CalendarFormat.twoWeeks: 'checkin_calendar_two_weeks'.tr,
+                        CalendarFormat.month: 'checkin_calendar_month'.tr,
                       },
                       headerStyle: const HeaderStyle(
                         formatButtonVisible: false,

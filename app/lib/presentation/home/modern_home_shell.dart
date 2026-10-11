@@ -13,6 +13,7 @@ import 'package:xbb/presentation/task/modern_task_view.dart';
 import 'package:xbb/presentation/tracker/modern_tracker_view.dart';
 import 'package:xbb/presentation/widgets/avatar_helper.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
+import 'package:xbb/utils/translation.dart';
 
 enum AppTab { notes, task, checkin, tracker, clipboard, chat, settings }
 
@@ -73,11 +74,13 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
                               child: const Icon(Icons.bolt, color: Colors.white, size: 18),
                             ),
                             const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              'XBB Workspace',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
+                            Expanded(
+                              child: Text(
+                                'XBB Workspace',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
                           ],
@@ -143,7 +146,7 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
                                         style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
                                       ),
                                       Text(
-                                        auth.isLoggedIn ? '@${auth.username}' : '离线访客',
+                                        auth.isLoggedIn ? '@${auth.username}' : 'offline_guest'.tr,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -246,19 +249,19 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
   String _getTitleForTab(AppTab tab) {
     switch (tab) {
       case AppTab.notes:
-        return '笔记';
+        return 'home_bar_title_notes'.tr;
       case AppTab.task:
-        return '待办';
+        return 'home_bar_title_task'.tr;
       case AppTab.checkin:
-        return '打卡';
+        return 'home_bar_title_checkin'.tr;
       case AppTab.tracker:
-        return '目标';
+        return 'home_bar_title_tracker'.tr;
       case AppTab.clipboard:
-        return '剪贴板';
+        return 'home_bar_title_clipboard'.tr;
       case AppTab.chat:
-        return 'AI 助手';
+        return 'home_bar_title_chat'.tr;
       case AppTab.settings:
-        return '设置';
+        return 'home_bar_title_setting'.tr;
     }
   }
 }

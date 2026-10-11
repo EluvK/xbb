@@ -1,6 +1,10 @@
 class Translation {
   static String currentLocale = 'zh_CN';
 
+  static void setLocale(String locale) {
+    currentLocale = locale;
+  }
+
   static final Map<String, Map<String, String>> _keys = _TranslationHelper.loadTranslations();
 
   static Map<String, Map<String, String>> get keys => _keys;
@@ -52,6 +56,194 @@ class _TranslationHelper {
     },
 
     // --- Components: Common & Settings (通用与设置) ---
+    "settings_center": {
+      "en_US": "Settings",
+      "zh_CN": "设置中心",
+    },
+    "language_setting": {
+      "en_US": "Language",
+      "zh_CN": "语言设置",
+    },
+    "language_system": {
+      "en_US": "System",
+      "zh_CN": "跟随系统",
+    },
+    "language_zh": {
+      "en_US": "中文",
+      "zh_CN": "中文",
+    },
+    "language_en": {
+      "en_US": "English",
+      "zh_CN": "English",
+    },
+    "appearance_and_typography": {
+      "en_US": "Appearance & Typography",
+      "zh_CN": "外观与排版",
+    },
+    "theme_mode_title": {
+      "en_US": "Theme Mode",
+      "zh_CN": "深浅模式",
+    },
+    "theme_mode_system": {
+      "en_US": "System",
+      "zh_CN": "系统",
+    },
+    "theme_mode_light": {
+      "en_US": "Light",
+      "zh_CN": "明亮",
+    },
+    "theme_mode_dark": {
+      "en_US": "Dark",
+      "zh_CN": "深邃",
+    },
+    "font_scale_title": {
+      "en_US": "Font Scale",
+      "zh_CN": "字体缩放",
+    },
+    "sync_status_title": {
+      "en_US": "Local-First Sync Status",
+      "zh_CN": "Local-First 同步状态",
+    },
+    "sync_status_syncing": {
+      "en_US": "Syncing...",
+      "zh_CN": "正在同步...",
+    },
+    "sync_status_error": {
+      "en_US": "Sync Error",
+      "zh_CN": "同步异常",
+    },
+    "sync_status_ready": {
+      "en_US": "Ready",
+      "zh_CN": "已就绪",
+    },
+    "sync_status_desc": {
+      "en_US": "Based on Rust ChangeLog incremental sync engine & local Outbox, write anytime offline, sync automatically when online.",
+      "zh_CN": "基于 Rust ChangeLog 增量变更流引擎与本地 Outbox 队列，离线随时写入，联网自动同步。",
+    },
+    "sync_trigger_check": {
+      "en_US": "Check Sync Now",
+      "zh_CN": "立即检查同步",
+    },
+    "sync_triggered_snack": {
+      "en_US": "Incremental sync check triggered",
+      "zh_CN": "已触发增量同步检查",
+    },
+    "feature_management_title": {
+      "en_US": "Feature Management",
+      "zh_CN": "功能模块管理",
+    },
+    "feature_task": {
+      "en_US": "Tasks (Task)",
+      "zh_CN": "待办任务 (Task)",
+    },
+    "feature_notes": {
+      "en_US": "Notes (Notes)",
+      "zh_CN": "个人笔记 (Notes)",
+    },
+    "feature_tracker": {
+      "en_US": "Tracker (Tracker)",
+      "zh_CN": "目标追踪 (Tracker)",
+    },
+    "feature_checkin": {
+      "en_US": "Check-in (Checkin)",
+      "zh_CN": "习惯打卡 (Checkin)",
+    },
+    "feature_clipboard": {
+      "en_US": "Clipboard Backup (Clipboard)",
+      "zh_CN": "剪贴板备份 (Clipboard)",
+    },
+    "feature_chat": {
+      "en_US": "AI Assistant (Chat)",
+      "zh_CN": "AI 对话助手 (Chat)",
+    },
+    "tray_and_clipboard_title": {
+      "en_US": "Desktop Tray & Clipboard",
+      "zh_CN": "桌面系统托盘与剪贴板",
+    },
+    "tray_listening": {
+      "en_US": "Listening",
+      "zh_CN": "正在监听",
+    },
+    "tray_paused": {
+      "en_US": "Paused",
+      "zh_CN": "已暂停",
+    },
+    "tray_desc": {
+      "en_US": "Continuously listen to clipboard in background and support minimizing to system tray. Captured history complies with ADR-0002 local-first privacy.",
+      "zh_CN": "在后台持续监听系统剪贴板并支持窗口最小化至系统托盘。捕获的历史文本严格遵循 ADR-0002 本地优先隐私规范，默认仅写入本地 SQLite，绝不自动上传云端。",
+    },
+    "tray_enable_listening": {
+      "en_US": "Enable Background Clipboard Listening",
+      "zh_CN": "启用后台剪贴板监听",
+    },
+    "tray_enable_listening_subtitle": {
+      "en_US": "Automatically capture copied text into local history",
+      "zh_CN": "复制系统文本时自动捕获到本地历史",
+    },
+    "home_widget_title": {
+      "en_US": "Home Screen Widgets",
+      "zh_CN": "桌面小部件 (Home Widget)",
+    },
+    "home_widget_desc": {
+      "en_US": "Pin task widget to home screen to view active tasks at a glance without opening the app. Updates automatically on change.",
+      "zh_CN": "将待办事项小部件固定到手机桌面，无需打开 App 即可一览进行中的待办清单。数据变动时将自动同步更新。",
+    },
+    "home_widget_add_btn": {
+      "en_US": "Add to Home Screen",
+      "zh_CN": "添加到桌面小部件",
+    },
+    "home_widget_requested_snack": {
+      "en_US": "Widget pin request sent to system",
+      "zh_CN": "已向系统发送添加小部件请求",
+    },
+    "home_widget_guide_title": {
+      "en_US": "Widget Guide",
+      "zh_CN": "添加桌面小部件指引",
+    },
+    "home_widget_guide_content": {
+      "en_US": "1. Return to device home screen empty area;\n2. Long-press empty area and tap Widgets;\n3. Find XBB and select Task Widget to drag onto home screen;\n4. The widget will automatically sync active tasks.",
+      "zh_CN": "1. 返回手机或平板主屏幕空白区域；\n2. 长按空白处，在弹出的菜单中选择「微件」或「小部件 (Widgets)」；\n3. 在列表中找到「XBB」并选择「待办事项」小部件拖动至主屏幕；\n4. 添加后小部件将自动同步最新待办任务。",
+    },
+    "home_widget_guide_confirm": {
+      "en_US": "Got it",
+      "zh_CN": "我知道了",
+    },
+    "account_local_user": {
+      "en_US": "Local Account (@id)",
+      "zh_CN": "本地账户 (@id)",
+    },
+    "account_profile_click_hint": {
+      "en_US": "@username • Tap to manage profile",
+      "zh_CN": "@username • 点击管理资料",
+    },
+    "account_login_click_hint": {
+      "en_US": "Offline local mode • Tap to log in",
+      "zh_CN": "离线本地单机模式 • 点击登录",
+    },
+    "account_logged_in": {
+      "en_US": "Logged In",
+      "zh_CN": "已登录",
+    },
+    "account_offline_ready": {
+      "en_US": "Offline Ready",
+      "zh_CN": "离线可用",
+    },
+    "offline_guest": {
+      "en_US": "Guest",
+      "zh_CN": "离线访客",
+    },
+    "cancel": {
+      "en_US": "Cancel",
+      "zh_CN": "取消",
+    },
+    "confirm": {
+      "en_US": "Confirm",
+      "zh_CN": "确认",
+    },
+    "save": {
+      "en_US": "Save",
+      "zh_CN": "保存",
+    },
     "unknown_user": {
       "en_US": "Unknown User",
       "zh_CN": "未知用户",
@@ -142,6 +334,38 @@ class _TranslationHelper {
     },
 
     // --- Components: Notes & Editor (笔记与编辑器) ---
+    "notes_appbar_title": {
+      "en_US": "Notes",
+      "zh_CN": "个人笔记",
+    },
+    "notes_new_note_title": {
+      "en_US": "New Note",
+      "zh_CN": "新建笔记",
+    },
+    "notes_new_note_content": {
+      "en_US": "# New Note\n\nStart capturing your thoughts...",
+      "zh_CN": "# 新建笔记\n\n开始记录你的灵感...",
+    },
+    "notes_untitled": {
+      "en_US": "Untitled",
+      "zh_CN": "无标题",
+    },
+    "notes_default_category": {
+      "en_US": "Default",
+      "zh_CN": "默认",
+    },
+    "notes_search_hint": {
+      "en_US": "Search notes...",
+      "zh_CN": "搜索笔记标题或内容...",
+    },
+    "notes_my_repos_title": {
+      "en_US": "My Repositories",
+      "zh_CN": "我的仓库",
+    },
+    "notes_subscribed_repos_title": {
+      "en_US": "Subscribed Repositories",
+      "zh_CN": "订阅的仓库",
+    },
     "reply": {
       "en_US": "Reply",
       "zh_CN": "回复",
@@ -302,6 +526,138 @@ class _TranslationHelper {
     },
 
     // --- Pages: Route Titles (页面标题/动态参数) ---
+    "home_bar_title_notes": {
+      "en_US": "Notes",
+      "zh_CN": "笔记",
+    },
+    "task_active_list": {
+      "en_US": "Tasks",
+      "zh_CN": "待办事项",
+    },
+    "task_archived_list": {
+      "en_US": "Archived Tasks",
+      "zh_CN": "已归档清单",
+    },
+    "task_input_hint": {
+      "en_US": "Add a task, press Enter to save...",
+      "zh_CN": "添加新任务，按回车快速保存...",
+    },
+    "task_archive_completed_tooltip": {
+      "en_US": "Archive Completed Tasks",
+      "zh_CN": "归档已完成任务",
+    },
+    "task_view_archived_tooltip": {
+      "en_US": "View Archived History",
+      "zh_CN": "查看归档历史",
+    },
+    "task_view_active_tooltip": {
+      "en_US": "View Active Tasks",
+      "zh_CN": "查看进行中",
+    },
+    "task_view_details_hide_tooltip": {
+      "en_US": "Hide Task Details",
+      "zh_CN": "隐藏任务详情",
+    },
+    "task_view_details_show_tooltip": {
+      "en_US": "Show Task Details",
+      "zh_CN": "显示任务详情",
+    },
+    "task_empty_title": {
+      "en_US": "No Tasks",
+      "zh_CN": "没有待办任务",
+    },
+    "task_empty_desc": {
+      "en_US": "Add tasks above to stay focused and productive",
+      "zh_CN": "在上方输入框添加新任务，保持专注与高效",
+    },
+    "task_overview_and_progress": {
+      "en_US": "Task Overview & Progress",
+      "zh_CN": "任务概览与进度",
+    },
+    "task_expand_overview": {
+      "en_US": "Expand Overview",
+      "zh_CN": "展开概览",
+    },
+    "task_collapse_overview": {
+      "en_US": "Collapse Overview",
+      "zh_CN": "收起概览",
+    },
+    "task_total_label": {
+      "en_US": "Total",
+      "zh_CN": "总任务",
+    },
+    "task_done_label": {
+      "en_US": "Done",
+      "zh_CN": "已完成",
+    },
+    "task_pending_label": {
+      "en_US": "Pending",
+      "zh_CN": "待处理",
+    },
+    "task_edit_tooltip": {
+      "en_US": "Edit Task",
+      "zh_CN": "修改任务",
+    },
+    "task_delete_tooltip": {
+      "en_US": "Delete Task",
+      "zh_CN": "删除任务",
+    },
+    "task_save_tooltip": {
+      "en_US": "Save",
+      "zh_CN": "保存",
+    },
+    "task_cancel_tooltip": {
+      "en_US": "Cancel",
+      "zh_CN": "取消",
+    },
+    "task_content_hint": {
+      "en_US": "Task content...",
+      "zh_CN": "任务内容...",
+    },
+    "task_detail_done_time": {
+      "en_US": "Done: @time",
+      "zh_CN": "完成时间: @time",
+    },
+    "task_detail_updated_time": {
+      "en_US": "Updated: @time",
+      "zh_CN": "更新时间: @time",
+    },
+    "task_detail_order": {
+      "en_US": "ID: @id (Order: @order)",
+      "zh_CN": "ID: @id (序号: @order)",
+    },
+    "clipboard_appbar_title": {
+      "en_US": "Clipboard History",
+      "zh_CN": "剪贴板历史",
+    },
+    "clipboard_clear_tooltip": {
+      "en_US": "Clear History",
+      "zh_CN": "清空历史记录",
+    },
+    "clipboard_clear_dialog_title": {
+      "en_US": "Clear Clipboard History",
+      "zh_CN": "清空剪贴板历史",
+    },
+    "clipboard_clear_dialog_content": {
+      "en_US": "Clear all local clipboard history? This cannot be undone.",
+      "zh_CN": "确认清空本地所有剪贴板记录吗？此操作不可撤销。",
+    },
+    "clipboard_clear_btn": {
+      "en_US": "Clear",
+      "zh_CN": "清空",
+    },
+    "clipboard_search_hint": {
+      "en_US": "Search clipboard text...",
+      "zh_CN": "搜索剪贴板文本...",
+    },
+    "clipboard_empty_title": {
+      "en_US": "No Clipboard Records",
+      "zh_CN": "无剪贴板记录",
+    },
+    "clipboard_empty_desc": {
+      "en_US": "Copied text will show here to reuse or backup",
+      "zh_CN": "复制文本后即可在此处查看历史、快捷复用或备份",
+    },
     "home_bar_title_task": {
       "en_US": "Tasks",
       "zh_CN": "任务",
@@ -1107,6 +1463,26 @@ class _TranslationHelper {
     },
 
     // --- Tracker: UI Texts ---
+    "tracker_appbar_title": {
+      "en_US": "Tracker",
+      "zh_CN": "目标追踪",
+    },
+    "tracker_add_tooltip": {
+      "en_US": "New Tracker",
+      "zh_CN": "新建追踪器",
+    },
+    "tracker_empty_title": {
+      "en_US": "No Trackers Yet",
+      "zh_CN": "暂无目标追踪器",
+    },
+    "tracker_empty_desc": {
+      "en_US": "Tap + to create habit cycles, milestones, or anniversaries",
+      "zh_CN": "点击右上角 “+” 创建你的习惯周期、里程碑或重要纪念日",
+    },
+    "tracker_default_category": {
+      "en_US": "Default",
+      "zh_CN": "默认",
+    },
     "tracker_panic": {
       "en_US": "Tracker Error",
       "zh_CN": "追踪器异常",
@@ -1385,6 +1761,22 @@ class _TranslationHelper {
     },
 
     // --- Pages: Check-in (打卡) ---
+    "checkin_appbar_title": {
+      "en_US": "Habits & Check-in",
+      "zh_CN": "习惯打卡",
+    },
+    "checkin_add_tooltip": {
+      "en_US": "New Check-in Event",
+      "zh_CN": "新建打卡项目",
+    },
+    "checkin_calendar_two_weeks": {
+      "en_US": "Two Weeks",
+      "zh_CN": "两周",
+    },
+    "checkin_calendar_month": {
+      "en_US": "Month",
+      "zh_CN": "月",
+    },
     "checkin_create_event": {
       "en_US": "Create Event",
       "zh_CN": "创建打卡事件",

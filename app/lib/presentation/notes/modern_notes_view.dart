@@ -13,6 +13,7 @@ import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 import 'package:xbb/utils/color_picker.dart';
+import 'package:xbb/utils/translation.dart';
 
 class ModernNotesView extends ConsumerStatefulWidget {
   const ModernNotesView({super.key});
@@ -71,7 +72,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
   void _saveCurrentPost(DataItem<Post> post) {
     final updated = post.updatedBody(
       post.body.copyWith(
-        title: _titleController.text.trim().isEmpty ? '无标题' : _titleController.text.trim(),
+        title: _titleController.text.trim().isEmpty ? 'notes_untitled'.tr : _titleController.text.trim(),
         content: _contentController.text,
       ),
     );
@@ -90,17 +91,17 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
       repoId,
       null,
       body: Post(
-        title: '新建笔记',
-        category: '默认',
-        content: '# 新建笔记\n\n开始记录你的灵感...',
+        title: 'notes_new_note_title'.tr,
+        category: 'notes_default_category'.tr,
+        content: 'notes_new_note_content'.tr,
         repoId: repoId,
       ),
       syncStatus: SyncStatus.pending,
     );
     ref.read(notesRepositoryProvider).savePost(newPost);
     ref.read(selectedPostIdProvider.notifier).state = newId;
-    _titleController.text = '新建笔记';
-    _contentController.text = '# 新建笔记\n\n开始记录你的灵感...';
+    _titleController.text = 'notes_new_note_title'.tr;
+    _contentController.text = 'notes_new_note_content'.tr;
     setState(() => _isEditing = true);
   }
 
@@ -168,12 +169,12 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '笔记本',
+                  'home_bar_title_notes'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add, size: 20),
-                  tooltip: '新建笔记本',
+                  tooltip: 'new_repo'.tr,
                   onPressed: () => _showCreateRepoDialog(userId),
                 ),
               ],
@@ -186,26 +187,26 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
               children: [
                 // 卡片 1: 我的小本本
                 _buildAccordionSection(
-                  title: '我的小本本',
+                  title: 'notes_my_repos_title'.tr,
                   icon: Icons.folder_outlined,
                   color: theme.colorScheme.primary,
                   isExpanded: _myReposExpanded,
                   onToggle: () => setState(() => _myReposExpanded = !_myReposExpanded),
                   asyncData: myReposAsync,
                   selectedRepoId: selectedRepoId,
-                  emptyText: '暂无自建笔记本',
+                  emptyText: 'my_repos'.tr,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 // 卡片 2: 订阅的小本本
                 _buildAccordionSection(
-                  title: '订阅的小本本',
+                  title: 'notes_subscribed_repos_title'.tr,
                   icon: Icons.share_outlined,
                   color: theme.colorScheme.secondary,
                   isExpanded: _subscribedReposExpanded,
                   onToggle: () => setState(() => _subscribedReposExpanded = !_subscribedReposExpanded),
                   asyncData: subscribedReposAsync,
                   selectedRepoId: selectedRepoId,
-                  emptyText: '暂无订阅笔记本',
+                  emptyText: 'subscribe_repos'.tr,
                 ),
               ],
             ),

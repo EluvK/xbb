@@ -8,6 +8,7 @@ import 'package:xbb/presentation/providers/settings_provider.dart';
 import 'package:xbb/presentation/providers/sync_provider.dart';
 import 'package:xbb/presentation/widgets/avatar_helper.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
+import 'package:xbb/utils/translation.dart';
 
 class ModernSettingsView extends ConsumerWidget {
   const ModernSettingsView({super.key});
@@ -22,7 +23,7 @@ class ModernSettingsView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text('设置中心', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        title: Text('settings_center'.tr, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -45,19 +46,21 @@ class ModernSettingsView extends ConsumerWidget {
                       Text(
                         auth.isLoggedIn
                             ? (auth.nickname.isNotEmpty ? auth.nickname : auth.username)
-                            : '本地账户 (${auth.userId})',
+                            : 'account_local_user'.trParams({'id': auth.userId}),
                         style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        auth.isLoggedIn ? '@${auth.username} • 点击管理资料' : '离线本地单机模式 • 点击登录',
+                        auth.isLoggedIn
+                            ? 'account_profile_click_hint'.trParams({'username': auth.username})
+                            : 'account_login_click_hint'.tr,
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
                 ),
                 ModernBadge(
-                  label: auth.isLoggedIn ? '已登录' : '离线可用',
+                  label: auth.isLoggedIn ? 'account_logged_in'.tr : 'account_offline_ready'.tr,
                   color: auth.isLoggedIn ? Colors.green : Colors.grey,
                 ),
                 const SizedBox(width: AppSpacing.xs),
@@ -75,20 +78,20 @@ class ModernSettingsView extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Local-First 同步状态', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text('sync_status_title'.tr, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                     ModernBadge(
                       label: syncStatus.state == SyncRunningState.syncing
-                          ? '正在同步...'
+                          ? 'sync_status_syncing'.tr
                           : syncStatus.state == SyncRunningState.error
-                              ? '同步异常'
-                              : '已就绪',
+                              ? 'sync_status_error'.tr
+                              : 'sync_status_ready'.tr,
                       color: syncStatus.state == SyncRunningState.error ? Colors.red : Colors.blue,
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '基于 Rust ChangeLog 增量变更流引擎与本地 Outbox 队列，离线随时写入，联网自动同步。',
+                  'sync_status_desc'.tr,
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -97,11 +100,11 @@ class ModernSettingsView extends ConsumerWidget {
                   children: [
                     FilledButton.icon(
                       icon: const Icon(Icons.sync, size: 16),
-                      label: const Text('立即检查同步'),
+                      label: Text('sync_trigger_check'.tr),
                       onPressed: () {
                         ref.read(syncStatusProvider.notifier).triggerSync();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('已触发增量同步检查')),
+                          SnackBar(content: Text('sync_triggered_snack'.tr)),
                         );
                       },
                     ),
@@ -112,21 +115,21 @@ class ModernSettingsView extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 外观与主题
+          // 外观与排版
           ModernCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('外观与排版', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                Text('appearance_and_typography'.tr, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: AppSpacing.sm),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('深浅模式'),
+                  title: Text('theme_mode_title'.tr),
                   trailing: SegmentedButton<ThemeMode>(
-                    segments: const [
-                      ButtonSegment(value: ThemeMode.system, label: Text('系统')),
-                      ButtonSegment(value: ThemeMode.light, label: Text('明亮')),
-                      ButtonSegment(value: ThemeMode.dark, label: Text('深邃')),
+                    segments: [
+                      ButtonSegment(value: ThemeMode.system, label: Text('theme_mode_system'.tr)),
+                      ButtonSegment(value: ThemeMode.light, label: Text('theme_mode_light'.tr)),
+                      ButtonSegment(value: ThemeMode.dark, label: Text('theme_mode_dark'.tr)),
                     ],
                     selected: {settings.themeMode},
                     onSelectionChanged: (set) {
@@ -137,7 +140,23 @@ class ModernSettingsView extends ConsumerWidget {
                 const Divider(),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('字体缩放'),
+                  title: Text('language_setting'.tr),
+                  trailing: SegmentedButton<String>(
+                    segments: [
+                      ButtonSegment(value: 'system', label: Text('language_system'.tr)),
+                      ButtonSegment(value: 'zh', label: Text('language_zh'.tr)),
+                      ButtonSegment(value: 'en', label: Text('language_en'.tr)),
+                    ],
+                    selected: {settings.languageCode},
+                    onSelectionChanged: (set) {
+                      ref.read(appSettingsProvider.notifier).setLanguageCode(set.first);
+                    },
+                  ),
+                ),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('font_scale_title'.tr),
                   subtitle: Text('${(settings.fontScale * 100).toInt()}%'),
                   trailing: SizedBox(
                     width: 160,
@@ -162,41 +181,41 @@ class ModernSettingsView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('功能模块管理', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                Text('feature_management_title'.tr, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: AppSpacing.xs),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('待办任务 (Task)'),
+                  title: Text('feature_task'.tr),
                   value: settings.taskEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(task: v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('个人笔记 (Notes)'),
+                  title: Text('feature_notes'.tr),
                   value: settings.notesEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(notes: v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('目标追踪 (Tracker)'),
+                  title: Text('feature_tracker'.tr),
                   value: settings.trackerEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(tracker: v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('习惯打卡 (Checkin)'),
+                  title: Text('feature_checkin'.tr),
                   value: settings.checkinEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(checkin: v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('剪贴板备份 (Clipboard)'),
+                  title: Text('feature_clipboard'.tr),
                   value: settings.clipboardEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(clipboard: v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('AI 对话助手 (Chat)'),
+                  title: Text('feature_chat'.tr),
                   value: settings.chatEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(chat: v),
                 ),
@@ -213,23 +232,23 @@ class ModernSettingsView extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('桌面系统托盘与剪贴板', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text('tray_and_clipboard_title'.tr, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                     ModernBadge(
-                      label: settings.clipboardListeningEnabled ? '正在监听' : '已暂停',
+                      label: settings.clipboardListeningEnabled ? 'tray_listening'.tr : 'tray_paused'.tr,
                       color: settings.clipboardListeningEnabled ? Colors.teal : Colors.grey,
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '在后台持续监听系统剪贴板并支持窗口最小化至系统托盘。捕获的历史文本严格遵循 ADR-0002 本地优先隐私规范，默认仅写入本地 SQLite，绝不自动上传云端。',
+                  'tray_desc'.tr,
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('启用后台剪贴板监听'),
-                  subtitle: const Text('复制系统文本时自动捕获到本地历史'),
+                  title: Text('tray_enable_listening'.tr),
+                  subtitle: Text('tray_enable_listening_subtitle'.tr),
                   value: settings.clipboardListeningEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).setClipboardListeningEnabled(v),
                 ),
@@ -246,13 +265,13 @@ class ModernSettingsView extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('桌面小部件 (Home Widget)', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text('home_widget_title'.tr, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                     const ModernBadge(label: 'Android / iOS', color: Colors.teal),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '将待办事项小部件固定到手机桌面，无需打开 App 即可一览进行中的待办清单。数据变动时将自动同步更新。',
+                  'home_widget_desc'.tr,
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -261,29 +280,24 @@ class ModernSettingsView extends ConsumerWidget {
                   children: [
                     FilledButton.tonalIcon(
                       icon: const Icon(Icons.widgets_outlined, size: 16),
-                      label: const Text('添加到桌面小部件'),
+                      label: Text('home_widget_add_btn'.tr),
                       onPressed: () async {
                         final pinned = await TaskWidgetBridge.requestPinWidget();
                         if (context.mounted) {
                           if (pinned) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已向系统发送添加小部件请求')),
+                              SnackBar(content: Text('home_widget_requested_snack'.tr)),
                             );
                           } else {
                             showDialog<void>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                title: const Text('添加桌面小部件指引'),
-                                content: const Text(
-                                  '1. 返回手机或平板主屏幕空白区域；\n'
-                                  '2. 长按空白处，在弹出的菜单中选择「微件」或「小部件 (Widgets)」；\n'
-                                  '3. 在列表中找到「XBB」并选择「待办事项」小部件拖动至主屏幕；\n'
-                                  '4. 添加后小部件将自动同步最新待办任务。',
-                                ),
+                                title: Text('home_widget_guide_title'.tr),
+                                content: Text('home_widget_guide_content'.tr),
                                 actions: [
                                   FilledButton(
                                     onPressed: () => Navigator.pop(ctx),
-                                    child: const Text('我知道了'),
+                                    child: Text('home_widget_guide_confirm'.tr),
                                   ),
                                 ],
                               ),

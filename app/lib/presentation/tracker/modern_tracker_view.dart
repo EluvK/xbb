@@ -12,6 +12,7 @@ import 'package:xbb/presentation/tracker/tracker_history_sheet.dart';
 import 'package:xbb/presentation/tracker/tracker_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
+import 'package:xbb/utils/translation.dart';
 
 class ModernTrackerView extends ConsumerWidget {
   const ModernTrackerView({super.key});
@@ -26,12 +27,12 @@ class ModernTrackerView extends ConsumerWidget {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          '目标追踪',
+          'tracker_appbar_title'.tr,
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            tooltip: '新建追踪器',
+            tooltip: 'tracker_add_tooltip'.tr,
             icon: const Icon(Icons.add),
             onPressed: () => _showCreateTrackerDialog(context, ref, userId),
           ),
@@ -41,17 +42,17 @@ class ModernTrackerView extends ConsumerWidget {
       body: trackersAsync.when(
         data: (trackers) {
           if (trackers.isEmpty) {
-            return const ModernEmptyState(
+            return ModernEmptyState(
               icon: Icons.track_changes_rounded,
-              title: '暂无目标追踪器',
-              subtitle: '点击右上角 “+” 创建你的习惯周期、里程碑或重要纪念日',
+              title: 'tracker_empty_title'.tr,
+              subtitle: 'tracker_empty_desc'.tr,
             );
           }
 
           // 按分类成组聚合
           final Map<String, List<DataItem<Tracker>>> groupedTrackers = {};
           for (final t in trackers) {
-            final cat = t.body.category.trim().isEmpty ? '默认' : t.body.category.trim();
+            final cat = t.body.category.trim().isEmpty ? 'tracker_default_category'.tr : t.body.category.trim();
             groupedTrackers.putIfAbsent(cat, () => []).add(t);
           }
           final sortedCategories = groupedTrackers.keys.toList()..sort();

@@ -8,6 +8,7 @@ import 'package:xbb/presentation/task/task_history_view.dart';
 import 'package:xbb/presentation/task/task_overview_card.dart';
 import 'package:xbb/presentation/task/task_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
+import 'package:xbb/utils/translation.dart';
 
 class ModernTaskView extends ConsumerStatefulWidget {
   const ModernTaskView({super.key});
@@ -106,34 +107,34 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          _showArchived ? '已归档清单' : '待办事项',
+          _showArchived ? 'task_archived_list'.tr : 'task_active_list'.tr,
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            tooltip: _showArchived ? '查看进行中' : '查看归档历史',
+            tooltip: _showArchived ? 'task_view_active_tooltip'.tr : 'task_view_archived_tooltip'.tr,
             icon: Icon(_showArchived ? Icons.checklist_rounded : Icons.archive_outlined),
             onPressed: () => setState(() => _showArchived = !_showArchived),
           ),
           if (!_showArchived)
             IconButton(
-              tooltip: _showDetails ? '隐藏任务详情' : '显示任务详情',
+              tooltip: _showDetails ? 'task_view_details_hide_tooltip'.tr : 'task_view_details_show_tooltip'.tr,
               icon: Icon(_showDetails ? Icons.visibility_rounded : Icons.visibility_outlined),
               onPressed: () => setState(() => _showDetails = !_showDetails),
             ),
           if (!_showArchived && doneCount > 0)
             IconButton(
-              tooltip: '归档已完成任务',
+              tooltip: 'task_archive_completed_tooltip'.tr,
               icon: const Icon(Icons.archive),
               onPressed: () async {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('归档任务清单'),
-                    content: Text('确认将当前已完成的 $doneCount 项任务归档吗？未完成任务将保留至新清单。'),
+                    title: Text('task_confirm_archive_title'.tr),
+                    content: Text('task_confirm_archive_content'.tr),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('归档')),
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('cancel'.tr)),
+                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('task_action_archive_completed'.tr)),
                     ],
                   ),
                 );
@@ -160,7 +161,7 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
                           focusNode: _focusNode,
                           onSubmitted: (_) => _submitNewTask(),
                           decoration: InputDecoration(
-                            hintText: '添加新任务，按回车快速保存...',
+                            hintText: 'task_input_hint'.tr,
                             filled: true,
                             fillColor: theme.colorScheme.surfaceContainerLow,
                             prefixIcon: const Icon(Icons.add_circle_outline, size: 20),
@@ -208,10 +209,10 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
                 // 任务列表
                 Expanded(
                   child: orderedTasks.isEmpty
-                      ? const ModernEmptyState(
+                      ? ModernEmptyState(
                           icon: Icons.checklist_rounded,
-                          title: '没有待办任务',
-                          subtitle: '在上方输入框添加新任务，保持专注与高效',
+                          title: 'task_empty_title'.tr,
+                          subtitle: 'task_empty_desc'.tr,
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.all(AppSpacing.md),
@@ -361,7 +362,7 @@ class _InlineTaskTileState extends State<InlineTaskTile> {
                           style: theme.textTheme.bodyMedium,
                           decoration: InputDecoration(
                             isDense: true,
-                            hintText: '任务内容...',
+                            hintText: 'task_content_hint'.tr,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.sm,
                               vertical: AppSpacing.xs,
@@ -392,23 +393,23 @@ class _InlineTaskTileState extends State<InlineTaskTile> {
               ),
               if (widget.isEditing) ...[
                 IconButton(
-                  tooltip: '保存',
+                  tooltip: 'task_save_tooltip'.tr,
                   icon: const Icon(Icons.check, size: 18, color: Colors.green),
                   onPressed: _handleSave,
                 ),
                 IconButton(
-                  tooltip: '取消',
+                  tooltip: 'task_cancel_tooltip'.tr,
                   icon: const Icon(Icons.close, size: 18, color: Colors.grey),
                   onPressed: widget.onCancel,
                 ),
               ] else ...[
                 IconButton(
-                  tooltip: '修改任务',
+                  tooltip: 'task_edit_tooltip'.tr,
                   icon: Icon(Icons.edit_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant.withAlpha(120)),
                   onPressed: widget.onTapEdit,
                 ),
                 IconButton(
-                  tooltip: '删除任务',
+                  tooltip: 'task_delete_tooltip'.tr,
                   icon: Icon(Icons.delete_outline, size: 18, color: theme.colorScheme.error.withAlpha(160)),
                   onPressed: widget.onDelete,
                 ),
@@ -437,15 +438,15 @@ class _TaskDetailBlock extends StatelessWidget {
     final textStyle = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant.withAlpha(160),
     );
-    final doneAtStr = task.doneAt?.toLocal().toString().split('.').first ?? '未完成';
+    final doneAtStr = task.doneAt?.toLocal().toString().split('.').first ?? 'task_status_todo'.tr;
     final modAtStr = task.lastModifiedAt.toLocal().toString().split('.').first;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('ID: ${task.id} (序号: ${task.sortOrder})', style: textStyle),
-        Text('完成时间: $doneAtStr', style: textStyle),
-        Text('更新时间: $modAtStr', style: textStyle),
+        Text('task_detail_order'.trParams({'id': task.id, 'order': '${task.sortOrder}'}), style: textStyle),
+        Text('task_detail_done_time'.trParams({'time': doneAtStr}), style: textStyle),
+        Text('task_detail_updated_time'.trParams({'time': modAtStr}), style: textStyle),
       ],
     );
   }

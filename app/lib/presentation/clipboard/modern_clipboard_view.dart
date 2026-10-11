@@ -6,6 +6,7 @@ import 'package:xbb/presentation/clipboard/clipboard_date_group_view.dart';
 import 'package:xbb/presentation/clipboard/clipboard_overview_card.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
+import 'package:xbb/utils/translation.dart';
 
 class ModernClipboardView extends ConsumerWidget {
   const ModernClipboardView({super.key});
@@ -21,22 +22,22 @@ class ModernClipboardView extends ConsumerWidget {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          '剪贴板历史',
+          'clipboard_appbar_title'.tr,
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            tooltip: '清空历史记录',
+            tooltip: 'clipboard_clear_tooltip'.tr,
             icon: const Icon(Icons.delete_sweep_outlined),
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('清空剪贴板历史'),
-                  content: const Text('确认清空本地所有剪贴板记录吗？此操作不可撤销。'),
+                  title: Text('clipboard_clear_dialog_title'.tr),
+                  content: Text('clipboard_clear_dialog_content'.tr),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('清空')),
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('cancel'.tr)),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('clipboard_clear_btn'.tr)),
                   ],
                 ),
               );
@@ -54,7 +55,7 @@ class ModernClipboardView extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             child: ModernSearchField(
-              hintText: '搜索剪贴板文本...',
+              hintText: 'clipboard_search_hint'.tr,
               onChanged: (v) => ref.read(clipboardSearchQueryProvider.notifier).state = v,
             ),
           ),
@@ -68,10 +69,10 @@ class ModernClipboardView extends ConsumerWidget {
             child: entriesAsync.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : groups.isEmpty
-                    ? const ModernEmptyState(
+                    ? ModernEmptyState(
                         icon: Icons.content_paste_off_rounded,
-                        title: '无剪贴板记录',
-                        subtitle: '复制文本后即可在此处查看历史、快捷复用或备份',
+                        title: 'clipboard_empty_title'.tr,
+                        subtitle: 'clipboard_empty_desc'.tr,
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),

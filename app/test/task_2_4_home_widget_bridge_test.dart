@@ -119,7 +119,7 @@ void main() {
       await tester.pump();
 
       // 滚动到底部找到桌面小部件卡片
-      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.drag(find.byType(ListView), const Offset(0, -1000));
       await tester.pump();
 
       expect(find.text('桌面小部件 (Home Widget)'), findsOneWidget);

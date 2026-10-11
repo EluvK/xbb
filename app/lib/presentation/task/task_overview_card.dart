@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
+import 'package:xbb/utils/translation.dart';
 
 /// 响应式活跃任务概览统计卡片
 class TaskOverviewCard extends StatelessWidget {
@@ -43,7 +44,7 @@ class TaskOverviewCard extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    '任务概览与进度',
+                    'task_overview_and_progress'.tr,
                     style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -57,7 +58,7 @@ class TaskOverviewCard extends StatelessWidget {
                   if (onToggleCollapse != null)
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      tooltip: isCollapsed ? '展开概览' : '收起概览',
+                      tooltip: isCollapsed ? 'task_expand_overview'.tr : 'task_collapse_overview'.tr,
                       icon: Icon(
                         isCollapsed ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded,
                         size: 20,
@@ -96,7 +97,7 @@ class TaskOverviewCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _StatBox(
-                    label: '总任务',
+                    label: 'task_total_label'.tr,
                     value: totalCount,
                     icon: Icons.format_list_bulleted_rounded,
                     color: theme.colorScheme.primary,
@@ -105,7 +106,7 @@ class TaskOverviewCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: _StatBox(
-                    label: '已完成',
+                    label: 'task_done_label'.tr,
                     value: doneCount,
                     icon: Icons.check_circle_outline_rounded,
                     color: Colors.green,
@@ -114,7 +115,7 @@ class TaskOverviewCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: _StatBox(
-                    label: '待处理',
+                    label: 'task_pending_label'.tr,
                     value: todoCount,
                     icon: Icons.pending_actions_rounded,
                     color: Colors.orange,

@@ -13,6 +13,7 @@ import 'package:xbb/presentation/providers/settings_provider.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
 import 'package:xbb/sync/v2/sync_worker.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
+import 'package:xbb/utils/translation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +52,19 @@ void main() async {
   ClipboardTrayService.instance.configure(userId: userId);
 
   await initializeDateFormatting('zh');
+  await initializeDateFormatting('en');
+
+  // 初始化当前多语言环境
+  final savedAppSettings = box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_SETTINGS_KEY);
+  final savedLang = savedAppSettings != null ? savedAppSettings['locale'] as String? : null;
+  if (savedLang == 'en') {
+    Translation.setLocale('en_US');
+  } else if (savedLang == 'zh') {
+    Translation.setLocale('zh_CN');
+  } else {
+    final sys = PlatformDispatcher.instance.locale;
+    Translation.setLocale(sys.languageCode == 'en' ? 'en_US' : 'zh_CN');
+  }
 
   runApp(
     ProviderScope(
