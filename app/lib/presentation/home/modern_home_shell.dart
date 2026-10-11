@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/chat/modern_chat_view.dart';
 import 'package:xbb/presentation/checkin/modern_checkin_view.dart';
 import 'package:xbb/presentation/clipboard/modern_clipboard_view.dart';
 import 'package:xbb/presentation/notes/modern_notes_view.dart';
+import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/settings_provider.dart';
 import 'package:xbb/presentation/settings/modern_settings_view.dart';
 import 'package:xbb/presentation/task/modern_task_view.dart';
 import 'package:xbb/presentation/tracker/modern_tracker_view.dart';
+import 'package:xbb/presentation/widgets/avatar_helper.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 enum AppTab { notes, task, checkin, tracker, clipboard, chat, settings }
@@ -27,6 +30,7 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final settings = ref.watch(appSettingsProvider);
+    final auth = ref.watch(authProvider);
 
     final tabs = <AppTab>[];
     if (settings.notesEnabled) tabs.add(AppTab.notes);
@@ -111,6 +115,48 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
                           ],
                         ),
                       ),
+                      const Divider(height: 1),
+                      // 桌面端左下角用户头像与进入个人中心入口
+                      Padding(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          onTap: () => context.push('/profile'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                            child: Row(
+                              children: [
+                                UserAvatarWidget(
+                                  avatar: auth.avatar,
+                                  fallbackName: auth.nickname.isNotEmpty ? auth.nickname : auth.username,
+                                  radius: 16,
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        auth.nickname.isNotEmpty ? auth.nickname : auth.username,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                      Text(
+                                        auth.isLoggedIn ? '@${auth.username}' : '离线访客',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -118,7 +164,27 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
                 Expanded(child: _buildCurrentTabView()),
               ],
             )
-          : _buildCurrentTabView(),
+          : Scaffold(
+              backgroundColor: theme.colorScheme.surface,
+              appBar: AppBar(
+                title: Text(_getTitleForTab(_currentTab), style: const TextStyle(fontWeight: FontWeight.bold)),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.md),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () => context.push('/profile'),
+                      child: UserAvatarWidget(
+                        avatar: auth.avatar,
+                        fallbackName: auth.nickname.isNotEmpty ? auth.nickname : auth.username,
+                        radius: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              body: _buildCurrentTabView(),
+            ),
       bottomNavigationBar: isDesktop
           ? null
           : NavigationBar(

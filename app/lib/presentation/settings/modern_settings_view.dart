@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/settings_provider.dart';
 import 'package:xbb/presentation/providers/sync_provider.dart';
+import 'package:xbb/presentation/widgets/avatar_helper.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 class ModernSettingsView extends ConsumerWidget {
@@ -26,12 +28,13 @@ class ModernSettingsView extends ConsumerWidget {
         children: [
           // 用户信息与账号卡片
           ModernCard(
+            onTap: () => context.push('/profile'),
             child: Row(
               children: [
-                CircleAvatar(
+                UserAvatarWidget(
+                  avatar: auth.avatar,
+                  fallbackName: auth.nickname.isNotEmpty ? auth.nickname : auth.username,
                   radius: 24,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Icon(Icons.person, color: theme.colorScheme.primary),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -39,12 +42,14 @@ class ModernSettingsView extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        auth.isLoggedIn ? auth.username : '本地账户 (${auth.userId})',
+                        auth.isLoggedIn
+                            ? (auth.nickname.isNotEmpty ? auth.nickname : auth.username)
+                            : '本地账户 (${auth.userId})',
                         style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        auth.isLoggedIn ? '已登录多端同步账户' : '离线本地单机模式',
+                        auth.isLoggedIn ? '@${auth.username} • 点击管理资料' : '离线本地单机模式 • 点击登录',
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ],
@@ -54,6 +59,8 @@ class ModernSettingsView extends ConsumerWidget {
                   label: auth.isLoggedIn ? '已登录' : '离线可用',
                   color: auth.isLoggedIn ? Colors.green : Colors.grey,
                 ),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
               ],
             ),
           ),

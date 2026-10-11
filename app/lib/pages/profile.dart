@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:xbb/presentation/settings/modern_settings_view.dart';
+import 'package:xbb/presentation/profile/profile_view.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const ModernSettingsView();
+    return const ProfileView();
   }
 }
