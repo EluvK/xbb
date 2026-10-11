@@ -3,6 +3,9 @@ use salvo::http::StatusCode;
 use salvo::prelude::*;
 use sqlx::SqlitePool;
 use crate::auth::AuthMiddleware;
+use crate::user::{
+    auth_login, auth_me, auth_register, health_check, list_users, update_password, update_profile,
+};
 
 #[derive(Clone)]
 pub struct DbMiddleware(pub SqlitePool);
@@ -126,6 +129,19 @@ pub fn create_app_router_with_auth(auth: AuthMiddleware) -> Router {
 pub fn create_app_router_with_db(pool: SqlitePool, auth: AuthMiddleware) -> Router {
     Router::new()
         .hoop(DbMiddleware(pool))
+        .push(Router::with_path("health").get(health_check))
+        .push(Router::with_path("api/v1/health").get(health_check))
+        .push(Router::with_path("api/v1/auth/register").post(auth_register))
+        .push(Router::with_path("api/v1/auth/login").post(auth_login))
+        .push(
+            Router::with_path("api/v1/auth")
+                .hoop(auth.clone())
+                .push(Router::with_path("me").get(auth_me))
+                .push(Router::with_path("profile").put(update_profile).post(update_profile))
+                .push(Router::with_path("password").post(update_password))
+                .push(Router::with_path("users").get(list_users))
+                .push(Router::with_path("friends").get(list_users)),
+        )
         .push(Router::with_path("fs/public/{app}/version").get(app_version))
         .push(Router::with_path("fs/public/{app}/CHANGELOG").get(app_changelog))
         .push(Router::with_path("fs/public/{app}/download").get(app_download))
@@ -224,5 +240,88 @@ mod tests {
         assert_eq!(res.status_code.unwrap(), StatusCode::OK);
         let json: serde_json::Value = res.take_json().await.unwrap();
         assert_eq!(json["user_id"], "user-tester-42");
+    }
+
+    #[tokio::test]
+    async fn test_auth_register_login_profile_pipeline() {
+        let pool = crate::storage::create_raw_pool("sqlite::memory:").await.unwrap();
+        crate::storage::init_schema(&pool).await.unwrap();
+        let auth = AuthMiddleware::default();
+        let router = create_app_router_with_db(pool, auth);
+        let service = Service::new(router);
+
+        // 1. 注册新用户
+        let register_body = serde_json::json!({
+            "username": "alice",
+            "password": "secretPassword123",
+            "nickname": "Alice In Wonder",
+            "avatar": "avatar_2"
+        });
+        let mut res = TestClient::post("http://127.0.0.1/api/v1/auth/register")
+            .json(&register_body)
+            .send(&service)
+            .await;
+        assert_eq!(res.status_code.unwrap(), StatusCode::CREATED);
+        let json: serde_json::Value = res.take_json().await.unwrap();
+        assert_eq!(json["status"], "ok");
+        let token = json["token"].as_str().unwrap().to_string();
+        let user_id = json["user"]["id"].as_str().unwrap().to_string();
+        assert_eq!(json["user"]["username"], "alice");
+
+        // 2. 使用刚才注册的账号登录
+        let login_body = serde_json::json!({
+            "username": "alice",
+            "password": "secretPassword123"
+        });
+        let mut res = TestClient::post("http://127.0.0.1/api/v1/auth/login")
+            .json(&login_body)
+            .send(&service)
+            .await;
+        assert_eq!(res.status_code.unwrap(), StatusCode::OK);
+        let login_json: serde_json::Value = res.take_json().await.unwrap();
+        assert_eq!(login_json["user"]["id"], user_id);
+
+        // 3. 错误密码 -> 401
+        let bad_login = serde_json::json!({
+            "username": "alice",
+            "password": "wrongPassword"
+        });
+        let res = TestClient::post("http://127.0.0.1/api/v1/auth/login")
+            .json(&bad_login)
+            .send(&service)
+            .await;
+        assert_eq!(res.status_code.unwrap(), StatusCode::UNAUTHORIZED);
+
+        // 4. 使用 token 访问 /api/v1/auth/me
+        let mut res = TestClient::get("http://127.0.0.1/api/v1/auth/me")
+            .add_header("Authorization", format!("Bearer {token}"), true)
+            .send(&service)
+            .await;
+        assert_eq!(res.status_code.unwrap(), StatusCode::OK);
+        let me_json: serde_json::Value = res.take_json().await.unwrap();
+        assert_eq!(me_json["user"]["username"], "alice");
+
+        // 5. 修改个人资料
+        let update_profile_body = serde_json::json!({
+            "nickname": "Alice Updated",
+            "avatar": "avatar_3"
+        });
+        let mut res = TestClient::post("http://127.0.0.1/api/v1/auth/profile")
+            .add_header("Authorization", format!("Bearer {token}"), true)
+            .json(&update_profile_body)
+            .send(&service)
+            .await;
+        assert_eq!(res.status_code.unwrap(), StatusCode::OK);
+        let prof_json: serde_json::Value = res.take_json().await.unwrap();
+        assert_eq!(prof_json["user"]["nickname"], "Alice Updated");
+        assert_eq!(prof_json["user"]["avatar"], "avatar_3");
+
+        // 6. 检查 health 接口
+        let mut res = TestClient::get("http://127.0.0.1/health")
+            .send(&service)
+            .await;
+        assert_eq!(res.status_code.unwrap(), StatusCode::OK);
+        let health_json: serde_json::Value = res.take_json().await.unwrap();
+        assert_eq!(health_json["status"], "ok");
     }
 }

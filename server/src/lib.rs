@@ -3,3 +3,4 @@ pub mod migrate;
 pub mod router;
 pub mod storage;
 pub mod sync;
+pub mod user;

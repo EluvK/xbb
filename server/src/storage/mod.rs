@@ -35,6 +35,17 @@ pub struct AclRecord {
     pub permission: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+pub struct UserRecord {
+    pub id: String,
+    pub username: String,
+    pub password_hash: String,
+    pub nickname: Option<String>,
+    pub avatar: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
 pub const SCHEMA_SQL: &str = r#"
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
@@ -73,6 +84,18 @@ CREATE TABLE IF NOT EXISTS acls (
 );
 
 CREATE INDEX IF NOT EXISTS idx_acls_user ON acls (user_id, table_name, entity_id);
+
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    nickname TEXT,
+    avatar TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 "#;
 
 pub async fn create_raw_pool(database_url: &str) -> Result<SqlitePool> {

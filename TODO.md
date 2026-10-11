@@ -41,7 +41,7 @@
   3. 当网络地址或用户 Token 发生变更时，提供动态 `updateDependencies` 机制。
 - **验收标准**: 在控制台可见定时轮询发起的真实 HTTP Push/Pull 请求日志；断网/连网时状态能够正确转为 syncing / idle / error。
 
-### TASK-0.2: 重构真实的账号认证体系与本地持久化 (Auth Pipeline)
+### TASK-0.2: 重构真实的账号认证体系与本地持久化 (Auth Pipeline) [x]
 - **依赖**: TASK-0.1
 - **问题现状**:
   - `login.dart` 中使用 `Future.delayed(300ms)` 伪造登录，硬编码返回假 Token `token-$username`；且 `setLogin` 根本没有写入本地 Storage，应用冷启动时永远被重置为离线的 `default` 假用户。
