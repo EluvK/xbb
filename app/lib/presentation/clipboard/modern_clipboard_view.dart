@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xbb/core/theme/tokens.dart';
+import 'package:xbb/presentation/clipboard/clipboard_batch_action_bar.dart';
 import 'package:xbb/presentation/clipboard/clipboard_date_group_view.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
@@ -79,6 +80,7 @@ class ModernClipboardView extends ConsumerWidget {
                         },
                       ),
           ),
+          const ClipboardBatchActionBar(),
         ],
       ),
     );

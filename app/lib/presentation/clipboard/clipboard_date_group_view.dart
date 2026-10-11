@@ -47,6 +47,7 @@ String clipboardDateHeaderLabel(DateTime date, {bool isZh = true}) {
 class ClipboardDateGroupView extends ConsumerWidget {
   final ClipboardDateGroup group;
   final bool isCollapsed;
+  final bool? isZh;
   final VoidCallback? onToggleCollapse;
   final Widget? trailingHeaderAction;
   final Widget Function(BuildContext context, dynamic item)? itemBuilder;
@@ -55,6 +56,7 @@ class ClipboardDateGroupView extends ConsumerWidget {
     super.key,
     required this.group,
     required this.isCollapsed,
+    this.isZh,
     this.onToggleCollapse,
     this.trailingHeaderAction,
     this.itemBuilder,
@@ -63,8 +65,11 @@ class ClipboardDateGroupView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isZh = Localizations.maybeLocaleOf(context)?.languageCode.startsWith('zh') ?? true;
-    final headerTitle = clipboardDateHeaderLabel(group.date, isZh: isZh);
+    final effectiveIsZh = isZh ?? (Localizations.maybeLocaleOf(context)?.languageCode.startsWith('zh') ?? true);
+    final headerTitle = clipboardDateHeaderLabel(group.date, isZh: effectiveIsZh);
+    final selectedIds = ref.watch(selectedClipboardIdsProvider);
+    final groupIds = group.entries.map((e) => e.id as String).toList();
+    final isAllSelected = groupIds.isNotEmpty && groupIds.every(selectedIds.contains);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -111,7 +116,22 @@ class ClipboardDateGroupView extends ConsumerWidget {
                   ),
                 ),
                 const Spacer(),
-                if (trailingHeaderAction != null) trailingHeaderAction!,
+                if (trailingHeaderAction != null)
+                  trailingHeaderAction!
+                else
+                  TextButton(
+                    onPressed: () {
+                      ref.read(selectedClipboardIdsProvider.notifier).toggleGroup(groupIds);
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      isAllSelected ? (effectiveIsZh ? '取消当天' : 'Unselect Day') : (effectiveIsZh ? '全选当天' : 'Select Day'),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -141,10 +161,14 @@ class ClipboardDateGroupView extends ConsumerWidget {
 
 class ClipboardEntryCard extends ConsumerWidget {
   final dynamic item;
+  final bool? isSelected;
+  final ValueChanged<bool>? onSelectChanged;
 
   const ClipboardEntryCard({
     super.key,
     required this.item,
+    this.isSelected,
+    this.onSelectChanged,
   });
 
   @override
@@ -152,6 +176,8 @@ class ClipboardEntryCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final entry = item.body as ClipboardHistoryEntry;
     final timeStr = entry.capturedAt?.toLocal().toString().split('.').first ?? '';
+    final selectedIds = ref.watch(selectedClipboardIdsProvider);
+    final selected = isSelected ?? selectedIds.contains(item.id as String);
 
     return ModernCard(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -159,13 +185,29 @@ class ClipboardEntryCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: selected,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  onChanged: (val) {
+                    if (onSelectChanged != null) {
+                      onSelectChanged!(val ?? false);
+                    } else {
+                      ref.read(selectedClipboardIdsProvider.notifier).toggle(item.id as String);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               ModernBadge(
                 label: entry.localOnly ? '本地隐私 (ADR-0002)' : '已云端同步',
                 color: entry.localOnly ? Colors.teal : Colors.blue,
                 icon: entry.localOnly ? Icons.lock_outline : Icons.cloud_done_outlined,
               ),
+              const Spacer(),
               Text(
                 timeStr,
                 style: theme.textTheme.labelSmall?.copyWith(
@@ -175,11 +217,14 @@ class ClipboardEntryCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            entry.data,
-            style: theme.textTheme.bodyMedium,
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
+          Padding(
+            padding: const EdgeInsets.only(left: 32.0),
+            child: Text(
+              entry.data,
+              style: theme.textTheme.bodyMedium,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(

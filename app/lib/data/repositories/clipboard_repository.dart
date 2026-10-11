@@ -8,6 +8,32 @@ import 'package:xbb/sync/v2/local_first_db.dart';
 import 'package:xbb/sync/v2/sync_worker.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 
+class ClipboardSyncBatchResult {
+  final int syncedCount;
+  final int skippedCount;
+  final int failedCount;
+  final List<String> failedIds;
+
+  const ClipboardSyncBatchResult({
+    required this.syncedCount,
+    required this.skippedCount,
+    required this.failedCount,
+    required this.failedIds,
+  });
+}
+
+class ClipboardDeleteBatchResult {
+  final int deletedCount;
+  final int failedCount;
+  final List<String> failedIds;
+
+  const ClipboardDeleteBatchResult({
+    required this.deletedCount,
+    required this.failedCount,
+    required this.failedIds,
+  });
+}
+
 class ClipboardRepository {
   final Database db;
   final DatabaseChangeNotifier changeNotifier;
@@ -112,9 +138,116 @@ class ClipboardRepository {
     await Clipboard.setData(ClipboardData(text: text));
   }
 
-  /// 删除条目
+  /// 批量备份上云（ADR-0002: 跳过已同步项，仅未同步项入队 Outbox，失败项记录保留）
+  Future<ClipboardSyncBatchResult> syncSelectedToCloud(List<DataItem<ClipboardHistoryEntry>> items) async {
+    int syncedCount = 0;
+    int skippedCount = 0;
+    int failedCount = 0;
+    final failedIds = <String>[];
+
+    for (final item in items) {
+      if (!item.body.localOnly) {
+        skippedCount++;
+        continue;
+      }
+
+      try {
+        final updated = item.body.copyWith(localOnly: false);
+        final row = <String, dynamic>{
+          'id': item.id,
+          'created_at': item.createdAt.toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+          'owner': item.owner,
+          'parent_id': null,
+          'sync_status': 'pending',
+          'color_tag': 'default',
+          'body': jsonEncode(updated.toJson()),
+        };
+
+        await LocalFirstDB.persistPutRaw(
+          db: db,
+          tableName: 'clipboard_history_entry',
+          entityId: item.id,
+          entityRow: row,
+        );
+        syncedCount++;
+      } catch (_) {
+        failedCount++;
+        failedIds.add(item.id);
+      }
+    }
+
+    if (syncedCount > 0) {
+      changeNotifier.notify('clipboard_history_entry');
+      SyncWorker.instance.notifyLocalWrite();
+    }
+
+    return ClipboardSyncBatchResult(
+      syncedCount: syncedCount,
+      skippedCount: skippedCount,
+      failedCount: failedCount,
+      failedIds: failedIds,
+    );
+  }
+
+  /// 批量删除条目（ADR-0002: localOnly 仅本地物理删除，非 localOnly 需入队 Outbox DELETE 记录）
+  Future<ClipboardDeleteBatchResult> deleteSelected(List<DataItem<ClipboardHistoryEntry>> items) async {
+    int deletedCount = 0;
+    int failedCount = 0;
+    final failedIds = <String>[];
+
+    for (final item in items) {
+      try {
+        if (item.body.localOnly) {
+          await db.delete('clipboard_history_entry', where: 'id = ?', whereArgs: [item.id]);
+        } else {
+          await LocalFirstDB.persistDeleteRaw(
+            db: db,
+            tableName: 'clipboard_history_entry',
+            entityId: item.id,
+          );
+        }
+        deletedCount++;
+      } catch (_) {
+        failedCount++;
+        failedIds.add(item.id);
+      }
+    }
+
+    if (deletedCount > 0) {
+      changeNotifier.notify('clipboard_history_entry');
+      SyncWorker.instance.notifyLocalWrite();
+    }
+
+    return ClipboardDeleteBatchResult(
+      deletedCount: deletedCount,
+      failedCount: failedCount,
+      failedIds: failedIds,
+    );
+  }
+
+  /// 删除单条目（遵循 ADR-0002）
   Future<void> delete(String id) async {
-    await db.delete('clipboard_history_entry', where: 'id = ?', whereArgs: [id]);
+    final rows = await db.query('clipboard_history_entry', where: 'id = ?', whereArgs: [id], limit: 1);
+    if (rows.isEmpty) return;
+    final row = rows.first;
+    final bodyStr = row['body'] as String? ?? '{}';
+    bool localOnly = true;
+    try {
+      final entry = ClipboardHistoryEntry.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+      localOnly = entry.localOnly;
+    } catch (_) {}
+
+    if (localOnly) {
+      await db.delete('clipboard_history_entry', where: 'id = ?', whereArgs: [id]);
+    } else {
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: 'clipboard_history_entry',
+        entityId: id,
+      );
+      SyncWorker.instance.notifyLocalWrite();
+    }
     changeNotifier.notify('clipboard_history_entry');
   }
 

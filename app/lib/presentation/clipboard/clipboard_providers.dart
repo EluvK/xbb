@@ -116,3 +116,57 @@ class CollapsedClipboardDatesNotifier extends StateNotifier<Set<String>> {
     state = <String>{};
   }
 }
+
+final selectedClipboardIdsProvider = StateNotifierProvider<SelectedClipboardIdsNotifier, Set<String>>((ref) {
+  return SelectedClipboardIdsNotifier();
+});
+
+class SelectedClipboardIdsNotifier extends StateNotifier<Set<String>> {
+  SelectedClipboardIdsNotifier() : super(<String>{});
+
+  void toggle(String id) {
+    if (state.contains(id)) {
+      state = Set<String>.from(state)..remove(id);
+    } else {
+      state = Set<String>.from(state)..add(id);
+    }
+  }
+
+  void select(String id) {
+    if (!state.contains(id)) {
+      state = Set<String>.from(state)..add(id);
+    }
+  }
+
+  void deselect(String id) {
+    if (state.contains(id)) {
+      state = Set<String>.from(state)..remove(id);
+    }
+  }
+
+  void selectGroup(List<String> ids) {
+    state = Set<String>.from(state)..addAll(ids);
+  }
+
+  void deselectGroup(List<String> ids) {
+    state = Set<String>.from(state)..removeAll(ids);
+  }
+
+  void toggleGroup(List<String> ids) {
+    if (ids.isEmpty) return;
+    final allSelected = ids.every(state.contains);
+    if (allSelected) {
+      deselectGroup(ids);
+    } else {
+      selectGroup(ids);
+    }
+  }
+
+  void clear() {
+    state = <String>{};
+  }
+
+  void setFailedIds(List<String> failedIds) {
+    state = failedIds.toSet();
+  }
+}
