@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:markdown_widget/markdown_widget.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/presentation/notes/comment_widgets.dart';
+import 'package:xbb/presentation/notes/markdown_editor_toolbar.dart';
 import 'package:xbb/presentation/notes/notes_providers.dart';
 import 'package:xbb/presentation/notes/repo_acl_dialog.dart';
 import 'package:xbb/presentation/notes/repo_quick_switcher.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
+import 'package:xbb/utils/color_picker.dart';
 
 class ModernNotesView extends ConsumerStatefulWidget {
   const ModernNotesView({super.key});
@@ -279,6 +281,10 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                       },
                       child: Row(
                         children: [
+                          if (repo.colorTag != ColorTag.none) ...[
+                            Icon(Icons.brightness_1_rounded, color: repo.colorTag.toColor(), size: 10),
+                            const SizedBox(width: AppSpacing.xs),
+                          ],
                           Icon(icon, size: 16, color: color),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
@@ -396,11 +402,21 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          post.body.title,
-                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: [
+                            if (post.colorTag != ColorTag.none) ...[
+                              Icon(Icons.brightness_1_rounded, color: post.colorTag.toColor(), size: 10),
+                              const SizedBox(width: AppSpacing.xs),
+                            ],
+                            Expanded(
+                              child: Text(
+                                post.body.title,
+                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -451,6 +467,12 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   )
                 : Text(post.body.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             actions: [
+              PaletteColorPickerButton(
+                selectedTag: post.colorTag,
+                onSelected: (newTag) {
+                  ref.read(notesRepositoryProvider).updatePostColorTag(post.id, newTag);
+                },
+              ),
               IconButton(
                 tooltip: '笔记本协作与分享',
                 icon: const Icon(Icons.share_outlined),
@@ -503,18 +525,35 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
             ],
           ),
           body: _isEditing
-              ? Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: TextField(
-                    controller: _contentController,
-                    maxLines: null,
-                    expands: true,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '输入 Markdown 内容...',
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: MarkdownEditorToolbar(
+                        controller: _contentController,
+                      ),
                     ),
-                  ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: TextField(
+                          controller: _contentController,
+                          maxLines: null,
+                          expands: true,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            hintText: '输入 Markdown 内容...',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 )
               : Consumer(
                   builder: (context, ref, _) {
@@ -524,9 +563,8 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                     return ListView(
                       padding: const EdgeInsets.all(AppSpacing.lg),
                       children: [
-                        MarkdownWidget(
+                        SimpleMarkdownRenderer(
                           data: post.body.content,
-                          shrinkWrap: true,
                         ),
                         const SizedBox(height: AppSpacing.xl),
                         const Divider(),

@@ -16,6 +16,17 @@ class NotesRepository {
     required this.changeNotifier,
   });
 
+  /// 辅助解析 SQLite color_tag 字段
+  static ColorTag parseColorTag(String? raw) {
+    if (raw == null || raw.isEmpty || raw == 'default' || raw == 'none') {
+      return ColorTag.none;
+    }
+    for (final tag in ColorTag.values) {
+      if (tag.name.toLowerCase() == raw.toLowerCase()) return tag;
+    }
+    return ColorTag.none;
+  }
+
   /// 监听所有笔记本 (Repo)
   Stream<List<DataItem<Repo>>> watchRepos() {
     return changeNotifier.watchTable('repo').asyncMap((_) async {
@@ -33,6 +44,7 @@ class NotesRepository {
           null,
           body: repo,
           syncStatus: SyncStatus.synced,
+          colorTag: parseColorTag(r['color_tag'] as String?),
         );
       }).toList();
     });
@@ -60,6 +72,7 @@ class NotesRepository {
           null,
           body: repo,
           syncStatus: SyncStatus.synced,
+          colorTag: parseColorTag(r['color_tag'] as String?),
         );
       }).toList();
     });
@@ -87,6 +100,7 @@ class NotesRepository {
           null,
           body: repo,
           syncStatus: SyncStatus.synced,
+          colorTag: parseColorTag(r['color_tag'] as String?),
         );
       }).toList();
     });
@@ -115,6 +129,7 @@ class NotesRepository {
           null,
           body: post,
           syncStatus: SyncStatus.synced,
+          colorTag: parseColorTag(r['color_tag'] as String?),
         );
       }).toList();
     });
@@ -144,6 +159,7 @@ class NotesRepository {
         null,
         body: post,
         syncStatus: SyncStatus.synced,
+        colorTag: parseColorTag(r['color_tag'] as String?),
       );
     });
   }
@@ -158,7 +174,7 @@ class NotesRepository {
       'owner': item.owner,
       'parent_id': null,
       'sync_status': 'pending',
-      'color_tag': 'default',
+      'color_tag': item.colorTag != ColorTag.none ? item.colorTag.name : 'default',
       'body': jsonEncode(item.body.toJson()),
     };
     await LocalFirstDB.persistPutRaw(
@@ -181,7 +197,7 @@ class NotesRepository {
       'owner': item.owner,
       'parent_id': item.body.repoId,
       'sync_status': 'pending',
-      'color_tag': 'default',
+      'color_tag': item.colorTag != ColorTag.none ? item.colorTag.name : 'default',
       'body': jsonEncode(item.body.toJson()),
     };
     await LocalFirstDB.persistPutRaw(
@@ -189,6 +205,38 @@ class NotesRepository {
       tableName: 'post',
       entityId: item.id,
       entityRow: row,
+    );
+    changeNotifier.notify('post');
+    SyncWorker.instance.notifyLocalWrite();
+  }
+
+  /// 更新笔记本的颜色标签
+  Future<void> updateRepoColorTag(String repoId, ColorTag colorTag) async {
+    final nowIso = DateTime.now().toIso8601String();
+    await db.update(
+      'repo',
+      {
+        'color_tag': colorTag != ColorTag.none ? colorTag.name : 'default',
+        'updated_at': nowIso,
+      },
+      where: 'id = ?',
+      whereArgs: [repoId],
+    );
+    changeNotifier.notify('repo');
+    SyncWorker.instance.notifyLocalWrite();
+  }
+
+  /// 更新文章的颜色标签
+  Future<void> updatePostColorTag(String postId, ColorTag colorTag) async {
+    final nowIso = DateTime.now().toIso8601String();
+    await db.update(
+      'post',
+      {
+        'color_tag': colorTag != ColorTag.none ? colorTag.name : 'default',
+        'updated_at': nowIso,
+      },
+      where: 'id = ?',
+      whereArgs: [postId],
     );
     changeNotifier.notify('post');
     SyncWorker.instance.notifyLocalWrite();
