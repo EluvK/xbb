@@ -6,6 +6,7 @@ import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/presentation/notes/comment_widgets.dart';
 import 'package:xbb/presentation/notes/notes_providers.dart';
+import 'package:xbb/presentation/notes/repo_acl_dialog.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
@@ -206,6 +207,21 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            IconButton(
+                              icon: const Icon(Icons.share_outlined, size: 16),
+                              tooltip: '协作与分享',
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                              onPressed: () {
+                                RepoAclDialog.show(
+                                  context,
+                                  repoId: repo.id,
+                                  repoName: repo.body.name,
+                                  ownerId: repo.owner,
+                                );
+                              },
+                            ),
                           ],
                         ),
                       ),
@@ -342,6 +358,20 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                   )
                 : Text(post.body.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             actions: [
+              IconButton(
+                tooltip: '笔记本协作与分享',
+                icon: const Icon(Icons.share_outlined),
+                onPressed: () {
+                  final repos = ref.read(reposStreamProvider).value ?? [];
+                  final repo = repos.where((r) => r.id == post.body.repoId).firstOrNull;
+                  RepoAclDialog.show(
+                    context,
+                    repoId: post.body.repoId,
+                    repoName: repo?.body.name ?? '笔记本',
+                    ownerId: repo?.owner ?? post.owner,
+                  );
+                },
+              ),
               IconButton(
                 tooltip: _isEditing ? '完成' : '编辑',
                 icon: Icon(_isEditing ? Icons.check : Icons.edit_outlined),

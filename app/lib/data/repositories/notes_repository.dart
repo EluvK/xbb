@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/core/acl/acl_repository.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
@@ -221,6 +222,64 @@ class NotesRepository {
     );
     changeNotifier.notify('comment');
     SyncWorker.instance.notifyLocalWrite();
+  }
+
+  /// 获取知识库成员权限列表
+  Future<List<EntityAclEntry>> getRepoAcls(String repoId) async {
+    final aclRepo = AclRepository(changeNotifier);
+    return aclRepo.getAcls(db, table: 'repo', entityId: repoId);
+  }
+
+  /// 监听知识库成员权限列表
+  Stream<List<EntityAclEntry>> watchRepoAcls(String repoId) {
+    final aclRepo = AclRepository(changeNotifier);
+    return aclRepo.watchAcls(db, table: 'repo', entityId: repoId);
+  }
+
+  /// 为知识库添加或更新成员权限 (本地记录、Outbox 变更与远端同步)
+  Future<void> grantRepoPermission(String repoId, EntityAclEntry entry) async {
+    final aclRepo = AclRepository(changeNotifier);
+    await aclRepo.grantPermission(
+      db: db,
+      table: 'repo',
+      entityId: repoId,
+      entry: entry,
+    );
+  }
+
+  /// 为知识库移除成员权限
+  Future<void> revokeRepoPermission(String repoId, String granteeId) async {
+    final aclRepo = AclRepository(changeNotifier);
+    await aclRepo.revokePermission(
+      db: db,
+      table: 'repo',
+      entityId: repoId,
+      granteeId: granteeId,
+    );
+  }
+
+  /// 生成标准分享口令 / URL
+  static String generateShareLink(String ownerId, String repoId) {
+    return 'xbb-share://$ownerId/$repoId';
+  }
+
+  /// 解析分享口令 / URL
+  static ({String ownerId, String repoId})? parseShareLink(String link) {
+    final trimmed = link.trim();
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null && uri.scheme == 'xbb-share') {
+      final owner = uri.host;
+      final pathSegments = uri.pathSegments;
+      if (owner.isNotEmpty && pathSegments.isNotEmpty) {
+        return (ownerId: owner, repoId: pathSegments.first);
+      }
+    }
+    final regex = RegExp(r'^xbb-share:\/\/([^/]+)\/(.+)$');
+    final match = regex.firstMatch(trimmed);
+    if (match != null) {
+      return (ownerId: match.group(1)!, repoId: match.group(2)!);
+    }
+    return null;
   }
 }
 

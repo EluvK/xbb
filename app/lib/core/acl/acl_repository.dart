@@ -3,6 +3,10 @@ import 'package:dio/dio.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:xbb/core/network/api_client.dart';
 import 'package:xbb/data/database_change_notifier.dart';
+import 'package:xbb/sync/v2/outbox_dao.dart';
+import 'package:xbb/sync/v2/outbox_item.dart';
+import 'package:xbb/sync/v2/sync_worker.dart';
+import 'package:xbb/sync/v2/uuid_service.dart';
 
 /// 权限角色等级
 enum EntityAclRole {
@@ -157,17 +161,25 @@ class AclRepository {
     map[entry.userId] = entry;
     final updatedList = map.values.toList();
 
-    // 2. 本地 SQLite 事务落盘
+    // 2. 本地 SQLite 事务落盘与入队 Outbox
     await db.transaction((txn) async {
       final jsonStr = jsonEncode(updatedList.map((e) => e.toJson()).toList());
       await txn.rawInsert(
         'INSERT OR REPLACE INTO acl (data_id, data_collection, permissions) VALUES (?, ?, ?)',
         [entityId, table, jsonStr],
       );
+      final outboxItem = OutboxItem.put(
+        id: UuidService.v7(),
+        tableName: 'acl',
+        entityId: entityId,
+        data: jsonStr,
+      );
+      await OutboxDao.enqueue(txn, outboxItem);
     });
 
     // 3. 广播本地变动
     _changeNotifier.notify('acl');
+    SyncWorker.instance.notifyLocalWrite();
 
     // 4. 异步推送至远端 Rust 服务端 /sync/v1/acl/grant
     try {
@@ -201,9 +213,17 @@ class AclRepository {
         'INSERT OR REPLACE INTO acl (data_id, data_collection, permissions) VALUES (?, ?, ?)',
         [entityId, table, jsonStr],
       );
+      final outboxItem = OutboxItem.put(
+        id: UuidService.v7(),
+        tableName: 'acl',
+        entityId: entityId,
+        data: jsonStr,
+      );
+      await OutboxDao.enqueue(txn, outboxItem);
     });
 
     _changeNotifier.notify('acl');
+    SyncWorker.instance.notifyLocalWrite();
 
     try {
       await _clientDio.post(
