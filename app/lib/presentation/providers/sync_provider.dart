@@ -17,12 +17,25 @@ class SyncStatus {
 
 class SyncNotifier extends StateNotifier<SyncStatus> {
   SyncNotifier() : super(const SyncStatus()) {
+    SyncWorker.instance.onStateChanged = (workerState, {error}) {
+      state = SyncStatus(
+        state: workerState == SyncWorkerState.syncing
+            ? SyncRunningState.syncing
+            : workerState == SyncWorkerState.error
+                ? SyncRunningState.error
+                : SyncRunningState.idle,
+        lastError: error?.toString(),
+        lastSyncTime: workerState == SyncWorkerState.idle ? DateTime.now() : state.lastSyncTime,
+      );
+    };
+
     SyncWorker.instance.onPushCompleted = (_) {
       state = SyncStatus(
         state: SyncRunningState.idle,
         lastSyncTime: DateTime.now(),
       );
     };
+
     SyncWorker.instance.onError = (e) {
       state = SyncStatus(
         state: SyncRunningState.error,
@@ -33,24 +46,7 @@ class SyncNotifier extends StateNotifier<SyncStatus> {
   }
 
   Future<void> triggerSync() async {
-    state = SyncStatus(
-      state: SyncRunningState.syncing,
-      lastError: null,
-      lastSyncTime: state.lastSyncTime,
-    );
-    try {
-      await SyncWorker.instance.triggerSync();
-      state = SyncStatus(
-        state: SyncRunningState.idle,
-        lastSyncTime: DateTime.now(),
-      );
-    } catch (e) {
-      state = SyncStatus(
-        state: SyncRunningState.error,
-        lastError: e.toString(),
-        lastSyncTime: state.lastSyncTime,
-      );
-    }
+    await SyncWorker.instance.triggerSync();
   }
 }
 

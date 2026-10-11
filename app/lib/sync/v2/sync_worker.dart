@@ -8,6 +8,9 @@ import 'sync_meta_dao.dart';
 import 'sync_models.dart';
 import 'uuid_service.dart';
 
+/// 后台守护进程运行状态
+enum SyncWorkerState { idle, syncing, error }
+
 /// 全局单例 SyncWorker（后台同步守护进程）
 /// 负责本地变更 Push 到服务端，以及服务端最新变更流 Pull 回放至本地
 class SyncWorker {
@@ -48,6 +51,10 @@ class SyncWorker {
   bool _isSyncing = false;
   bool _hasPendingTrigger = false;
   bool _isUpgradeRequired = false;
+  SyncWorkerState _state = SyncWorkerState.idle;
+
+  /// 同步状态流转监听 (syncing -> idle / error)
+  void Function(SyncWorkerState state, {Object? error})? onStateChanged;
 
   /// 426 升级要求回调
   void Function(String message)? onUpgradeRequired;
@@ -77,6 +84,7 @@ class SyncWorker {
   bool get isRunning => _isRunning;
   bool get isSyncing => _isSyncing;
   bool get isUpgradeRequired => _isUpgradeRequired;
+  SyncWorkerState get state => _state;
   String get clientId => _clientId;
 
   void updateDependencies({Dio? dio, Database? db, String? clientId}) {
@@ -128,12 +136,19 @@ class SyncWorker {
     }
 
     _isSyncing = true;
+    _state = SyncWorkerState.syncing;
+    onStateChanged?.call(SyncWorkerState.syncing);
+
     try {
       await _runSyncCycle();
+      _state = SyncWorkerState.idle;
+      onStateChanged?.call(SyncWorkerState.idle);
     } catch (e) {
+      _state = SyncWorkerState.error;
       onError?.call(e);
       // 检查是否为 426 Upgrade Required
       _handlePotentialUpgradeRequired(e);
+      onStateChanged?.call(SyncWorkerState.error, error: e);
     } finally {
       _isSyncing = false;
       if (_hasPendingTrigger) {
@@ -148,7 +163,11 @@ class SyncWorker {
   Future<void> _runSyncCycle() async {
     final dio = _dio;
     final db = _db;
-    if (dio == null || db == null) return;
+    if (dio == null || db == null) {
+      // ignore: avoid_print
+      print('[SyncWorker] Skipped sync cycle: dio is ${dio == null ? 'null' : 'injected'}, db is ${db == null ? 'null' : 'injected'}');
+      return;
+    }
 
     // 1. Push 流程
     await _pushPendingMutations(dio, db);

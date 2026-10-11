@@ -31,7 +31,7 @@
 
 ## 阶段零：核心网络底座、账号鉴权与在线同步接入 (Foundation, Auth & Sync)
 
-### TASK-0.1: 修复 `SyncWorker` 真实依赖装配与网络连接管道
+### TASK-0.1: 修复 `SyncWorker` 真实依赖装配与网络连接管道 [x]
 - **依赖**: 无
 - **问题现状**:
   - `main.dart` 仅执行 `SyncWorker.instance.start()`，既未注入 `dio` 也未注入 `db`，其内部 `_runSyncCycle` 执行时因 `dio == null || db == null` 直接静默 return，导致完全没有同步动作！
