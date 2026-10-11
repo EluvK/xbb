@@ -86,11 +86,13 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> with WindowListener {
     final backgroundColor = theme.colorScheme.surfaceContainerLowest;
     final buttonHoverColor = isDark ? Colors.white12 : Colors.black12;
 
-    return Container(
-      height: widget.height,
+    return Material(
       color: backgroundColor,
-      child: Row(
-        children: [
+      child: SizedBox(
+        height: widget.height,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // 左侧 Leading / 图标或自定义控件
           if (widget.leading != null) widget.leading!,
           // 标题与可拖动空白区域
@@ -158,6 +160,7 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> with WindowListener {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -210,27 +213,32 @@ class _WindowHoverButtonState extends State<_WindowHoverButton> {
     final normalColor = theme.colorScheme.onSurfaceVariant;
     final activeIconColor = _isHovered ? (widget.iconHoverColor ?? theme.colorScheme.onSurface) : normalColor;
 
+    Widget button = InkWell(
+      onTap: widget.onPressed,
+      child: Container(
+        width: 44,
+        alignment: Alignment.center,
+        color: _isHovered ? widget.hoverColor : Colors.transparent,
+        child: Icon(
+          widget.icon,
+          size: widget.iconSize,
+          color: activeIconColor,
+        ),
+      ),
+    );
+
+    if (Overlay.maybeOf(context) != null) {
+      button = Tooltip(
+        message: widget.tooltip,
+        waitDuration: const Duration(milliseconds: 600),
+        child: button,
+      );
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: Tooltip(
-        message: widget.tooltip,
-        waitDuration: const Duration(milliseconds: 600),
-        child: InkWell(
-          onTap: widget.onPressed,
-          child: Container(
-            width: 44,
-            height: double.infinity,
-            alignment: Alignment.center,
-            color: _isHovered ? widget.hoverColor : Colors.transparent,
-            child: Icon(
-              widget.icon,
-              size: widget.iconSize,
-              color: activeIconColor,
-            ),
-          ),
-        ),
-      ),
+      child: button,
     );
   }
 }

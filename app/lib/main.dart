@@ -115,11 +115,17 @@ class ModernXbbApp extends ConsumerWidget {
         final mediaQueryData = MediaQuery.of(context);
         return MediaQuery(
           data: mediaQueryData.copyWith(textScaler: TextScaler.linear(settings.fontScale)),
-          child: Column(
-            children: [
-              const DesktopTitleBar(),
-              Expanded(child: child ?? const SizedBox.shrink()),
-            ],
+          child: Overlay.wrap(
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const DesktopTitleBar(),
+                  Expanded(child: child ?? const SizedBox.shrink()),
+                ],
+              ),
+            ),
           ),
         );
       },
