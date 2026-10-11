@@ -96,6 +96,22 @@ class _TranslationHelper {
       "en_US": "Unavailable / Offline",
       "zh_CN": "服务不可用 / 离线",
     },
+    "startup_page_title": {
+      "en_US": "Default Startup Page",
+      "zh_CN": "默认启动页面",
+    },
+    "startup_page_desc": {
+      "en_US": "Choose which feature tab opens by default when starting the app.",
+      "zh_CN": "选择打开 App 时默认展示哪个功能模块页面。",
+    },
+    "widget_center_title": {
+      "en_US": "Widget Center",
+      "zh_CN": "桌面小部件中心",
+    },
+    "widget_center_desc": {
+      "en_US": "Pin Task and Check-in widgets to your home screen to view your lists without opening the app.",
+      "zh_CN": "将待办事项与打卡小部件固定到手机桌面，无需打开 App 即可快速查看。",
+    },
     "settings_center": {
       "en_US": "Settings",
       "zh_CN": "设置中心",

@@ -235,6 +235,15 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     await box.write(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY, updatedMap);
   }
 
+  void setStartupTabIndex(int index) {
+    state = state.copyWith(startupTabIndex: index);
+    final featureMap = Map<String, dynamic>.from(
+      box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY) ?? {},
+    );
+    featureMap['home_startup_tab_index'] = index;
+    box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, featureMap);
+  }
+
   void _persistAppSetting() {
     final appMap = Map<String, dynamic>.from(
       box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_SETTINGS_KEY) ?? {},

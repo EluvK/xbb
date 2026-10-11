@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:xbb/controller/setting.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/chat/modern_chat_view.dart';
 import 'package:xbb/presentation/checkin/modern_checkin_view.dart';
@@ -26,6 +27,19 @@ class ModernHomeShell extends ConsumerStatefulWidget {
 
 class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
   AppTab _currentTab = AppTab.notes;
+  bool _initializedTab = false;
+
+  static AppTab getTabFromStartupIndex(int index) {
+    return switch (index) {
+      AppHomeStartupTabIndex.task => AppTab.task,
+      AppHomeStartupTabIndex.checkin => AppTab.checkin,
+      AppHomeStartupTabIndex.tracker => AppTab.tracker,
+      AppHomeStartupTabIndex.clipboard => AppTab.clipboard,
+      AppHomeStartupTabIndex.chat => AppTab.chat,
+      AppHomeStartupTabIndex.settings => AppTab.settings,
+      _ => AppTab.notes,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +55,14 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
     if (settings.clipboardEnabled) tabs.add(AppTab.clipboard);
     if (settings.chatEnabled) tabs.add(AppTab.chat);
     tabs.add(AppTab.settings);
+
+    if (!_initializedTab) {
+      final preferredTab = getTabFromStartupIndex(settings.startupTabIndex);
+      if (tabs.contains(preferredTab)) {
+        _currentTab = preferredTab;
+      }
+      _initializedTab = true;
+    }
 
     if (!tabs.contains(_currentTab) && tabs.isNotEmpty) {
       _currentTab = tabs.first;

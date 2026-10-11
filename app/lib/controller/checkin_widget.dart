@@ -175,5 +175,10 @@ class CheckinWidgetBridge {
     }
   }
 
+  static Future<bool> requestPinWidget() async {
+    if (!_isSupportedPlatform) return false;
+    return await _channel.invokeMethod<bool>('requestPinWidget') ?? false;
+  }
+
   static bool get _isSupportedPlatform => !kIsWeb && Platform.isAndroid;
 }

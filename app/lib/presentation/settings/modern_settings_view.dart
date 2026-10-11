@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:xbb/components/common/ping_latency_inline.dart';
+import 'package:xbb/controller/checkin_widget.dart';
+import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
@@ -182,7 +184,7 @@ class ModernSettingsView extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 功能模块开关
+          // 功能模块开关与默认启动页 (TASK-6.3)
           ModernCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,6 +227,31 @@ class ModernSettingsView extends ConsumerWidget {
                   value: settings.chatEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(chat: v),
                 ),
+                const Divider(),
+                // 默认启动页下拉选择 (TASK-6.3)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('startup_page_title'.tr),
+                  subtitle: Text('startup_page_desc'.tr),
+                  trailing: DropdownButton<int>(
+                    value: settings.startupTabIndex,
+                    underline: const SizedBox.shrink(),
+                    items: [
+                      DropdownMenuItem(value: AppHomeStartupTabIndex.notes, child: Text('home_bar_title_notes'.tr)),
+                      DropdownMenuItem(value: AppHomeStartupTabIndex.task, child: Text('home_bar_title_task'.tr)),
+                      DropdownMenuItem(value: AppHomeStartupTabIndex.checkin, child: Text('home_bar_title_checkin'.tr)),
+                      DropdownMenuItem(value: AppHomeStartupTabIndex.tracker, child: Text('home_bar_title_tracker'.tr)),
+                      DropdownMenuItem(value: AppHomeStartupTabIndex.clipboard, child: Text('home_bar_title_clipboard'.tr)),
+                      DropdownMenuItem(value: AppHomeStartupTabIndex.chat, child: Text('home_bar_title_chat'.tr)),
+                      DropdownMenuItem(value: AppHomeStartupTabIndex.settings, child: Text('home_bar_title_setting'.tr)),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        ref.read(appSettingsProvider.notifier).setStartupTabIndex(val);
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -263,7 +290,7 @@ class ModernSettingsView extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 桌面小部件 (Desktop / Home Widget)
+          // 桌面小部件添加中心 (Home Widget Center - TASK-6.3)
           ModernCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,38 +308,76 @@ class ModernSettingsView extends ConsumerWidget {
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    FilledButton.tonalIcon(
-                      icon: const Icon(Icons.widgets_outlined, size: 16),
-                      label: Text('home_widget_add_btn'.tr),
-                      onPressed: () async {
-                        final pinned = await TaskWidgetBridge.requestPinWidget();
-                        if (context.mounted) {
-                          if (pinned) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('home_widget_requested_snack'.tr)),
-                            );
-                          } else {
-                            showDialog<void>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text('home_widget_guide_title'.tr),
-                                content: Text('home_widget_guide_content'.tr),
-                                actions: [
-                                  FilledButton(
-                                    onPressed: () => Navigator.pop(ctx),
-                                    child: Text('home_widget_guide_confirm'.tr),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
+
+                // 1. 待办事项插件快捷操作
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.checklist_rounded, size: 24),
+                  title: Text('task_widget_label'.tr),
+                  trailing: FilledButton.tonalIcon(
+                    icon: const Icon(Icons.widgets_outlined, size: 16),
+                    label: Text('home_widget_add_btn'.tr),
+                    onPressed: () async {
+                      final pinned = await TaskWidgetBridge.requestPinWidget();
+                      if (context.mounted) {
+                        if (pinned) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('home_widget_requested_snack'.tr)),
+                          );
+                        } else {
+                          showDialog<void>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text('home_widget_guide_title'.tr),
+                              content: Text('home_widget_guide_content'.tr),
+                              actions: [
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text('home_widget_guide_confirm'.tr),
+                                ),
+                              ],
+                            ),
+                          );
                         }
-                      },
-                    ),
-                  ],
+                      }
+                    },
+                  ),
+                ),
+                const Divider(),
+
+                // 2. 打卡项目插件快捷操作
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.event_available_outlined, size: 24),
+                  title: Text('checkin_widget_label'.tr),
+                  trailing: FilledButton.tonalIcon(
+                    icon: const Icon(Icons.widgets_outlined, size: 16),
+                    label: Text('add_checkin_widget_title'.tr),
+                    onPressed: () async {
+                      final pinned = await CheckinWidgetBridge.requestPinWidget();
+                      if (context.mounted) {
+                        if (pinned) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('home_widget_requested_snack'.tr)),
+                          );
+                        } else {
+                          showDialog<void>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text('add_checkin_widget_title'.tr),
+                              content: Text('add_checkin_widget_guide_message'.tr),
+                              actions: [
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text('home_widget_guide_confirm'.tr),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
                 ),
               ],
             ),
