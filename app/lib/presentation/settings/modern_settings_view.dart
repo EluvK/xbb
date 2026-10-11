@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:xbb/controller/task_widget.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/settings_provider.dart';
@@ -198,6 +199,67 @@ class ModernSettingsView extends ConsumerWidget {
                   title: const Text('AI 对话助手 (Chat)'),
                   value: settings.chatEnabled,
                   onChanged: (v) => ref.read(appSettingsProvider.notifier).toggleFeature(chat: v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // 桌面小部件 (Desktop / Home Widget)
+          ModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('桌面小部件 (Home Widget)', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    const ModernBadge(label: 'Android / iOS', color: Colors.teal),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  '将待办事项小部件固定到手机桌面，无需打开 App 即可一览进行中的待办清单。数据变动时将自动同步更新。',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FilledButton.tonalIcon(
+                      icon: const Icon(Icons.widgets_outlined, size: 16),
+                      label: const Text('添加到桌面小部件'),
+                      onPressed: () async {
+                        final pinned = await TaskWidgetBridge.requestPinWidget();
+                        if (context.mounted) {
+                          if (pinned) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已向系统发送添加小部件请求')),
+                            );
+                          } else {
+                            showDialog<void>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('添加桌面小部件指引'),
+                                content: const Text(
+                                  '1. 返回手机或平板主屏幕空白区域；\n'
+                                  '2. 长按空白处，在弹出的菜单中选择「微件」或「小部件 (Widgets)」；\n'
+                                  '3. 在列表中找到「XBB」并选择「待办事项」小部件拖动至主屏幕；\n'
+                                  '4. 添加后小部件将自动同步最新待办任务。',
+                                ),
+                                actions: [
+                                  FilledButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('我知道了'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

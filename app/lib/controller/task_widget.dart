@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:xbb/models/task/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
 
@@ -84,9 +85,9 @@ class TaskWidgetBridge {
     });
   }
 
-  static Future<void> refreshFromLocalState() async {
+  static Future<void> refreshFromLocalState({Database? currentDb}) async {
     if (!_isSupportedPlatform) return;
-    await _publishSnapshot(await _buildSnapshot());
+    await _publishSnapshot(await _buildSnapshot(currentDb: currentDb));
   }
 
   static Future<void> _publishSnapshot(TaskWidgetSnapshot snapshot) async {
@@ -98,9 +99,24 @@ class TaskWidgetBridge {
     return await _channel.invokeMethod<bool>('requestPinWidget') ?? false;
   }
 
-  static Future<TaskWidgetSnapshot> _buildSnapshot() async {
+  static TaskWidgetSnapshot buildSnapshotFromTasks(List<TaskItem> tasks) {
+    final sorted = sortTaskItems(tasks);
+    final unfinished = sorted.where((t) => !t.done && t.content.trim().isNotEmpty).toList();
+    if (unfinished.isEmpty) {
+      return TaskWidgetSnapshot.empty(totalCount: sorted.length);
+    }
+    return TaskWidgetSnapshot(
+      state: taskWidgetStateReady,
+      totalCount: sorted.length,
+      unfinishedCount: unfinished.length,
+      generatedAt: DateTime.now().toUtc(),
+      items: unfinished.map((t) => TaskWidgetSnapshotItem(id: t.id, content: t.content.trim())).toList(),
+    );
+  }
+
+  static Future<TaskWidgetSnapshot> _buildSnapshot({Database? currentDb}) async {
     try {
-      final db = await LocalFirstDB.getDb(userId: 'default');
+      final db = currentDb ?? await LocalFirstDB.getDb(userId: 'default');
       final rows = await db.query('check_list', orderBy: 'created_at DESC');
       CheckList? activeCheckList;
       for (final r in rows) {
@@ -116,19 +132,8 @@ class TaskWidgetBridge {
         return TaskWidgetSnapshot.empty(totalCount: 0);
       }
 
-      final tasks = sortTaskItems(decodeTaskItems(activeCheckList.tasks));
-      final unfinished = tasks.where((t) => !t.done && t.content.trim().isNotEmpty).toList();
-      if (unfinished.isEmpty) {
-        return TaskWidgetSnapshot.empty(totalCount: tasks.length);
-      }
-
-      return TaskWidgetSnapshot(
-        state: taskWidgetStateReady,
-        totalCount: tasks.length,
-        unfinishedCount: unfinished.length,
-        generatedAt: DateTime.now().toUtc(),
-        items: unfinished.map((t) => TaskWidgetSnapshotItem(id: t.id, content: t.content.trim())).toList(),
-      );
+      final tasks = decodeTaskItems(activeCheckList.tasks);
+      return buildSnapshotFromTasks(tasks);
     } catch (_) {
       return TaskWidgetSnapshot.empty(totalCount: 0);
     }

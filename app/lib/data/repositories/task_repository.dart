@@ -147,6 +147,7 @@ class TaskRepository {
     );
     changeNotifier.notify('check_list');
     SyncWorker.instance.notifyLocalWrite();
+    await TaskWidgetBridge.refreshFromLocalState(currentDb: db);
   }
 
   /// 获取或新建活动 CheckList
@@ -209,6 +210,7 @@ class TaskRepository {
     );
     changeNotifier.notify('check_list');
     SyncWorker.instance.notifyLocalWrite();
+    await TaskWidgetBridge.refreshFromLocalState(currentDb: db);
   }
 
   /// 添加任务项
