@@ -1,0 +1,397 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:markdown_widget/markdown_widget.dart';
+import 'package:syncstore_client/syncstore_client.dart';
+import 'package:xbb/core/theme/tokens.dart';
+import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/presentation/notes/notes_providers.dart';
+import 'package:xbb/presentation/providers/auth_provider.dart';
+import 'package:xbb/presentation/widgets/modern_widgets.dart';
+import 'package:xbb/sync/v2/uuid_service.dart';
+
+class ModernNotesView extends ConsumerStatefulWidget {
+  const ModernNotesView({super.key});
+
+  @override
+  ConsumerState<ModernNotesView> createState() => _ModernNotesViewState();
+}
+
+class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
+  bool _isEditing = false;
+  String _searchKeyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  void _saveCurrentPost(DataItem<Post> post) {
+    final updated = post.copyWith(
+      body: post.body.copyWith(
+        title: _titleController.text.trim().isEmpty ? '无标题' : _titleController.text.trim(),
+        content: _contentController.text,
+      ),
+    );
+    ref.read(notesRepositoryProvider).savePost(updated);
+    setState(() => _isEditing = false);
+  }
+
+  void _createNewPost(String repoId, String userId) {
+    final newId = UuidService.v7();
+    final newPost = DataItem<Post>(
+      id: newId,
+      owner: userId,
+      parentId: repoId,
+      body: Post(
+        title: '新建笔记',
+        category: '默认',
+        content: '# 新建笔记\n\n开始记录你的灵感...',
+        repoId: repoId,
+      ),
+      syncStatus: SyncStatus.pending,
+    );
+    ref.read(notesRepositoryProvider).savePost(newPost);
+    ref.read(selectedPostIdProvider.notifier).state = newId;
+    _titleController.text = '新建笔记';
+    _contentController.text = '# 新建笔记\n\n开始记录你的灵感...';
+    setState(() => _isEditing = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final reposAsync = ref.watch(reposStreamProvider);
+    final postsAsync = ref.watch(postsStreamProvider);
+    final currentPostAsync = ref.watch(currentPostStreamProvider);
+    final selectedRepoId = ref.watch(selectedRepoIdProvider);
+    final selectedPostId = ref.watch(selectedPostIdProvider);
+    final userId = ref.watch(authProvider).userId;
+
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width >= 800;
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: Row(
+        children: [
+          // 栏 1: 笔记本列表 (仅在桌面端或无选中文章时展开)
+          if (isDesktop)
+            SizedBox(
+              width: 220,
+              child: _buildRepoSidebar(reposAsync, selectedRepoId, userId),
+            ),
+          if (isDesktop) const VerticalDivider(width: 1),
+
+          // 栏 2: 文章列表
+          SizedBox(
+            width: isDesktop ? 300 : (selectedPostId == null ? width : 0),
+            child: selectedPostId == null || isDesktop
+                ? _buildPostList(postsAsync, selectedRepoId, selectedPostId, userId)
+                : const SizedBox.shrink(),
+          ),
+          if (isDesktop) const VerticalDivider(width: 1),
+
+          // 栏 3: 正文预览与沉浸编辑
+          Expanded(
+            child: selectedPostId == null && !isDesktop
+                ? const SizedBox.shrink()
+                : _buildPostDetail(currentPostAsync, isDesktop),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRepoSidebar(
+    AsyncValue<List<DataItem<Repo>>> reposAsync,
+    String? selectedRepoId,
+    String userId,
+  ) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.surfaceContainerLowest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '笔记本',
+                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add, size: 20),
+                  tooltip: '新建笔记本',
+                  onPressed: () => _showCreateRepoDialog(userId),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: reposAsync.when(
+              data: (repos) {
+                if (repos.isEmpty) {
+                  return const Center(child: Text('无笔记本', style: TextStyle(color: Colors.grey)));
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+                  itemCount: repos.length,
+                  itemBuilder: (context, index) {
+                    final repo = repos[index];
+                    final isSelected = repo.id == selectedRepoId;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: ModernCard(
+                        selected: isSelected,
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                        onTap: () {
+                          ref.read(selectedRepoIdProvider.notifier).state = repo.id;
+                          ref.read(selectedPostIdProvider.notifier).state = null;
+                        },
+                        child: Row(
+                          children: [
+                            Icon(Icons.folder_outlined, size: 18, color: theme.colorScheme.primary),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                repo.body.name,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('错误: $e')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostList(
+    AsyncValue<List<DataItem<Post>>> postsAsync,
+    String? selectedRepoId,
+    String? selectedPostId,
+    String userId,
+  ) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: ModernSearchField(
+                  controller: _searchController,
+                  hintText: '搜索文章...',
+                  onChanged: (v) => setState(() => _searchKeyword = v.trim().toLowerCase()),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.add, size: 18),
+                tooltip: '新建文章',
+                onPressed: selectedRepoId == null ? null : () => _createNewPost(selectedRepoId, userId),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: postsAsync.when(
+            data: (posts) {
+              final filtered = _searchKeyword.isEmpty
+                  ? posts
+                  : posts.where((p) => p.body.title.toLowerCase().contains(_searchKeyword)).toList();
+
+              if (filtered.isEmpty) {
+                return const ModernEmptyState(
+                  icon: Icons.article_outlined,
+                  title: '没有文章',
+                  subtitle: '点击上方 “+” 开始写下新文章',
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                itemCount: filtered.length,
+                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+                itemBuilder: (context, index) {
+                  final post = filtered[index];
+                  final isSelected = post.id == selectedPostId;
+                  return ModernCard(
+                    selected: isSelected,
+                    onTap: () {
+                      ref.read(selectedPostIdProvider.notifier).state = post.id;
+                      _titleController.text = post.body.title;
+                      _contentController.text = post.body.content;
+                      setState(() => _isEditing = false);
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.body.title,
+                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          post.body.content.replaceAll(RegExp(r'[#*`\n]'), ' '),
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('错误: $e')),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPostDetail(AsyncValue<DataItem<Post>?> currentPostAsync, bool isDesktop) {
+    final theme = Theme.of(context);
+    return currentPostAsync.when(
+      data: (post) {
+        if (post == null) {
+          return const ModernEmptyState(
+            icon: Icons.edit_note_rounded,
+            title: '未选择文章',
+            subtitle: '在左侧列表中点击选择文章以阅读或编辑',
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            leading: !isDesktop
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => ref.read(selectedPostIdProvider.notifier).state = null,
+                  )
+                : null,
+            title: _isEditing
+                ? TextField(
+                    controller: _titleController,
+                    style: theme.textTheme.titleMedium,
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: '文章标题'),
+                  )
+                : Text(post.body.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            actions: [
+              IconButton(
+                tooltip: _isEditing ? '完成' : '编辑',
+                icon: Icon(_isEditing ? Icons.check : Icons.edit_outlined),
+                onPressed: () {
+                  if (_isEditing) {
+                    _saveCurrentPost(post);
+                  } else {
+                    _titleController.text = post.body.title;
+                    _contentController.text = post.body.content;
+                    setState(() => _isEditing = true);
+                  }
+                },
+              ),
+              IconButton(
+                tooltip: '删除',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('删除笔记'),
+                      content: Text('确认删除笔记 "${post.body.title}" 吗？'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除')),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    ref.read(notesRepositoryProvider).deletePost(post.id);
+                    ref.read(selectedPostIdProvider.notifier).state = null;
+                  }
+                },
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+          ),
+          body: _isEditing
+              ? Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: TextField(
+                    controller: _contentController,
+                    maxLines: null,
+                    expands: true,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: '输入 Markdown 内容...',
+                    ),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: MarkdownWidget(data: post.body.content),
+                ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('错误: $e')),
+    );
+  }
+
+  void _showCreateRepoDialog(String userId) {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('新建笔记本'),
+        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: '笔记本名称')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () {
+              if (ctrl.text.trim().isNotEmpty) {
+                final newRepo = DataItem<Repo>(
+                  id: UuidService.v7(),
+                  owner: userId,
+                  body: Repo(name: ctrl.text.trim(), status: 'active'),
+                  syncStatus: SyncStatus.pending,
+                );
+                ref.read(notesRepositoryProvider).saveRepo(newRepo);
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('创建'),
+          ),
+        ],
+      ),
+    );
+  }
+}
