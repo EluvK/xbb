@@ -1,52 +1,53 @@
 # Tracker Feature Domain
 
 ## 1. Domain Concept
-The Tracker module provides flexible time-series and habit tracking across three distinct configurations: periodic habits, measurable milestones, and anniversary reflections.
+The Tracker module supports quantitative goal tracking, recurring habit monitoring, and milestone reflections across three polymorphic configurations: periodic events, measurable milestones, and anniversary monitors.
 
 ---
 
-## 2. Core Entities
+## 2. Core Entities & Polymorphism
 
-### 2.1 Tracker
-- Definition: The parent configuration entity defining what is being tracked.
-- Model: `Tracker { String name, String description, String category, String type, TrackerConfig config }`
-- ACL Enabled: Yes (`withAcls: true`). Supports sharing trackers with collaborators.
-- Config Polymorphism (`TrackerConfig`):
-  - `event`: Periodic habit tracking.
-    - Fields: `int periodDays` (interval in days; `0` indicates no fixed cycle).
-  - `milestone`: Target progress tracking toward a goal.
+### 2.1 Tracker (追踪器)
+- **Definition**: Parent configuration entity defining tracking criteria, type, and target boundaries.
+- **Model**: `Tracker { String name, String description, String category, String type, TrackerConfig config }`
+- **Drift Table**: `TrackerTable` -> table `tracker` in `app_v2.db`.
+- **Config Polymorphism (`TrackerConfig`)**:
+  - `event`: Recurring habit with cycle interval.
+    - Fields: `int periodDays` (`0` means flexible/no fixed interval).
+  - `milestone`: Measurable target goal.
     - Fields: `String goalType` (`time` in minutes, `number`, `boolean`), `String targetValue`, `String progressMode` (`accumulate` vs `latest`).
-  - `anniversary`: Significant date reflections.
-    - Fields: `DateTime baseDate`, `bool isLunar` (supports traditional lunar calendar), `String remindType` (`per_year`, `per_100_days`, `t_minus`).
+  - `anniversary`: Significant milestone or countdown date.
+    - Fields: `DateTime baseDate`, `bool isLunar` (traditional lunar calendar support), `String remindType` (`per_year`, `per_100_days`, `t_minus`).
 
-### 2.2 TrackerRecord
-- Definition: A concrete log entry recorded against a specific tracker.
-- Model: `TrackerRecord { String trackerId, DateTime timestamp, String? value, String? content }`
+### 2.2 TrackerRecord (追踪记录)
+- **Definition**: Time-series log entry recorded against a Tracker.
+- **Model**: `TrackerRecord { String trackerId, DateTime timestamp, String? value, String? content }`
+- **Drift Table**: `TrackerRecordTable` -> table `tracker_record` in `app_v2.db` (`parent_id = trackerId`).
 
 ---
 
-## 3. Record Expression Rules
+## 3. Key Capabilities & Analytics
 
-| Tracker Type | `value` Format | `timestamp` Role | `content` Role |
-|---|---|---|---|
-| Event | `null` | Primary field (when the habit occurred). | Optional memo. |
-| Milestone (number) | Numeric string (e.g. `"18"`, `"3.5"`) | When progress was made. | Optional memo. |
-| Milestone (time) | Minutes as integer string (e.g. `"45"`) | When activity occurred. | Optional memo. |
-| Milestone (boolean) | `"true"` / `"false"` | Completion date. | Optional memo. |
-| Anniversary | `null` | Record timestamp. | Reflection or milestone note. |
-
-Convenience constructors are provided in `TrackerRecord`:
-- `TrackerRecord.forEvent(...)`
-- `TrackerRecord.forMilestoneNumber(...)`
-- `TrackerRecord.forMilestoneTime(...)`
-- `TrackerRecord.forMilestoneBoolean(...)`
-- `TrackerRecord.forAnniversary(...)`
+1. **Category Macro Briefing (`ViewTrackerBrief`)**:
+   - Aggregates overall health, category completion rates, and deadline alerts across trackers.
+2. **Dedicated In-Depth Analytics Page (`ViewTrackerDetailPage`)**:
+   - Full-screen time-series visualization showing historical progress charts, milestones, and record logs.
+   - Provides backfill and record editing directly from the timeline view.
+3. **Calculation & Countdown Engine (`TrackerCalculator`)**:
+   - Calculates remaining days, recurrence health, and milestone accumulation.
+   - Computes color shifts (e.g. green-to-red deadline warning gradients) for event trackers.
+4. **Bento Matrix Layout**:
+   - Responsive multi-card grid adapting between desktop widescreen dashboards and mobile column cards.
 
 ---
 
 ## 4. Key Source Paths
 
-- Models & Codegen: `lib/models/tracker/model.dart`
-- Database Provider: `lib/models/tracker/db.dart`
-- Expression Spec: `lib/models/tracker/record_expression_guide.md`
-- Pages & Components: `lib/pages/trackers/view_tracker.dart`, `lib/pages/trackers/edit_tracker.dart`, `lib/components/trackers/tracker_card.dart`
+- **Domain Model**: `app/lib/models/tracker/model.dart`
+- **Calculation Engine**: `app/lib/models/tracker/tracker_calculator.dart` (`TrackerCalculator`)
+- **Data Repository**: `app/lib/data/repositories/tracker_repository.dart` (`TrackerRepository`)
+- **State Management**: `app/lib/presentation/tracker/tracker_providers.dart` (Riverpod Notifiers & Providers)
+- **Presentation Views**:
+  - Main Dashboard: `app/lib/presentation/tracker/modern_tracker_view.dart` (`ModernTrackerView`, `ViewTrackerBrief`)
+  - Detail Analysis & Timeline: `app/lib/presentation/tracker/tracker_history_sheet.dart` (`ViewTrackerDetailPage`, `TrackerHistorySheet`)
+- **Route Screens**: `app/lib/pages/trackers/view_tracker.dart`, `app/lib/pages/trackers/edit_tracker.dart`

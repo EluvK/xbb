@@ -141,15 +141,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
 
     // 4. 广播所有本地业务表刷新
-    dbChangeNotifier.notifyAll([
-      'post',
-      'repo',
-      'check_list',
-      'tracker',
-      'checkin',
-      'chat_message',
-      'clipboard',
-    ]);
+    dbChangeNotifier.notifyAll(LocalFirstDB.coreEntityTables);
 
     // 5. 更新响应式状态
     state = AuthState(
@@ -172,24 +164,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // 2. 清除网络层 Token
     ApiClient.instance.updateToken(null);
 
-    // 3. 停止同步守护并断开数据库依赖
+    // 3. 停止同步守护并切回纯内存隔离数据库（访客模式）
     SyncWorker.instance.stop();
     SyncWorker.instance.updateDependencies(db: null);
-    setActiveDatabase(null);
+    final guestDb = await LocalFirstDB.openInMemory();
+    setActiveDatabase(guestDb);
     if (ref != null) {
-      ref!.read(activeDatabaseStateProvider.notifier).state = null;
+      ref!.read(activeDatabaseStateProvider.notifier).state = guestDb;
     }
 
     // 4. 广播业务表刷新
-    dbChangeNotifier.notifyAll([
-      'post',
-      'repo',
-      'check_list',
-      'tracker',
-      'checkin',
-      'chat_message',
-      'clipboard',
-    ]);
+    dbChangeNotifier.notifyAll(LocalFirstDB.coreEntityTables);
 
     // 5. 更新状态
     state = const AuthState();

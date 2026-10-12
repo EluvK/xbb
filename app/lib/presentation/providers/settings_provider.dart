@@ -327,6 +327,17 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       clipboardEnabled: clipboard,
     );
 
+    final featureMap = Map<String, dynamic>.from(
+      box.read<Map<String, dynamic>?>(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY) ?? {},
+    );
+    if (task != null) featureMap['enable_task'] = task;
+    if (notes != null) featureMap['enable_notes'] = notes;
+    if (tracker != null) featureMap['enable_tracker'] = tracker;
+    if (checkin != null) featureMap['enable_checkin'] = checkin;
+    if (chat != null) featureMap['enable_chat'] = chat;
+    if (clipboard != null) featureMap['enable_clipboard_backup'] = clipboard;
+    box.write(STORAGE_SETTING_APP_FEATURES_MANAGEMENT_KEY, featureMap);
+
     if (clipboard != null) {
       ClipboardTrayService.instance.setFeatureEnabled(clipboard);
     }

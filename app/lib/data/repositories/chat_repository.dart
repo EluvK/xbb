@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/models/chat/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
+import 'package:xbb/sync/v2/sync_worker.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 
 class ChatRepository {
@@ -177,11 +178,28 @@ class ChatRepository {
     return id;
   }
 
-  /// 删除会话及级联消息
+  /// 删除会话及级联消息（入队 Outbox DELETE 并通知同步守护进程）
   Future<void> deleteConversation(String convId) async {
+    // 1. 级联删除该会话下的所有关联消息并在 Outbox 产生 DELETE 记录
+    final messages = await db.query(
+      'chat_message',
+      columns: ['id'],
+      where: 'parent_id = ?',
+      whereArgs: [convId],
+    );
+    for (final m in messages) {
+      final msgId = m['id'] as String;
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: 'chat_message',
+        entityId: msgId,
+      );
+    }
+
+    // 2. 删除会话本身
     await LocalFirstDB.persistDeleteRaw(db: db, tableName: 'chat_conversation', entityId: convId);
-    await db.delete('chat_message', where: 'parent_id = ?', whereArgs: [convId]);
-    changeNotifier.notify('chat_conversation');
     changeNotifier.notify('chat_message');
+    changeNotifier.notify('chat_conversation');
+    SyncWorker.instance.notifyLocalWrite();
   }
 }

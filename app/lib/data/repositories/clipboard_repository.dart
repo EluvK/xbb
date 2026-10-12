@@ -298,9 +298,32 @@ class ClipboardRepository {
     changeNotifier.notify('clipboard_history_entry');
   }
 
-  /// 清空历史
+  /// 清空历史（遵循 ADR-0002：对已同步上云条目入队 Outbox DELETE）
   Future<void> clearAll() async {
+    final rows = await db.query('clipboard_history_entry');
+    bool hasCloudEntries = false;
+    for (final row in rows) {
+      final bodyStr = row['body'] as String? ?? '{}';
+      bool localOnly = true;
+      try {
+        final entry = ClipboardHistoryEntry.fromJson(jsonDecode(bodyStr) as Map<String, dynamic>);
+        localOnly = entry.localOnly;
+      } catch (_) {}
+
+      if (!localOnly) {
+        hasCloudEntries = true;
+        await LocalFirstDB.persistDeleteRaw(
+          db: db,
+          tableName: 'clipboard_history_entry',
+          entityId: row['id'] as String,
+        );
+      }
+    }
+
     await db.delete('clipboard_history_entry');
     changeNotifier.notify('clipboard_history_entry');
+    if (hasCloudEntries) {
+      SyncWorker.instance.notifyLocalWrite();
+    }
   }
 }

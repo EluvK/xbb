@@ -29,12 +29,18 @@ final subscribedReposStreamProvider = StreamProvider<List<DataItem<Repo>>>((ref)
 });
 
 final selectedRepoIdProvider = StateProvider<String?>((ref) {
-  final reposAsync = ref.watch(reposStreamProvider);
-  return reposAsync.when(
-    data: (list) => list.isNotEmpty ? list.first.id : null,
-    loading: () => null,
-    error: (_, __) => null,
-  );
+  ref.listen<AsyncValue<List<DataItem<Repo>>>>(reposStreamProvider, (prev, next) {
+    final list = next.value;
+    if (list != null && list.isNotEmpty) {
+      final current = ref.controller.state;
+      if (current == null || !list.any((r) => r.id == current)) {
+        ref.controller.state = list.first.id;
+      }
+    } else if (list != null && list.isEmpty) {
+      ref.controller.state = null;
+    }
+  }, fireImmediately: true);
+  return null;
 });
 
 final postsStreamProvider = StreamProvider<List<DataItem<Post>>>((ref) {

@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:xbb/core/network/api_client.dart';
 import 'local_first_db.dart';
 import 'outbox_dao.dart';
 import 'outbox_item.dart';

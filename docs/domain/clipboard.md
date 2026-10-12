@@ -1,62 +1,57 @@
 # Clipboard Feature Domain
 
 ## 1. Domain Concept
-The Clipboard module is a Windows desktop background clipboard manager. It captures copied text locally, provides tray minimization, and enables explicit, selective cloud backup.
+The Clipboard module provides a cross-platform desktop background clipboard manager. It captures copied text locally, respects user privacy boundaries (ADR-0002), and integrates with system tray and window controls.
 
 ---
 
-## 2. Core Decisions & Privacy Rules
+## 2. Core Decisions & Privacy Rules (ADR-0002)
 
-1. Local-First & Non-Automatic Double Writing:
-   - Background copy events are captured only to local SQLite (`localOnly = true`).
-   - Entries are never automatically uploaded to the cloud upon capture.
+1. **Local-First & Non-Automatic Double Writing**:
+   - Background copy events are captured strictly to local storage (`localOnly = true`).
+   - Entries are **never** automatically uploaded to the cloud upon capture.
    - Cloud synchronization requires explicit user selection and manual confirmation ("Confirm Sync").
-2. Deduplication Strategy:
-   - Consecutive identical clips are ignored.
-   - Sliding 30-second deduplication window against recent entries.
-3. Consistency & Synchronization Lifecycle:
-   - Manual Bulk Sync: Only `localOnly = true` items trigger remote `create`. Upon server success, local records are updated to `localOnly = false`.
-   - Editing:
-     - `localOnly = true`: Local database update only.
-     - `localOnly = false`: Local update followed by immediate remote `update`.
-   - Deletion:
-     - `localOnly = true`: Local SQLite delete.
-     - `localOnly = false`: Remote delete followed by local SQLite delete.
+2. **Lifecycle & Mutability**:
+   - `localOnly == true`: Mutations (edits and deletes) apply exclusively to local storage.
+   - `localOnly == false`: Mutations apply locally and enqueue an Outbox mutation for cloud synchronization.
+3. **Deduplication**:
+   - Consecutive identical clips within a 30-second window are automatically deduplicated.
 
 ---
 
-## 3. Data Models
+## 3. Core Entities & Schema
 
-### 3.1 ClipboardHistoryEntry
-- Model: `ClipboardHistoryEntry { String data, DateTime? capturedAt, bool localOnly }`
-- Annotation:
-  ```dart
-  @Repository(
-    collectionName: 'clipboard_history',
-    tableName: 'entry',
-    db: ClipboardDB,
-    toSyncJsonMethod: 'toSyncJson',
-    fromRemoteJsonFactory: 'fromRemoteJson',
-  )
-  ```
-- Sync Serialization: Maps `data` and `captured_at` (omits `localOnly` from remote payload).
+### 3.1 ClipboardHistoryEntry (剪贴板记录)
+- **Definition**: Captured clipboard text record with timestamp and cloud state.
+- **Model**: `ClipboardHistoryEntry { String data, DateTime? capturedAt, bool localOnly }`
+- **Drift Table**: `ClipboardHistoryTable` -> table `clipboard_history_entry` in `app_v2.db`.
+- **Sync Payload**: Serializes `data` and `captured_at`; excludes `localOnly` from the remote body.
 
 ---
 
-## 4. Windows Native Integration
+## 4. Desktop Integration & UI Features
 
-- Runner: Uses Win32 `AddClipboardFormatListener` to capture `WM_CLIPBOARDUPDATE`.
-- Channel: `MethodChannel('com.eluvk.xbb/clipboard_tray')`.
-- Tray Capabilities:
-  - Minimize to tray on main window close.
-  - Double-click to restore.
-  - Tray context menu: Show Window, Pause/Resume Listening, Exit.
+1. **Cross-Platform Tray & Windowing (ADR-0006)**:
+   - Unified across Windows, macOS, and Linux using `tray_manager` and `window_manager`.
+   - Minimize-to-tray on window close, click to restore, and context menu actions (Toggle listening, Exit).
+   - MethodChannel `com.eluvk.xbb/clipboard_tray` handles native background clipboard hooks, supporting both `onClipboardTextChanged` and `onClipboardDataCollected`.
+2. **Modern Clipboard UI**:
+   - **Date Grouping**: Automatic chronological grouping with daily collapsible headers (`ClipboardDateGroupView`).
+   - **Batch Management**: Multi-select action bar (`ClipboardBatchActionBar`) for batch cloud backup and batch deletion.
+   - **In-Place Card Editing**: Inline editing card (`ClipboardOverviewCard`) allowing quick text modification without full-screen navigation.
 
 ---
 
 ## 5. Key Source Paths
 
-- Models & Sync: `lib/models/clipboard/model.dart`, `lib/models/clipboard/db.dart`
-- Tray Controller: `lib/controller/clipboard_tray.dart`
-- Native Implementation: `windows/runner/flutter_window.cpp` (and clipboard integration files)
-- UI Components: `lib/components/clipboard/view_clipboard_history.dart`, `lib/components/clipboard/view_clipboard_overview.dart`
+- **Domain Model**: `app/lib/models/clipboard/model.dart`
+- **Data Repository**: `app/lib/data/repositories/clipboard_repository.dart` (`ClipboardRepository`)
+- **State Management**: `app/lib/presentation/clipboard/clipboard_providers.dart` (Riverpod Notifiers & Providers)
+- **Service & Desktop Hook**:
+  - Tray Service: `app/lib/controller/clipboard_tray.dart` (`ClipboardTrayService`)
+  - Desktop Base: `app/lib/core/desktop/desktop_manager.dart` (`DesktopManager`)
+- **Presentation Views**:
+  - Main View: `app/lib/presentation/clipboard/modern_clipboard_view.dart` (`ModernClipboardView`)
+  - Date Groups: `app/lib/presentation/clipboard/clipboard_date_group_view.dart` (`ClipboardDateGroupView`)
+  - Batch Action Bar: `app/lib/presentation/clipboard/clipboard_batch_action_bar.dart` (`ClipboardBatchActionBar`)
+  - Card & Overview: `app/lib/presentation/clipboard/clipboard_overview_card.dart` (`ClipboardOverviewCard`)

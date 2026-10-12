@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:xbb/data/database_providers.dart';
 import 'package:xbb/models/task/model.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
 
@@ -116,7 +117,7 @@ class TaskWidgetBridge {
 
   static Future<TaskWidgetSnapshot> _buildSnapshot({Database? currentDb}) async {
     try {
-      final db = currentDb ?? await LocalFirstDB.getDb(userId: 'default');
+      final db = currentDb ?? getActiveDatabase() ?? await LocalFirstDB.getDb(userId: 'default');
       final rows = await db.query('check_list', orderBy: 'created_at DESC');
       CheckList? activeCheckList;
       for (final r in rows) {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/checkin/model.dart';
-import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 class EventFilterBar extends StatelessWidget {
   const EventFilterBar({

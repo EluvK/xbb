@@ -259,7 +259,7 @@ class NotesRepository {
       await db.update(
         'comment',
         {'sync_status': 'archived'},
-        where: 'post_id = ?',
+        where: 'parent_id = ?',
         whereArgs: [id],
       );
     }

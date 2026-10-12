@@ -1,22 +1,22 @@
 # Code Generation Pipeline
 
 ## 1. Overview
-XBB relies on internal packages (`sync_annotation` and `sync_generator`) and `build_runner` to automatically bridge in-memory domain models, local SQLite tables, GetX reactive controllers, and bidirectional sync engines.
+XBB relies on internal code generation packages (`sync_annotation`, `sync_generator`) combined with Flutter ecosystem generators (`build_runner`, `freezed`, `json_serializable`, `riverpod_generator`) to generate immutable domain entities, serialization methods, and reactive state notifiers.
 
 ---
 
 ## 2. The `@Repository` Annotation
 
-Defined in `packages/sync_annotation/lib/sync_annotation.dart`:
+Defined in `app/packages/sync_annotation/lib/sync_annotation.dart`:
 
 ```dart
 @Repository(
-  collectionName: 'xbb',              // Remote SyncStore collection name
-  tableName: 'post',                  // Local SQLite table name
-  db: NotesDB,                        // Database provider class (returns Future<Database>)
-  withAcls: false,                    // Whether to generate ACL permission hooks
-  parentIdField: 'repoId',            // Binds model field to DataItem.parentId for local creation
-  toSyncJsonMethod: 'toSyncJson',     // Custom serialization method (defaults to toJson)
+  collectionName: 'xbb',                   // Remote SyncStore collection namespace
+  tableName: 'post',                       // Local SQLite / Drift table name
+  db: NotesDB,                             // Database provider type reference
+  withAcls: false,                         // Whether to generate ACL permission hooks
+  parentIdField: 'repoId',                 // Binds model field to parent entity ID
+  toSyncJsonMethod: 'toSyncJson',          // Custom serialization method (defaults to toJson)
   fromRemoteJsonFactory: 'fromRemoteJson', // Custom deserializer (defaults to fromJson)
 )
 @freezed
@@ -25,31 +25,26 @@ abstract class Post with _$Post { ... }
 
 ---
 
-## 3. Generated Layers (`*.g.dart`)
+## 3. Codegen Layers & Ecosystem Integration
 
-Running `dart run build_runner build --delete-conflicting-outputs` generates four synchronized layers per entity:
+Running `dart run build_runner build --delete-conflicting-outputs` inside `app/` drives multiple generator passes:
 
-1. LocalStore (`LocalStore<Entity>`):
-   - `onCreateTable<Entity>SQL`: DDL including indexes and primary key (`data_id`).
-   - SQLite CRUD: insert, batch insert, update, soft delete, hard delete, and query by `parentId` or status.
-2. Repository (`<Entity>Repository`):
-   - Manages memory caches (`RxList<EntityDataItem>`).
-   - Encapsulates transaction queries and mapping between raw SQLite rows and `DataItem<Entity>`.
-3. Controller (`<Entity>Controller`):
-   - GetX controller managing UI-facing observables.
-   - Provides optimistic UI mutations (e.g. `addData`, `updateData`, `deleteData`) that write locally with `SyncStatus.pending` before kicking off sync tasks.
-4. Sync Engine (`<Entity>SyncEngine`):
-   - Bidirectional reconciliation:
-     - Push: Queries local items where `syncStatus == SyncStatus.pending`, batches POST requests to SyncStore, and marks them `SyncStatus.synced`.
-     - Pull: Queries remote updates with `marker` pagination, reconciles timestamps, writes to local SQLite, and triggers `rebuildLocal()`.
+1. **Freezed & JSON Serialization (`freezed`, `json_serializable`)**:
+   - Generates immutable dataclasses with deep `copyWith`, equality comparisons, and JSON serialization (`*.freezed.dart`, `*.g.dart`).
+2. **Repository Model Annotations (`sync_generator`)**:
+   - Inspects `@Repository` markers and validates parent-child hierarchy definitions and sync configurations.
+3. **Reactive State Providers (`riverpod_annotation`)**:
+   - Generates strongly-typed Riverpod Notifiers and auto-disposing Providers, decoupling presentation state from UI rendering.
+4. **Relational Storage Schema (`drift`)**:
+   - Drift tables (`app/lib/data/drift/schema.dart`) define compile-time safe database schemas aligned with `SyncStoreEntityTable`.
 
 ---
 
 ## 4. Development Workflow & Rules
 
-- Do Not Hand-Edit: Never modify `*.g.dart` or `*.freezed.dart` manually.
-- Model Evolution:
-  1. Modify `lib/models/<feature>/model.dart`.
-  2. Run `dart run build_runner build --delete-conflicting-outputs`.
-  3. Ensure `lib/models/<feature>/db.dart` includes table creation DDL in `onCreate`.
-  4. Ensure `reInit<Feature>Sync` is registered in `lib/controller/syncstore.dart`.
+- **Do Not Hand-Edit**: Never edit `*.g.dart` or `*.freezed.dart` files manually.
+- **Model Evolution Workflow**:
+  1. Update entity definition in `app/lib/models/<feature>/model.dart`.
+  2. Run `dart run build_runner build --delete-conflicting-outputs` from `app/`.
+  3. Ensure the entity's table is registered in `LocalFirstDB.coreEntityTables` (`app/lib/sync/v2/local_first_db.dart`) and Drift schema (`app/lib/data/drift/schema.dart`).
+  4. Implement or update repository queries in `app/lib/data/repositories/<feature>_repository.dart`.

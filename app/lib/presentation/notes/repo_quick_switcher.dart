@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
-import 'package:xbb/models/notes/model.dart';
 import 'package:xbb/presentation/notes/notes_providers.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 

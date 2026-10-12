@@ -498,18 +498,6 @@ class _TranslationHelper {
       "en_US": "Delete Comment",
       "zh_CN": "删除评论",
     },
-    "cancel": {
-      "en_US": "Cancel",
-      "zh_CN": "取消",
-    },
-    "confirm": {
-      "en_US": "Confirm",
-      "zh_CN": "确认",
-    },
-    "save": {
-      "en_US": "Save",
-      "zh_CN": "保存",
-    },
     "update_repo_info": {
       "en_US": "Update Repo Info",
       "zh_CN": "更新仓库信息",

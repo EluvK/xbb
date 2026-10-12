@@ -1,41 +1,57 @@
 # Chat Feature Domain
 
 ## 1. Domain Concept
-The Chat module provides an integrated conversational AI interface supporting configurable assistant personas and real-time streaming LLM responses with native reasoning (chain-of-thought) visualization.
+The Chat module provides an integrated conversational AI workspace supporting configurable assistant personas, dialogue threads, and real-time streaming LLM responses with first-class chain-of-thought (reasoning) token visualization.
 
 ---
 
-## 2. Core Entities
+## 2. Core Entities & Schema
 
-### 2.1 ChatAssistant
-- Definition: Configured AI persona defining system prompt and model hyperparameters.
-- Model: `ChatAssistant { String name, ChatAssistantType type, String description, String prompt, String? avatarUrl, ChatAssistantModelConfig? modelConfig }`
-- Assistant Types: `system` (built-in templates) or `userDefined` (custom created by user).
-- Model Config: Optional per-assistant override for provider, baseUrl, model name, temperature, and thinking parameters.
+### 2.1 ChatAssistant (AI 助手)
+- **Definition**: Configured AI persona defining system prompt, temperature, avatar, and provider parameters.
+- **Model**: `ChatAssistant { String name, ChatAssistantType type, String description, String prompt, String? avatarUrl, ChatAssistantModelConfig? modelConfig }`
+- **Drift Table**: table `chat_assistant` in `app_v2.db`.
+- **Types**: `system` (built-in templates) or `userDefined` (custom created by user).
 
-### 2.2 ChatConversation
-- Definition: A conversation thread bound to a specific assistant.
-- Model: `ChatConversation { String name, String assistantId, String assistantName, bool like }`
+### 2.2 ChatConversation (对话会话)
+- **Definition**: Conversation thread bound to a specific assistant.
+- **Model**: `ChatConversation { String name, String assistantId, String assistantName, bool like }`
+- **Drift Table**: table `chat_conversation` in `app_v2.db` (`parent_id = assistantId`).
 
-### 2.3 ChatMessage
-- Definition: Individual message in a conversation.
-- Model: `ChatMessage { String conversationId, ChatMessageRole role, String text, String? reasoningText, ChatUsage? usage }`
-- Role: `system`, `user`, `assistant`.
-- Reasoning Stream: `reasoningText` stores internal chain-of-thought tokens (e.g. DeepSeek-R1), rendered in an expandable thinking box in the UI.
-- Usage: Token metrics (`promptTokens`, `completionTokens`, `totalTokens`).
+### 2.3 ChatMessage (对话消息)
+- **Definition**: Individual message in a conversation.
+- **Model**:
+  ```dart
+  ChatMessage {
+    String conversationId,
+    ChatMessageRole role,
+    String text,
+    String? reasoningText,
+    ChatUsage? usage,
+    bool favorite,
+  }
+  ```
+- **Drift Table**: table `chat_message` in `app_v2.db` (`parent_id = conversationId`).
+- **Chain of Thought**: `reasoningText` holds raw model reasoning stream (e.g. DeepSeek-R1), rendered in an expandable thinking box.
 
 ---
 
-## 3. Streaming & LLM Client
+## 3. Streaming & LLM Client Pipeline
 
-- Provider: Supported provider is currently DeepSeek (`packages/deepseek_client`), with extensible common abstractions in `lib/client/chat/llm/common.dart`.
-- Streaming Pipeline: `ChatClient.sendMessageStream(...)` provides real-time token streaming with separate callbacks for reasoning chunks (`onStream`), error events (`onError`), and completion (`onSuccess`).
+- **Client Package**: `app/packages/deepseek_client/` provides Server-Sent Events (SSE) streaming.
+- **Client Wrapper**: `ChatClient` (`app/lib/client/chat/client.dart`) manages request dispatch, abort controllers, token usage recording, and separated chunk callbacks for reasoning and text response.
+- **Repository & State**: `ChatRepository` saves messages and conversation state locally, while Riverpod notifiers in `chat_providers.dart` expose active conversation streams to the UI.
 
 ---
 
 ## 4. Key Source Paths
 
-- Models & Codegen: `lib/models/chat/model.dart`, `lib/models/chat/db.dart`
-- Chat Client: `lib/client/chat/client.dart`, `lib/client/chat/llm/deepseek.dart`
-- Underlying Package: `packages/deepseek_client/`
-- Page & Components: `lib/pages/chat/chat_page.dart`, `lib/components/chat/view_chat_messages.dart`, `lib/components/chat/chat_input.dart`, `lib/components/chat/chat_message_card.dart`
+- **Domain Model**: `app/lib/models/chat/model.dart`
+- **Data Repository**: `app/lib/data/repositories/chat_repository.dart` (`ChatRepository`)
+- **State Management**: `app/lib/presentation/chat/chat_providers.dart` (Riverpod Notifiers & StateProviders)
+- **LLM Client Layer**:
+  - Common Client: `app/lib/client/chat/client.dart`
+  - DeepSeek Implementation: `app/lib/client/chat/llm/deepseek.dart`
+  - Internal Package: `app/packages/deepseek_client/`
+- **Presentation View**: `app/lib/presentation/chat/modern_chat_view.dart` (`ModernChatView`)
+- **Route Screen**: `app/lib/pages/chat/chat_page.dart`

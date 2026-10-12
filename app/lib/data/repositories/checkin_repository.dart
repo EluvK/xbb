@@ -207,7 +207,7 @@ class CheckinRepository {
       throw ArgumentError('严禁未来预打卡 (ADR-0003)');
     }
 
-    // 严格校验：禁止补打事件创建日期之前的历史日期
+    // 严格校验：禁止补打事件创建日期之前的历史日期（除非显式指定了 recordTime 自定义发生时间）
     final eventRows = await db.query(
       'checkin_event',
       columns: ['created_at'],
@@ -220,20 +220,32 @@ class CheckinRepository {
         final eventCreatedDate = DateTime.tryParse(createdAtStr)?.toLocal();
         if (eventCreatedDate != null) {
           final eventCreatedDayKey = formatLocalDayKey(eventCreatedDate);
-          if (targetDayKey.compareTo(eventCreatedDayKey) < 0) {
+          if (recordTime == null && targetDayKey.compareTo(eventCreatedDayKey) < 0) {
             throw ArgumentError('不能补打事件创建前的日期 (checkin_past_date_forbidden)');
           }
         }
       }
     }
 
-    // 检查是否已在该日期打卡
+    // 检查是否已在该日期打卡（结合 parent_id 与精准 JSON 解析，消除键序漂移影响）
     final existing = await db.query(
       'checkin_record',
-      where: "body LIKE ?",
-      whereArgs: ['%"event_id":"$eventId"%"local_day_key":"$targetDayKey"%'],
+      where: "(parent_id = ? OR body LIKE ?) AND body LIKE ?",
+      whereArgs: [eventId, '%"event_id":"$eventId"%', '%"local_day_key":"$targetDayKey"%'],
     );
-    if (existing.isNotEmpty) {
+    bool alreadyChecked = false;
+    for (final r in existing) {
+      try {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final map = jsonDecode(bodyStr) as Map<String, dynamic>;
+        final rec = CheckinRecord.fromJson(map);
+        if (rec.eventId == eventId && rec.localDayKey == targetDayKey) {
+          alreadyChecked = true;
+          break;
+        }
+      } catch (_) {}
+    }
+    if (alreadyChecked) {
       return false; // 当日已存在记录
     }
 
@@ -302,23 +314,30 @@ class CheckinRepository {
     CheckinWidgetBridge.scheduleRefresh();
   }
 
-  /// 撤销打卡记录
+  /// 撤销打卡记录（精准匹配 parent_id 与 local_day_key）
   Future<void> undoCheckin({
     required String eventId,
     required String dayKey,
   }) async {
     final existing = await db.query(
       'checkin_record',
-      where: "body LIKE ?",
-      whereArgs: ['%"event_id":"$eventId"%"local_day_key":"$dayKey"%'],
+      where: "(parent_id = ? OR body LIKE ?) AND body LIKE ?",
+      whereArgs: [eventId, '%"event_id":"$eventId"%', '%"local_day_key":"$dayKey"%'],
     );
     for (final r in existing) {
-      final id = r['id'] as String;
-      await LocalFirstDB.persistDeleteRaw(
-        db: db,
-        tableName: 'checkin_record',
-        entityId: id,
-      );
+      try {
+        final bodyStr = r['body'] as String? ?? '{}';
+        final map = jsonDecode(bodyStr) as Map<String, dynamic>;
+        final rec = CheckinRecord.fromJson(map);
+        if (rec.eventId == eventId && rec.localDayKey == dayKey) {
+          final id = r['id'] as String;
+          await LocalFirstDB.persistDeleteRaw(
+            db: db,
+            tableName: 'checkin_record',
+            entityId: id,
+          );
+        }
+      } catch (_) {}
     }
     changeNotifier.notify('checkin_record');
     SyncWorker.instance.notifyLocalWrite();

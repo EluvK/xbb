@@ -138,13 +138,31 @@ class TrackerRepository {
     SyncWorker.instance.notifyLocalWrite();
   }
 
-  /// 删除追踪器
+  /// 删除追踪器（级联删除所有关联的 tracker_record 并产生 Outbox DELETE 记录）
   Future<void> deleteTracker(String id) async {
+    // 1. 级联删除关联的所有 records
+    final records = await db.query(
+      'tracker_record',
+      columns: ['id'],
+      where: 'parent_id = ?',
+      whereArgs: [id],
+    );
+    for (final r in records) {
+      final recId = r['id'] as String;
+      await LocalFirstDB.persistDeleteRaw(
+        db: db,
+        tableName: 'tracker_record',
+        entityId: recId,
+      );
+    }
+
+    // 2. 删除追踪器本身
     await LocalFirstDB.persistDeleteRaw(
       db: db,
       tableName: 'tracker',
       entityId: id,
     );
+    changeNotifier.notify('tracker_record');
     changeNotifier.notify('tracker');
     SyncWorker.instance.notifyLocalWrite();
   }
