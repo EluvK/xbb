@@ -11,6 +11,7 @@ class DesktopTitleBar extends StatefulWidget {
   final Widget? title;
   final List<Widget>? actions;
   final double height;
+  final TargetPlatform? platformOverride;
 
   const DesktopTitleBar({
     super.key,
@@ -18,6 +19,7 @@ class DesktopTitleBar extends StatefulWidget {
     this.title,
     this.actions,
     this.height = 36.0,
+    this.platformOverride,
   });
 
   @override
@@ -27,7 +29,10 @@ class DesktopTitleBar extends StatefulWidget {
 class _DesktopTitleBarState extends State<DesktopTitleBar> with WindowListener {
   bool _isMaximized = false;
 
-  bool get _isDesktop => !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+  bool get _isDesktop {
+    if (widget.platformOverride != null) return true;
+    return !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+  }
   bool get _isTestEnvironment => Platform.environment.containsKey('FLUTTER_TEST');
 
   @override
@@ -77,10 +82,18 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isDesktop) {
+    final currentPlatform = widget.platformOverride ?? Theme.of(context).platform;
+    final isDesktopPlatform = widget.platformOverride != null
+        ? (currentPlatform == TargetPlatform.windows ||
+            currentPlatform == TargetPlatform.macOS ||
+            currentPlatform == TargetPlatform.linux)
+        : _isDesktop;
+
+    if (!isDesktopPlatform) {
       return const SizedBox.shrink();
     }
 
+    final isMacOS = currentPlatform == TargetPlatform.macOS;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor = theme.colorScheme.surfaceContainerLowest;
@@ -93,73 +106,78 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> with WindowListener {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          // 左侧 Leading / 图标或自定义控件
-          if (widget.leading != null) widget.leading!,
-          // 标题与可拖动空白区域
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onDoubleTap: _handleDoubleClick,
-              child: DragToMoveArea(
-                child: Row(
-                  children: [
-                    const SizedBox(width: AppSpacing.md),
-                    if (widget.title != null)
-                      widget.title!
-                    else
-                      Text(
-                        'XBB Workspace',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
+            // macOS 原生左上角交通灯避让区
+            if (isMacOS) const SizedBox(key: Key('macos-traffic-light-spacer'), width: 78.0),
+            // 左侧 Leading / 图标或自定义控件
+            if (widget.leading != null) widget.leading!,
+            // 标题与可拖动空白区域
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onDoubleTap: _handleDoubleClick,
+                child: DragToMoveArea(
+                  child: Row(
+                    children: [
+                      const SizedBox(width: AppSpacing.md),
+                      if (widget.title != null)
+                        widget.title!
+                      else
+                        Text(
+                          'XBB Workspace',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                    const Spacer(),
-                  ],
+                      const Spacer(),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          // 自定义 Action 列表
-          if (widget.actions != null) ...widget.actions!,
-          // 桌面窗口控制按钮 (最小化、最大化/还原、关闭)
-          _buildWindowButton(
-            icon: Icons.minimize,
-            iconSize: 14,
-            tooltip: '最小化',
-            hoverColor: buttonHoverColor,
-            onPressed: () async {
-              if (!_isTestEnvironment) await windowManager.minimize();
-            },
-          ),
-          _buildWindowButton(
-            icon: _isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-            iconSize: 14,
-            tooltip: _isMaximized ? '还原' : '最大化',
-            hoverColor: buttonHoverColor,
-            onPressed: () async {
-              if (!_isTestEnvironment) {
-                if (_isMaximized) {
-                  await windowManager.unmaximize();
-                } else {
-                  await windowManager.maximize();
-                }
-              }
-            },
-          ),
-          _buildWindowButton(
-            icon: Icons.close,
-            iconSize: 14,
-            tooltip: '关闭到托盘',
-            hoverColor: Colors.redAccent.withValues(alpha: 0.8),
-            iconHoverColor: Colors.white,
-            onPressed: () async {
-              if (!_isTestEnvironment) await windowManager.close();
-            },
-          ),
-        ],
-      ),
+            // 自定义 Action 列表
+            if (widget.actions != null) ...widget.actions!,
+            // 仅在 Windows / Linux 等非 macOS 桌面平台显示右上角窗口控制按钮
+            // macOS 使用系统原生左上角红黄绿交通灯，不应在右上角放置 Windows 风格控制按钮
+            if (!isMacOS) ...[
+              _buildWindowButton(
+                icon: Icons.minimize,
+                iconSize: 14,
+                tooltip: '最小化',
+                hoverColor: buttonHoverColor,
+                onPressed: () async {
+                  if (!_isTestEnvironment) await windowManager.minimize();
+                },
+              ),
+              _buildWindowButton(
+                icon: _isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
+                iconSize: 14,
+                tooltip: _isMaximized ? '还原' : '最大化',
+                hoverColor: buttonHoverColor,
+                onPressed: () async {
+                  if (!_isTestEnvironment) {
+                    if (_isMaximized) {
+                      await windowManager.unmaximize();
+                    } else {
+                      await windowManager.maximize();
+                    }
+                  }
+                },
+              ),
+              _buildWindowButton(
+                icon: Icons.close,
+                iconSize: 14,
+                tooltip: '关闭到托盘',
+                hoverColor: Colors.redAccent.withValues(alpha: 0.8),
+                iconHoverColor: Colors.white,
+                onPressed: () async {
+                  if (!_isTestEnvironment) await windowManager.close();
+                },
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
