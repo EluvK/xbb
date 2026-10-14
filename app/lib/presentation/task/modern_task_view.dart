@@ -7,6 +7,7 @@ import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/task/task_history_view.dart';
 import 'package:xbb/presentation/task/task_overview_card.dart';
 import 'package:xbb/presentation/task/task_providers.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/utils/translation.dart';
 
@@ -132,16 +133,13 @@ class _ModernTaskViewState extends ConsumerState<ModernTaskView> {
               tooltip: 'task_archive_completed_tooltip'.tr,
               icon: const Icon(Icons.archive),
               onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text('task_confirm_archive_title'.tr),
-                    content: Text('task_confirm_archive_content'.tr),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('cancel'.tr)),
-                      FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('task_action_archive_completed'.tr)),
-                    ],
-                  ),
+                final confirm = await showAdaptiveConfirmDialog(
+                  context,
+                  title: 'task_confirm_archive_title'.tr,
+                  message: 'task_confirm_archive_content'.tr,
+                  cancelText: 'cancel'.tr,
+                  confirmText: 'task_action_archive_completed'.tr,
+                  icon: Icons.archive_outlined,
                 );
                 if (confirm == true) {
                   ref.read(taskRepositoryProvider).archiveActiveCheckList(userId);

@@ -8,6 +8,7 @@ import 'package:xbb/models/tracker/tracker_calculator.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/tracker/tracker_providers.dart';
 import 'package:xbb/presentation/widgets/acl_editor.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 /// 独立的追踪器全屏详情与深度时序分析页 (ViewTrackerDetailPage)
@@ -231,9 +232,10 @@ class _ViewTrackerDetailPageState extends ConsumerState<ViewTrackerDetailPage> {
                       TextField(
                         controller: _valueController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
+                        decoration: ModernInputDecoration.field(
+                          context,
                           labelText: '完成数值 / 时长 (分钟)',
-                          isDense: true,
+                          prefixIcon: const Icon(Icons.timer_outlined, size: 20),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -260,9 +262,10 @@ class _ViewTrackerDetailPageState extends ConsumerState<ViewTrackerDetailPage> {
                     TextField(
                       controller: _contentController,
                       maxLines: t.type == 'anniversary' ? 4 : 2,
-                      decoration: InputDecoration(
+                      decoration: ModernInputDecoration.field(
+                        context,
                         labelText: t.type == 'anniversary' ? '纪念日心情 / Markdown 随笔' : '备注文字 (可选)',
-                        isDense: true,
+                        prefixIcon: const Icon(Icons.notes_rounded, size: 20),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),

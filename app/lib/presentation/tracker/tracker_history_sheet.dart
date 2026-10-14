@@ -6,6 +6,7 @@ import 'package:xbb/components/notes/markdown_renderer.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/tracker/model.dart';
 import 'package:xbb/presentation/tracker/tracker_providers.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 /// 追踪器历史明细流水侧滑板
@@ -246,66 +247,12 @@ class TrackerHistorySheet extends ConsumerWidget {
     final contentCtrl = TextEditingController(text: item.body.content ?? '');
     DateTime recordTime = item.body.timestamp.toLocal();
 
-    showDialog(
-      context: context,
+    showAdaptiveModal(
+      context,
+      maxWidth: 500,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('编辑打卡记录'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('记录时间', style: TextStyle(fontSize: 14)),
-                  subtitle: Text(DateFormat('yyyy-MM-dd HH:mm').format(recordTime)),
-                  trailing: const Icon(Icons.schedule, size: 18),
-                  onTap: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: recordTime,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (pickedDate != null && context.mounted) {
-                      final pickedTime = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(recordTime),
-                      );
-                      if (pickedTime != null) {
-                        setState(() {
-                          recordTime = DateTime(
-                            pickedDate.year,
-                            pickedDate.month,
-                            pickedDate.day,
-                            pickedTime.hour,
-                            pickedTime.minute,
-                          );
-                        });
-                      }
-                    }
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: valCtrl,
-                  decoration: const InputDecoration(labelText: '数值/状态 (可选)', isDense: true),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: contentCtrl,
-                  minLines: 3,
-                  maxLines: 6,
-                  decoration: const InputDecoration(
-                    labelText: '内容/笔记 (支持 Markdown)',
-                    alignLabelWithHint: true,
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        builder: (ctx, setState) => AdaptiveModalContainer(
+          title: '编辑打卡记录',
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
             FilledButton(
@@ -329,29 +276,74 @@ class TrackerHistorySheet extends ConsumerWidget {
               child: const Text('保存修改'),
             ),
           ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('记录时间', style: TextStyle(fontSize: 14)),
+                subtitle: Text(DateFormat('yyyy-MM-dd HH:mm').format(recordTime)),
+                trailing: const Icon(Icons.schedule, size: 18),
+                onTap: () async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: recordTime,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null && context.mounted) {
+                    final pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(recordTime),
+                    );
+                    if (pickedTime != null) {
+                      setState(() {
+                        recordTime = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+                      });
+                    }
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: valCtrl,
+                decoration: ModernInputDecoration.field(ctx, labelText: '数值/状态 (可选)', prefixIcon: const Icon(Icons.pin, size: 20)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: contentCtrl,
+                minLines: 3,
+                maxLines: 6,
+                decoration: ModernInputDecoration.field(
+                  ctx,
+                  labelText: '内容/笔记 (支持 Markdown)',
+                  hintText: '输入打卡记录详情...',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _confirmDeleteRecord(BuildContext context, WidgetRef ref, String recordId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('确认删除记录？'),
-        content: const Text('删除后该条记录将从打卡历史与统计中移除。'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              ref.read(trackerRepositoryProvider).deleteRecord(recordId);
-              Navigator.pop(ctx);
-            },
-            child: const Text('确认删除'),
-          ),
-        ],
-      ),
+  void _confirmDeleteRecord(BuildContext context, WidgetRef ref, String recordId) async {
+    final confirm = await showAdaptiveConfirmDialog(
+      context,
+      title: '确认删除记录？',
+      message: '删除后该条记录将从打卡历史与统计中移除。',
+      confirmText: '确认删除',
+      isDanger: true,
     );
+    if (confirm == true) {
+      ref.read(trackerRepositoryProvider).deleteRecord(recordId);
+    }
   }
 }

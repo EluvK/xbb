@@ -1,6 +1,6 @@
-import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:xbb/core/core.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:get_time_ago/get_time_ago.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -100,50 +100,16 @@ void flushBar(
   bool upperPosition = false,
   Duration duration = const Duration(seconds: 2),
 }) {
-  Color? color;
-  IconData? icon;
-  switch (level) {
-    case FlushLevel.OK:
-      color = Colors.green.shade300;
-      icon = Icons.check_box_sharp;
-      break;
-    case FlushLevel.INFO:
-      color = Colors.blue.shade300;
-      icon = Icons.info_outline;
-      break;
-    case FlushLevel.WARNING:
-      color = Colors.orange.shade300;
-      icon = Icons.error_outline;
-      break;
-  }
   print('[$level] $title: $message');
 }
 
 Future<bool?> showBackCheckDialog(BuildContext context) {
-  return showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('back_check_title'.tr),
-        content: Text('back_check_content'.tr),
-        actions: <Widget>[
-          TextButton(
-            child: Text('back_check_cancel'.tr),
-            onPressed: () {
-              Navigator.pop(context, false);
-            },
-          ),
-          TextButton(
-            // style: TextButton.styleFrom(
-            //   textStyle: Theme.of(context).textTheme.labelLarge,
-            // ),
-            child: Text('back_check_confirm'.tr, style: TextStyle(color: Colors.red[400])),
-            onPressed: () {
-              Navigator.pop(context, true);
-            },
-          ),
-        ],
-      );
-    },
+  return showAdaptiveConfirmDialog(
+    context,
+    title: 'back_check_title'.tr,
+    message: 'back_check_content'.tr,
+    cancelText: 'back_check_cancel'.tr,
+    confirmText: 'back_check_confirm'.tr,
+    isDanger: true,
   );
 }

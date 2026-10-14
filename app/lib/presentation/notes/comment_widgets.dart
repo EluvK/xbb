@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/notes/model.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 /// 评论节点数据包装，用于支持树状层级渲染
@@ -241,22 +242,12 @@ class _CommentCard extends StatelessWidget {
                   tooltip: '删除',
                   icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
                   onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('删除评论'),
-                        content: const Text('确定要删除这条评论吗？'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('取消'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('删除'),
-                          ),
-                        ],
-                      ),
+                    final confirm = await showAdaptiveConfirmDialog(
+                      context,
+                      title: '删除评论',
+                      message: '确定要删除这条评论吗？',
+                      confirmText: '删除',
+                      isDanger: true,
                     );
                     if (confirm == true) {
                       onDelete();

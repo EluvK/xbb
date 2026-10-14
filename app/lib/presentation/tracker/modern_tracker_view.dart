@@ -12,6 +12,7 @@ import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/tracker/tracker_history_sheet.dart';
 import 'package:xbb/presentation/tracker/tracker_providers.dart';
 import 'package:xbb/presentation/widgets/acl_editor.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 import 'package:xbb/utils/translation.dart';
@@ -186,115 +187,12 @@ class ModernTrackerView extends ConsumerWidget {
     DateTime selectedBaseDate = DateTime.now();
     bool isLunar = false;
 
-    showDialog(
-      context: context,
+    showAdaptiveModal(
+      context,
+      maxWidth: 520,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('新建追踪器'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '名称', isDense: true)),
-                const SizedBox(height: 12),
-                TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述 (可选)', isDense: true)),
-                const SizedBox(height: 12),
-                TextField(controller: categoryCtrl, decoration: const InputDecoration(labelText: '分类 (如 学习、健身、生活)', isDense: true)),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedType,
-                  decoration: const InputDecoration(labelText: '类型', isDense: true),
-                  items: const [
-                    DropdownMenuItem(value: 'milestone', child: Text('阶段里程碑 (Milestone)')),
-                    DropdownMenuItem(value: 'event', child: Text('习惯周期 (Event)')),
-                    DropdownMenuItem(value: 'anniversary', child: Text('重要纪念日 (Anniversary)')),
-                  ],
-                  onChanged: (v) => setState(() => selectedType = v ?? 'milestone'),
-                ),
-                if (selectedType == 'milestone') ...[
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: goalType,
-                    decoration: const InputDecoration(labelText: '目标类型', isDense: true),
-                    items: const [
-                      DropdownMenuItem(value: 'number', child: Text('数值 (Number)')),
-                      DropdownMenuItem(value: 'time', child: Text('时长/分钟 (Time)')),
-                      DropdownMenuItem(value: 'boolean', child: Text('完成状态 (Boolean)')),
-                    ],
-                    onChanged: (v) => setState(() => goalType = v ?? 'number'),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: progressMode,
-                    decoration: const InputDecoration(labelText: '计算模式', isDense: true),
-                    items: const [
-                      DropdownMenuItem(value: 'accumulate', child: Text('累计求和 (Accumulate)')),
-                      DropdownMenuItem(value: 'latest', child: Text('最新一次值 (Latest)')),
-                    ],
-                    onChanged: (v) => setState(() => progressMode = v ?? 'accumulate'),
-                  ),
-                  if (goalType != 'boolean') ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: targetValCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: goalType == 'time' ? '目标时长 (分钟数，如 120)' : '目标数值 (如 100)',
-                        isDense: true,
-                      ),
-                    ),
-                  ],
-                ] else if (selectedType == 'event') ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: periodCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: '周期天数 (0 为自由打卡)',
-                      isDense: true,
-                    ),
-                  ),
-                ] else if (selectedType == 'anniversary') ...[
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: remindType,
-                    decoration: const InputDecoration(labelText: '提醒与推算类型', isDense: true),
-                    items: const [
-                      DropdownMenuItem(value: 'per_year', child: Text('每年重复 (按周年推算)')),
-                      DropdownMenuItem(value: 'per_100_days', child: Text('每百天节点 (100/200/500天)')),
-                      DropdownMenuItem(value: 't_minus', child: Text('倒计时 / 正计时')),
-                    ],
-                    onChanged: (v) => setState(() => remindType = v ?? 'per_year'),
-                  ),
-                  const SizedBox(height: 12),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('基准日期', style: TextStyle(fontSize: 14)),
-                    subtitle: Text(DateFormat('yyyy-MM-dd').format(selectedBaseDate)),
-                    trailing: const Icon(Icons.calendar_month, size: 20),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: selectedBaseDate,
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        setState(() => selectedBaseDate = picked);
-                      }
-                    },
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('农历纪念日', style: TextStyle(fontSize: 14)),
-                    value: isLunar,
-                    onChanged: (v) => setState(() => isLunar = v),
-                  ),
-                ],
-              ],
-            ),
-          ),
+        builder: (ctx, setState) => AdaptiveModalContainer(
+          title: '新建追踪器',
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
             FilledButton(
@@ -342,6 +240,119 @@ class ModernTrackerView extends ConsumerWidget {
               child: const Text('创建'),
             ),
           ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: ModernInputDecoration.field(ctx, labelText: '名称', prefixIcon: const Icon(Icons.title, size: 20)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descCtrl,
+                decoration: ModernInputDecoration.field(ctx, labelText: '描述 (可选)', prefixIcon: const Icon(Icons.notes, size: 20)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: categoryCtrl,
+                decoration: ModernInputDecoration.field(ctx, labelText: '分类 (如 学习、健身、生活)', prefixIcon: const Icon(Icons.category_outlined, size: 20)),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: selectedType,
+                decoration: ModernInputDecoration.field(ctx, labelText: '类型'),
+                items: const [
+                  DropdownMenuItem(value: 'milestone', child: Text('阶段里程碑 (Milestone)')),
+                  DropdownMenuItem(value: 'event', child: Text('习惯周期 (Event)')),
+                  DropdownMenuItem(value: 'anniversary', child: Text('重要纪念日 (Anniversary)')),
+                ],
+                onChanged: (v) => setState(() => selectedType = v ?? 'milestone'),
+              ),
+              if (selectedType == 'milestone') ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: goalType,
+                  decoration: ModernInputDecoration.field(ctx, labelText: '目标类型'),
+                  items: const [
+                    DropdownMenuItem(value: 'number', child: Text('数值 (Number)')),
+                    DropdownMenuItem(value: 'time', child: Text('时长/分钟 (Time)')),
+                    DropdownMenuItem(value: 'boolean', child: Text('完成状态 (Boolean)')),
+                  ],
+                  onChanged: (v) => setState(() => goalType = v ?? 'number'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: progressMode,
+                  decoration: ModernInputDecoration.field(ctx, labelText: '计算模式'),
+                  items: const [
+                    DropdownMenuItem(value: 'accumulate', child: Text('累计求和 (Accumulate)')),
+                    DropdownMenuItem(value: 'latest', child: Text('最新一次值 (Latest)')),
+                  ],
+                  onChanged: (v) => setState(() => progressMode = v ?? 'accumulate'),
+                ),
+                if (goalType != 'boolean') ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: targetValCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: ModernInputDecoration.field(
+                      ctx,
+                      labelText: goalType == 'time' ? '目标时长 (分钟数，如 120)' : '目标数值 (如 100)',
+                      prefixIcon: const Icon(Icons.track_changes, size: 20),
+                    ),
+                  ),
+                ],
+              ] else if (selectedType == 'event') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: periodCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: ModernInputDecoration.field(
+                    ctx,
+                    labelText: '周期天数 (0 为自由打卡)',
+                    prefixIcon: const Icon(Icons.repeat, size: 20),
+                  ),
+                ),
+              ] else if (selectedType == 'anniversary') ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: remindType,
+                  decoration: ModernInputDecoration.field(ctx, labelText: '提醒与推算类型'),
+                  items: const [
+                    DropdownMenuItem(value: 'per_year', child: Text('每年重复 (按周年推算)')),
+                    DropdownMenuItem(value: 'per_100_days', child: Text('每百天节点 (100/200/500天)')),
+                    DropdownMenuItem(value: 't_minus', child: Text('倒计时 / 正计时')),
+                  ],
+                  onChanged: (v) => setState(() => remindType = v ?? 'per_year'),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('基准日期', style: TextStyle(fontSize: 14)),
+                  subtitle: Text(DateFormat('yyyy-MM-dd').format(selectedBaseDate)),
+                  trailing: const Icon(Icons.calendar_month, size: 20),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedBaseDate,
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() => selectedBaseDate = picked);
+                    }
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('农历纪念日', style: TextStyle(fontSize: 14)),
+                  value: isLunar,
+                  onChanged: (v) => setState(() => isLunar = v),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -533,25 +544,17 @@ class ModernTrackerCard extends ConsumerWidget {
     );
   }
 
-  void _confirmDeleteTracker(BuildContext context, WidgetRef ref, DataItem<Tracker> item) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('删除追踪器 “${item.body.name}”？'),
-        content: const Text('该操作将级联删除该追踪器及其所有历史打卡记录，无法恢复。'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              ref.read(trackerRepositoryProvider).deleteTracker(item.id);
-              Navigator.pop(ctx);
-            },
-            child: const Text('确认删除'),
-          ),
-        ],
-      ),
+  void _confirmDeleteTracker(BuildContext context, WidgetRef ref, DataItem<Tracker> item) async {
+    final confirm = await showAdaptiveConfirmDialog(
+      context,
+      title: '删除追踪器 “${item.body.name}”？',
+      message: '该操作将级联删除该追踪器及其所有历史打卡记录，无法恢复。',
+      confirmText: '确认删除',
+      isDanger: true,
     );
+    if (confirm == true) {
+      ref.read(trackerRepositoryProvider).deleteTracker(item.id);
+    }
   }
 
   void _showEditTrackerDialog(BuildContext context, WidgetRef ref, DataItem<Tracker> item) {
@@ -569,55 +572,12 @@ class ModernTrackerCard extends ConsumerWidget {
     );
     String progressMode = config is MilestoneTrackerConfig ? config.progressMode : 'accumulate';
 
-    showDialog(
-      context: context,
+    showAdaptiveModal(
+      context,
+      maxWidth: 520,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('编辑追踪器'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: '名称', isDense: true)),
-                const SizedBox(height: 12),
-                TextField(controller: descCtrl, decoration: const InputDecoration(labelText: '描述 (可选)', isDense: true)),
-                const SizedBox(height: 12),
-                TextField(controller: categoryCtrl, decoration: const InputDecoration(labelText: '分类', isDense: true)),
-                if (config is MilestoneTrackerConfig && config.goalType != 'boolean') ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: targetValCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: config.goalType == 'time' ? '目标时长 (分钟)' : '目标数值',
-                      isDense: true,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: progressMode,
-                    decoration: const InputDecoration(labelText: '计算模式', isDense: true),
-                    items: const [
-                      DropdownMenuItem(value: 'accumulate', child: Text('累计求和 (Accumulate)')),
-                      DropdownMenuItem(value: 'latest', child: Text('最新一次值 (Latest)')),
-                    ],
-                    onChanged: (v) => setState(() => progressMode = v ?? 'accumulate'),
-                  ),
-                ] else if (config is EventTrackerConfig) ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: periodCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: '周期天数 (0 为自由打卡)',
-                      isDense: true,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
+        builder: (ctx, setState) => AdaptiveModalContainer(
+          title: '编辑追踪器',
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
             FilledButton(
@@ -655,6 +615,59 @@ class ModernTrackerCard extends ConsumerWidget {
               child: const Text('保存'),
             ),
           ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: ModernInputDecoration.field(ctx, labelText: '名称', prefixIcon: const Icon(Icons.title, size: 20)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descCtrl,
+                decoration: ModernInputDecoration.field(ctx, labelText: '描述 (可选)', prefixIcon: const Icon(Icons.notes, size: 20)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: categoryCtrl,
+                decoration: ModernInputDecoration.field(ctx, labelText: '分类', prefixIcon: const Icon(Icons.category_outlined, size: 20)),
+              ),
+              if (config is MilestoneTrackerConfig && config.goalType != 'boolean') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: targetValCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: ModernInputDecoration.field(
+                    ctx,
+                    labelText: config.goalType == 'time' ? '目标时长 (分钟)' : '目标数值',
+                    prefixIcon: const Icon(Icons.track_changes, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: progressMode,
+                  decoration: ModernInputDecoration.field(ctx, labelText: '计算模式'),
+                  items: const [
+                    DropdownMenuItem(value: 'accumulate', child: Text('累计求和 (Accumulate)')),
+                    DropdownMenuItem(value: 'latest', child: Text('最新一次值 (Latest)')),
+                  ],
+                  onChanged: (v) => setState(() => progressMode = v ?? 'accumulate'),
+                ),
+              ] else if (config is EventTrackerConfig) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: periodCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: ModernInputDecoration.field(
+                    ctx,
+                    labelText: '周期天数 (0 为自由打卡)',
+                    prefixIcon: const Icon(Icons.repeat, size: 20),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -947,12 +960,28 @@ class ModernTrackerCard extends ConsumerWidget {
       bool isPreview = false;
       final contentCtrl = TextEditingController();
 
-      showDialog(
-        context: context,
+      showAdaptiveModal(
+        context,
+        maxWidth: 520,
         builder: (ctx) => StatefulBuilder(
-          builder: (ctx, setDialogState) => AlertDialog(
-            title: const Text('纪念日心情打卡'),
-            content: SizedBox(
+          builder: (ctx, setDialogState) => AdaptiveModalContainer(
+            title: '纪念日心情打卡',
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+              FilledButton(
+                onPressed: () {
+                  ref.read(trackerRepositoryProvider).addRecord(
+                        trackerId: trackerId,
+                        value: null,
+                        content: contentCtrl.text.trim().isEmpty ? null : contentCtrl.text.trim(),
+                        currentUserId: userId,
+                      );
+                  Navigator.pop(ctx);
+                },
+                child: const Text('保存'),
+              ),
+            ],
+            child: SizedBox(
               width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -982,11 +1011,9 @@ class ModernTrackerCard extends ConsumerWidget {
                       controller: contentCtrl,
                       minLines: 4,
                       maxLines: 8,
-                      decoration: InputDecoration(
+                      decoration: ModernInputDecoration.field(
+                        ctx,
                         hintText: '支持 Markdown，记录当下发生了什么、你的感受或想法...',
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     )
                   else
@@ -1006,21 +1033,6 @@ class ModernTrackerCard extends ConsumerWidget {
                 ],
               ),
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-              FilledButton(
-                onPressed: () {
-                  ref.read(trackerRepositoryProvider).addRecord(
-                        trackerId: trackerId,
-                        value: null,
-                        content: contentCtrl.text.trim().isEmpty ? null : contentCtrl.text.trim(),
-                        currentUserId: userId,
-                      );
-                  Navigator.pop(ctx);
-                },
-                child: const Text('保存'),
-              ),
-            ],
           ),
         ),
       );
@@ -1046,12 +1058,28 @@ class ModernTrackerCard extends ConsumerWidget {
       }
     }
 
-    showDialog(
-      context: context,
+    showAdaptiveModal(
+      context,
+      maxWidth: 520,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('添加打卡记录'),
-          content: Column(
+        builder: (ctx, setDialogState) => AdaptiveModalContainer(
+          title: '添加打卡记录',
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+            FilledButton(
+              onPressed: () {
+                ref.read(trackerRepositoryProvider).addRecord(
+                      trackerId: trackerId,
+                      value: valCtrl.text.trim().isEmpty ? null : valCtrl.text.trim(),
+                      content: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
+                      currentUserId: userId,
+                    );
+                Navigator.pop(ctx);
+              },
+              child: const Text('保存'),
+            ),
+          ],
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1092,30 +1120,15 @@ class ModernTrackerCard extends ConsumerWidget {
               TextField(
                 controller: valCtrl,
                 keyboardType: keyboardType,
-                decoration: InputDecoration(labelText: labelText, isDense: true),
+                decoration: ModernInputDecoration.field(ctx, labelText: labelText, prefixIcon: const Icon(Icons.pin, size: 20)),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: noteCtrl,
-                decoration: const InputDecoration(labelText: '备注/笔记 (可选)', isDense: true),
+                decoration: ModernInputDecoration.field(ctx, labelText: '备注/笔记 (可选)', prefixIcon: const Icon(Icons.notes, size: 20)),
               ),
             ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-            FilledButton(
-              onPressed: () {
-                ref.read(trackerRepositoryProvider).addRecord(
-                      trackerId: trackerId,
-                      value: valCtrl.text.trim().isEmpty ? null : valCtrl.text.trim(),
-                      content: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
-                      currentUserId: userId,
-                    );
-                Navigator.pop(ctx);
-              },
-              child: const Text('保存'),
-            ),
-          ],
         ),
       ),
     );

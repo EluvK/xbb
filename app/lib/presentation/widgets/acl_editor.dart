@@ -6,6 +6,7 @@ import 'package:xbb/data/database_providers.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/friends_provider.dart';
 import 'package:xbb/presentation/widgets/avatar_helper.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 /// 全局通用的细粒度权限控制核心编辑器组件 (AclEditor)
@@ -31,21 +32,15 @@ class AclEditor extends ConsumerStatefulWidget {
     required String entityTitle,
     String? ownerId,
   }) {
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xl),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520, maxHeight: 680),
-          child: AclEditor(
-            table: table,
-            entityId: entityId,
-            entityTitle: entityTitle,
-            ownerId: ownerId,
-          ),
-        ),
+    return showAdaptiveModal(
+      context,
+      maxWidth: 520,
+      isDismissible: false,
+      builder: (_) => AclEditor(
+        table: table,
+        entityId: entityId,
+        entityTitle: entityTitle,
+        ownerId: ownerId,
       ),
     );
   }
@@ -89,9 +84,7 @@ class _AclEditorState extends ConsumerState<AclEditor> {
 
   void _addFromFriend(dynamic friend) {
     if (_collaborators.any((c) => c.userId == friend.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${friend.nickname} 已经在协作者列表中')),
-      );
+      AppFeedback.showInfo(context, '${friend.nickname} 已经在协作者列表中');
       return;
     }
 
@@ -113,9 +106,7 @@ class _AclEditorState extends ConsumerState<AclEditor> {
     if (userId.isEmpty) return;
 
     if (_collaborators.any((c) => c.userId == userId)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('该用户已在协作者列表中')),
-      );
+      AppFeedback.showWarning(context, '该用户已在协作者列表中');
       return;
     }
 
@@ -187,16 +178,12 @@ class _AclEditorState extends ConsumerState<AclEditor> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('协作者权限已成功保存并同步')),
-        );
+        AppFeedback.showSuccess(context, '协作者权限已成功保存并同步');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存权限失败: $e')),
-        );
+        AppFeedback.showError(context, '保存权限失败: $e');
       }
     } finally {
       if (mounted) {
@@ -303,10 +290,10 @@ class _AclEditorState extends ConsumerState<AclEditor> {
                         Expanded(
                           child: TextField(
                             controller: _manualUserIdController,
-                            decoration: const InputDecoration(
+                            decoration: ModernInputDecoration.field(
+                              context,
                               hintText: '输入协作者 User ID (user-xxx)',
-                              prefixIcon: Icon(Icons.person_add_alt, size: 18),
-                              isDense: true,
+                              prefixIcon: const Icon(Icons.person_add_alt, size: 18),
                             ),
                           ),
                         ),

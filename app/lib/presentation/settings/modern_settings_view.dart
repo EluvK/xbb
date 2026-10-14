@@ -12,6 +12,7 @@ import 'package:xbb/presentation/providers/server_health_provider.dart';
 import 'package:xbb/presentation/providers/settings_provider.dart';
 import 'package:xbb/presentation/providers/sync_provider.dart';
 import 'package:xbb/presentation/widgets/avatar_helper.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/utils/translation.dart';
 
@@ -112,9 +113,7 @@ class ModernSettingsView extends ConsumerWidget {
                       label: Text('sync_trigger_check'.tr),
                       onPressed: () {
                         ref.read(syncStatusProvider.notifier).triggerSync();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('sync_triggered_snack'.tr)),
-                        );
+                        AppFeedback.showSuccess(context, 'sync_triggered_snack'.tr);
                       },
                     ),
                   ],
@@ -322,21 +321,20 @@ class ModernSettingsView extends ConsumerWidget {
                       final pinned = await TaskWidgetBridge.requestPinWidget();
                       if (context.mounted) {
                         if (pinned) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('home_widget_requested_snack'.tr)),
-                          );
+                          AppFeedback.showSuccess(context, 'home_widget_requested_snack'.tr);
                         } else {
-                          showDialog<void>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text('home_widget_guide_title'.tr),
-                              content: Text('home_widget_guide_content'.tr),
+                          showAdaptiveModal<void>(
+                            context,
+                            maxWidth: 440,
+                            builder: (ctx) => AdaptiveModalContainer(
+                              title: 'home_widget_guide_title'.tr,
                               actions: [
                                 FilledButton(
                                   onPressed: () => Navigator.pop(ctx),
                                   child: Text('home_widget_guide_confirm'.tr),
                                 ),
                               ],
+                              child: Text('home_widget_guide_content'.tr),
                             ),
                           );
                         }
@@ -358,21 +356,20 @@ class ModernSettingsView extends ConsumerWidget {
                       final pinned = await CheckinWidgetBridge.requestPinWidget();
                       if (context.mounted) {
                         if (pinned) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('home_widget_requested_snack'.tr)),
-                          );
+                          AppFeedback.showSuccess(context, 'home_widget_requested_snack'.tr);
                         } else {
-                          showDialog<void>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text('add_checkin_widget_title'.tr),
-                              content: Text('add_checkin_widget_guide_message'.tr),
+                          showAdaptiveModal<void>(
+                            context,
+                            maxWidth: 440,
+                            builder: (ctx) => AdaptiveModalContainer(
+                              title: 'add_checkin_widget_title'.tr,
                               actions: [
                                 FilledButton(
                                   onPressed: () => Navigator.pop(ctx),
                                   child: Text('home_widget_guide_confirm'.tr),
                                 ),
                               ],
+                              child: Text('add_checkin_widget_guide_message'.tr),
                             ),
                           );
                         }
@@ -427,9 +424,7 @@ class _SyncStoreServerCardState extends ConsumerState<_SyncStoreServerCard> {
     setState(() => _isEditing = false);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('syncstore_server_saved'.tr)),
-      );
+      AppFeedback.showSuccess(context, 'syncstore_server_saved'.tr);
     }
   }
 
@@ -440,9 +435,7 @@ class _SyncStoreServerCardState extends ConsumerState<_SyncStoreServerCard> {
     setState(() => _isEditing = false);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('syncstore_server_reset_done'.tr)),
-      );
+      AppFeedback.showSuccess(context, 'syncstore_server_reset_done'.tr);
     }
   }
 
@@ -491,12 +484,10 @@ class _SyncStoreServerCardState extends ConsumerState<_SyncStoreServerCard> {
               Expanded(
                 child: TextField(
                   controller: _urlController,
-                  decoration: InputDecoration(
+                  decoration: ModernInputDecoration.field(
+                    context,
                     prefixIcon: const Icon(Icons.cloud_outlined, size: 20),
                     hintText: 'http://127.0.0.1:10101',
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
-                    border: OutlineInputBorder(borderRadius: AppRadius.roundedSm),
                   ),
                   onChanged: (_) {
                     if (!_isEditing) setState(() => _isEditing = true);

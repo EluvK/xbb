@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/data/repositories/notes_repository.dart';
 import 'package:xbb/presentation/widgets/acl_editor.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 /// 笔记本成员协作与分享对话框 (RepoAclDialog)
@@ -26,25 +27,13 @@ class RepoAclDialog extends ConsumerStatefulWidget {
     required String repoName,
     required String ownerId,
   }) {
-    return showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xl,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 540, maxHeight: 720),
-          child: RepoAclDialog(
-            repoId: repoId,
-            repoName: repoName,
-            ownerId: ownerId,
-          ),
-        ),
+    return showAdaptiveModal(
+      context,
+      maxWidth: 540,
+      builder: (_) => RepoAclDialog(
+        repoId: repoId,
+        repoName: repoName,
+        ownerId: ownerId,
       ),
     );
   }
@@ -64,12 +53,7 @@ class _RepoAclDialogState extends ConsumerState<RepoAclDialog> {
 
   void _copyShareLink() {
     Clipboard.setData(ClipboardData(text: _shareLink));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已复制分享链接到剪贴板: $_shareLink'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppFeedback.showSuccess(context, '已复制分享链接到剪贴板: $_shareLink');
   }
 
   @override

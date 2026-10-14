@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/clipboard/model.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 
 class ClipboardBatchActionBar extends ConsumerStatefulWidget {
   const ClipboardBatchActionBar({super.key});
@@ -27,35 +28,28 @@ class _ClipboardBatchActionBarState extends ConsumerState<ClipboardBatchActionBa
 
     if (result.failedCount > 0) {
       ref.read(selectedClipboardIdsProvider.notifier).setFailedIds(result.failedIds);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('已备份上云 ${result.syncedCount} 条，失败 ${result.failedCount} 条，跳过 ${result.skippedCount} 条已同步。失败项已保留。'),
-        ),
+      AppFeedback.showWarning(
+        context,
+        '已备份上云 ${result.syncedCount} 条，失败 ${result.failedCount} 条，跳过 ${result.skippedCount} 条已同步。失败项已保留。',
       );
     } else {
       ref.read(selectedClipboardIdsProvider.notifier).clear();
       final msg = result.syncedCount > 0
           ? '已成功备份上云 ${result.syncedCount} 条${result.skippedCount > 0 ? '（跳过 ${result.skippedCount} 条已同步）' : ''}'
           : '所选 ${result.skippedCount} 条均已是云端同步状态';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      AppFeedback.showSuccess(context, msg);
     }
   }
 
   Future<void> _handleDeleteSelected(BuildContext context, List<DataItem<ClipboardHistoryEntry>> selectedItems) async {
     if (_isProcessing || selectedItems.isEmpty) return;
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('批量删除'),
-        content: Text('确定删除选中的 ${selectedItems.length} 条剪贴板记录吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除')),
-        ],
-      ),
+    final confirm = await showAdaptiveConfirmDialog(
+      context,
+      title: '批量删除',
+      message: '确定删除选中的 ${selectedItems.length} 条剪贴板记录吗？',
+      confirmText: '删除',
+      isDanger: true,
     );
 
     if (confirm != true || !mounted) return;
@@ -69,14 +63,13 @@ class _ClipboardBatchActionBarState extends ConsumerState<ClipboardBatchActionBa
 
     if (result.failedCount > 0) {
       ref.read(selectedClipboardIdsProvider.notifier).setFailedIds(result.failedIds);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已删除 ${result.deletedCount} 条，失败 ${result.failedCount} 条。失败项已保留。')),
+      AppFeedback.showWarning(
+        context,
+        '已删除 ${result.deletedCount} 条，失败 ${result.failedCount} 条。失败项已保留。',
       );
     } else {
       ref.read(selectedClipboardIdsProvider.notifier).clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已成功删除 ${result.deletedCount} 条记录')),
-      );
+      AppFeedback.showSuccess(context, '已成功删除 ${result.deletedCount} 条记录');
     }
   }
 

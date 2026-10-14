@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:xbb/core/network/api_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/utils/translation.dart';
 
@@ -132,22 +133,30 @@ class AppUpdateService {
 
   /// 弹出更新弹窗
   static Future<void> showUpdateDialog(BuildContext context, AppUpdateInfo info) {
-    return showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.system_update_alt_rounded, color: Colors.blue),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                'update_dialog_title'.trParams({'version': info.latestVersion}),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
+    return showAdaptiveModal<void>(
+      context,
+      maxWidth: 480,
+      builder: (ctx) => AdaptiveModalContainer(
+        leading: const Icon(Icons.system_update_alt_rounded, color: Colors.blue),
+        title: 'update_dialog_title'.trParams({'version': info.latestVersion}),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('remind_later'.tr),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.download_rounded, size: 16),
+            label: Text('download_update_btn'.tr),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final uri = Uri.parse(info.downloadUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+          ),
+        ],
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -187,23 +196,6 @@ class AppUpdateService {
             ],
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('remind_later'.tr),
-          ),
-          FilledButton.icon(
-            icon: const Icon(Icons.download_rounded, size: 16),
-            label: Text('download_update_btn'.tr),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final uri = Uri.parse(info.downloadUrl);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-            },
-          ),
-        ],
       ),
     );
   }
@@ -253,9 +245,7 @@ class AppUpdateNotifier extends StateNotifier<AppUpdateState> {
       if (info.hasUpdate) {
         AppUpdateService.showUpdateDialog(context, info);
       } else if (isManual) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('already_latest_version'.tr)),
-        );
+        AppFeedback.showInfo(context, 'already_latest_version'.tr);
       }
     }
 

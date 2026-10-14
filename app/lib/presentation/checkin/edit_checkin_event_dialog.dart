@@ -5,6 +5,7 @@ import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/checkin/model.dart';
 import 'package:xbb/presentation/checkin/checkin_providers.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 
 const List<Color> kPresetEventColors = [
   Colors.teal,
@@ -34,8 +35,9 @@ class EditCheckinEventDialog extends ConsumerStatefulWidget {
   final Future<void> Function()? onDelete;
 
   static Future<void> show(BuildContext context, {DataItem<CheckinEvent>? eventItem}) {
-    return showDialog(
-      context: context,
+    return showAdaptiveModal(
+      context,
+      maxWidth: 480,
       builder: (_) => EditCheckinEventDialog(eventItem: eventItem),
     );
   }
@@ -70,9 +72,7 @@ class _EditCheckinEventDialogState extends ConsumerState<EditCheckinEventDialog>
   Future<void> _handleSave() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('习惯名称不能为空')),
-      );
+      AppFeedback.showWarning(context, '习惯名称不能为空');
       return;
     }
 
@@ -81,7 +81,7 @@ class _EditCheckinEventDialogState extends ConsumerState<EditCheckinEventDialog>
     }
 
     final desc = _descCtrl.text.trim();
-    final color = _selectedColor.value;
+    final color = _selectedColor.toARGB32();
 
     if (widget.onSave != null) {
       await widget.onSave!(name, desc, color);
@@ -109,120 +109,33 @@ class _EditCheckinEventDialogState extends ConsumerState<EditCheckinEventDialog>
     }
   }
 
-  void _confirmDelete() {
+  Future<void> _confirmDelete() async {
     final event = widget.eventItem!;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除打卡事件'),
-        content: Text('确定删除「${event.body.name}」吗？\n所有历史打卡记录也将被级联清理，操作不可撤销！'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
-            },
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: () async {
-              if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop(); // 关闭确认弹窗
-              if (Navigator.of(context).canPop()) Navigator.of(context).pop(); // 关闭编辑弹窗
-              if (widget.onDelete != null) {
-                await widget.onDelete!();
-              } else {
-                await ref.read(checkinRepositoryProvider).deleteEvent(event.id);
-              }
-            },
-            child: const Text('危险删除'),
-          ),
-        ],
-      ),
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: '删除打卡事件',
+      message: '确定删除「${event.body.name}」吗？\n所有历史打卡记录也将被级联清理，操作不可撤销！',
+      confirmText: '危险删除',
+      isDanger: true,
     );
+    if (confirmed == true) {
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      if (widget.onDelete != null) {
+        await widget.onDelete!();
+      } else {
+        await ref.read(checkinRepositoryProvider).deleteEvent(event.id);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AlertDialog(
-      title: Text(_isEditing ? '编辑习惯项目' : '新建习惯项目'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: '习惯名称',
-                hintText: '如：晨跑、阅读、深蹲',
-                isDense: true,
-              ),
-              autofocus: !_isEditing,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: _descCtrl,
-              decoration: const InputDecoration(
-                labelText: '描述或目标 (可选)',
-                hintText: '如：每天 30 分钟',
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              '专属色彩',
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: kPresetEventColors.map((color) {
-                final isSelected = _selectedColor.value == color.value;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedColor = color;
-                    });
-                  },
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: isSelected
-                          ? Border.all(color: theme.colorScheme.onSurface, width: 2.5)
-                          : null,
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.4),
-                                blurRadius: 6,
-                                spreadRadius: 1,
-                              )
-                            ]
-                          : null,
-                    ),
-                    child: isSelected
-                        ? const Icon(Icons.check, size: 18, color: Colors.white)
-                        : null,
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-      actionsAlignment: _isEditing ? MainAxisAlignment.spaceBetween : MainAxisAlignment.end,
+    return AdaptiveModalContainer(
+      title: _isEditing ? '编辑习惯项目' : '新建习惯项目',
       actions: [
         if (_isEditing)
           TextButton.icon(
@@ -231,6 +144,7 @@ class _EditCheckinEventDialogState extends ConsumerState<EditCheckinEventDialog>
             label: const Text('删除'),
             style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
           ),
+        const Spacer(),
         TextButton(
           onPressed: () {
             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
@@ -242,6 +156,78 @@ class _EditCheckinEventDialogState extends ConsumerState<EditCheckinEventDialog>
           child: Text(_isEditing ? '保存' : '创建'),
         ),
       ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _nameCtrl,
+            decoration: ModernInputDecoration.field(
+              context,
+              labelText: '习惯名称',
+              hintText: '如：晨跑、阅读、深蹲',
+              prefixIcon: const Icon(Icons.edit_outlined, size: 20),
+            ),
+            autofocus: !_isEditing,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _descCtrl,
+            decoration: ModernInputDecoration.field(
+              context,
+              labelText: '描述或目标 (可选)',
+              hintText: '如：每天 30 分钟',
+              prefixIcon: const Icon(Icons.flag_outlined, size: 20),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            '专属色彩',
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: kPresetEventColors.map((color) {
+              final isSelected = _selectedColor.toARGB32() == color.toARGB32();
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedColor = color;
+                  });
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: isSelected
+                        ? Border.all(color: theme.colorScheme.onSurface, width: 2.5)
+                        : null,
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.4),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check, size: 18, color: Colors.white)
+                      : null,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 
 class UpdateSheet extends StatelessWidget {
   final String latestVersion;
@@ -16,12 +17,15 @@ class UpdateSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('版本检查'),
-      content: Text(hasNewVersion ? '发现新版本: $latestVersion' : '当前已是最新版本'),
+    return AdaptiveModalContainer(
+      title: '版本检查',
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('好的')),
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('好的'),
+        ),
       ],
+      child: Text(hasNewVersion ? '发现新版本: $latestVersion' : '当前已是最新版本'),
     );
   }
 }

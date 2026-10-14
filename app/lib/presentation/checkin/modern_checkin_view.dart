@@ -9,6 +9,7 @@ import 'package:xbb/presentation/checkin/checkin_providers.dart';
 import 'package:xbb/presentation/checkin/edit_checkin_event_dialog.dart';
 import 'package:xbb/presentation/checkin/event_filter_bar.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/utils/translation.dart';
 
@@ -223,12 +224,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                                     : () => _showCheckinWithNoteDialog(context, eventItem, event.name)),
                             onTap: () async {
                               if (isFuture) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('不能预打未来的日期'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
+                                AppFeedback.showWarning(context, '不能预打未来的日期');
                                 return;
                               }
                               if (isChecked) {
@@ -236,12 +232,7 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                               } else {
                                 final eventCreatedDayKey = CheckinRepository.formatLocalDayKey(eventItem.createdAt);
                                 if (selectedKey.compareTo(eventCreatedDayKey) < 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('不能补打事件创建前的日期'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
+                                  AppFeedback.showWarning(context, '不能补打事件创建前的日期');
                                   return;
                                 }
                                 await ref.read(checkinRepositoryProvider).checkin(
@@ -391,21 +382,42 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
     DateTime recordDateTime = recordItem.body.createdAtUtc.toLocal();
     final noteCtrl = TextEditingController(text: recordItem.body.note ?? '');
 
-    showDialog(
-      context: context,
+    showAdaptiveModal(
+      context,
+      maxWidth: 480,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
           final timeStr =
               '${recordDateTime.hour.toString().padLeft(2, '0')}:${recordDateTime.minute.toString().padLeft(2, '0')}';
-          return AlertDialog(
-            title: Text('编辑记录 · $eventName'),
-            content: Column(
+          return AdaptiveModalContainer(
+            title: '编辑记录 · $eventName',
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final text = noteCtrl.text.trim();
+                  await ref.read(checkinRepositoryProvider).updateRecordDetails(
+                        recordId: recordItem.id,
+                        recordTime: recordDateTime,
+                        note: text.isEmpty ? null : text,
+                      );
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                },
+                child: const Text('保存'),
+              ),
+            ],
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.schedule),
+                  leading: const Icon(Icons.schedule_rounded),
                   title: const Text('打卡时间'),
                   trailing: OutlinedButton(
                     onPressed: () async {
@@ -428,38 +440,19 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                     child: Text(timeStr),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.sm),
                 TextField(
                   controller: noteCtrl,
-                  decoration: const InputDecoration(
+                  decoration: ModernInputDecoration.field(
+                    ctx,
                     labelText: '打卡备注',
                     hintText: '写点今天的感受或备注...',
-                    isDense: true,
+                    prefixIcon: const Icon(Icons.notes_rounded, size: 20),
                   ),
                   maxLines: 3,
                 ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('取消'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  final text = noteCtrl.text.trim();
-                  await ref.read(checkinRepositoryProvider).updateRecordDetails(
-                        recordId: recordItem.id,
-                        recordTime: recordDateTime,
-                        note: text.isEmpty ? null : text,
-                      );
-                  if (ctx.mounted) {
-                    Navigator.pop(ctx);
-                  }
-                },
-                child: const Text('保存'),
-              ),
-            ],
           );
         },
       ),
@@ -471,34 +464,21 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
     String eventId,
     String dayKey,
     String eventName,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('撤销打卡'),
-        content: Text('确认撤销「$eventName」的打卡记录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await ref.read(checkinRepositoryProvider).undoCheckin(
-                    eventId: eventId,
-                    dayKey: dayKey,
-                  );
-            },
-            child: const Text('撤销'),
-          ),
-        ],
-      ),
+  ) async {
+    final confirm = await showAdaptiveConfirmDialog(
+      context,
+      title: '撤销打卡',
+      message: '确认撤销「$eventName」的打卡记录吗？',
+      cancelText: '取消',
+      confirmText: '撤销',
+      isDanger: true,
     );
+    if (confirm == true) {
+      await ref.read(checkinRepositoryProvider).undoCheckin(
+            eventId: eventId,
+            dayKey: dayKey,
+          );
+    }
   }
 
   void _showCheckinWithNoteDialog(
@@ -509,67 +489,22 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
     final eventCreatedDayKey = CheckinRepository.formatLocalDayKey(eventItem.createdAt);
     final selectedKey = CheckinRepository.formatLocalDayKey(_selectedDay);
     if (selectedKey.compareTo(eventCreatedDayKey) < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('不能补打事件创建前的日期'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      AppFeedback.showWarning(context, '不能补打事件创建前的日期');
       return;
     }
 
     DateTime recordDateTime = DateTime.now();
     final noteCtrl = TextEditingController();
 
-    showDialog(
-      context: context,
+    showAdaptiveModal(
+      context,
+      maxWidth: 480,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
           final timeStr =
               '${recordDateTime.hour.toString().padLeft(2, '0')}:${recordDateTime.minute.toString().padLeft(2, '0')}';
-          return AlertDialog(
-            title: Text('打卡 · $eventName'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.schedule),
-                  title: const Text('记录时间'),
-                  trailing: OutlinedButton(
-                    onPressed: () async {
-                      final pickedTime = await showTimePicker(
-                        context: ctx,
-                        initialTime: TimeOfDay.fromDateTime(recordDateTime),
-                      );
-                      if (pickedTime != null) {
-                        setDialogState(() {
-                          recordDateTime = DateTime(
-                            _selectedDay.year,
-                            _selectedDay.month,
-                            _selectedDay.day,
-                            pickedTime.hour,
-                            pickedTime.minute,
-                          );
-                        });
-                      }
-                    },
-                    child: Text(timeStr),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: noteCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '文字备注 (可选)',
-                    hintText: '今日跑步 5 公里，状态良好...',
-                    isDense: true,
-                  ),
-                  maxLines: 3,
-                ),
-              ],
-            ),
+          return AdaptiveModalContainer(
+            title: '打卡 · $eventName',
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
@@ -593,6 +528,48 @@ class _ModernCheckinViewState extends ConsumerState<ModernCheckinView> {
                 child: const Text('打卡'),
               ),
             ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.schedule_rounded),
+                  title: const Text('记录时间'),
+                  trailing: OutlinedButton(
+                    onPressed: () async {
+                      final pickedTime = await showTimePicker(
+                        context: ctx,
+                        initialTime: TimeOfDay.fromDateTime(recordDateTime),
+                      );
+                      if (pickedTime != null) {
+                        setDialogState(() {
+                          recordDateTime = DateTime(
+                            _selectedDay.year,
+                            _selectedDay.month,
+                            _selectedDay.day,
+                            pickedTime.hour,
+                            pickedTime.minute,
+                          );
+                        });
+                      }
+                    },
+                    child: Text(timeStr),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: ModernInputDecoration.field(
+                    ctx,
+                    labelText: '文字备注 (可选)',
+                    hintText: '今日跑步 5 公里，状态良好...',
+                    prefixIcon: const Icon(Icons.notes_rounded, size: 20),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
           );
         },
       ),

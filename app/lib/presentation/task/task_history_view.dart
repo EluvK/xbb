@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/task/model.dart';
 import 'package:xbb/presentation/task/task_providers.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 /// 归档历史管理主视图
@@ -48,23 +49,13 @@ class _TaskHistoryViewState extends ConsumerState<TaskHistoryView> {
   }
 
   Future<void> _confirmDeleteSegment(BuildContext context, String segmentId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除历史记录'),
-        content: const Text('确认删除此段归档历史吗？删除后本地与云端将同步永久移除。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: '删除历史记录',
+      message: '确认删除此段归档历史吗？删除后本地与云端将同步永久移除。',
+      cancelText: '取消',
+      confirmText: '删除',
+      isDanger: true,
     );
 
     if (confirmed == true) {

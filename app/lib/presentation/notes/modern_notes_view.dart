@@ -10,6 +10,7 @@ import 'package:xbb/presentation/notes/notes_providers.dart';
 import 'package:xbb/presentation/notes/repo_acl_dialog.dart';
 import 'package:xbb/presentation/notes/repo_quick_switcher.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/sync/v2/uuid_service.dart';
 import 'package:xbb/utils/color_picker.dart';
@@ -576,9 +577,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                                     icon: const Icon(Icons.mark_email_read_outlined),
                                     onPressed: () {
                                       ref.read(notesRepositoryProvider).markPostsAsArchived(categoryPosts.map((p) => p.id).toList());
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('已将【$category】下的文章全部标为已读'), duration: const Duration(seconds: 1)),
-                                      );
+                                      AppFeedback.showSuccess(context, '已将【$category】下的文章全部标为已读');
                                     },
                                   ),
                                 Icon(
@@ -602,25 +601,12 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                                   final previewText = post.body.content.length <= 300
                                       ? post.body.content
                                       : '${post.body.content.substring(0, 300)}...';
-                                  showDialog(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: Row(
-                                        children: [
-                                          Icon(Icons.preview_rounded, size: 20, color: theme.colorScheme.primary),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              post.body.title,
-                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      content: SingleChildScrollView(
-                                        child: Text(previewText, style: const TextStyle(fontSize: 13, height: 1.5)),
-                                      ),
+                                  showAdaptiveModal(
+                                    context,
+                                    maxWidth: 480,
+                                    builder: (ctx) => AdaptiveModalContainer(
+                                      leading: Icon(Icons.preview_rounded, size: 20, color: theme.colorScheme.primary),
+                                      title: post.body.title,
                                       actions: [
                                         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('关闭')),
                                         FilledButton(
@@ -631,6 +617,7 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                                           child: const Text('打开阅读'),
                                         ),
                                       ],
+                                      child: Text(previewText, style: const TextStyle(fontSize: 13, height: 1.5)),
                                     ),
                                   );
                                 },
@@ -765,16 +752,12 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                 tooltip: '删除',
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('删除笔记'),
-                      content: Text('确认删除笔记 "${post.body.title}" 吗？'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('删除')),
-                      ],
-                    ),
+                  final confirm = await showAdaptiveConfirmDialog(
+                    context,
+                    title: '删除笔记',
+                    message: '确认删除笔记 "${post.body.title}" 吗？',
+                    confirmText: '删除',
+                    isDanger: true,
                   );
                   if (confirm == true) {
                     ref.read(notesRepositoryProvider).deletePost(post.id);
@@ -908,80 +891,55 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     );
   }
 
-  void _showSubscribeRepoDialog(String userId) {
-    final ctrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('subscribe_repo_dialog_title'.tr),
-        content: TextField(
-          controller: ctrl,
-          decoration: InputDecoration(
-            labelText: 'subscribe_repo_dialog_hint'.tr,
-            hintText: 'xbb-share://ownerId/repoId',
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('cancel'.tr)),
-          FilledButton(
-            onPressed: () async {
-              final link = ctrl.text.trim();
-              if (link.isNotEmpty) {
-                try {
-                  await ref.read(notesRepositoryProvider).subscribeRepoByShareLink(link);
-                  if (ctx.mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('subscribe_repo_success'.tr)),
-                    );
-                  }
-                } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-                    );
-                  }
-                }
-              }
-            },
-            child: Text('confirm'.tr),
-          ),
-        ],
-      ),
+  void _showSubscribeRepoDialog(String userId) async {
+    final link = await showAdaptiveTextInputDialog(
+      context,
+      title: 'subscribe_repo_dialog_title'.tr,
+      labelText: 'subscribe_repo_dialog_hint'.tr,
+      hintText: 'xbb-share://ownerId/repoId',
+      prefixIcon: Icons.link_rounded,
+      confirmText: 'confirm'.tr,
+      cancelText: 'cancel'.tr,
     );
+
+    if (link != null && link.isNotEmpty && mounted) {
+      try {
+        await ref.read(notesRepositoryProvider).subscribeRepoByShareLink(link);
+        if (mounted) {
+          AppFeedback.showSuccess(context, 'subscribe_repo_success'.tr);
+        }
+      } catch (e) {
+        if (mounted) {
+          AppFeedback.showError(context, e.toString().replaceFirst('Exception: ', ''));
+        }
+      }
+    }
   }
 
-  void _showCreateRepoDialog(String userId) {
-    final ctrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('新建笔记本'),
-        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: '笔记本名称')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () {
-              if (ctrl.text.trim().isNotEmpty) {
-                final now = DateTime.now();
-                final newRepo = DataItem<Repo>(
-                  UuidService.v7(),
-                  now,
-                  now,
-                  userId,
-                  null,
-                  null,
-                  body: Repo(name: ctrl.text.trim(), status: 'active'),
-                  syncStatus: SyncStatus.pending,
-                );
-                ref.read(notesRepositoryProvider).saveRepo(newRepo);
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('创建'),
-          ),
-        ],
-      ),
+  void _showCreateRepoDialog(String userId) async {
+    final name = await showAdaptiveTextInputDialog(
+      context,
+      title: '新建笔记本',
+      labelText: '笔记本名称',
+      hintText: '例如：工作笔记、灵感随笔',
+      prefixIcon: Icons.book_outlined,
+      confirmText: '创建',
+      cancelText: '取消',
     );
+
+    if (name != null && name.isNotEmpty) {
+      final now = DateTime.now();
+      final newRepo = DataItem<Repo>(
+        UuidService.v7(),
+        now,
+        now,
+        userId,
+        null,
+        null,
+        body: Repo(name: name, status: 'active'),
+        syncStatus: SyncStatus.pending,
+      );
+      ref.read(notesRepositoryProvider).saveRepo(newRepo);
+    }
   }
 }

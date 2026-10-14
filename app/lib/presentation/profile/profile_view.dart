@@ -7,6 +7,7 @@ import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/friends_provider.dart';
 import 'package:xbb/presentation/widgets/avatar_helper.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 class ProfileView extends ConsumerStatefulWidget {
@@ -61,15 +62,11 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
         avatar: avatarToSave,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('个人资料已成功保存并同步到云端')),
-        );
+        AppFeedback.showSuccess(context, '个人资料已成功保存并同步到云端');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败: ${e.toString().replaceFirst("Exception: ", "")}')),
-        );
+        AppFeedback.showError(context, '保存失败: ${e.toString().replaceFirst("Exception: ", "")}');
       }
     } finally {
       if (mounted) {
@@ -84,15 +81,11 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     final confirm = _confirmPasswordController.text.trim();
 
     if (oldPassword.isEmpty || newPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入当前密码与新密码')),
-      );
+      AppFeedback.showWarning(context, '请输入当前密码与新密码');
       return;
     }
     if (newPassword != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('两次输入的新密码不一致')),
-      );
+      AppFeedback.showWarning(context, '两次输入的新密码不一致');
       return;
     }
 
@@ -103,15 +96,11 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
       _newPasswordController.clear();
       _confirmPasswordController.clear();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('密码修改成功，请牢记您的新密码')),
-        );
+        AppFeedback.showSuccess(context, '密码修改成功，请牢记您的新密码');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('修改失败: ${e.toString().replaceFirst("Exception: ", "")}')),
-        );
+        AppFeedback.showError(context, '修改失败: ${e.toString().replaceFirst("Exception: ", "")}');
       }
     } finally {
       if (mounted) {
@@ -169,9 +158,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                           InkWell(
                             onTap: () {
                               Clipboard.setData(ClipboardData(text: auth.userId));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('已复制 User ID 到剪贴板')),
-                              );
+                              AppFeedback.showSuccess(context, '已复制 User ID 到剪贴板');
                             },
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -200,10 +187,10 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 const SizedBox(height: AppSpacing.xs),
                 TextField(
                   controller: _nicknameController,
-                  decoration: const InputDecoration(
+                  decoration: ModernInputDecoration.field(
+                    context,
                     hintText: '请输入新的显示昵称',
-                    prefixIcon: Icon(Icons.badge_outlined, size: 20),
-                    isDense: true,
+                    prefixIcon: const Icon(Icons.badge_outlined, size: 20),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -252,10 +239,10 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 TextField(
                   controller: _customAvatarController,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
+                  decoration: ModernInputDecoration.field(
+                    context,
                     hintText: 'https://example.com/avatar.png',
-                    prefixIcon: Icon(Icons.image_outlined, size: 20),
-                    isDense: true,
+                    prefixIcon: const Icon(Icons.image_outlined, size: 20),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -286,30 +273,30 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                   TextField(
                     controller: _oldPasswordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
+                    decoration: ModernInputDecoration.field(
+                      context,
                       labelText: '当前密码',
-                      prefixIcon: Icon(Icons.lock_clock_outlined, size: 20),
-                      isDense: true,
+                      prefixIcon: const Icon(Icons.lock_clock_outlined, size: 20),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   TextField(
                     controller: _newPasswordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
+                    decoration: ModernInputDecoration.field(
+                      context,
                       labelText: '新密码',
-                      prefixIcon: Icon(Icons.lock_outline, size: 20),
-                      isDense: true,
+                      prefixIcon: const Icon(Icons.lock_outline, size: 20),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   TextField(
                     controller: _confirmPasswordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
+                    decoration: ModernInputDecoration.field(
+                      context,
                       labelText: '确认新密码',
-                      prefixIcon: Icon(Icons.check_circle_outline, size: 20),
-                      isDense: true,
+                      prefixIcon: const Icon(Icons.check_circle_outline, size: 20),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -390,9 +377,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                             tooltip: '复制协作者 ID',
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: friend.id));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('已复制 ${friend.nickname} 的 ID 到剪贴板')),
-                              );
+                              AppFeedback.showSuccess(context, '已复制 ${friend.nickname} 的 ID 到剪贴板');
                             },
                           ),
                         );

@@ -4,6 +4,7 @@ import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/models/clipboard/model.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 String clipboardDateHeaderLabel(DateTime date, {bool isZh = true}) {
@@ -69,7 +70,7 @@ class ClipboardDateGroupView extends ConsumerWidget {
     final effectiveIsZh = isZh ?? (Localizations.maybeLocaleOf(context)?.languageCode.startsWith('zh') ?? true);
     final headerTitle = clipboardDateHeaderLabel(group.date, isZh: effectiveIsZh);
     final selectedIds = ref.watch(selectedClipboardIdsProvider);
-    final groupIds = group.entries.map((e) => e.id as String).toList();
+    final groupIds = group.entries.map((e) => e.id).toList();
     final isAllSelected = groupIds.isNotEmpty && groupIds.every(selectedIds.contains);
 
     return Column(
@@ -258,9 +259,7 @@ class ClipboardEntryCard extends ConsumerWidget {
                     label: const Text('备份上云'),
                     onPressed: () {
                       ref.read(clipboardRepositoryProvider).syncToCloud(item);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已确认并入队同步')),
-                      );
+                      AppFeedback.showSuccess(context, '已确认并入队同步');
                     },
                   ),
                 TextButton.icon(
@@ -268,9 +267,7 @@ class ClipboardEntryCard extends ConsumerWidget {
                   label: const Text('复制'),
                   onPressed: () {
                     ref.read(clipboardRepositoryProvider).copyToClipboard(entry.data);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已复制到系统剪贴板')),
-                    );
+                    AppFeedback.showSuccess(context, '已复制到系统剪贴板');
                   },
                 ),
                 IconButton(
@@ -313,13 +310,16 @@ class _ClipboardInlineEditorState extends ConsumerState<_ClipboardInlineEditor> 
 
   Future<void> _handleSave() async {
     final newText = _controller.text;
-    final messenger = ScaffoldMessenger.of(context);
     final repo = ref.read(clipboardRepositoryProvider);
     final changed = await repo.updateEntryText(widget.item.id, newText);
 
-    messenger.showSnackBar(
-      SnackBar(content: Text(changed ? '剪贴板文本已更新' : '未检测到修改')),
-    );
+    if (mounted) {
+      if (changed) {
+        AppFeedback.showSuccess(context, '剪贴板文本已更新');
+      } else {
+        AppFeedback.showInfo(context, '未检测到修改');
+      }
+    }
     ref.read(editingClipboardIdProvider.notifier).state = null;
   }
 
@@ -332,9 +332,8 @@ class _ClipboardInlineEditorState extends ConsumerState<_ClipboardInlineEditor> 
           controller: _controller,
           minLines: 2,
           maxLines: 8,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            isDense: true,
+          decoration: ModernInputDecoration.field(
+            context,
             hintText: '编辑剪贴板文本...',
           ),
         ),

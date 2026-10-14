@@ -5,6 +5,7 @@ import 'package:xbb/presentation/clipboard/clipboard_batch_action_bar.dart';
 import 'package:xbb/presentation/clipboard/clipboard_date_group_view.dart';
 import 'package:xbb/presentation/clipboard/clipboard_overview_card.dart';
 import 'package:xbb/presentation/clipboard/clipboard_providers.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 import 'package:xbb/utils/translation.dart';
 
@@ -30,16 +31,13 @@ class ModernClipboardView extends ConsumerWidget {
             tooltip: 'clipboard_clear_tooltip'.tr,
             icon: const Icon(Icons.delete_sweep_outlined),
             onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text('clipboard_clear_dialog_title'.tr),
-                  content: Text('clipboard_clear_dialog_content'.tr),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('cancel'.tr)),
-                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('clipboard_clear_btn'.tr)),
-                  ],
-                ),
+              final confirm = await showAdaptiveConfirmDialog(
+                context,
+                title: 'clipboard_clear_dialog_title'.tr,
+                message: 'clipboard_clear_dialog_content'.tr,
+                cancelText: 'cancel'.tr,
+                confirmText: 'clipboard_clear_btn'.tr,
+                isDanger: true,
               );
               if (confirm == true) {
                 ref.read(clipboardRepositoryProvider).clearAll();

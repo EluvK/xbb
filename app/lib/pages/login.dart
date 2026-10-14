@@ -5,6 +5,7 @@ import 'package:xbb/core/auth/quick_login_manager.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/server_health_provider.dart';
+import 'package:xbb/presentation/widgets/modern_dialogs.dart';
 import 'package:xbb/presentation/widgets/modern_widgets.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -119,16 +120,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _deleteQuickAccount(String userId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('移除历史凭据'),
-        content: const Text('确定从本设备删除该账号的快捷登录凭据吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('确认删除')),
-        ],
-      ),
+    final confirm = await showAdaptiveConfirmDialog(
+      context,
+      title: '移除历史凭据',
+      message: '确定从本设备删除该账号的快捷登录凭据吗？',
+      confirmText: '确认删除',
+      isDanger: true,
     );
 
     if (confirm == true) {
@@ -137,47 +134,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  void _showEditServerDialog(String currentUrl) {
-    final urlController = TextEditingController(text: currentUrl);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('配置同步服务器地址'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '请输入权威 Rust ChangeLog 服务的访问 BaseURL：',
-              style: TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: urlController,
-              decoration: const InputDecoration(
-                labelText: '服务器 BaseURL',
-                hintText: 'http://127.0.0.1:10101',
-                prefixIcon: Icon(Icons.dns_outlined, size: 20),
-                isDense: true,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () {
-              final newUrl = urlController.text.trim();
-              if (newUrl.isNotEmpty) {
-                ref.read(serverHealthProvider.notifier).updateServerUrl(newUrl);
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('保存并测速'),
-          ),
-        ],
-      ),
+  void _showEditServerDialog(String currentUrl) async {
+    final newUrl = await showAdaptiveTextInputDialog(
+      context,
+      title: '配置同步服务器地址',
+      subtitle: '请输入权威 Rust ChangeLog 服务的访问 BaseURL：',
+      initialValue: currentUrl,
+      labelText: '服务器 BaseURL',
+      hintText: 'http://127.0.0.1:10101',
+      prefixIcon: Icons.dns_outlined,
+      confirmText: '保存并测速',
+      cancelText: '取消',
     );
+
+    if (newUrl != null && newUrl.isNotEmpty && mounted) {
+      ref.read(serverHealthProvider.notifier).updateServerUrl(newUrl);
+    }
   }
 
   @override
@@ -206,7 +178,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                        color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: Row(
@@ -376,20 +348,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   TextField(
                     controller: _usernameController,
-                    decoration: const InputDecoration(
+                    decoration: ModernInputDecoration.field(
+                      context,
                       labelText: '用户名',
-                      prefixIcon: Icon(Icons.person_outline, size: 20),
-                      isDense: true,
+                      prefixIcon: const Icon(Icons.person_outline, size: 20),
                     ),
                   ),
                   if (_isRegisterMode) ...[
                     const SizedBox(height: AppSpacing.md),
                     TextField(
                       controller: _nicknameController,
-                      decoration: const InputDecoration(
+                      decoration: ModernInputDecoration.field(
+                        context,
                         labelText: '显示昵称 (可选)',
-                        prefixIcon: Icon(Icons.badge_outlined, size: 20),
-                        isDense: true,
+                        prefixIcon: const Icon(Icons.badge_outlined, size: 20),
                       ),
                     ),
                   ],
@@ -397,7 +369,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
-                    decoration: InputDecoration(
+                    decoration: ModernInputDecoration.field(
+                      context,
                       labelText: '密码',
                       prefixIcon: const Icon(Icons.lock_outline, size: 20),
                       suffixIcon: IconButton(
@@ -407,7 +380,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
-                      isDense: true,
                     ),
                     onSubmitted: (_) => _handleSubmit(),
                   ),
