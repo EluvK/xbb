@@ -72,7 +72,13 @@ android {
 
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
+            val releaseSign = signingConfigs.getByName("release")
+            val hasKeystore = releaseSign.storeFile?.exists() == true && !releaseSign.storePassword.isNullOrEmpty()
+            signingConfig = if (hasKeystore) {
+                releaseSign
+            } else {
+                signingConfigs.getByName("debug")
+            }
             isCrunchPngs = false
         }
     }
