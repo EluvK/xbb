@@ -17,6 +17,12 @@
       "program": "lib/main.dart"
     },
     {
+      "name": "Client (Attach)",
+      "request": "attach",
+      "type": "dart",
+      "cwd": "app"
+    },
+    {
       "name": "Server (Rust - CodeLLDB)",
       "type": "lldb",
       "request": "launch",
