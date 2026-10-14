@@ -20,6 +20,5 @@
 
 ## Progressive Disclosure
 - 领域词典与物理索引：首选 `GLOSSARY.md`。
-- 系统整体架构与技术栈：阅读 `CONTEXT.md`。
 - 架构决策记录：阅读 `docs/adr/README.md` 与对应 ADR。
 - 子模块详细设计与 Schema：按需查阅 `docs/domain/<feature>.md` (`notes`, `task`, `tracker`, `checkin`, `clipboard`, `chat`, `syncstore_protocol`, `codegen_pipeline`)。
