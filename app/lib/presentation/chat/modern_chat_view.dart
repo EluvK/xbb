@@ -83,6 +83,15 @@ class _ModernChatViewState extends ConsumerState<ModernChatView> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
+        leading: !isDesktop
+            ? Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(Icons.forum_outlined),
+                  tooltip: '会话列表',
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              )
+            : null,
         title: Text('AI 助手对话', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
@@ -102,13 +111,19 @@ class _ModernChatViewState extends ConsumerState<ModernChatView> {
           const SizedBox(width: AppSpacing.sm),
         ],
       ),
+      drawer: !isDesktop
+          ? Drawer(
+              child: SafeArea(
+                child: _buildConversationSidebar(convsAsync, selectedConvId, isDesktop: false),
+              ),
+            )
+          : null,
       body: Row(
         children: [
-          // 会话侧边栏 (桌面端展开)
           if (isDesktop)
             SizedBox(
               width: 240,
-              child: _buildConversationSidebar(convsAsync, selectedConvId),
+              child: _buildConversationSidebar(convsAsync, selectedConvId, isDesktop: true),
             ),
           if (isDesktop) const VerticalDivider(width: 1),
 
@@ -206,8 +221,9 @@ class _ModernChatViewState extends ConsumerState<ModernChatView> {
 
   Widget _buildConversationSidebar(
     AsyncValue<List<dynamic>> convsAsync,
-    String? selectedConvId,
-  ) {
+    String? selectedConvId, {
+    required bool isDesktop,
+  }) {
     final theme = Theme.of(context);
     return Container(
       color: theme.colorScheme.surfaceContainerLowest,
@@ -229,6 +245,9 @@ class _ModernChatViewState extends ConsumerState<ModernChatView> {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                   onTap: () {
                     ref.read(selectedConversationIdProvider.notifier).state = conv.id;
+                    if (!isDesktop) {
+                      Navigator.of(context).maybePop();
+                    }
                   },
                   child: Row(
                     children: [

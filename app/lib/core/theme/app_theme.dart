@@ -1,7 +1,7 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-/// 现代应用主题构建工厂
 class AppTheme {
   static const FlexScheme defaultScheme = FlexScheme.blumineBlue;
   static const String defaultFontFamily = 'lxgw';
@@ -10,7 +10,7 @@ class AppTheme {
     FlexScheme scheme = defaultScheme,
     String? fontFamily = defaultFontFamily,
   }) {
-    return FlexThemeData.light(
+    final theme = FlexThemeData.light(
       scheme: scheme,
       surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
       blendLevel: 7,
@@ -32,13 +32,24 @@ class AppTheme {
       swapLegacyOnMaterial3: true,
       fontFamily: fontFamily,
     );
+
+    return theme.copyWith(
+      appBarTheme: theme.appBarTheme.copyWith(
+        elevation: 0,
+        scrolledUnderElevation: 1.0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+        ),
+      ),
+    );
   }
 
   static ThemeData dark({
     FlexScheme scheme = defaultScheme,
     String? fontFamily = defaultFontFamily,
   }) {
-    return FlexThemeData.dark(
+    final theme = FlexThemeData.dark(
       scheme: scheme,
       surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
       blendLevel: 14,
@@ -58,6 +69,17 @@ class AppTheme {
       useMaterial3: true,
       swapLegacyOnMaterial3: true,
       fontFamily: fontFamily,
+    );
+
+    return theme.copyWith(
+      appBarTheme: theme.appBarTheme.copyWith(
+        elevation: 0,
+        scrolledUnderElevation: 1.0,
+        systemOverlayStyle: SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+        ),
+      ),
     );
   }
 }

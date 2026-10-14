@@ -290,6 +290,9 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
               ],
               child: NavigationBar(
                 selectedIndex: tabs.indexOf(_currentTab).clamp(0, tabs.length - 1),
+                labelBehavior: tabs.length > 5
+                    ? NavigationDestinationLabelBehavior.onlyShowSelected
+                    : NavigationDestinationLabelBehavior.alwaysShow,
                 onDestinationSelected: (idx) {
                   if (idx >= 0 && idx < tabs.length) {
                     setState(() => _currentTab = tabs[idx]);
@@ -299,6 +302,7 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
                   for (final tab in tabs)
                     NavigationDestination(
                       icon: Icon(_getIconForTab(tab)),
+                      selectedIcon: Icon(_getSelectedIconForTab(tab)),
                       label: _getTitleForTab(tab),
                     ),
                 ],
@@ -345,6 +349,25 @@ class _ModernHomeShellState extends ConsumerState<ModernHomeShell> {
         return Icons.auto_awesome_outlined;
       case AppTab.settings:
         return Icons.settings_outlined;
+    }
+  }
+
+  IconData _getSelectedIconForTab(AppTab tab) {
+    switch (tab) {
+      case AppTab.notes:
+        return Icons.auto_stories;
+      case AppTab.task:
+        return Icons.checklist_rounded;
+      case AppTab.checkin:
+        return Icons.event_available;
+      case AppTab.tracker:
+        return Icons.track_changes;
+      case AppTab.clipboard:
+        return Icons.content_paste_rounded;
+      case AppTab.chat:
+        return Icons.auto_awesome;
+      case AppTab.settings:
+        return Icons.settings;
     }
   }
 

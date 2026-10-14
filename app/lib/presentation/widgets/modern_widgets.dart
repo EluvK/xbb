@@ -41,33 +41,38 @@ class ModernCard extends StatelessWidget {
             ? colorScheme.primary.withAlpha(160)
             : colorScheme.outlineVariant.withAlpha(80));
 
-    Widget content = Container(
-      margin: margin,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: border, width: selected ? 1.5 : 1.0),
-        boxShadow: AppShadows.subtle(context),
-      ),
-      child: Padding(
-        padding: padding,
-        child: child,
+    final cardContent = (onTap != null || onLongPress != null)
+        ? InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            child: Padding(
+              padding: padding,
+              child: child,
+            ),
+          )
+        : Padding(
+            padding: padding,
+            child: child,
+          );
+
+    return Padding(
+      padding: margin,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          boxShadow: AppShadows.subtle(context),
+        ),
+        child: Material(
+          color: bg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+            side: BorderSide(color: border, width: selected ? 1.5 : 1.0),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: cardContent,
+        ),
       ),
     );
-
-    if (onTap != null || onLongPress != null) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(radius),
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: content,
-        ),
-      );
-    }
-
-    return content;
   }
 }
 

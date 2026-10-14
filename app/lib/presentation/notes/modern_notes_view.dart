@@ -130,6 +130,8 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 800;
 
+    final showMobileAppBar = !isDesktop && selectedPostId == null;
+
     return PopScope(
       canPop: isDesktop || selectedPostId == null,
       onPopInvokedWithResult: (didPop, result) {
@@ -139,6 +141,41 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
       },
       child: Scaffold(
         backgroundColor: theme.colorScheme.surface,
+        appBar: showMobileAppBar
+            ? AppBar(
+                leading: Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu_book_outlined),
+                    tooltip: 'home_bar_title_notes'.tr,
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  ),
+                ),
+                title: const RepoQuickSwitcher(),
+                centerTitle: false,
+                actions: [
+                  IconButton(
+                    icon: Icon(_isAllCategoriesExpanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded),
+                    tooltip: _isAllCategoriesExpanded ? '全部收起' : '全部展开',
+                    onPressed: () {
+                      final posts = postsAsync.value ?? [];
+                      final categories = posts.map((p) => p.body.category.trim().isEmpty ? 'notes_default_category'.tr : p.body.category.trim()).toSet();
+                      setState(() {
+                        _isAllCategoriesExpanded = !_isAllCategoriesExpanded;
+                        for (final cat in categories) {
+                          _expandedCategories[cat] = _isAllCategoriesExpanded;
+                        }
+                      });
+                    },
+                  ),
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.add, size: 20),
+                    tooltip: '新建文章',
+                    onPressed: selectedRepoId == null ? null : () => _createNewPost(selectedRepoId, userId),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+              )
+            : null,
         drawer: !isDesktop
             ? Drawer(
                 child: SafeArea(
@@ -389,31 +426,25 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: isDesktop
+              ? const EdgeInsets.all(AppSpacing.md)
+              : const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs),
           child: Column(
             children: [
-              Row(
-                children: [
-                  if (!isDesktop) ...[
-                    Builder(
-                      builder: (ctx) => IconButton(
-                        icon: const Icon(Icons.menu_book_outlined, size: 20),
-                        tooltip: '笔记本列表',
-                        onPressed: () => Scaffold.of(ctx).openDrawer(),
-                      ),
+              if (isDesktop) ...[
+                Row(
+                  children: [
+                    const RepoQuickSwitcher(),
+                    const Spacer(),
+                    IconButton.filledTonal(
+                      icon: const Icon(Icons.add, size: 18),
+                      tooltip: '新建文章',
+                      onPressed: selectedRepoId == null ? null : () => _createNewPost(selectedRepoId, userId),
                     ),
-                    const SizedBox(width: AppSpacing.xs),
                   ],
-                  const RepoQuickSwitcher(),
-                  const Spacer(),
-                  IconButton.filledTonal(
-                    icon: const Icon(Icons.add, size: 18),
-                    tooltip: '新建文章',
-                    onPressed: selectedRepoId == null ? null : () => _createNewPost(selectedRepoId, userId),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -423,22 +454,24 @@ class _ModernNotesViewState extends ConsumerState<ModernNotesView> {
                       onChanged: (v) => setState(() => _searchKeyword = v.trim().toLowerCase()),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: Icon(_isAllCategoriesExpanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded, size: 20),
-                    tooltip: _isAllCategoriesExpanded ? '全部收起' : '全部展开',
-                    onPressed: () {
-                      final posts = postsAsync.value ?? [];
-                      final categories = posts.map((p) => p.body.category.trim().isEmpty ? 'notes_default_category'.tr : p.body.category.trim()).toSet();
-                      setState(() {
-                        _isAllCategoriesExpanded = !_isAllCategoriesExpanded;
-                        for (final cat in categories) {
-                          _expandedCategories[cat] = _isAllCategoriesExpanded;
-                        }
-                      });
-                    },
-                  ),
+                  if (isDesktop) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(_isAllCategoriesExpanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded, size: 20),
+                      tooltip: _isAllCategoriesExpanded ? '全部收起' : '全部展开',
+                      onPressed: () {
+                        final posts = postsAsync.value ?? [];
+                        final categories = posts.map((p) => p.body.category.trim().isEmpty ? 'notes_default_category'.tr : p.body.category.trim()).toSet();
+                        setState(() {
+                          _isAllCategoriesExpanded = !_isAllCategoriesExpanded;
+                          for (final cat in categories) {
+                            _expandedCategories[cat] = _isAllCategoriesExpanded;
+                          }
+                        });
+                      },
+                    ),
+                  ],
                 ],
               ),
             ],
