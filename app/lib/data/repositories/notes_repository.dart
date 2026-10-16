@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:syncstore_client/syncstore_client.dart';
 import 'package:xbb/core/acl/acl_repository.dart';
@@ -10,10 +11,12 @@ import 'package:xbb/sync/v2/sync_worker.dart';
 class NotesRepository {
   final Database db;
   final DatabaseChangeNotifier changeNotifier;
+  final Dio? dio;
 
   NotesRepository({
     required this.db,
     required this.changeNotifier,
+    this.dio,
   });
 
   /// 辅助解析 SQLite color_tag 字段
@@ -359,13 +362,13 @@ class NotesRepository {
 
   /// 监听知识库成员权限列表
   Stream<List<EntityAclEntry>> watchRepoAcls(String repoId) {
-    final aclRepo = AclRepository(changeNotifier);
+    final aclRepo = AclRepository(changeNotifier, dio);
     return aclRepo.watchAcls(db, table: 'repo', entityId: repoId);
   }
 
   /// 为知识库添加或更新成员权限 (本地记录、Outbox 变更与远端同步)
   Future<void> grantRepoPermission(String repoId, EntityAclEntry entry) async {
-    final aclRepo = AclRepository(changeNotifier);
+    final aclRepo = AclRepository(changeNotifier, dio);
     await aclRepo.grantPermission(
       db: db,
       table: 'repo',
@@ -376,7 +379,7 @@ class NotesRepository {
 
   /// 为知识库移除成员权限
   Future<void> revokeRepoPermission(String repoId, String granteeId) async {
-    final aclRepo = AclRepository(changeNotifier);
+    final aclRepo = AclRepository(changeNotifier, dio);
     await aclRepo.revokePermission(
       db: db,
       table: 'repo',

@@ -29,15 +29,15 @@ class AppSettingsState {
   final bool clipboardListeningEnabled;
   final int startupTabIndex;
 
-  const AppSettingsState({
+  AppSettingsState({
     this.themeMode = ThemeMode.system,
     this.scheme = FlexScheme.blumineBlue,
     this.languageCode = 'zh',
     this.locale = const Locale('zh', 'CN'),
     this.fontScale = 1.0,
     this.colorTag = ColorTag.none,
-    this.syncStoreUrl = 'http://127.0.0.1:10101',
-    this.syncStoreUrlHistory = const ['http://127.0.0.1:10101'],
+    String? syncStoreUrl,
+    List<String>? syncStoreUrlHistory,
     this.taskEnabled = true,
     this.notesEnabled = true,
     this.trackerEnabled = true,
@@ -46,7 +46,8 @@ class AppSettingsState {
     this.clipboardEnabled = true,
     this.clipboardListeningEnabled = false,
     this.startupTabIndex = 0,
-  });
+  })  : syncStoreUrl = syncStoreUrl ?? ApiClient.defaultDevServerUrl,
+        syncStoreUrlHistory = syncStoreUrlHistory ?? [ApiClient.defaultDevServerUrl];
 
   AppSettingsState copyWith({
     ThemeMode? themeMode,
@@ -91,7 +92,7 @@ class AppSettingsState {
 class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   final GetStorage box;
 
-  AppSettingsNotifier(this.box) : super(const AppSettingsState()) {
+  AppSettingsNotifier(this.box) : super(AppSettingsState()) {
     _loadFromStorage();
   }
 
@@ -164,10 +165,10 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     }
 
     final syncSetting = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY);
-    String syncUrl = 'http://127.0.0.1:10101';
-    List<String> urlHistory = ['http://127.0.0.1:10101'];
+    String syncUrl = ApiClient.defaultDevServerUrl;
+    List<String> urlHistory = [ApiClient.defaultDevServerUrl];
     if (syncSetting != null) {
-      syncUrl = syncSetting['base_url'] as String? ?? 'http://127.0.0.1:10101';
+      syncUrl = syncSetting['base_url'] as String? ?? ApiClient.defaultDevServerUrl;
       final rawHist = syncSetting['url_history'] as List<dynamic>?;
       if (rawHist != null && rawHist.isNotEmpty) {
         urlHistory = rawHist.map((e) => e.toString()).toList();
@@ -222,7 +223,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   }
 
   Future<void> resetDefaultSyncStoreUrl() async {
-    const defaultUrl = 'http://127.0.0.1:10101';
+    final defaultUrl = ApiClient.defaultDevServerUrl;
     await updateSyncStoreUrl(defaultUrl);
   }
 

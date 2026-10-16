@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,12 +42,28 @@ void main() {
   });
 
   group('TASK-6.2: 恢复服务器配置与网络实时 Ping 测速', () {
+    test('多平台默认服务器地址判断', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      expect(ApiClient.defaultDevServerUrl, equals('http://10.0.2.2:10101'));
+
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      expect(ApiClient.defaultDevServerUrl, equals('http://127.0.0.1:10101'));
+
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      expect(ApiClient.defaultDevServerUrl, equals('http://127.0.0.1:10101'));
+
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      expect(ApiClient.defaultDevServerUrl, equals('http://127.0.0.1:10101'));
+
+      debugDefaultTargetPlatformOverride = null;
+    });
+
     test('SettingsNotifier 能够规范化保存 syncStoreUrl 与历史记录并落盘', () async {
       final box = GetStorage(GET_STORAGE_FILE_KEY);
       await box.erase();
       final notifier = AppSettingsNotifier(box);
 
-      expect(notifier.state.syncStoreUrl, equals('http://127.0.0.1:10101'));
+      expect(notifier.state.syncStoreUrl, equals(ApiClient.defaultDevServerUrl));
 
       // 输入带多余斜杠的自定义地址
       await notifier.updateSyncStoreUrl('http://192.168.1.88:9090/');
@@ -61,8 +78,8 @@ void main() {
 
       // 重置为默认
       await notifier.resetDefaultSyncStoreUrl();
-      expect(notifier.state.syncStoreUrl, equals('http://127.0.0.1:10101'));
-      expect(ApiClient.instance.baseUrl, equals('http://127.0.0.1:10101'));
+      expect(notifier.state.syncStoreUrl, equals(ApiClient.defaultDevServerUrl));
+      expect(ApiClient.instance.baseUrl, equals(ApiClient.defaultDevServerUrl));
     });
 
     testWidgets('PingLatencyInline 正确呈现时延 ms、离线状态与加载中动画', (tester) async {
@@ -156,7 +173,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(container.read(appSettingsProvider).syncStoreUrl, equals('http://127.0.0.1:10101'));
+      expect(container.read(appSettingsProvider).syncStoreUrl, equals(ApiClient.defaultDevServerUrl));
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 1));

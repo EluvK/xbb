@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:xbb/core/acl/acl_repository.dart';
@@ -5,6 +7,20 @@ import 'package:xbb/data/database_change_notifier.dart';
 import 'package:xbb/data/repositories/notes_repository.dart';
 import 'package:xbb/sync/v2/local_first_db.dart';
 import 'package:xbb/sync/v2/sync_worker.dart';
+
+class _MockAclAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(RequestOptions options, Stream<List<int>>? requestStream, Future<void>? cancelFuture) async {
+    return ResponseBody.fromString(
+      jsonEncode({'status': 'ok'}),
+      200,
+      headers: {Headers.contentTypeHeader: [Headers.jsonContentType]},
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
 
 void main() {
   setUpAll(() {
@@ -16,11 +32,13 @@ void main() {
     late Database db;
     late DatabaseChangeNotifier dbChangeNotifier;
     late NotesRepository notesRepo;
+    late Dio mockDio;
 
     setUp(() async {
       db = await LocalFirstDB.openInMemory();
       dbChangeNotifier = DatabaseChangeNotifier();
-      notesRepo = NotesRepository(db: db, changeNotifier: dbChangeNotifier);
+      mockDio = Dio()..httpClientAdapter = _MockAclAdapter();
+      notesRepo = NotesRepository(db: db, changeNotifier: dbChangeNotifier, dio: mockDio);
     });
 
     tearDown(() async {

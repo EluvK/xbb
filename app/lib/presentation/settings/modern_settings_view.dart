@@ -5,6 +5,7 @@ import 'package:xbb/components/common/ping_latency_inline.dart';
 import 'package:xbb/controller/checkin_widget.dart';
 import 'package:xbb/controller/setting.dart';
 import 'package:xbb/controller/task_widget.dart';
+import 'package:xbb/core/network/api_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/core/update/app_update_service.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
@@ -430,8 +431,8 @@ class _SyncStoreServerCardState extends ConsumerState<_SyncStoreServerCard> {
 
   Future<void> _handleReset() async {
     await ref.read(appSettingsProvider.notifier).resetDefaultSyncStoreUrl();
-    await ref.read(serverHealthProvider.notifier).updateServerUrl('http://127.0.0.1:10101');
-    _urlController.text = 'http://127.0.0.1:10101';
+    await ref.read(serverHealthProvider.notifier).updateServerUrl(ApiClient.defaultDevServerUrl);
+    _urlController.text = ApiClient.defaultDevServerUrl;
     setState(() => _isEditing = false);
 
     if (mounted) {
@@ -487,7 +488,7 @@ class _SyncStoreServerCardState extends ConsumerState<_SyncStoreServerCard> {
                   decoration: ModernInputDecoration.field(
                     context,
                     prefixIcon: const Icon(Icons.cloud_outlined, size: 20),
-                    hintText: 'http://127.0.0.1:10101',
+                    hintText: ApiClient.defaultDevServerUrl,
                   ),
                   onChanged: (_) {
                     if (!_isEditing) setState(() => _isEditing = true);

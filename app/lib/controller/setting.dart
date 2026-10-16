@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:xbb/core/core.dart';
+import 'package:xbb/core/network/api_client.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:syncstore_client/syncstore_client.dart' show ColorTag, UserProfile;
 import 'package:xbb/constant.dart';
@@ -271,7 +272,7 @@ class SyncStoreSetting {
     : urlHistory = urlHistory ?? [];
 
   factory SyncStoreSetting.defaults() {
-    return SyncStoreSetting(baseUrl: 'http://127.0.0.1:10101/api');
+    return SyncStoreSetting(baseUrl: '${ApiClient.defaultDevServerUrl}/api');
   }
 
   Map<String, dynamic> toJson() {
@@ -280,7 +281,7 @@ class SyncStoreSetting {
 
   factory SyncStoreSetting.fromJson(Map<String, dynamic> json) {
     return SyncStoreSetting(
-      baseUrl: json['base_url'] ?? 'http://127.0.0.1:10101/api',
+      baseUrl: json['base_url'] ?? '${ApiClient.defaultDevServerUrl}/api',
       urlHistory: ((json['url_history'] as List<dynamic>?) ?? []).cast<String>(),
     );
   }

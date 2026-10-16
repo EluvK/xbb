@@ -38,8 +38,8 @@ void main() async {
   // 初始化 ApiClient 与配置后台单例 SyncWorker 守护进程 (TASK-0.1)
   final syncSetting = box.read<Map<String, dynamic>?>(STORAGE_SETTING_SYNCSTORE_SETTINGS_KEY);
   final syncStoreUrl = syncSetting != null
-      ? (syncSetting['base_url'] as String? ?? 'http://127.0.0.1:10101')
-      : 'http://127.0.0.1:10101';
+      ? (syncSetting['base_url'] as String? ?? ApiClient.defaultDevServerUrl)
+      : ApiClient.defaultDevServerUrl;
   var clientId = box.read<String>('device_client_id');
   if (clientId == null || clientId.isEmpty) {
     clientId = UuidService.v4();

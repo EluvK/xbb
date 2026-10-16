@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:xbb/core/auth/quick_login_manager.dart';
+import 'package:xbb/core/network/api_client.dart';
 import 'package:xbb/core/theme/tokens.dart';
 import 'package:xbb/presentation/providers/auth_provider.dart';
 import 'package:xbb/presentation/providers/server_health_provider.dart';
@@ -141,7 +142,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       subtitle: '请输入权威 Rust ChangeLog 服务的访问 BaseURL：',
       initialValue: currentUrl,
       labelText: '服务器 BaseURL',
-      hintText: 'http://127.0.0.1:10101',
+      hintText: ApiClient.defaultDevServerUrl,
       prefixIcon: Icons.dns_outlined,
       confirmText: '保存并测速',
       cancelText: '取消',

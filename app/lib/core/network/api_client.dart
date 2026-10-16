@@ -1,9 +1,21 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// 全局网络客户端管理单例 (ApiClient)
 /// 负责维护 Dio 单例、BaseURL 规范化、Bearer JWT 鉴权拦截器与请求日志打印。
 class ApiClient {
+  static const int defaultPort = 10101;
+
+  static String get defaultDevServerUrl {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:$defaultPort';
+    }
+    return 'http://127.0.0.1:$defaultPort';
+  }
+
+  static String get defaultBaseUrl => defaultDevServerUrl;
+
   static ApiClient? _instance;
   static ApiClient get instance => _instance ??= ApiClient._();
 
@@ -13,7 +25,7 @@ class ApiClient {
   }
 
   late final Dio _dio;
-  String _baseUrl = 'http://127.0.0.1:10101';
+  String _baseUrl = defaultDevServerUrl;
   String? _token;
 
   /// HTTP 401 未授权回调（用于引导重新登录）
@@ -29,7 +41,7 @@ class ApiClient {
   /// 规范化服务器 BaseURL，去除尾部斜杠及多余的 /api 后缀
   static String normalizeBaseUrl(String rawUrl) {
     var trimmed = rawUrl.trim();
-    if (trimmed.isEmpty) return 'http://127.0.0.1:10101';
+    if (trimmed.isEmpty) return defaultDevServerUrl;
     while (trimmed.endsWith('/')) {
       trimmed = trimmed.substring(0, trimmed.length - 1);
     }
@@ -42,9 +54,9 @@ class ApiClient {
     return trimmed;
   }
 
-  static BaseOptions _defaultOptions({String baseUrl = 'http://127.0.0.1:10101'}) {
+  static BaseOptions _defaultOptions({String? baseUrl}) {
     return BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: baseUrl ?? defaultDevServerUrl,
       connectTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
